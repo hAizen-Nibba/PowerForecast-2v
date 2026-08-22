@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useLogin } from "@refinedev/core";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
@@ -76,15 +75,6 @@ export const LandingPage: React.FC = () => {
     };
   }, [selectedWatts, estimatorHours, estimatorRate]);
 
-  const handleGuestDemo = () => {
-    login(
-      { isGuest: true },
-      {
-        onSuccess: () => navigate("/dashboard"),
-      }
-    );
-  };
-
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default", color: "text.primary" }}>
       {/* 1. MUI AppAppBar */}
@@ -158,12 +148,13 @@ export const LandingPage: React.FC = () => {
               </Button>
 
               <Button
+                component={Link}
+                to="/signup"
                 variant="contained"
                 size="small"
-                onClick={handleGuestDemo}
                 endIcon={<ArrowForwardIcon />}
               >
-                Launch App
+                Get Started
               </Button>
             </Box>
           </Toolbar>
@@ -236,22 +227,23 @@ export const LandingPage: React.FC = () => {
 
             <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 2 }}>
               <Button
+                component={Link}
+                to="/signup"
                 variant="contained"
                 size="large"
-                onClick={handleGuestDemo}
-                startIcon={<PlayIcon />}
+                endIcon={<ArrowForwardIcon />}
                 sx={{ px: 3.5, py: 1.25, fontSize: "1rem", borderRadius: 2.5 }}
               >
-                1-Click Instant Demo
+                Get Started Free
               </Button>
               <Button
                 component={Link}
-                to="/signup"
+                to="/login"
                 variant="outlined"
                 size="large"
                 sx={{ px: 3.5, py: 1.25, fontSize: "1rem", borderRadius: 2.5 }}
               >
-                Create Free Account
+                Sign In
               </Button>
             </Box>
           </Box>
@@ -597,11 +589,12 @@ export const LandingPage: React.FC = () => {
                   </Box>
 
                   <Button
+                    component={Link}
+                    to="/signup"
                     variant={tier.popular ? "contained" : "outlined"}
                     fullWidth
-                    onClick={handleGuestDemo}
                   >
-                    Simulate This Tier
+                    Start with this Tier
                   </Button>
                 </Card>
               </Grid>
@@ -632,8 +625,8 @@ export const LandingPage: React.FC = () => {
                 a: "Yes. All appliance inventories and schedule events are synced securely with Supabase Cloud DB with automatic fallback to browser storage.",
               },
               {
-                q: "Can I use PowerForecast without creating an account?",
-                a: "Absolutely! Click '1-Click Instant Demo' to explore full features with pre-configured residential appliance sets.",
+                q: "How do I get started with PowerForecast?",
+                a: "Simply click 'Get Started Free' or 'Create Free Account' to register your household with Supabase authentication and begin tracking immediately.",
               },
             ].map((faq, idx) => (
               <Accordion key={idx}>

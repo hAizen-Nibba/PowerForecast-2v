@@ -1,9 +1,9 @@
 import React from "react";
-import { Refine } from "@refinedev/core";
+import { Refine, Authenticated } from "@refinedev/core";
 import routerBindings, {
   UnsavedChangesNotifier,
 } from "@refinedev/react-router-v6";
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { resilientDataProvider } from "./providers/dataProvider";
 import { authProvider } from "./providers/authProvider";
 import { Layout } from "./components/layout/Layout";
@@ -140,8 +140,14 @@ export const App: React.FC = () => {
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-              {/* App Workspace Pages (under Layout) */}
-              <Route element={<Layout />}>
+              {/* App Workspace Pages (Protected under Authenticated guard and Layout) */}
+              <Route
+                element={
+                  <Authenticated key="authenticated-workspace" fallback={<Navigate to="/login" replace />}>
+                    <Layout />
+                  </Authenticated>
+                }
+              >
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/calculator" element={<CalculatorPage />} />
                 <Route path="/appliances" element={<AppliancesPage />} />

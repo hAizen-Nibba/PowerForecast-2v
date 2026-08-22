@@ -238,21 +238,23 @@ export const Header: React.FC<HeaderProps> = ({
             }}
           >
             <Avatar
-              src={identity?.avatar || "https://api.dicebear.com/7.x/bottts/svg?seed=Powerforecast"}
-              sx={{ width: 26, height: 26, bgcolor: "primary.main" }}
-            />
+              src={identity?.avatar}
+              sx={{ width: 26, height: 26, bgcolor: "primary.main", fontSize: "0.75rem", fontWeight: 700 }}
+            >
+              {identity?.name?.charAt(0) || "U"}
+            </Avatar>
             <Typography
               variant="caption"
               sx={{
                 fontWeight: 700,
-                maxWidth: 100,
+                maxWidth: 110,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
                 display: { xs: "none", sm: "block" },
               }}
             >
-              {identity?.name || "Demo User"}
+              {identity?.name || identity?.email?.split("@")[0] || "User"}
             </Typography>
           </Box>
 
@@ -271,10 +273,10 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Box sx={{ px: 2, py: 1 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                {identity?.name || "Demo User"}
+                {identity?.name || "PowerForecast User"}
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                {identity?.email || "demo@powerforecast.ph"}
+                {identity?.email || "Authenticated Account"}
               </Typography>
             </Box>
             <MenuItem

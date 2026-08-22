@@ -20,7 +20,6 @@ import {
   Lock as LockIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
-  PlayArrow as PlayIcon,
   LightMode as SunIcon,
   DarkMode as MoonIcon,
 } from "@mui/icons-material";
@@ -51,17 +50,9 @@ export const LoginPage: React.FC = () => {
       { email, password, rememberMe },
       {
         onSuccess: () => navigate("/dashboard"),
-        onError: (err: any) => setErrorMessage(err?.message || "Invalid credentials."),
-      }
-    );
-  };
-
-  const handleGuestDemo = () => {
-    setErrorMessage(null);
-    login(
-      { isGuest: true },
-      {
-        onSuccess: () => navigate("/dashboard"),
+        onError: (err: any) => {
+          setErrorMessage(err?.message || "Invalid credentials. Please verify your email and password.");
+        },
       }
     );
   };
@@ -173,30 +164,6 @@ export const LoginPage: React.FC = () => {
               {errorMessage}
             </Alert>
           )}
-
-          {/* 1-Click Guest Demo Action */}
-          <Button
-            variant="contained"
-            color="secondary"
-            fullWidth
-            size="large"
-            onClick={handleGuestDemo}
-            startIcon={<PlayIcon />}
-            sx={{
-              py: 1.25,
-              fontWeight: 800,
-              borderRadius: 2.5,
-              mb: 2.5,
-            }}
-          >
-            1-Click Instant Guest Demo
-          </Button>
-
-          <Divider sx={{ my: 2.5 }}>
-            <Typography variant="caption" sx={{ color: "text.secondary", px: 1 }}>
-              OR SIGN IN WITH EMAIL
-            </Typography>
-          </Divider>
 
           <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <TextField

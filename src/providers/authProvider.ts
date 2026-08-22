@@ -3,243 +3,219 @@ import { supabaseClient } from "../lib/supabaseClient";
 import { devLog } from "../lib/devLogger";
 
 export const authProvider: AuthProvider = {
-  login: async ({ email, password, isGuest }) => {
-    // 1. Guest / Demo one-click bypass
-    if (isGuest) {
-      const demoUser = {
-        id: "demo-user-101",
-        email: "demo@powerforecast.ph",
-        name: "PowerForecast Explorer",
-        avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Powerforecast",
-        role: "guest_demo",
-        householdType: "Residential (Meralco 230V)",
-      };
-      localStorage.setItem("powerforecast_active_user", JSON.stringify(demoUser));
-      devLog.info("Auth", "Guest session initiated", demoUser);
+  login: async ({ email, password }) => {
+    if (!email || !password) {
       return {
-        success: true,
-        redirectTo: "/dashboard",
+        success: false,
+        error: {
+          name: "LoginError",
+          message: "Please enter both email and password.",
+        },
       };
     }
 
-    // 2. Supabase Cloud Authentication
-    if (email && password) {
-      try {
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-          email,
-          password,
-        });
+    try {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email.trim(),
+        password: password.trim(),
+      });
 
-        if (error) {
-          devLog.warn("Auth", `Supabase login note: ${error.message}. Checking fallback.`);
-          
-          // Fallback to local session if email is provided
-          const fallbackUser = {
-            id: `user-${Date.now()}`,
-            email,
-            name: email.split("@")[0],
-            avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${email}`,
-            role: "authenticated",
-            householdType: "Residential",
-          };
-          localStorage.setItem("powerforecast_active_user", JSON.stringify(fallbackUser));
-          return {
-            success: true,
-            redirectTo: "/dashboard",
-          };
-        }
-
-        // Fetch user account from accounts table
-        let accountProfile: any = null;
-        if (data.user?.id) {
-          const { data: profile } = await supabaseClient
-            .from("accounts")
-            .select("*")
-            .eq("id", data.user.id)
-            .maybeSingle();
-          accountProfile = profile;
-        }
-
-        const user = {
-          id: data.user?.id || `user-${Date.now()}`,
-          email: data.user?.email || email,
-          name: accountProfile?.full_name || data.user?.user_metadata?.name || email.split("@")[0],
-          avatar: accountProfile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${email}`,
-          role: "authenticated",
-          householdType: data.user?.user_metadata?.householdType || "Residential",
-        };
-        localStorage.setItem("powerforecast_active_user", JSON.stringify(user));
-        devLog.info("Auth", "Supabase authentication successful", user);
+      if (error) {
+        devLog.warn("Auth", `Supabase login failed: ${error.message}`);
         return {
-          success: true,
-          redirectTo: "/dashboard",
-        };
-      } catch (err: any) {
-        devLog.error("Auth", "Authentication error:", err);
-      }
-    }
-
-    // 3. Simple email entry fallback
-    if (email) {
-      const user = {
-        id: `user-${Date.now()}`,
-        email,
-        name: email.split("@")[0],
-        avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${email}`,
-        role: "authenticated",
-        householdType: "Residential",
-      };
-      localStorage.setItem("powerforecast_active_user", JSON.stringify(user));
-      return {
-        success: true,
-        redirectTo: "/dashboard",
-      };
-    }
-
-    return {
-      success: false,
-      error: {
-        name: "LoginError",
-        message: "Please enter your email and password.",
-      },
-    };
-  },
-
-  register: async ({ email, password, name, householdType }) => {
-    if (email && password) {
-      try {
-        const { data, error } = await supabaseClient.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              name: name || email.split("@")[0],
-              householdType: householdType || "Residential",
-            },
+          success: false,
+          error: {
+            name: "LoginError",
+            message: error.message || "Invalid email or password.",
           },
-        });
-
-        if (error) {
-          devLog.warn("Auth", `Supabase signup note: ${error.message}`);
-        }
-
-        // The PostgreSQL handle_new_user trigger automatically inserts into the accounts table on auth.users insert.
-        const user = {
-          id: data?.user?.id || `user-${Date.now()}`,
-          email,
-          name: name || email.split("@")[0],
-          avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${email}`,
-          role: "authenticated",
-          householdType: householdType || "Residential (Meralco)",
         };
-        localStorage.setItem("powerforecast_active_user", JSON.stringify(user));
-        devLog.info("Auth", "User registered successfully", user);
-        return {
-          success: true,
-          redirectTo: "/dashboard",
-        };
-      } catch (err: any) {
-        devLog.error("Auth", "Registration error:", err);
       }
-    }
 
-    if (email) {
-      const user = {
-        id: `user-${Date.now()}`,
-        email,
-        name: name || email.split("@")[0],
-        avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${email}`,
-        role: "authenticated",
-        householdType: householdType || "Residential (Meralco)",
-      };
-      localStorage.setItem("powerforecast_active_user", JSON.stringify(user));
-      return {
-        success: true,
-        redirectTo: "/dashboard",
-      };
-    }
+      if (!data.user) {
+        return {
+          success: false,
+          error: {
+            name: "LoginError",
+            message: "User session could not be established.",
+          },
+        };
+      }
 
-    return {
-      success: false,
-      error: {
-        name: "RegisterError",
-        message: "Unable to create account. Please provide required fields.",
-      },
-    };
-  },
-
-  logout: async () => {
-    try {
-      await supabaseClient.auth.signOut();
-    } catch {}
-    localStorage.removeItem("powerforecast_active_user");
-    devLog.info("Auth", "User logged out");
-    return {
-      success: true,
-      redirectTo: "/",
-    };
-  },
-
-  check: async () => {
-    const user = localStorage.getItem("powerforecast_active_user");
-    if (user) {
-      return {
-        authenticated: true,
-      };
-    }
-
-    const { data } = await supabaseClient.auth.getSession();
-    if (data?.session?.user) {
-      return {
-        authenticated: true,
-      };
-    }
-
-    return {
-      authenticated: false,
-    };
-  },
-
-  getIdentity: async () => {
-    try {
-      const { data } = await supabaseClient.auth.getUser();
-      if (data?.user) {
-        // Query accounts table
+      // Fetch user profile from accounts table
+      let accountProfile: any = null;
+      try {
         const { data: profile } = await supabaseClient
           .from("accounts")
           .select("*")
           .eq("id", data.user.id)
           .maybeSingle();
+        accountProfile = profile;
+      } catch (profileErr) {
+        devLog.warn("Auth", "Could not fetch user profile record:", profileErr);
+      }
 
+      const activeUser = {
+        id: data.user.id,
+        email: data.user.email || email,
+        name: accountProfile?.full_name || data.user.user_metadata?.name || email.split("@")[0],
+        avatar: accountProfile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${email}`,
+        role: "authenticated",
+        householdType: data.user.user_metadata?.householdType || accountProfile?.household_type || "Residential",
+      };
+
+      localStorage.setItem("powerforecast_active_user", JSON.stringify(activeUser));
+      devLog.info("Auth", "Authentication successful", activeUser);
+
+      return {
+        success: true,
+        redirectTo: "/dashboard",
+      };
+    } catch (err: any) {
+      devLog.error("Auth", "Unexpected login error:", err);
+      return {
+        success: false,
+        error: {
+          name: "LoginError",
+          message: err?.message || "An unexpected error occurred during login.",
+        },
+      };
+    }
+  },
+
+  register: async ({ email, password, name, householdType }) => {
+    if (!email || !password) {
+      return {
+        success: false,
+        error: {
+          name: "RegisterError",
+          message: "Please provide an email and password.",
+        },
+      };
+    }
+
+    try {
+      const { data, error } = await supabaseClient.auth.signUp({
+        email: email.trim(),
+        password: password.trim(),
+        options: {
+          data: {
+            name: name?.trim() || email.split("@")[0],
+            householdType: householdType || "Residential (Meralco 230V)",
+          },
+        },
+      });
+
+      if (error) {
+        devLog.warn("Auth", `Supabase registration failed: ${error.message}`);
+        return {
+          success: false,
+          error: {
+            name: "RegisterError",
+            message: error.message || "Failed to create account.",
+          },
+        };
+      }
+
+      if (data?.user) {
         const activeUser = {
           id: data.user.id,
-          name: profile?.full_name || data.user.user_metadata?.name || data.user.email?.split("@")[0] || "User",
-          email: profile?.email || data.user.email || "",
-          avatar: profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${data.user.email}`,
-          householdType: data.user.user_metadata?.householdType || "Residential",
-          provider: profile?.provider || "email",
+          email: data.user.email || email,
+          name: name?.trim() || data.user.user_metadata?.name || email.split("@")[0],
+          avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${email}`,
+          role: "authenticated",
+          householdType: householdType || "Residential (Meralco 230V)",
         };
         localStorage.setItem("powerforecast_active_user", JSON.stringify(activeUser));
-        return activeUser;
+        devLog.info("Auth", "User registered successfully", activeUser);
       }
-    } catch (e) {
-      devLog.warn("Auth", "Could not fetch Supabase user identity, checking cache", e);
-    }
 
-    const raw = localStorage.getItem("powerforecast_active_user");
-    if (raw) {
-      try {
-        return JSON.parse(raw);
-      } catch {}
+      return {
+        success: true,
+        redirectTo: "/dashboard",
+      };
+    } catch (err: any) {
+      devLog.error("Auth", "Unexpected registration error:", err);
+      return {
+        success: false,
+        error: {
+          name: "RegisterError",
+          message: err?.message || "An unexpected error occurred during registration.",
+        },
+      };
     }
+  },
 
+  logout: async () => {
+    try {
+      await supabaseClient.auth.signOut();
+    } catch (err) {
+      devLog.warn("Auth", "Sign out error:", err);
+    }
+    localStorage.removeItem("powerforecast_active_user");
+    devLog.info("Auth", "User logged out successfully");
     return {
-      id: "demo-user-101",
-      name: "PowerForecast Explorer",
-      email: "demo@powerforecast.ph",
-      avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=Powerforecast",
-      householdType: "Residential (Meralco 230V)",
+      success: true,
+      redirectTo: "/login",
     };
+  },
+
+  check: async () => {
+    try {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error || !data?.session?.user) {
+        // Clear cached user if Supabase session is absent or expired
+        localStorage.removeItem("powerforecast_active_user");
+        return {
+          authenticated: false,
+          redirectTo: "/login",
+          logout: true,
+        };
+      }
+
+      return {
+        authenticated: true,
+      };
+    } catch {
+      localStorage.removeItem("powerforecast_active_user");
+      return {
+        authenticated: false,
+        redirectTo: "/login",
+        logout: true,
+      };
+    }
+  },
+
+  getIdentity: async () => {
+    try {
+      const { data: authData, error: authError } = await supabaseClient.auth.getUser();
+      if (authError || !authData?.user) {
+        return null;
+      }
+
+      const user = authData.user;
+
+      // Query accounts table for customized profile metadata
+      const { data: profile } = await supabaseClient
+        .from("accounts")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const activeUser = {
+        id: user.id,
+        name: profile?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "User",
+        email: profile?.email || user.email || "",
+        avatar: profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.email}`,
+        householdType: user.user_metadata?.householdType || profile?.household_type || "Residential",
+        provider: profile?.provider || "email",
+      };
+
+      localStorage.setItem("powerforecast_active_user", JSON.stringify(activeUser));
+      return activeUser;
+    } catch (e) {
+      devLog.warn("Auth", "Error fetching user identity", e);
+      return null;
+    }
   },
 
   onError: async (error) => {
@@ -247,3 +223,5 @@ export const authProvider: AuthProvider = {
     return { error };
   },
 };
+
+export default authProvider;
