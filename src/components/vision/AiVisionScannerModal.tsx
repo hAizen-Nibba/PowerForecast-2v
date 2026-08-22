@@ -13,6 +13,12 @@ import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import Paper from "@mui/material/Paper";
 import LinearProgress from "@mui/material/LinearProgress";
+import Alert from "@mui/material/Alert";
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import SmartToyIcon from "@mui/icons-material/SmartToy";
 import {
   CameraAlt as CameraIcon,
   CloudUpload as UploadIcon,
@@ -40,6 +46,7 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
   const [preset, setPreset] = useState<"energy_guide" | "nameplate" | "inverter_check">("energy_guide");
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<VisionScanResult | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
 
   const [stagedImages, setStagedImages] = useState<ImageItem[]>([]);
   const [apiKey, setApiKey] = useState<string>("");
@@ -70,6 +77,7 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
 
   const handleFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
+    setScanError(null);
 
     const remainingSlots = 3 - stagedImages.length;
     if (remainingSlots <= 0) return;
@@ -101,9 +109,10 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
 
     setIsScanning(true);
     setScanResult(null);
+    setScanError(null);
 
     try {
-      devLog.info("AI Scanner", `Analyzing ${stagedImages.length} image(s)...`);
+      devLog.info("AI Scanner", `Sending ${stagedImages.length} image(s) to Google Gemini Multimodal AI...`);
       const result = await analyzeMultipleApplianceImages({
         images: stagedImages,
         apiKey: apiKey.trim(),
@@ -125,6 +134,7 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
       }
     } catch (err: any) {
       devLog.error("AI Scanner", "Analysis error:", err);
+      setScanError(err.message || "Failed to process image with Google Gemini AI.");
     } finally {
       setIsScanning(false);
     }
@@ -177,11 +187,26 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
             <CameraIcon sx={{ color: "#ffd54f" }} />
           </Box>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 800 }}>
-              AI Vision OCR Energy Scanner
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                Google Gemini AI Energy Auditor
+              </Typography>
+              <Chip
+                icon={<SmartToyIcon sx={{ fontSize: "14px !important", color: "#6366f1" }} />}
+                label="100% Genuine AI"
+                size="small"
+                sx={{
+                  height: 20,
+                  fontSize: "0.6875rem",
+                  fontWeight: 700,
+                  bgcolor: "rgba(99, 102, 241, 0.12)",
+                  color: "primary.light",
+                  border: "1px solid rgba(99, 102, 241, 0.3)",
+                }}
+              />
+            </Box>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Upload appliance rating plates or DOE energy labels for auto-extraction
+              Upload appliance rating plates or DOE energy labels for multimodal vision extraction
             </Typography>
           </Box>
         </Box>
@@ -193,6 +218,18 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
       <Divider />
 
       <DialogContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+        {/* Error Alert Display */}
+        {scanError && (
+          <Alert severity="error" onClose={() => setScanError(null)} sx={{ borderRadius: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+              AI Vision Analysis Unsuccessful
+            </Typography>
+            <Typography variant="body2" sx={{ fontSize: "0.8125rem", mt: 0.5 }}>
+              {scanError}
+            </Typography>
+          </Alert>
+        )}
+
         {/* Preset Selector & API Key Toggle */}
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
           <Box sx={{ display: "flex", gap: 1 }}>
@@ -316,69 +353,101 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
           <Box sx={{ py: 2 }}>
             <LinearProgress />
             <Typography variant="caption" sx={{ color: "primary.light", fontWeight: 600, display: "block", textAlign: "center", mt: 1 }}>
-              ⚡ OCR Vision AI analyzing specs and wattage ratings...
+              ⚡ Google Gemini Multimodal AI is inspecting photos, recognizing circuits, and verifying specs...
             </Typography>
           </Box>
         )}
 
         {/* Parsed Result & Editable Form */}
         {scanResult && (
-          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2.5, bgcolor: "action.hover" }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "success.main", display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-              <CheckCircleIcon fontSize="small" />
-              Specs Successfully Extracted
-            </Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2.5, bgcolor: "action.hover" }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "success.main", display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                <CheckCircleIcon fontSize="small" />
+                Gemini AI Specs Extracted
+              </Typography>
 
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Appliance Name"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                />
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Appliance Name"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                  />
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Brand"
+                    value={editBrand}
+                    onChange={(e) => setEditBrand(e.target.value)}
+                  />
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Model"
+                    value={editModel}
+                    onChange={(e) => setEditModel(e.target.value)}
+                  />
+                </Grid>
+                <Grid size={6}>
+                  <TextField
+                    type="number"
+                    fullWidth
+                    size="small"
+                    label="Power Draw (Watts)"
+                    value={editWatts}
+                    onChange={(e) => setEditWatts(Number(e.target.value) || 0)}
+                  />
+                </Grid>
+                <Grid size={6}>
+                  <TextField
+                    type="number"
+                    fullWidth
+                    size="small"
+                    label="Monthly kWh"
+                    value={editMonthlyKwh}
+                    onChange={(e) => setEditMonthlyKwh(Number(e.target.value) || 0)}
+                  />
+                </Grid>
               </Grid>
-              <Grid size={{ xs: 6, sm: 3 }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Brand"
-                  value={editBrand}
-                  onChange={(e) => setEditBrand(e.target.value)}
-                />
-              </Grid>
-              <Grid size={{ xs: 6, sm: 3 }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Model"
-                  value={editModel}
-                  onChange={(e) => setEditModel(e.target.value)}
-                />
-              </Grid>
-              <Grid size={6}>
-                <TextField
-                  type="number"
-                  fullWidth
-                  size="small"
-                  label="Power Draw (Watts)"
-                  value={editWatts}
-                  onChange={(e) => setEditWatts(Number(e.target.value) || 0)}
-                />
-              </Grid>
-              <Grid size={6}>
-                <TextField
-                  type="number"
-                  fullWidth
-                  size="small"
-                  label="Monthly kWh (PELP)"
-                  value={editMonthlyKwh}
-                  onChange={(e) => setEditMonthlyKwh(Number(e.target.value) || 0)}
-                />
-              </Grid>
-            </Grid>
-          </Paper>
+            </Paper>
+
+            {/* Expandable Direct AI Diagnostic Notes */}
+            {scanResult.raw_markdown && (
+              <Accordion sx={{ borderRadius: 2, "&:before": { display: "none" } }} defaultExpanded={false}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <SmartToyIcon sx={{ fontSize: 18, color: "primary.main" }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      Gemini AI Engineering Diagnostic Report
+                    </Typography>
+                  </Box>
+                </AccordionSummary>
+                <AccordionDetails sx={{ pt: 0 }}>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 2,
+                      bgcolor: "background.default",
+                      borderRadius: 1.5,
+                      fontFamily: "monospace",
+                      fontSize: "0.8125rem",
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {scanResult.raw_markdown}
+                  </Paper>
+                </AccordionDetails>
+              </Accordion>
+            )}
+          </Box>
         )}
       </DialogContent>
 

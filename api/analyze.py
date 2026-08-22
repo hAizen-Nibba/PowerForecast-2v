@@ -62,7 +62,7 @@ class handler(BaseHTTPRequestHandler):
         mime_type = payload.get('mimeType', 'image/jpeg')
         prompt = payload.get('prompt')
         preset = payload.get('preset', 'specs')
-        model = payload.get('model', 'gemini-2.5-flash')
+        model = payload.get('model', 'gemini-2.0-flash')
 
         api_keys = get_gemini_api_keys()
 
@@ -71,7 +71,9 @@ class handler(BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({"error": "No Gemini API key configured on server."}).encode('utf-8'))
+            self.wfile.write(json.dumps({
+                "error": "No Gemini API key configured on server. Please add GEMINI_API_KEY to your Vercel Environment Variables."
+            }).encode('utf-8'))
             return
 
         # Prepare multimodal parts
@@ -80,18 +82,24 @@ class handler(BaseHTTPRequestHandler):
             parts.append({"text": prompt})
         else:
             default_prompt = (
-                "You are an expert electrical appliance energy auditor in the Philippines. "
-                "Analyze the provided image(s) (which may include energy rating guide labels, yellow Energy Guide tags, nameplates, or appliance full views). "
-                "Extract the following exact fields in JSON: "
-                "1. brand (string) "
-                "2. model (string) "
-                "3. category (string: Air Conditioners, Refrigerating Appliances, Television Sets, Electric Fans, Clothes Washing Machines, Lighting Products, or Other) "
-                "4. power_watts (number: wattage rating in Watts) "
-                "5. voltage (number: voltage rating, typically 230V in Philippines) "
-                "6. monthly_kwh (number: monthly energy consumption if listed on Energy Guide label) "
-                "7. energy_rating (string: CSPF, EER, or star rating) "
-                "8. star_rating (number: 1 to 5 stars if visible) "
-                "Return clean JSON only."
+                "You are ApplianceSpec AI, an expert electrical energy auditor specialized in Philippine DOE Energy Guide labels and technical specification nameplates.\n"
+                "Analyze the provided image(s) (which may show energy labels, nameplates, or appliance body). "
+                "Extract and reconcile all technical electrical data into clean JSON with these exact keys:\n"
+                "{\n"
+                '  "brand": "Exact brand string (e.g. Astron, Standard, Asahi, Carrier, Panasonic, LG, Sharp, Daikin, Samsung, Condura, etc.)",\n'
+                '  "model": "Exact model number or code (e.g. BRONCO 18, BR-000993)",\n'
+                '  "category": "Air Conditioners | Refrigerating Appliances | Television Sets | Electric Fans | Clothes Washing Machines | Lighting Products | Other",\n'
+                '  "power_watts": number (e.g. 70 for fan, 1050 for AC, 120 for ref),\n'
+                '  "voltage": number (e.g. 230),\n'
+                '  "monthly_kwh": number (e.g. 16.8 for 70W fan @ 8h/day, 240 for 1000W AC),\n'
+                '  "energy_rating": "e.g. 5-Star DOE or CSPF rating or PS Quality Mark",\n'
+                '  "star_rating": number (1 to 5),\n'
+                '  "room_location": "Living Room | Master Bedroom | Kitchen | Laundry Area | Home Office",\n'
+                '  "confidence": "high | medium | low",\n'
+                '  "notes": "Detailed engineering audit notes describing detected ratings, serials, and efficiency analysis."\n'
+                "}\n"
+                "Preset: " + str(preset) + "\n"
+                "Respond ONLY with valid JSON inside a ```json ``` code block."
             )
             parts.append({"text": default_prompt})
 
@@ -100,55 +108,76 @@ class handler(BaseHTTPRequestHandler):
                 b64 = img.get('base64', '')
                 mt = img.get('mimeType', 'image/jpeg')
                 if b64:
+                    clean_b64 = re.sub(r'^data:image\/[a-zA-Z]+;base64,', '', b64)
                     parts.append({
                         "inline_data": {
                             "mime_type": mt,
-                            "data": b64
+                            "data": clean_b64
                         }
                     })
         elif image_base64:
+            clean_b64 = re.sub(r'^data:image\/[a-zA-Z]+;base64,', '', image_base64)
             parts.append({
                 "inline_data": {
                     "mime_type": mime_type,
-                    "data": image_base64
+                    "data": clean_b64
                 }
             })
 
         req_body = json.dumps({
             "contents": [{"parts": parts}],
             "generationConfig": {
-                "temperature": 0.2,
+                "temperature": 0.1,
                 "response_mime_type": "application/json"
             }
         }).encode('utf-8')
 
-        # Multi-key fallback execution
+        # Multi-model and Multi-key fallback execution
+        models_to_try = [model, 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash', 'gemini-1.5-pro']
+        # Deduplicate while preserving order
+        ordered_models = []
+        for m in models_to_try:
+            if m and m not in ordered_models:
+                ordered_models.append(m)
+
         last_error = None
-        for key in api_keys:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
-            req = urllib.request.Request(url, data=req_body, headers={'Content-Type': 'application/json'})
-            try:
-                with urllib.request.urlopen(req, timeout=25) as resp:
-                    resp_data = resp.read().decode('utf-8')
-                    parsed = json.loads(resp_data)
-                    raw_text = parsed.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '{}')
-                    
-                    self.send_response(200)
-                    self.send_header('Content-Type', 'application/json')
-                    self.send_header('Access-Control-Allow-Origin', '*')
-                    self.end_headers()
-                    self.wfile.write(json.dumps({
-                        "success": True,
-                        "raw_markdown": raw_text,
-                        "data": json.loads(raw_text) if raw_text.startswith('{') else {}
-                    }).encode('utf-8'))
-                    return
-            except Exception as e:
-                last_error = str(e)
-                continue
+        for current_model in ordered_models:
+            for key in api_keys:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{current_model}:generateContent?key={key}"
+                req = urllib.request.Request(url, data=req_body, headers={'Content-Type': 'application/json'})
+                try:
+                    with urllib.request.urlopen(req, timeout=30) as resp:
+                        resp_data = resp.read().decode('utf-8')
+                        parsed = json.loads(resp_data)
+                        raw_text = parsed.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '{}')
+                        
+                        # Parse extracted JSON
+                        json_match = re.search(r'```json\s*([\s\S]*?)\s*```', raw_text)
+                        clean_json_str = json_match.group(1) if json_match else raw_text
+                        extracted_data = {}
+                        try:
+                            extracted_data = json.loads(clean_json_str)
+                        except Exception:
+                            pass
+
+                        self.send_response(200)
+                        self.send_header('Content-Type', 'application/json')
+                        self.send_header('Access-Control-Allow-Origin', '*')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({
+                            "success": True,
+                            "source": "gemini_multimodal_api",
+                            "model_used": current_model,
+                            "raw_markdown": raw_text,
+                            "data": extracted_data
+                        }).encode('utf-8'))
+                        return
+                except Exception as e:
+                    last_error = str(e)
+                    continue
 
         self.send_response(500)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
-        self.wfile.write(json.dumps({"error": f"All Gemini API keys failed: {last_error}"}).encode('utf-8'))
+        self.wfile.write(json.dumps({"error": f"Google Gemini Vision API error: {last_error}"}).encode('utf-8'))
