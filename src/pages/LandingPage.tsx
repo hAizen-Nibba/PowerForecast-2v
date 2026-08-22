@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
@@ -33,7 +33,6 @@ import {
   VerifiedUser as ShieldIcon,
   Memory as CpuIcon,
   AccessTime as ClockIcon,
-  PlayArrow as PlayIcon,
   AcUnit as AcIcon,
   Tv as TvIcon,
   Kitchen as FridgeIcon,
@@ -43,8 +42,6 @@ import { APP_VERSION } from "../lib/supabaseClient";
 import { useColorMode } from "../theme/AppTheme";
 
 export const LandingPage: React.FC = () => {
-  const navigate = useNavigate();
-  const { mutate: login } = useLogin();
   const { mode, toggleColorMode } = useColorMode();
   const isDark = mode === "dark";
 
