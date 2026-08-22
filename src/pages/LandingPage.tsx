@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
@@ -42,6 +42,7 @@ import { APP_VERSION } from "../lib/supabaseClient";
 import { useColorMode } from "../theme/AppTheme";
 
 export const LandingPage: React.FC = () => {
+  const navigate = useNavigate();
   const { mode, toggleColorMode } = useColorMode();
   const isDark = mode === "dark";
 
