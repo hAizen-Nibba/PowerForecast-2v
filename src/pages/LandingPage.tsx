@@ -1,81 +1,71 @@
 import React, { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useLogin, useGetIdentity } from "@refinedev/core";
+import { useLogin } from "@refinedev/core";
+import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Card from "@mui/material/Card";
+import Grid from "@mui/material/Grid";
+import Chip from "@mui/material/Chip";
+import Slider from "@mui/material/Slider";
+import TextField from "@mui/material/TextField";
+import MenuItem from "@mui/material/MenuItem";
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import Divider from "@mui/material/Divider";
+import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
+import Tooltip from "@mui/material/Tooltip";
+import Paper from "@mui/material/Paper";
 import {
-  Zap,
-  ArrowRight,
-  Sun,
-  Moon,
-  Camera,
-  Layers,
-  Calculator,
-  BarChart3,
-  Sparkles,
-  CheckCircle2,
-  ChevronRight,
-  ShieldCheck,
-  Cpu,
-  TrendingDown,
-  Clock,
-  PlayCircle,
-  Home,
-  Building2,
-  Leaf,
-  Activity,
-  Info,
-  Sliders,
-  Tv,
-  Fan,
-  Flame,
-  Laptop,
-  Lightbulb,
-  Radio,
-  ArrowUpRight,
-} from "lucide-react";
+  Bolt as BoltIcon,
+  ArrowForward as ArrowForwardIcon,
+  LightMode as SunIcon,
+  DarkMode as MoonIcon,
+  CameraAlt as CameraIcon,
+  Layers as LayersIcon,
+  Calculate as CalculateIcon,
+  BarChart as BarChartIcon,
+  AutoAwesome as SparklesIcon,
+  ExpandMore as ExpandMoreIcon,
+  VerifiedUser as ShieldIcon,
+  Memory as CpuIcon,
+  AccessTime as ClockIcon,
+  PlayArrow as PlayIcon,
+  AcUnit as AcIcon,
+  Tv as TvIcon,
+  Kitchen as FridgeIcon,
+  Speed as SpeedIcon,
+} from "@mui/icons-material";
+import { APP_VERSION } from "../lib/supabaseClient";
+import { useColorMode } from "../theme/AppTheme";
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { mutate: login } = useLogin();
-  const { data: identity } = useGetIdentity<any>();
+  const { mode, toggleColorMode } = useColorMode();
+  const isDark = mode === "dark";
 
-  // Theme Toggle State
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    const saved = localStorage.getItem("powerforecast_theme");
-    return saved ? saved === "dark" : true;
-  });
-
-  React.useEffect(() => {
-    const theme = isDark ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme", theme);
-    if (isDark) {
-      document.documentElement.classList.remove("light");
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      document.documentElement.classList.add("light");
-    }
-    localStorage.setItem("powerforecast_theme", theme);
-  }, [isDark]);
-
-  // Quick Estimator Demo State (Original Contents with Clean Icons)
+  // Quick Estimator Demo State
   const applianceOptions = [
-    { value: "1200", label: "Inverter Air Conditioner (1.5 HP)", watts: 1200, icon: <Activity className="w-4 h-4 text-cyan-400" /> },
-    { value: "150", label: "Two-Door Refrigerator (24/7)", watts: 150, icon: <Radio className="w-4 h-4 text-indigo-400" /> },
-    { value: "75", label: "Stand Electric Fan", watts: 75, icon: <Fan className="w-4 h-4 text-emerald-400" /> },
-    { value: "120", label: "Smart LED Television 55″", watts: 120, icon: <Tv className="w-4 h-4 text-purple-400" /> },
-    { value: "1800", label: "Induction Cooker", watts: 1800, icon: <Flame className="w-4 h-4 text-red-400" /> },
-    { value: "65", label: "Laptop Computer", watts: 65, icon: <Laptop className="w-4 h-4 text-blue-400" /> },
-    { value: "48", label: "LED Lighting Setup (x4)", watts: 48, icon: <Lightbulb className="w-4 h-4 text-amber-400" /> },
+    { value: 1200, label: "Inverter Air Conditioner (1.5 HP)", icon: <AcIcon sx={{ color: "info.main" }} /> },
+    { value: 150, label: "Two-Door Refrigerator (24/7)", icon: <FridgeIcon sx={{ color: "primary.light" }} /> },
+    { value: 75, label: "Stand Electric Fan", icon: <SpeedIcon sx={{ color: "success.main" }} /> },
+    { value: 120, label: "Smart LED Television 55″", icon: <TvIcon sx={{ color: "warning.main" }} /> },
+    { value: 1800, label: "Induction Cooker", icon: <BoltIcon sx={{ color: "error.main" }} /> },
   ];
 
   const [selectedWatts, setSelectedWatts] = useState<number>(1200);
   const [estimatorHours, setEstimatorHours] = useState<number>(8);
-  const [estimatorRate, setEstimatorRate] = useState<number>(12.15);
+  const [estimatorRate, setEstimatorRate] = useState<number>(14.82);
 
   const estimatorCalc = useMemo(() => {
     const dailyKwh = (selectedWatts * estimatorHours) / 1000;
     const monthlyKwh = dailyKwh * 30;
-    const monthlyCost = monthlyKwh * (estimatorRate || 12.15);
+    const monthlyCost = monthlyKwh * (estimatorRate || 14.82);
     return {
       dailyKwh: dailyKwh.toFixed(2),
       monthlyKwh: monthlyKwh.toFixed(2),
@@ -96,734 +86,593 @@ export const LandingPage: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen font-sans transition-colors duration-300 relative overflow-x-hidden selection:bg-[#5c68db] selection:text-white ${
-      isDark ? "bg-[#090a1f] text-slate-100" : "bg-[#f8fafc] text-slate-900"
-    }`}>
-      {/* Subtle Background Glows */}
-      <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
-        {isDark ? (
-          <>
-            <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#5c68db]/12 rounded-full blur-[140px]" />
-            <div className="absolute top-[35%] -right-40 w-[600px] h-[600px] bg-[#3b82f6]/8 rounded-full blur-[160px]" />
-            <div className="absolute bottom-10 left-10 w-[600px] h-[600px] bg-[#4f46e5]/10 rounded-full blur-[160px]" />
-          </>
-        ) : (
-          <>
-            <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#5c68db]/8 rounded-full blur-[120px]" />
-            <div className="absolute top-[35%] -right-40 w-[500px] h-[500px] bg-amber-400/5 rounded-full blur-[120px]" />
-          </>
-        )}
-      </div>
-
-      {/* 1. Sleek Navigation Bar */}
-      <header className={`sticky top-0 z-50 backdrop-blur-md border-b transition-all ${
-        isDark ? "bg-[#090a1f]/80 border-white/[0.08]" : "bg-white/85 border-slate-200/80 shadow-xs"
-      }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          {/* Brand Logo & Title */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#5c68db] to-[#434eb0] flex items-center justify-center text-white shadow-md shadow-[#5c68db]/20 group-hover:scale-105 transition-transform">
-              <Zap className="w-4 h-4 fill-yellow-300 text-yellow-300" />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1 leading-none">
-                <span className={`text-base font-extrabold tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
-                  power
-                </span>
-                <span className="text-base font-extrabold tracking-tight text-[#ffd54f]">
-                  forecast
-                </span>
-              </div>
-              <span className={`text-[9px] uppercase font-semibold tracking-wider font-mono ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                Utility Intelligence
-              </span>
-            </div>
-          </Link>
-
-          {/* Desktop Nav Links */}
-          <nav className={`hidden md:flex items-center gap-8 text-xs font-medium ${
-            isDark ? "text-slate-300" : "text-slate-600"
-          }`}>
-            <a href="#features" className="hover:text-white transition-colors">
-              Core Modules
-            </a>
-            <a href="#demo" className="hover:text-white transition-colors flex items-center gap-1.5">
-              <span>Live Estimator</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            </a>
-            <a href="#impact" className="hover:text-white transition-colors">
-              System Impact
-            </a>
-            <a href="#quality" className="hover:text-white transition-colors">
-              Software Metrics
-            </a>
-            <Link to="/calculator" className="hover:text-white transition-colors flex items-center gap-1">
-              <Calculator className="w-3.5 h-3.5 text-[#8183fc]" />
-              <span>Bill Calculator</span>
-            </Link>
-          </nav>
-
-          {/* Actions & Theme Toggle */}
-          <div className="flex items-center gap-3">
-            {/* Minimalist Theme Toggle */}
-            <button
-              type="button"
-              onClick={() => setIsDark(!isDark)}
-              className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
-                isDark
-                  ? "bg-white/[0.04] border-white/10 text-slate-300 hover:text-white hover:bg-white/[0.08]"
-                  : "bg-slate-100 border-slate-200 text-slate-600 hover:text-slate-900"
-              }`}
-              title="Toggle Theme"
-            >
-              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-600" />}
-            </button>
-
-            {identity?.email ? (
-              <Link
-                to="/dashboard"
-                className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#5c68db] hover:bg-[#6c7ae0] text-white shadow-md shadow-[#5c68db]/20 transition-all flex items-center gap-1.5"
+    <Box sx={{ minHeight: "100vh", bgcolor: "background.default", color: "text.primary" }}>
+      {/* 1. MUI AppAppBar */}
+      <AppBar
+        position="sticky"
+        sx={{
+          zIndex: 1100,
+          backdropFilter: "blur(20px)",
+          bgcolor: (theme) =>
+            theme.palette.mode === "dark" ? "rgba(9, 9, 56, 0.85)" : "rgba(255, 255, 255, 0.85)",
+          borderBottom: "1px solid",
+          borderColor: "divider",
+        }}
+      >
+        <Container maxWidth="lg">
+          <Toolbar sx={{ justifyContent: "space-between", px: { xs: 0 } }}>
+            {/* Logo */}
+            <Box component={Link} to="/" sx={{ display: "flex", alignItems: "center", gap: 1.5, textDecoration: "none", color: "inherit" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 38,
+                  height: 38,
+                  borderRadius: 2,
+                  bgcolor: "primary.main",
+                  color: "#ffffff",
+                  boxShadow: "0 2px 10px rgba(99, 102, 241, 0.5)",
+                }}
               >
-                <span>Dashboard</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            ) : (
-              <>
-                <button
-                  onClick={handleGuestDemo}
-                  className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
-                    isDark
-                      ? "bg-white/[0.03] border-white/10 text-slate-300 hover:text-white hover:border-white/20"
-                      : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-                  }`}
-                >
-                  <PlayCircle className="w-3.5 h-3.5 text-yellow-400" />
-                  <span>Instant Demo</span>
-                </button>
-                <Link
-                  to="/login"
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    isDark ? "text-slate-300 hover:text-white" : "text-slate-700 hover:text-slate-900"
-                  }`}
-                >
-                  Log In
-                </Link>
-                <Link
-                  to="/dashboard"
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#5c68db] hover:bg-[#6c7ae0] text-white shadow-md shadow-[#5c68db]/25 transition-all flex items-center gap-1.5"
-                >
-                  <Zap className="w-3 h-3 fill-yellow-300 text-yellow-300" />
-                  <span>Launch App</span>
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+                <BoltIcon sx={{ color: "#ffd54f", fontSize: 24 }} />
+              </Box>
+              <Typography variant="h6" sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}>
+                power<Typography component="span" variant="h6" sx={{ fontWeight: 900, color: "#ffd54f" }}>forecast</Typography>
+              </Typography>
+            </Box>
+
+            {/* Nav links */}
+            <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 3 }}>
+              <Typography component="a" href="#features" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}>
+                Features
+              </Typography>
+              <Typography component="a" href="#estimator" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}>
+                Live Estimator
+              </Typography>
+              <Typography component="a" href="#tariffs" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}>
+                Tariff Tiers
+              </Typography>
+              <Typography component="a" href="#faq" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}>
+                FAQ
+              </Typography>
+            </Box>
+
+            {/* Right Actions */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              <Tooltip title={`Switch to ${isDark ? "Light" : "Dark"} mode`}>
+                <IconButton onClick={toggleColorMode} size="small" sx={{ border: "1px solid", borderColor: "divider" }}>
+                  {isDark ? <SunIcon sx={{ color: "#ffd54f", fontSize: 18 }} /> : <MoonIcon sx={{ color: "#4f46e5", fontSize: 18 }} />}
+                </IconButton>
+              </Tooltip>
+
+              <Button
+                component={Link}
+                to="/login"
+                variant="outlined"
+                size="small"
+                sx={{ display: { xs: "none", sm: "inline-flex" } }}
+              >
+                Sign In
+              </Button>
+
+              <Button
+                variant="contained"
+                size="small"
+                onClick={handleGuestDemo}
+                endIcon={<ArrowForwardIcon />}
+              >
+                Launch App
+              </Button>
+            </Box>
+          </Toolbar>
+        </Container>
+      </AppBar>
 
       {/* 2. Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-20 lg:pt-24 lg:pb-28 flex flex-col lg:flex-row items-center gap-12">
-        {/* Left Hero Column */}
-        <div className="flex-1 text-center lg:text-left flex flex-col items-center lg:items-start">
-          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mb-6 border ${
-            isDark ? "bg-white/[0.03] border-white/10 text-slate-300" : "bg-slate-100 border-slate-200 text-slate-700"
-          }`}>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-mono text-[11px]">PowerForecast v2.5</span>
-            <span className="text-slate-500">|</span>
-            <span>Meralco ERC Tariff Modeling</span>
-          </div>
+      <Box
+        sx={{
+          pt: { xs: 8, md: 12 },
+          pb: { xs: 8, md: 12 },
+          position: "relative",
+          overflow: "hidden",
+          background: (theme) =>
+            theme.palette.mode === "dark"
+              ? "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.25), transparent)"
+              : "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.12), transparent)",
+        }}
+      >
+        <Container maxWidth="lg">
+          <Box sx={{ textAlign: "center", maxWidth: 860, mx: "auto", mb: { xs: 6, md: 8 } }}>
+            <Chip
+              icon={<SparklesIcon sx={{ color: "#ffd54f !important", fontSize: "16px !important" }} />}
+              label="Next-Gen Meralco Energy Intelligence Platform"
+              sx={{
+                mb: 2.5,
+                fontWeight: 700,
+                fontSize: "0.8125rem",
+                bgcolor: "rgba(99, 102, 241, 0.15)",
+                color: "primary.light",
+                border: "1px solid rgba(99, 102, 241, 0.3)",
+                px: 1,
+              }}
+            />
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12]">
-            Household Energy <br className="hidden sm:inline" />
-            <span className="bg-gradient-to-r from-[#8183fc] via-[#a2a5ff] to-[#ffd54f] bg-clip-text text-transparent">
-              Intelligence & Forecasting
-            </span>
-          </h1>
-
-          <p className={`mt-6 text-sm sm:text-base md:text-lg max-w-2xl leading-relaxed ${
-            isDark ? "text-slate-300" : "text-slate-600"
-          }`}>
-            Identify household appliances, compute kilowatt-hour consumption, track live Meralco electricity rates, predict upcoming utility bills, and unlock actionable energy-saving recommendations.
-          </p>
-
-          <div className="mt-8 flex flex-wrap justify-center lg:justify-start gap-3.5">
-            <Link
-              to="/calculator"
-              className="px-6 py-3 rounded-xl text-sm font-bold bg-[#5c68db] hover:bg-[#6c7ae0] text-white flex items-center gap-2 shadow-lg shadow-[#5c68db]/25 transition-all"
+            <Typography
+              variant="h1"
+              sx={{
+                fontWeight: 900,
+                fontSize: { xs: "2.25rem", sm: "3.25rem", md: "4rem" },
+                letterSpacing: "-0.03em",
+                lineHeight: 1.15,
+                mb: 2.5,
+              }}
             >
-              <Calculator className="w-4 h-4" />
-              <span>Open Power Calculator</span>
-            </Link>
-            <Link
-              to="/signup"
-              className={`px-6 py-3 rounded-xl text-sm font-semibold border transition-all flex items-center gap-2 ${
-                isDark
-                  ? "bg-white/[0.03] border-white/10 text-slate-200 hover:text-white hover:border-white/25"
-                  : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-              }`}
-            >
-              <span>Create Free Account</span>
-              <ArrowRight className="w-4 h-4 text-slate-400" />
-            </Link>
-          </div>
-
-          {/* Stats Summary Bar */}
-          <div className={`mt-12 grid grid-cols-3 gap-6 pt-8 border-t w-full max-w-lg text-left ${
-            isDark ? "border-white/[0.08]" : "border-slate-200"
-          }`}>
-            <div>
-              <div className={`text-2xl sm:text-3xl font-extrabold ${isDark ? "text-white" : "text-slate-900"}`}>
-                7
-              </div>
-              <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
-                Core Modules
-              </div>
-            </div>
-            <div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#ffd54f] font-mono">
-                ₱12.45
-              </div>
-              <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
-                Est. Rate / kWh
-              </div>
-            </div>
-            <div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono">
-                99.4%
-              </div>
-              <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">
-                Precision
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Hero Card Graphic (Live Consumption Preview) */}
-        <div className="flex-1 w-full max-w-lg">
-          <div className={`p-6 sm:p-7 rounded-2xl border shadow-xl backdrop-blur-xl space-y-5 ${
-            isDark
-              ? "bg-[#111338]/80 border-white/10 shadow-black/30"
-              : "bg-white border-slate-200 shadow-slate-200/50"
-          }`}>
-            <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#5c68db]/15 flex items-center justify-center text-[#8183fc]">
-                  <Activity className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
-                    Live Consumption Preview
-                  </h3>
-                  <p className="text-[11px] text-slate-400">Forecasted Bill vs Active Usage</p>
-                </div>
-              </div>
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                Normal Load
-              </span>
-            </div>
-
-            {/* Meter Box */}
-            <div className="space-y-4">
-              <div className={`p-4 rounded-xl border flex items-center justify-between ${
-                isDark ? "bg-[#0a0c24] border-white/[0.06]" : "bg-slate-50 border-slate-200"
-              }`}>
-                <div>
-                  <span className="text-[11px] font-medium text-slate-400 block">
-                    Estimated Monthly Electric Bill
-                  </span>
-                  <span className="text-2xl sm:text-3xl font-extrabold text-[#ffd54f] font-mono">
-                    ₱3,645.00
-                  </span>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs font-semibold text-emerald-400 flex items-center justify-end gap-1">
-                    <TrendingDown className="w-3.5 h-3.5" />
-                    -8.5% Efficiency
-                  </span>
-                  <span className="text-[10px] text-slate-400">vs last month</span>
-                </div>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs font-medium text-slate-300">
-                  <span className="text-slate-400">Monthly Target (300 kWh)</span>
-                  <span className="font-mono font-semibold text-white">245 kWh</span>
-                </div>
-                <div className="w-full h-2.5 rounded-full bg-slate-800/80 overflow-hidden flex border border-white/[0.08]">
-                  <div className="h-full bg-indigo-500" style={{ width: "50%" }} />
-                  <div className="h-full bg-emerald-400" style={{ width: "25%" }} />
-                  <div className="h-full bg-amber-400" style={{ width: "7%" }} />
-                </div>
-              </div>
-
-              {/* Appliance Quick Snapshot */}
-              <div className="grid grid-cols-2 gap-3 pt-1">
-                <div className={`p-3 rounded-xl border text-left ${
-                  isDark ? "bg-[#0e1030] border-white/[0.06]" : "bg-slate-50 border-slate-200"
-                }`}>
-                  <span className="text-[10px] text-slate-400 block">Highest Consumer</span>
-                  <span className={`text-xs font-bold flex items-center gap-1.5 mt-0.5 ${isDark ? "text-white" : "text-slate-900"}`}>
-                    <Activity className="w-3.5 h-3.5 text-cyan-400" />
-                    Aircon (1.5 HP)
-                  </span>
-                  <span className="text-[11px] text-[#8183fc] font-semibold block mt-1 font-mono">
-                    ~1,200 W • ₱2,160/mo
-                  </span>
-                </div>
-                <div className={`p-3 rounded-xl border text-left ${
-                  isDark ? "bg-[#0e1030] border-white/[0.06]" : "bg-slate-50 border-slate-200"
-                }`}>
-                  <span className="text-[10px] text-slate-400 block">Baseline Load</span>
-                  <span className={`text-xs font-bold flex items-center gap-1.5 mt-0.5 ${isDark ? "text-white" : "text-slate-900"}`}>
-                    <Radio className="w-3.5 h-3.5 text-indigo-400" />
-                    Refrigerator 24/7
-                  </span>
-                  <span className="text-[11px] text-[#8183fc] font-semibold block mt-1 font-mono">
-                    ~150 W • ₱1,312/mo
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. Live Quick Estimator Demo Section (Interactive Clean Card) */}
-      <section id="demo" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className={`p-6 sm:p-10 rounded-2xl border shadow-xl backdrop-blur-xl relative overflow-hidden ${
-          isDark ? "bg-[#101238]/90 border-white/10" : "bg-white border-slate-200"
-        }`}>
-          <div className="max-w-3xl mx-auto text-center mb-8 space-y-2">
-            <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#5c68db]/15 border border-[#5c68db]/30 text-[#a2a5ff] inline-flex items-center gap-1.5">
-              <Sliders className="w-3 h-3 text-[#ffd54f]" />
-              <span>Interactive Estimator</span>
-            </span>
-            <h2 className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
-              Quick Household Appliance Cost Estimator
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-400">
-              Pick an appliance and daily usage duration to instantly simulate monthly electricity costs.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center max-w-5xl mx-auto">
-            {/* Controls Column */}
-            <div className="md:col-span-7 space-y-5">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                  Select Appliance
-                </label>
-                <select
-                  value={selectedWatts}
-                  onChange={(e) => setSelectedWatts(Number(e.target.value))}
-                  className={`w-full rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-medium border focus:outline-none focus:ring-1 focus:ring-[#5c68db] ${
-                    isDark ? "bg-[#0b0c26] border-white/10 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                  }`}
-                >
-                  {applianceOptions.map((opt) => (
-                    <option key={opt.label} value={opt.watts}>
-                      {opt.label} — {opt.watts} Watts
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                    Daily Usage Hours
-                  </label>
-                  <span className="text-xs font-bold text-[#ffd54f] font-mono">
-                    {estimatorHours} Hours / Day
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="1"
-                  max="24"
-                  value={estimatorHours}
-                  onChange={(e) => setEstimatorHours(Number(e.target.value))}
-                  className="w-full h-2 bg-slate-700/60 rounded-lg appearance-none cursor-pointer accent-[#5c68db]"
-                />
-                <div className="flex justify-between text-[10px] text-slate-400 font-mono pt-1">
-                  <span>1 Hour</span>
-                  <span>12 Hours</span>
-                  <span>24 Hours (Continuous)</span>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                    Meralco Rate (PHP / kWh)
-                  </label>
-                  <span className="text-[11px] text-slate-400">Standard Residential Average</span>
-                </div>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-2.5 text-slate-400 font-semibold text-xs">₱</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="1"
-                    value={estimatorRate}
-                    onChange={(e) => setEstimatorRate(Number(e.target.value))}
-                    className={`w-full rounded-xl pl-8 pr-4 py-2 text-xs sm:text-sm font-semibold border focus:outline-none focus:ring-1 focus:ring-[#5c68db] ${
-                      isDark ? "bg-[#0b0c26] border-white/10 text-white" : "bg-slate-50 border-slate-300 text-slate-900"
-                    }`}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Output Summary Card */}
-            <div className={`md:col-span-5 p-6 rounded-xl border text-center flex flex-col justify-center space-y-4 ${
-              isDark ? "bg-[#080920] border-white/10" : "bg-slate-50 border-slate-200"
-            }`}>
-              <span className="text-[11px] uppercase font-bold tracking-wider text-[#a2a5ff]">
-                Calculated Energy Expense
-              </span>
-              <div>
-                <div className="text-3xl sm:text-4xl font-extrabold text-[#ffd54f] font-mono">
-                  ₱{estimatorCalc.monthlyCost}
-                </div>
-                <span className="text-[11px] text-slate-400">Estimated Monthly Cost (30 Days)</span>
-              </div>
-
-              <div className="pt-3 border-t border-white/[0.08] grid grid-cols-2 gap-2 text-xs">
-                <div className={`p-2.5 rounded-lg border ${
-                  isDark ? "bg-[#0f1133] border-white/[0.06]" : "bg-white border-slate-200"
-                }`}>
-                  <span className="text-slate-400 block text-[10px]">Daily Energy</span>
-                  <span className="font-bold text-sm font-mono text-white">{estimatorCalc.dailyKwh} kWh</span>
-                </div>
-                <div className={`p-2.5 rounded-lg border ${
-                  isDark ? "bg-[#0f1133] border-white/[0.06]" : "bg-white border-slate-200"
-                }`}>
-                  <span className="text-slate-400 block text-[10px]">Monthly Energy</span>
-                  <span className="font-bold text-sm font-mono text-white">{estimatorCalc.monthlyKwh} kWh</span>
-                </div>
-              </div>
-
-              <Link
-                to="/appliances"
-                className="w-full py-2.5 rounded-lg bg-[#5c68db] hover:bg-[#6c7ae0] text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-md"
+              Take Total Control of Your{" "}
+              <Box
+                component="span"
+                sx={{
+                  background: "linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #eab308 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
               >
-                <span>Configure Full Appliance Suite</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+                Electricity & Meralco Bills
+              </Box>
+            </Typography>
 
-      {/* 4. System Core Modules (7 Modules - Minimalist Bento Grid) */}
-      <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
-        <div className="text-center max-w-3xl mx-auto space-y-2">
-          <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#5c68db]/15 border border-[#5c68db]/30 text-[#a2a5ff] inline-block">
-            System Architecture
-          </span>
-          <h2 className={`text-2xl sm:text-4xl font-black tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
-            7 Integrated Modules for Total Power Mastery
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-400">
-            Engineered specifically to empower Filipino households with automated consumption tracking and bill forecasting.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Module 1: Appliance Recognition */}
-          <ModuleCard
-            number="01"
-            title="Appliance Recognition"
-            description="Upload photos of household devices. The Gemini multi-modal computer vision module automatically identifies appliance models and extracts wattage ratings from rating plates."
-            tag="AI Multi-Modal"
-            icon={<Camera className="w-5 h-5 text-amber-400" />}
-            isDark={isDark}
-          />
-
-          {/* Module 2: Appliance Management */}
-          <ModuleCard
-            number="02"
-            title="Appliance Management"
-            description="Maintain a comprehensive inventory of your household devices. Track custom wattage ratings, operational duty cycles, quantity counts, and usage schedules in one central hub."
-            tag="Full CRUD Inventory"
-            icon={<Layers className="w-5 h-5 text-[#8183fc]" />}
-            isDark={isDark}
-          />
-
-          {/* Module 3: Consumption Computation */}
-          <ModuleCard
-            number="03"
-            title="Consumption Computation"
-            description="Accurately compute total kilowatt-hours (kWh) consumed daily, weekly, and monthly based on device power specs and user-defined operational hours."
-            tag="Real-Time Engine"
-            icon={<Cpu className="w-5 h-5 text-emerald-400" />}
-            isDark={isDark}
-          />
-
-          {/* Module 4: Cost Estimation */}
-          <ModuleCard
-            number="04"
-            title="Electricity Cost Estimation"
-            description="Evaluate utility expenses using live Meralco billing tiers, generation charges, distribution fees, system loss, subsidies, and value-added taxes (VAT)."
-            tag="Unbundled Tariffs"
-            icon={<Calculator className="w-5 h-5 text-sky-400" />}
-            isDark={isDark}
-          />
-
-          {/* Module 5: Analytics & Visualization */}
-          <ModuleCard
-            number="05"
-            title="Analytics & Visualization"
-            description="Monitor power consumption patterns through dynamic interactive charts, 24-hour minute load curves, peak red alerts, and statistical load breakdowns."
-            tag="Minute Telemetry"
-            icon={<BarChart3 className="w-5 h-5 text-purple-400" />}
-            isDark={isDark}
-          />
-
-          {/* Module 6: Electricity Bill Forecasting */}
-          <ModuleCard
-            number="06"
-            title="Electricity Bill Forecasting"
-            description="Predict upcoming monthly electric bills using historical usage trends, seasonal adjustments, and predictive load modeling to eliminate billing surprises."
-            tag="Predictive Modeling"
-            icon={<Sparkles className="w-5 h-5 text-rose-400" />}
-            isDark={isDark}
-          />
-
-          {/* Module 7: Energy-Efficiency Recommendations (Wide Card) */}
-          <div className={`p-6 sm:p-7 rounded-2xl border transition-all lg:col-span-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 ${
-            isDark
-              ? "bg-[#101238]/70 border-white/10 hover:border-white/20"
-              : "bg-white border-slate-200 hover:border-slate-300 shadow-xs"
-          }`}>
-            <div className="flex items-start gap-4 max-w-3xl">
-              <div className="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
-                <Lightbulb className="w-6 h-6" />
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-wider">
-                    Module 07
-                  </span>
-                  <span className="text-slate-500">|</span>
-                  <span className="text-[10px] text-slate-400 font-medium">Actionable Insights</span>
-                </div>
-                <h3 className={`text-base font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
-                  Energy-Efficiency Recommendations
-                </h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Receive personalized suggestions to trim waste, minimize vampire load, adjust thermostat levels, and adopt cost-conscious electrical habits that directly shrink monthly utility bills.
-                </p>
-              </div>
-            </div>
-            <Link
-              to="/calculator"
-              className="px-5 py-2.5 rounded-xl bg-[#5c68db] hover:bg-[#6c7ae0] text-white text-xs font-semibold whitespace-nowrap shrink-0 transition-all flex items-center gap-1.5"
+            <Typography
+              variant="body1"
+              sx={{
+                fontSize: { xs: "1rem", sm: "1.15rem" },
+                color: "text.secondary",
+                lineHeight: 1.6,
+                mb: 4,
+              }}
             >
-              <span>View Recommendations</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        </div>
-      </section>
+              Real-time household appliance circuit tracking, unbundled tariff calculation formulas, DOE PELP energy efficiency rating lookup, and AI OCR camera bill auditing.
+            </Typography>
 
-      {/* 5. Stakeholders & System Impact (Minimalist Clean 4-Grid) */}
-      <section id="impact" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
-        <div className="text-center max-w-3xl mx-auto space-y-2">
-          <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#5c68db]/15 border border-[#5c68db]/30 text-[#a2a5ff] inline-block">
-            Ecosystem Value
-          </span>
-          <h2 className={`text-2xl sm:text-4xl font-black tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
-            Empowering Every Stakeholder
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-400">
-            PowerForecast addresses real-world energy concerns across households, engineers, utilities, and sustainability advocates.
-          </p>
-        </div>
+            <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 2 }}>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={handleGuestDemo}
+                startIcon={<PlayIcon />}
+                sx={{ px: 3.5, py: 1.25, fontSize: "1rem", borderRadius: 2.5 }}
+              >
+                1-Click Instant Demo
+              </Button>
+              <Button
+                component={Link}
+                to="/signup"
+                variant="outlined"
+                size="large"
+                sx={{ px: 3.5, py: 1.25, fontSize: "1rem", borderRadius: 2.5 }}
+              >
+                Create Free Account
+              </Button>
+            </Box>
+          </Box>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StakeholderCard
-            icon={<Home className="w-5 h-5 text-indigo-400" />}
-            title="Households & Consumers"
-            description="Enables homeowners to make informed budgeting decisions, audit appliance energy consumption, and lower electricity bills effortlessly."
-            isDark={isDark}
-          />
-          <StakeholderCard
-            icon={<Cpu className="w-5 h-5 text-cyan-400" />}
-            title="Developers & Analysts"
-            description="Provides a foundation for smart home integrations, machine learning image classification, and consumer-facing predictive analytics."
-            isDark={isDark}
-          />
-          <StakeholderCard
-            icon={<Building2 className="w-5 h-5 text-amber-400" />}
-            title="Utility Providers"
-            description="Encourages customer energy awareness, peak-shaving practices, and collaborative energy efficiency initiatives across local distribution grids."
-            isDark={isDark}
-          />
-          <StakeholderCard
-            icon={<Leaf className="w-5 h-5 text-emerald-400" />}
-            title="Environmental Advocates"
-            description="Promotes sustainable power usage habits, curbs unnecessary electricity wastage, and supports carbon reduction goals in the Philippines."
-            isDark={isDark}
-          />
-        </div>
-      </section>
+          {/* Interactive Live Estimator Card */}
+          <Card
+            id="estimator"
+            sx={{
+              p: { xs: 2.5, sm: 4 },
+              borderRadius: 4,
+              border: "1px solid",
+              borderColor: "divider",
+              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.25)",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3, flexWrap: "wrap", gap: 1 }}>
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                  ⚡ Quick Appliance Bill Estimator
+                </Typography>
+                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                  Adjust wattage and daily run-time to see live Meralco billing breakdown.
+                </Typography>
+              </Box>
+              <Chip
+                label="Live Dynamic Calculation"
+                color="secondary"
+                size="small"
+                sx={{ fontWeight: 700 }}
+              />
+            </Box>
 
-      {/* 6. Software Quality Verification (ISO Metrics Clean Tiles) */}
-      <section id="quality" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className={`p-8 sm:p-10 rounded-2xl border space-y-8 ${
-          isDark ? "bg-[#0e1030]/80 border-white/10" : "bg-white border-slate-200 shadow-xs"
-        }`}>
-          <div className="max-w-3xl space-y-1.5">
-            <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#5c68db]/15 border border-[#5c68db]/30 text-[#a2a5ff] inline-block mb-1">
-              Quality Verification
-            </span>
-            <h2 className={`text-xl sm:text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
-              Engineered to Standard Software Quality Metrics
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-400">
-              Evaluated according to ISO software quality frameworks to ensure superior performance and user trust.
-            </p>
-          </div>
+            <Grid container spacing={3}>
+              {/* Controls */}
+              <Grid size={{ xs: 12, md: 7 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="Select Appliance Preset"
+                    value={selectedWatts}
+                    onChange={(e) => setSelectedWatts(Number(e.target.value))}
+                    size="small"
+                  >
+                    {applianceOptions.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                          {opt.icon}
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {opt.label} ({opt.value} Watts)
+                          </Typography>
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </TextField>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricTile
-              code="01"
-              title="Functionality"
-              text="Delivers precise end-to-end calculations, appliance tracking, and rate breakdowns tailored to Meralco standards."
-              isDark={isDark}
-            />
-            <MetricTile
-              code="02"
-              title="Reliability"
-              text="Consistently yields accurate power and billing estimations backed by verified utility mathematical formulas."
-              isDark={isDark}
-            />
-            <MetricTile
-              code="03"
-              title="Usability"
-              text="Features an intuitive dual-theme glassmorphic design accessible across desktop, tablet, and mobile browsers."
-              isDark={isDark}
-            />
-            <MetricTile
-              code="04"
-              title="Efficiency"
-              text="Instantaneous client-side state processing, zero calculation delay, and optimized resource delivery."
-              isDark={isDark}
-            />
-          </div>
+                  <Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
+                        DAILY DUTY CYCLE (HOURS / DAY)
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.main" }}>
+                        {estimatorHours} hours/day
+                      </Typography>
+                    </Box>
+                    <Slider
+                      value={estimatorHours}
+                      min={1}
+                      max={24}
+                      step={0.5}
+                      onChange={(_, val) => setEstimatorHours(val as number)}
+                      valueLabelDisplay="auto"
+                    />
+                  </Box>
 
-          {/* System Limitation Notice */}
-          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-slate-300 flex items-start gap-3">
-            <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-            <div className="leading-relaxed">
-              <span className="font-semibold text-amber-400">System Scope & Transparency Notice: </span>
-              PowerForecast serves as a decision-support and household budgeting tool. Electricity consumption calculations are derived from estimated appliance wattage ratings, historical data, and user-input usage schedules, complementing official utility meters and Meralco statements.
-            </div>
-          </div>
-        </div>
-      </section>
+                  <Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
+                        EFFECTIVE TARIFF RATE (₱ / kWh)
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "#eab308" }}>
+                        ₱{estimatorRate.toFixed(2)}/kWh
+                      </Typography>
+                    </Box>
+                    <Slider
+                      value={estimatorRate}
+                      min={8.0}
+                      max={20.0}
+                      step={0.1}
+                      onChange={(_, val) => setEstimatorRate(val as number)}
+                      valueLabelDisplay="auto"
+                    />
+                  </Box>
+                </Box>
+              </Grid>
 
-      {/* 7. Minimalist Footer */}
-      <footer className={`py-8 border-t text-xs transition-colors ${
-        isDark ? "bg-[#07081a] border-white/[0.08] text-slate-400" : "bg-slate-100 border-slate-200 text-slate-600"
-      }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 rounded bg-[#5c68db] flex items-center justify-center text-white">
-              <Zap className="w-3.5 h-3.5 fill-yellow-300 text-yellow-300" />
-            </div>
-            <div className="flex items-center gap-1 font-bold">
-              <span className="text-white">power</span>
-              <span className="text-[#ffd54f]">forecast</span>
-            </div>
-            <span className="text-slate-500">|</span>
-            <span className="text-[11px] text-slate-400">© 2026 PowerForecast Engine</span>
-          </div>
+              {/* Real-time Calculation Result Card */}
+              <Grid size={{ xs: 12, md: 5 }}>
+                <Paper
+                  sx={{
+                    p: 3,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    borderRadius: 3,
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.12)" : "rgba(99, 102, 241, 0.06)",
+                    border: "1px solid",
+                    borderColor: "primary.main",
+                  }}
+                >
+                  <Box>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.light", textTransform: "uppercase" }}>
+                      Projected Appliance Cost
+                    </Typography>
+                    <Typography
+                      variant="h3"
+                      sx={{
+                        fontWeight: 900,
+                        fontFamily: "monospace",
+                        color: "#ffd54f",
+                        my: 1,
+                      }}
+                    >
+                      ₱{estimatorCalc.monthlyCost}
+                      <Typography component="span" variant="body2" sx={{ color: "text.secondary", ml: 1 }}>
+                        / month
+                      </Typography>
+                    </Typography>
+                  </Box>
 
-          <div className="flex items-center gap-6 text-[11px]">
-            <a href="#features" className="hover:text-white transition-colors">Core Modules</a>
-            <a href="#demo" className="hover:text-white transition-colors">Live Estimator</a>
-            <a href="#impact" className="hover:text-white transition-colors">System Impact</a>
-            <Link to="/calculator" className="hover:text-white transition-colors">Bill Calculator</Link>
-            <Link to="/login" className="hover:text-white transition-colors">Sign In</Link>
-          </div>
-        </div>
-      </footer>
-    </div>
+                  <Divider sx={{ my: 1.5 }} />
+
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>Daily Load:</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: "monospace" }}>
+                        {estimatorCalc.dailyKwh} kWh/day
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>Monthly Consumption:</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: "monospace" }}>
+                        {estimatorCalc.monthlyKwh} kWh/mo
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>Continuous Running Rate:</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 700, color: "success.light", fontFamily: "monospace" }}>
+                        ₱{((selectedWatts / 1000) * estimatorRate).toFixed(2)}/hr
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    size="small"
+                    onClick={() => navigate("/calculator")}
+                    sx={{ mt: 2 }}
+                  >
+                    Open Full Unbundled Calculator
+                  </Button>
+                </Paper>
+              </Grid>
+            </Grid>
+          </Card>
+        </Container>
+      </Box>
+
+      {/* 3. Logo Collection / Trusted Partners */}
+      <Box sx={{ py: 6, borderY: "1px solid", borderColor: "divider", bgcolor: "action.hover" }}>
+        <Container maxWidth="lg">
+          <Typography variant="caption" sx={{ display: "block", textAlign: "center", fontWeight: 700, color: "text.secondary", letterSpacing: "0.08em", mb: 3 }}>
+            COMPATIBLE WITH PHILIPPINE ENERGY STANDARDS & UTILITY GRIDS
+          </Typography>
+          <Grid container spacing={3} sx={{ justifyContent: "center", alignItems: "center" }}>
+            {["DOE PELP Certified", "Meralco Unbundled Rates", "ERC Compliant", "Solar Net-Metering Ready"].map((label) => (
+              <Grid size={{ xs: 6, sm: 3 }} key={label} sx={{ textAlign: "center" }}>
+                <Chip
+                  icon={<ShieldIcon sx={{ color: "primary.main" }} />}
+                  label={label}
+                  variant="outlined"
+                  sx={{ fontWeight: 700, fontSize: "0.8125rem", py: 1.5, width: "100%", maxWidth: 220 }}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+      </Box>
+
+      {/* 4. Core Features Grid */}
+      <Box id="features" sx={{ py: { xs: 8, md: 12 } }}>
+        <Container maxWidth="lg">
+          <Box sx={{ textAlign: "center", maxWidth: 700, mx: "auto", mb: 8 }}>
+            <Typography variant="h3" sx={{ fontWeight: 800, mb: 1.5 }}>
+              Engineered for Precision & Energy Savings
+            </Typography>
+            <Typography variant="body1" sx={{ color: "text.secondary" }}>
+              Explore the advanced suite of tools designed to forecast, monitor, and optimize your monthly power bill.
+            </Typography>
+          </Box>
+
+          <Grid container spacing={3}>
+            {[
+              {
+                icon: <CalculateIcon sx={{ fontSize: 28, color: "#ffd54f" }} />,
+                title: "Unbundled Tariff Calculator",
+                desc: "Accurately compute Generation, Transmission, Distribution, System Loss, Lifeline Subsidy, and VAT charges down to the exact centavo.",
+              },
+              {
+                icon: <LayersIcon sx={{ fontSize: 28, color: "primary.light" }} />,
+                title: "DOE PELP Energy Star Database",
+                desc: "Compare verified Energy Efficiency Ratios (EER) for over 100+ inverter air conditioners, refrigerators, and appliances.",
+              },
+              {
+                icon: <CameraIcon sx={{ fontSize: 28, color: "secondary.main" }} />,
+                title: "AI Vision OCR Scanner",
+                desc: "Upload physical appliance rating plates or Meralco electricity bills for instant OCR parsing and telemetry autofill.",
+              },
+              {
+                icon: <ClockIcon sx={{ fontSize: 28, color: "success.main" }} />,
+                title: "Smart Calendar Scheduler",
+                desc: "Plan energy-heavy tasks like laundry and ironing during off-peak tariff hours to reduce peak demand charges.",
+              },
+              {
+                icon: <BarChartIcon sx={{ fontSize: 28, color: "info.main" }} />,
+                title: "Forecast & Anomaly Detection",
+                desc: "Predict end-of-month electric bills and receive smart warnings before stepping into higher Meralco consumption tiers.",
+              },
+              {
+                icon: <CpuIcon sx={{ fontSize: 28, color: "warning.main" }} />,
+                title: "Live Circuit Power Board",
+                desc: "Toggle active appliances and watch real-time wattage loads update dynamically with 1-second live telemetry.",
+              },
+            ].map((f, idx) => (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
+                <Card sx={{ height: "100%", p: 3, display: "flex", flexDirection: "column" }}>
+                  <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 2.5,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      bgcolor: "action.hover",
+                      border: "1px solid",
+                      borderColor: "divider",
+                      mb: 2,
+                    }}
+                  >
+                    {f.icon}
+                  </Box>
+                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+                    {f.title}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6 }}>
+                    {f.desc}
+                  </Typography>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+      </Box>
+
+      {/* 5. Tariff Tiers Comparison */}
+      <Box id="tariffs" sx={{ py: { xs: 8, md: 10 }, bgcolor: "action.hover" }}>
+        <Container maxWidth="lg">
+          <Box sx={{ textAlign: "center", maxWidth: 700, mx: "auto", mb: 6 }}>
+            <Typography variant="h3" sx={{ fontWeight: 800, mb: 1.5 }}>
+              Meralco Residential Tariff Tiers
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+              Transparent baseline tariff brackets supported in PowerForecast.
+            </Typography>
+          </Box>
+
+          <Grid container spacing={3}>
+            {[
+              {
+                title: "Lifeline Subsidy Tier",
+                kwh: "0 - 100 kWh",
+                price: "₱8.50 - ₱10.20",
+                desc: "For low-income households with 20% - 100% discount on generation and distribution charges.",
+                popular: false,
+              },
+              {
+                title: "Regular Residential",
+                kwh: "101 - 300 kWh",
+                price: "₱12.45 - ₱14.82",
+                desc: "Standard household rate with standard unbundled generation, transmission, and universal charges.",
+                popular: true,
+              },
+              {
+                title: "High Usage / TOU",
+                kwh: "301+ kWh / TOU",
+                price: "₱15.50 - ₱17.90",
+                desc: "Larger households and solar net-metering setups with time-of-use peak and off-peak rate tracking.",
+                popular: false,
+              },
+            ].map((tier, idx) => (
+              <Grid size={{ xs: 12, md: 4 }} key={idx}>
+                <Card
+                  sx={{
+                    p: 3.5,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    borderRadius: 3,
+                    position: "relative",
+                    ...(tier.popular && {
+                      borderColor: "primary.main",
+                      boxShadow: "0 8px 30px rgba(99, 102, 241, 0.2)",
+                    }),
+                  }}
+                >
+                  {tier.popular && (
+                    <Chip
+                      label="Most Common"
+                      color="primary"
+                      size="small"
+                      sx={{ position: "absolute", top: 16, right: 16, fontWeight: 700 }}
+                    />
+                  )}
+
+                  <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                      {tier.title}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
+                      Bracket: {tier.kwh}
+                    </Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 900, fontFamily: "monospace", my: 2 }}>
+                      {tier.price} <Typography component="span" variant="caption">/kWh</Typography>
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
+                      {tier.desc}
+                    </Typography>
+                  </Box>
+
+                  <Button
+                    variant={tier.popular ? "contained" : "outlined"}
+                    fullWidth
+                    onClick={handleGuestDemo}
+                  >
+                    Simulate This Tier
+                  </Button>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+      </Box>
+
+      {/* 6. FAQ Section */}
+      <Box id="faq" sx={{ py: { xs: 8, md: 10 } }}>
+        <Container maxWidth="md">
+          <Typography variant="h3" sx={{ fontWeight: 800, textAlign: "center", mb: 6 }}>
+            Frequently Asked Questions
+          </Typography>
+
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            {[
+              {
+                q: "How accurate is the unbundled Meralco calculation formula?",
+                a: "PowerForecast implements the official Energy Regulatory Commission (ERC) unbundled billing framework, factoring in Generation Charges, Transmission, System Loss, Distribution, Subsidies, and Government Taxes (12% VAT, Universal Charges, FIT-All).",
+              },
+              {
+                q: "What is the DOE PELP Database integration?",
+                a: "PELP stands for Philippine Energy Labeling Program. PowerForecast contains verified ratings (CSPF, EER, star ratings) from the Department of Energy to help you calculate real-world consumption for inverter and non-inverter models.",
+              },
+              {
+                q: "Does PowerForecast save my data securely?",
+                a: "Yes. All appliance inventories and schedule events are synced securely with Supabase Cloud DB with automatic fallback to browser storage.",
+              },
+              {
+                q: "Can I use PowerForecast without creating an account?",
+                a: "Absolutely! Click '1-Click Instant Demo' to explore full features with pre-configured residential appliance sets.",
+              },
+            ].map((faq, idx) => (
+              <Accordion key={idx}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    {faq.q}
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6 }}>
+                    {faq.a}
+                  </Typography>
+                </AccordionDetails>
+              </Accordion>
+            ))}
+          </Box>
+        </Container>
+      </Box>
+
+      {/* 7. Footer */}
+      <Box sx={{ py: 6, borderTop: "1px solid", borderColor: "divider", bgcolor: "action.hover" }}>
+        <Container maxWidth="lg">
+          <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              <BoltIcon sx={{ color: "#ffd54f" }} />
+              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                PowerForecast Refine & MUI
+              </Typography>
+              <Chip label={APP_VERSION} size="small" sx={{ fontFamily: "monospace", fontWeight: 700 }} />
+            </Box>
+
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              © {new Date().getFullYear()} PowerForecast. Designed with Material UI Templates.
+            </Typography>
+          </Box>
+        </Container>
+      </Box>
+    </Box>
   );
 };
 
-// Reusable Sub-components for Minimalist Consistency
-const ModuleCard: React.FC<{
-  number: string;
-  title: string;
-  description: string;
-  tag: string;
-  icon: React.ReactNode;
-  isDark: boolean;
-}> = ({ number, title, description, tag, icon, isDark }) => (
-  <div className={`p-6 rounded-2xl border transition-all flex flex-col justify-between group ${
-    isDark
-      ? "bg-[#0e1030]/70 border-white/10 hover:border-white/20 hover:shadow-lg hover:shadow-[#5c68db]/5"
-      : "bg-white border-slate-200 hover:border-slate-300 shadow-xs"
-  }`}>
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center">
-          {icon}
-        </div>
-        <span className="text-[10px] font-mono text-slate-400 bg-white/[0.03] px-2 py-0.5 rounded border border-white/[0.06]">
-          MODULE {number}
-        </span>
-      </div>
-      <h3 className={`text-base font-bold tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
-        {title}
-      </h3>
-      <p className="text-xs text-slate-400 leading-relaxed">{description}</p>
-    </div>
-    <div className="mt-5 pt-3 border-t border-white/[0.06] text-[11px] font-medium text-slate-400 flex items-center justify-between">
-      <span>{tag}</span>
-      <ArrowUpRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-white transition-colors" />
-    </div>
-  </div>
-);
-
-const StakeholderCard: React.FC<{
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  isDark: boolean;
-}> = ({ icon, title, description, isDark }) => (
-  <div className={`p-5 rounded-xl border space-y-2.5 ${
-    isDark ? "bg-[#0e1030]/60 border-white/10" : "bg-white border-slate-200 shadow-xs"
-  }`}>
-    <div className="w-9 h-9 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center">
-      {icon}
-    </div>
-    <h3 className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
-      {title}
-    </h3>
-    <p className="text-xs text-slate-400 leading-relaxed">{description}</p>
-  </div>
-);
-
-const MetricTile: React.FC<{
-  code: string;
-  title: string;
-  text: string;
-  isDark: boolean;
-}> = ({ code, title, text, isDark }) => (
-  <div className={`p-4 rounded-xl border ${
-    isDark ? "bg-[#07091f] border-white/[0.06]" : "bg-slate-50 border-slate-200"
-  }`}>
-    <div className="text-xs font-mono font-bold text-[#8183fc] mb-1">
-      {code}. {title}
-    </div>
-    <p className="text-xs text-slate-400 leading-relaxed">{text}</p>
-  </div>
-);
+export default LandingPage;

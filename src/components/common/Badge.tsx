@@ -1,44 +1,50 @@
-﻿import React from "react";
-import { clsx } from "clsx";
+import React from "react";
+import Chip, { ChipProps } from "@mui/material/Chip";
 
-interface BadgeProps {
-  children: React.ReactNode;
-  variant?: "primary" | "cyan" | "emerald" | "amber" | "rose" | "purple" | "neutral";
-  size?: "sm" | "md";
-  className?: string;
+export interface BadgeProps extends Omit<ChipProps, "variant" | "color"> {
+  variant?: "primary" | "secondary" | "success" | "warning" | "danger" | "neutral";
+  text?: string;
+  icon?: React.ReactElement;
 }
 
 export const Badge: React.FC<BadgeProps> = ({
-  children,
   variant = "primary",
-  size = "md",
-  className = "",
+  text,
+  label,
+  icon,
+  sx,
+  ...props
 }) => {
-  const variantStyles = {
-    primary: "bg-[#1c1f57] text-[#a2a5ff] border-[#2e3382]",
-    cyan: "bg-[#0b2742] text-[#38bdf8] border-[#154673]",
-    emerald: "bg-[#0a2c20] text-[#34d399] border-[#135940]",
-    amber: "bg-[#332408] text-[#ffd54f] border-[#664910]",
-    rose: "bg-[#330f1a] text-[#fb7185] border-[#661e33]",
-    purple: "bg-[#251545] text-[#c084fc] border-[#4c2b8c]",
-    neutral: "bg-[#151745] text-slate-300 border-[#2d317a]",
-  };
-
-  const sizeStyles = {
-    sm: "px-2 py-0.5 text-[11px]",
-    md: "px-2.5 py-1 text-xs",
+  const getColor = () => {
+    switch (variant) {
+      case "primary":
+        return "primary";
+      case "secondary":
+        return "secondary";
+      case "success":
+        return "success";
+      case "warning":
+        return "warning";
+      case "danger":
+        return "error";
+      default:
+        return "default";
+    }
   };
 
   return (
-    <span
-      className={clsx(
-        "inline-flex items-center gap-1.5 font-medium rounded-md border",
-        variantStyles[variant],
-        sizeStyles[size],
-        className
-      )}
-    >
-      {children}
-    </span>
+    <Chip
+      label={text || label}
+      color={getColor() as any}
+      icon={icon}
+      size="small"
+      sx={{
+        fontWeight: 600,
+        ...sx,
+      }}
+      {...props}
+    />
   );
 };
+
+export default Badge;

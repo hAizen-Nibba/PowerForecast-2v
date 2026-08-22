@@ -1,18 +1,21 @@
 import React, { useState } from "react";
-import { GlassCard } from "../common/GlassCard";
-import { MetricCard } from "../common/MetricCard";
-import { Button } from "../common/Button";
-import { Badge } from "../common/Badge";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import LinearProgress from "@mui/material/LinearProgress";
 import {
-  BarChart3,
-  TrendingUp,
-  Zap,
-  Leaf,
-  Lightbulb,
-  Download,
-  AlertTriangle,
-  RotateCcw,
-} from "lucide-react";
+  BarChart as AnalyticsIcon,
+  TrendingUp as TrendingUpIcon,
+  Bolt as BoltIcon,
+  EnergySavingsLeaf as LeafIcon,
+  Lightbulb as LightbulbIcon,
+  Download as DownloadIcon,
+  PieChart as PieChartIcon,
+  ReceiptLong as ReceiptIcon,
+} from "@mui/icons-material";
 import {
   AreaChart,
   Area,
@@ -23,11 +26,13 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Brush,
 } from "recharts";
 import { UserAppliance, UserCalendarEvent } from "../../types";
 import { useList } from "@refinedev/core";
 import { computeHourlyLoadCurve } from "../../lib/loadCurveService";
+import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
+import { MetricCard } from "../common/MetricCard";
+import ButtonGroup from "@mui/material/ButtonGroup";
 
 export const AnalyticsView: React.FC = () => {
   const [zoomPreset, setZoomPreset] = useState<"24h" | "morning" | "day" | "evening">("24h");
@@ -44,10 +49,35 @@ export const AnalyticsView: React.FC = () => {
   const appliances: UserAppliance[] = appliancesRes?.data?.data || appliancesRes?.result?.data || [];
   const events: UserCalendarEvent[] = eventsRes?.data?.data || eventsRes?.result?.data || [];
 
-  const totalMonthlyKwh = appliances.reduce((acc: number, curr: UserAppliance) => acc + (Number(curr.monthly_kwh) || 0), 0);
-  const totalCost = totalMonthlyKwh * 14.8261;
+  const totalMonthlyKwh = appliances.reduce(
+    (acc: number, curr: UserAppliance) => acc + (Number(curr.monthly_kwh) || 0),
+    0
+  ) || 250;
 
-  // Determine hour window based on zoom preset
+  const bill = calculateMeralcoBill(totalMonthlyKwh, 7.12);
+  const totalCost = bill.totalBill;
+
+  // 1. Group appliances by Category
+  const catMap: Record<string, number> = {};
+  appliances.forEach((a) => {
+    const cat = a.category || "General";
+    const kwh = Number(a.monthly_kwh) || ((a.watts * a.hours_per_day * 30 * (a.quantity || 1)) / 1000);
+    catMap[cat] = (catMap[cat] || 0) + kwh;
+  });
+
+  const categoryEntries = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
+  const totalCatKwh = categoryEntries.reduce((acc, curr) => acc + curr[1], 0) || 1;
+
+  // 2. Unbundled Rate Components breakdown
+  const rateComponents = [
+    { name: "Generation Charge", amount: bill.generationTotal, color: "#6366f1" },
+    { name: "Transmission Charge", amount: bill.transmissionTotal, color: "#a855f7" },
+    { name: "System Loss Charge", amount: bill.systemLossTotal, color: "#38bdf8" },
+    { name: "Distribution Network", amount: bill.distributionTotal, color: "#34d399" },
+    { name: "Government Taxes & VAT", amount: bill.totalVat + bill.localFranchiseTax, color: "#fbbf24" },
+    { name: "Universal & FIT-All Charges", amount: bill.universalCharges.total + bill.fitAll, color: "#94a3b8" },
+  ];
+
   let startHour = 0;
   let endHour = 24;
   if (zoomPreset === "morning") {
@@ -61,7 +91,6 @@ export const AnalyticsView: React.FC = () => {
     endHour = 24;
   }
 
-  // Real continuous distribution based on real appliance start times (continuous minutes)
   const HOURLY_LOAD_DATA = computeHourlyLoadCurve({
     appliances,
     events,
@@ -70,7 +99,6 @@ export const AnalyticsView: React.FC = () => {
     endHour,
   });
 
-  // Dynamic monthly data starting from August 2026 (Active Start) + Future Projections
   const MONTHLY_TREND_DATA = [
     { month: "May", kwh: 0, cost: 0, status: "Prior Period" },
     { month: "Jun", kwh: 0, cost: 0, status: "Prior Period" },
@@ -83,262 +111,287 @@ export const AnalyticsView: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-black t-primary tracking-tight flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-[#5c68db] text-white shadow-md shadow-[#5c68db]/20">
-              <BarChart3 className="w-5 h-5" />
-            </div>
-            Analytics & Forecasting
-          </h2>
-          <p className="text-xs sm:text-sm t-muted mt-0.5">
-            Grid demand profiles, minute-level telemetry, and efficiency projections
-          </p>
-        </div>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3.5 }}>
+      {/* Header Banner */}
+      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "flex-start", sm: "center" }, justifyContent: "space-between", gap: 2 }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: 2.5,
+                bgcolor: "primary.main",
+                color: "#ffffff",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <AnalyticsIcon sx={{ color: "#ffd54f" }} />
+            </Box>
+            Energy Analytics & Cost Distribution
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+            Deep-dive cost distribution, appliance category weights, and minute-level grid demand profiles.
+          </Typography>
+        </Box>
 
         <Button
-          variant="secondary"
-          size="sm"
+          variant="outlined"
+          size="small"
           onClick={() => window.print()}
-          icon={<Download className="w-3.5 h-3.5 text-[#8183fc]" />}
+          startIcon={<DownloadIcon />}
         >
           Export Report
         </Button>
-      </div>
+      </Box>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          title="Projected End-of-Month"
-          value={`₱${totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-          subtitle="Household registered load"
-          icon={<Zap className="w-4 h-4 text-yellow-400" />}
-          trend={{ value: `${appliances.length} devices`, direction: "neutral" }}
-        />
-        <MetricCard
-          title="Est. Monthly Volume"
-          value={`${totalMonthlyKwh.toFixed(1)} kWh`}
-          subtitle="Threshold: 350 kWh"
-          icon={<TrendingUp className="w-4 h-4 text-[#8183fc]" />}
-          trend={{ value: totalMonthlyKwh > 200 ? "Tier 3" : totalMonthlyKwh > 100 ? "Tier 2" : "Tier 1", direction: "neutral" }}
-        />
-        <MetricCard
-          title="Peak Hours Share"
-          value="38%"
-          subtitle="Target: < 30%"
-          icon={<AlertTriangle className="w-4 h-4 text-amber-500" />}
-          trend={{ value: "+2.1%", direction: "up" }}
-        />
-        <MetricCard
-          title="Eco Score"
-          value="92 / 100"
-          subtitle="Inverter efficiency"
-          icon={<Leaf className="w-4 h-4 text-emerald-500" />}
-          trend={{ value: "Top 10%", direction: "down" }}
-        />
-      </div>
+      {/* KPI Cards Row */}
+      <Grid container spacing={2.5}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <MetricCard
+            title="Monthly Energy Volume"
+            value={`${totalMonthlyKwh.toFixed(1)} kWh`}
+            subtitle="Household baseline load"
+            icon={<BoltIcon sx={{ color: "#ffd54f" }} />}
+            trend={{ value: "Tier 3", direction: "neutral" }}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <MetricCard
+            title="Forecasted Bill"
+            value={`₱${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            subtitle={`Effective: ₱${bill.effectiveRatePerKwh.toFixed(2)}/kWh`}
+            icon={<TrendingUpIcon sx={{ color: "primary.light" }} />}
+            trend={{ value: "-4.2%", direction: "down", label: "vs projected" }}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <MetricCard
+            title="Energy Efficiency"
+            value="89.4%"
+            subtitle="PELP star compliance"
+            icon={<LeafIcon sx={{ color: "success.main" }} />}
+            trend={{ value: "A+", direction: "up" }}
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <MetricCard
+            title="Optimization Potential"
+            value="₱380.00"
+            subtitle="Via off-peak shifting"
+            icon={<LightbulbIcon sx={{ color: "warning.main" }} />}
+          />
+        </Grid>
+      </Grid>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7">
-          <GlassCard className="space-y-3.5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b pf-divider">
-              <div>
-                <h3 className="text-xs font-bold t-primary flex items-center gap-1.5">
-                  <span>24-Hour Grid Load Profile</span>
-                  <span className="text-[10px] text-amber-500 dark:text-yellow-300 font-mono">({resolutionMinutes}m Continuous Tracking)</span>
-                </h3>
-                <p className="text-[11px] t-muted">Peak periods (Red Zones): 11:00 AM – 4:00 PM & 6:00 PM – 9:00 PM</p>
-              </div>
+      {/* Grouped Category Breakdown & Unbundled Cost Distribution Row */}
+      <Grid container spacing={3}>
+        {/* Left: Appliance Category Breakdown Bars */}
+        <Grid size={{ xs: 12, md: 7 }}>
+          <Card sx={{ p: 3, borderRadius: 3.5, height: "100%", display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <PieChartIcon sx={{ color: "primary.main" }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
+                  Energy Usage by Appliance Category
+                </Typography>
+              </Box>
+              <Chip label={`${categoryEntries.length} Categories`} size="small" variant="outlined" />
+            </Box>
 
-              {/* Interactive Zoom and Resolution Toolbar */}
-              <div className="flex flex-wrap items-center gap-1.5">
-                {/* Time Range Zoom Presets */}
-                <div className="flex items-center pf-input p-0.5 rounded-xl text-[10px]">
-                  {[
-                    { id: "24h", label: "24H" },
-                    { id: "morning", label: "Morning" },
-                    { id: "day", label: "Day" },
-                    { id: "evening", label: "Peak" },
-                  ].map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => setZoomPreset(p.id as any)}
-                      className={`px-2 py-0.5 rounded-lg font-bold transition-all cursor-pointer ${
-                        zoomPreset === p.id
-                          ? "bg-[#5c68db] text-white shadow-xs"
-                          : "t-muted hover:t-primary"
-                      }`}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, flex: 1, justifyContent: "center" }}>
+              {categoryEntries.length === 0 ? (
+                <Typography variant="caption" sx={{ color: "text.secondary", textAlign: "center", py: 4 }}>
+                  No appliances registered yet. Add appliances to inspect category proportions.
+                </Typography>
+              ) : (
+                categoryEntries.map(([cat, kwh]) => {
+                  const pct = Math.round((kwh / totalCatKwh) * 100);
+                  const cost = kwh * bill.effectiveRatePerKwh;
+                  return (
+                    <Box key={cat} sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                          {cat}
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary" }}>
+                          {kwh.toFixed(1)} kWh ({pct}%) • <span style={{ color: "#ffd54f" }}>₱{cost.toFixed(2)}</span>
+                        </Typography>
+                      </Box>
+                      <LinearProgress
+                        variant="determinate"
+                        value={pct}
+                        sx={{
+                          height: 8,
+                          borderRadius: 4,
+                          bgcolor: "rgba(108, 122, 224, 0.15)",
+                          "& .MuiLinearProgress-bar": {
+                            borderRadius: 4,
+                            background: "linear-gradient(90deg, #6366f1, #fbbf24)",
+                          },
+                        }}
+                      />
+                    </Box>
+                  );
+                })
+              )}
+            </Box>
+          </Card>
+        </Grid>
 
-                {/* Granularity Resolution (Minutes) */}
-                <div className="flex items-center pf-input p-0.5 rounded-xl text-[10px]">
-                  {[
-                    { val: 1, label: "1m" },
-                    { val: 5, label: "5m" },
-                    { val: 15, label: "15m" },
-                    { val: 30, label: "30m" },
-                  ].map((r) => (
-                    <button
-                      key={r.val}
-                      onClick={() => setResolutionMinutes(r.val as any)}
-                      className={`px-1.5 py-0.5 rounded-lg font-bold transition-all cursor-pointer ${
-                        resolutionMinutes === r.val
-                          ? "bg-[#5c68db] text-white shadow-xs"
-                          : "t-muted hover:t-primary"
-                      }`}
-                      title={`Scrub granularity: ${r.label}`}
-                    >
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
+        {/* Right: Unbundled Rate Component Proportions */}
+        <Grid size={{ xs: 12, md: 5 }}>
+          <Card sx={{ p: 3, borderRadius: 3.5, height: "100%", display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              <ReceiptIcon sx={{ color: "primary.main" }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
+                Unbundled Rate Component Distribution
+              </Typography>
+            </Box>
 
-                {zoomPreset !== "24h" && (
-                  <button
-                    onClick={() => setZoomPreset("24h")}
-                    className="p-1 rounded-lg btn-secondary transition-colors cursor-pointer"
-                    title="Reset Zoom to 24 Hours"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {appliances.length === 0 ? (
-              <div className="py-20 text-center text-xs t-muted">
-                No active appliances registered. Add devices in the Appliance Hub to generate your 24-hour demand profile.
-              </div>
-            ) : (
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={HOURLY_LOAD_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="offPeakFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#5c68db" stopOpacity={0.5} />
-                        <stop offset="95%" stopColor="#5c68db" stopOpacity={0.05} />
-                      </linearGradient>
-
-                      <linearGradient id="peakFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.65} />
-                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0.08} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" />
-                    <XAxis
-                      dataKey="timeLabel"
-                      stroke="var(--text-muted)"
-                      fontSize={10}
-                      minTickGap={45}
-                    />
-                    <YAxis stroke="var(--text-muted)" fontSize={11} />
-                    <Tooltip
-                      cursor={{ stroke: "#8183fc", strokeWidth: 1.5, strokeDasharray: "3 3" }}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const item = payload[0].payload;
-                          return (
-                            <div className="glass-card p-3 rounded-xl border text-xs shadow-xl space-y-1">
-                              <div className="flex items-center justify-between gap-4">
-                                <span className="font-bold t-primary">{item.timeLabel}</span>
-                                {item.isPeak ? (
-                                  <Badge variant="amber" size="sm">
-                                    PEAK (₱16.83/kWh)
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="emerald" size="sm">
-                                    OFF-PEAK (₱12.45/kWh)
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="flex items-center justify-between gap-3 text-[11px] pt-1 border-t pf-divider">
-                                <span className="t-muted">Total Draw:</span>
-                                <span className="font-mono font-bold text-amber-500 dark:text-yellow-300">{item.watts} Watts</span>
-                              </div>
-                              <div className="flex items-center justify-between gap-3 text-[11px]">
-                                <span className="t-muted">Est. Rate:</span>
-                                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">₱{Number(item.ratePerHour ?? ((item.watts || 0) / 1000 * 14.8261)).toFixed(2)}/hr</span>
-                              </div>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-
-                    <Area
-                      type="monotone"
-                      dataKey="watts"
-                      stroke="#5c68db"
-                      strokeWidth={2.5}
-                      fill="url(#offPeakFill)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </GlassCard>
-        </div>
-
-        {/* Right Column: Monthly Volume & Cost Projection Bar Chart */}
-        <div className="lg:col-span-5">
-          <GlassCard className="space-y-3.5">
-            <div className="pb-3 border-b pf-divider flex items-center justify-between">
-              <div>
-                <h3 className="text-xs font-bold t-primary">Monthly Historical & Projected Trend</h3>
-                <p className="text-[11px] t-muted">Active telemetry from Aug 2026</p>
-              </div>
-              <span className="text-[10px] font-bold font-mono t-accent bg-[#5c68db]/15 px-2 py-0.5 rounded-lg border border-[#5c68db]/30">
-                ACTIVE
-              </span>
-            </div>
-
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={MONTHLY_TREND_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" />
-                  <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={10} />
-                  <YAxis stroke="var(--text-muted)" fontSize={11} />
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const item = payload[0].payload;
-                        return (
-                          <div className="glass-card p-3 rounded-xl border text-xs shadow-xl space-y-1">
-                            <div className="flex items-center justify-between gap-3">
-                              <span className="font-bold t-primary">{item.month}</span>
-                              <Badge variant={item.kwh > 0 ? "primary" : "neutral"} size="sm">
-                                {item.status}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center justify-between gap-3 text-[11px] pt-1 border-t pf-divider">
-                              <span className="t-muted">Energy Load:</span>
-                              <span className="font-mono font-bold t-primary">{item.kwh} kWh</span>
-                            </div>
-                            <div className="flex items-center justify-between gap-3 text-[11px]">
-                              <span className="t-muted">Est. Amount:</span>
-                              <span className="font-mono font-bold text-amber-500 dark:text-yellow-300">₱{item.cost.toLocaleString()}</span>
-                            </div>
-                          </div>
-                        );
-                      }
-                      return null;
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, flex: 1, justifyContent: "center" }}>
+              {rateComponents.map((item) => {
+                const pct = totalCost > 0 ? Math.round((item.amount / totalCost) * 100) : 0;
+                return (
+                  <Box
+                    key={item.name}
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 2,
+                      bgcolor: "rgba(15, 14, 58, 0.4)",
+                      border: "1px solid rgba(108, 122, 224, 0.15)",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
                     }}
-                  />
-                  <Bar dataKey="kwh" fill="#5c68db" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </GlassCard>
-        </div>
-      </div>
-    </div>
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                      <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: item.color }} />
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "text.secondary", fontSize: "0.8rem" }}>
+                        {item.name}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: "text.primary", fontSize: "0.85rem" }}>
+                      ₱{item.amount.toFixed(2)} <span style={{ color: item.color, fontSize: "0.75rem" }}>({pct}%)</span>
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* 24-Hour Continuous Load Curve Card */}
+      <Card sx={{ p: 3, borderRadius: 3.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2, mb: 2.5 }}>
+          <Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+              24-Hour Continuous Load Profile
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              Dynamic minute-level power demand curve
+            </Typography>
+          </Box>
+
+          <ButtonGroup size="small" variant="outlined">
+            {[
+              { label: "24 Hours", val: "24h" },
+              { label: "Morning", val: "morning" },
+              { label: "Day", val: "day" },
+              { label: "Evening", val: "evening" },
+            ].map((b) => (
+              <Button
+                key={b.val}
+                variant={zoomPreset === b.val ? "contained" : "outlined"}
+                onClick={() => setZoomPreset(b.val as any)}
+              >
+                {b.label}
+              </Button>
+            ))}
+          </ButtonGroup>
+        </Box>
+
+        <Box sx={{ height: 260, width: "100%" }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={HOURLY_LOAD_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorLoad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+              <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const d = payload[0].payload;
+                    return (
+                      <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: "#0f0e3a", border: "1px solid rgba(99, 102, 241, 0.4)", color: "#ffffff" }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                          {d.time} ({d.isPeak ? "Peak Window" : "Off-Peak"})
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: "block", color: "#ffd54f", fontWeight: 800, fontFamily: "monospace" }}>
+                          {d.watts} Watts
+                        </Typography>
+                      </Box>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Area type="monotone" dataKey="watts" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#colorLoad)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </Box>
+      </Card>
+
+      {/* Multi-Month Trend & Forecast Bar Chart */}
+      <Card sx={{ p: 3, borderRadius: 3.5 }}>
+        <Box sx={{ mb: 2.5 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+            Multi-Month Energy Trend & Seasonal Forecast
+          </Typography>
+          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            Monthly consumption (kWh) with projection for upcoming billing cycles
+          </Typography>
+        </Box>
+
+        <Box sx={{ height: 260, width: "100%" }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={MONTHLY_TREND_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const d = payload[0].payload;
+                    return (
+                      <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: "#0f0e3a", border: "1px solid rgba(99, 102, 241, 0.4)", color: "#ffffff" }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                          {d.month} • {d.status}
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: "block", color: "#ffd54f", fontWeight: 800, fontFamily: "monospace" }}>
+                          {d.kwh} kWh (~₱{d.cost})
+                        </Typography>
+                      </Box>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Bar dataKey="kwh" fill="#6366f1" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
+      </Card>
+    </Box>
   );
 };
 
+export default AnalyticsView;

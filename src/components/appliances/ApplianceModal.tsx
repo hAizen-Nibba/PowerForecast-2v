@@ -1,9 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { Modal } from "../common/Modal";
-import { Button } from "../common/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import TextField from "@mui/material/TextField";
+import MenuItem from "@mui/material/MenuItem";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+import Divider from "@mui/material/Divider";
+import Paper from "@mui/material/Paper";
+import {
+  Bolt as BoltIcon,
+  Close as CloseIcon,
+  Save as SaveIcon,
+} from "@mui/icons-material";
 import { UserAppliance } from "../../types";
 import { useCreate, useUpdate } from "@refinedev/core";
-import { getDefaultStartHour, formatHourDetailed } from "../../lib/loadCurveService";
+import { getDefaultStartHour } from "../../lib/loadCurveService";
 
 interface ApplianceModalProps {
   isOpen: boolean;
@@ -28,8 +44,8 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
   const [roomLocation, setRoomLocation] = useState("Living Room");
   const [energyRating, setEnergyRating] = useState("5-Star Inverter");
 
-  const { mutate: createAppliance } = useCreate();
-  const { mutate: updateAppliance } = useUpdate();
+  const { mutate: createAppliance, isLoading: isCreating } = useCreate();
+  const { mutate: updateAppliance, isLoading: isUpdating } = useUpdate();
 
   useEffect(() => {
     if (applianceToEdit) {
@@ -60,22 +76,12 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
     }
   }, [applianceToEdit, isOpen]);
 
-  const handleCategoryChange = (newCat: string) => {
-    setCategory(newCat);
-    setStartHour(getDefaultStartHour(newCat));
-    if (newCat === "Air Conditioners") setWatts(750);
-    else if (newCat === "Refrigerators & Freezers") setWatts(180);
-    else if (newCat === "Television Sets") setWatts(120);
-    else if (newCat === "Electric Fans") setWatts(65);
-    else if (newCat === "Washing Machines") setWatts(450);
-    else if (newCat === "Lighting Products") setWatts(15);
-  };
-
-  const calculatedMonthlyKwh = (watts * hoursPerDay * daysPerMonth * quantity) / 1000;
-  const calculatedMonthlyCost = calculatedMonthlyKwh * 14.8261;
+  const monthlyKwh = ((watts * quantity * hoursPerDay * daysPerMonth) / 1000).toFixed(1);
+  const estimatedCost = (Number(monthlyKwh) * 14.8261).toFixed(2);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) return;
 
     const payload = {
       name,
@@ -89,209 +95,235 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
       start_hour: startHour,
       room_location: roomLocation,
       energy_rating: energyRating,
-      monthly_kwh: calculatedMonthlyKwh,
-      estimated_cost: calculatedMonthlyCost,
-      is_active: true,
+      monthly_kwh: Number(monthlyKwh),
     };
 
     if (applianceToEdit) {
-      updateAppliance({
-        resource: "user_appliances",
-        id: applianceToEdit.id,
-        values: payload,
-      });
-    } else {
-      createAppliance({
-        resource: "user_appliances",
-        values: {
-          ...payload,
-          is_currently_on: false,
+      updateAppliance(
+        {
+          resource: "user_appliances",
+          id: applianceToEdit.id,
+          values: payload,
         },
-      });
+        {
+          onSuccess: () => onClose(),
+        }
+      );
+    } else {
+      createAppliance(
+        {
+          resource: "user_appliances",
+          values: payload,
+        },
+        {
+          onSuccess: () => onClose(),
+        }
+      );
     }
-
-    onClose();
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={applianceToEdit ? "Edit Appliance" : "Add Appliance"}
-      subtitle="Configure appliance specs, operational hours, and room allocation"
-      maxWidth="xl"
-    >
-      <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="t-secondary font-semibold block mb-1">Appliance Name</label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Living Room AC"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full pf-input rounded-xl px-3 py-2 focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="t-secondary font-semibold block mb-1">Category</label>
-            <select
-              value={category}
-              onChange={(e) => handleCategoryChange(e.target.value)}
-              className="w-full pf-input rounded-xl px-3 py-2 focus:outline-none cursor-pointer"
+    <Dialog open={isOpen} onClose={onClose} fullWidth maxWidth="sm">
+      <form onSubmit={handleSubmit}>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: 2,
+                bgcolor: "primary.main",
+                color: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             >
-              <option value="Air Conditioners">Air Conditioners</option>
-              <option value="Refrigerators & Freezers">Refrigerators & Freezers</option>
-              <option value="Television Sets">Television Sets</option>
-              <option value="Electric Fans">Electric Fans</option>
-              <option value="Washing Machines">Washing Machines</option>
-              <option value="Lighting Products">Lighting Products</option>
-              <option value="Kitchen & Cooking">Kitchen & Cooking</option>
-              <option value="Other Electronics">Other Electronics</option>
-            </select>
-          </div>
-        </div>
+              <BoltIcon sx={{ color: "#ffd54f" }} />
+            </Box>
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              {applianceToEdit ? "Edit Appliance Specs" : "Add New Appliance"}
+            </Typography>
+          </Box>
+          <IconButton onClick={onClose} size="small">
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </DialogTitle>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label className="t-secondary font-semibold block mb-1">Brand</label>
-            <input
-              type="text"
-              placeholder="e.g. Carrier"
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-              className="w-full pf-input rounded-xl px-3 py-2 focus:outline-none"
-            />
-          </div>
+        <Divider />
 
-          <div>
-            <label className="t-secondary font-semibold block mb-1">Model</label>
-            <input
-              type="text"
-              placeholder="e.g. Inverter"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              className="w-full pf-input rounded-xl px-3 py-2 focus:outline-none"
-            />
-          </div>
+        <DialogContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
+          <Grid container spacing={2}>
+            <Grid size={12}>
+              <TextField
+                required
+                fullWidth
+                size="small"
+                label="Appliance Name / Description"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Master Bedroom Inverter AC"
+              />
+            </Grid>
 
-          <div>
-            <label className="t-secondary font-semibold block mb-1">Room</label>
-            <select
-              value={roomLocation}
-              onChange={(e) => setRoomLocation(e.target.value)}
-              className="w-full pf-input rounded-xl px-3 py-2 focus:outline-none cursor-pointer"
-            >
-              <option value="Living Room">Living Room</option>
-              <option value="Master Bedroom">Master Bedroom</option>
-              <option value="Bedroom 2">Bedroom 2</option>
-              <option value="Kitchen">Kitchen</option>
-              <option value="Dining Room">Dining Room</option>
-              <option value="Laundry Area">Laundry Area</option>
-              <option value="Home Office">Home Office</option>
-            </select>
-          </div>
-        </div>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                select
+                fullWidth
+                size="small"
+                label="Category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                <MenuItem value="Air Conditioners">Air Conditioners</MenuItem>
+                <MenuItem value="Refrigerators & Freezers">Refrigerators & Freezers</MenuItem>
+                <MenuItem value="Television Sets">Television Sets</MenuItem>
+                <MenuItem value="Electric Fans">Electric Fans</MenuItem>
+                <MenuItem value="Washing Machines">Washing Machines</MenuItem>
+                <MenuItem value="Lighting Products">Lighting Products</MenuItem>
+                <MenuItem value="Kitchen & Cooking">Kitchen & Cooking</MenuItem>
+                <MenuItem value="Computing & Office">Computing & Office</MenuItem>
+                <MenuItem value="Other">Other</MenuItem>
+              </TextField>
+            </Grid>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-1">
-          <div>
-            <label className="t-secondary font-semibold block mb-1">Watts</label>
-            <input
-              type="number"
-              min="1"
-              required
-              value={watts}
-              onChange={(e) => setWatts(Number(e.target.value))}
-              className="w-full pf-input rounded-xl px-3 py-2 font-mono font-bold"
-            />
-          </div>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                select
+                fullWidth
+                size="small"
+                label="Room Location"
+                value={roomLocation}
+                onChange={(e) => setRoomLocation(e.target.value)}
+              >
+                <MenuItem value="Living Room">Living Room</MenuItem>
+                <MenuItem value="Master Bedroom">Master Bedroom</MenuItem>
+                <MenuItem value="Bedroom 2">Bedroom 2</MenuItem>
+                <MenuItem value="Kitchen">Kitchen</MenuItem>
+                <MenuItem value="Dining">Dining</MenuItem>
+                <MenuItem value="Laundry Area">Laundry Area</MenuItem>
+                <MenuItem value="Home Office">Home Office</MenuItem>
+              </TextField>
+            </Grid>
 
-          <div>
-            <label className="t-secondary font-semibold block mb-1">Qty</label>
-            <input
-              type="number"
-              min="1"
-              max="50"
-              required
-              value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value))}
-              className="w-full pf-input rounded-xl px-3 py-2 font-mono font-bold"
-            />
-          </div>
+            <Grid size={6}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Brand (Optional)"
+                value={brand}
+                onChange={(e) => setBrand(e.target.value)}
+                placeholder="e.g. Panasonic, Carrier"
+              />
+            </Grid>
 
-          <div>
-            <label className="t-secondary font-semibold block mb-1">Start Time</label>
-            <select
-              value={startHour}
-              onChange={(e) => setStartHour(Number(e.target.value))}
-              className="w-full pf-input rounded-xl px-2 py-2 font-mono text-[11px] cursor-pointer"
-            >
-              {category.includes("Refrigerat") ? (
-                <option value={0}>24/7 (All Day)</option>
-              ) : (
-                Array.from({ length: 24 }, (_, i) => (
-                  <option key={i} value={i}>
-                    {formatHourDetailed(i)} {(i >= 11 && i < 16) || (i >= 18 && i < 21) ? "(Peak)" : ""}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
+            <Grid size={6}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Model No. (Optional)"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                placeholder="e.g. CS-XPU12WKH"
+              />
+            </Grid>
 
-          <div>
-            <label className="t-secondary font-semibold block mb-1">Hrs / Day</label>
-            <input
-              type="number"
-              min="0.1"
-              max="24"
-              step="0.5"
-              required
-              value={hoursPerDay}
-              onChange={(e) => setHoursPerDay(Number(e.target.value))}
-              className="w-full pf-input rounded-xl px-3 py-2 font-mono font-bold"
-            />
-          </div>
+            <Grid size={6}>
+              <TextField
+                required
+                type="number"
+                fullWidth
+                size="small"
+                label="Power Draw (Watts)"
+                value={watts}
+                onChange={(e) => setWatts(Number(e.target.value) || 0)}
+              />
+            </Grid>
 
-          <div>
-            <label className="t-secondary font-semibold block mb-1">Days / Mo</label>
-            <input
-              type="number"
-              min="1"
-              max="31"
-              required
-              value={daysPerMonth}
-              onChange={(e) => setDaysPerMonth(Number(e.target.value))}
-              className="w-full pf-input rounded-xl px-3 py-2 font-mono font-bold"
-            />
-          </div>
-        </div>
+            <Grid size={6}>
+              <TextField
+                required
+                type="number"
+                fullWidth
+                size="small"
+                label="Quantity"
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
+              />
+            </Grid>
 
-        <div className="p-3.5 rounded-2xl pf-input flex items-center justify-between shadow-xs">
-          <div>
-            <span className="text-[11px] t-accent block font-semibold">Monthly Load</span>
-            <span className="text-base font-black t-primary font-mono">
-              {calculatedMonthlyKwh.toFixed(1)} <span className="text-xs t-muted font-normal font-sans">kWh/mo</span>
-            </span>
-          </div>
-          <div className="text-right">
-            <span className="text-[11px] t-accent block font-semibold">Est. Cost</span>
-            <span className="text-base font-black text-amber-500 dark:text-amber-400 font-mono">
-              ₱{calculatedMonthlyCost.toFixed(2)}
-            </span>
-          </div>
-        </div>
+            <Grid size={6}>
+              <TextField
+                type="number"
+                fullWidth
+                size="small"
+                label="Daily Run-Time (Hours)"
+                value={hoursPerDay}
+                onChange={(e) => setHoursPerDay(Number(e.target.value) || 0)}
+              />
+            </Grid>
 
-        <div className="flex items-center justify-end gap-2 pt-2">
-          <Button variant="secondary" size="md" type="button" onClick={onClose}>
+            <Grid size={6}>
+              <TextField
+                type="number"
+                fullWidth
+                size="small"
+                label="Days Active per Month"
+                value={daysPerMonth}
+                onChange={(e) => setDaysPerMonth(Number(e.target.value) || 0)}
+              />
+            </Grid>
+          </Grid>
+
+          {/* Real-time projection preview */}
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              bgcolor: "action.hover",
+            }}
+          >
+            <Box>
+              <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                Monthly Projected Cost
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f" }}>
+                ₱{estimatedCost}
+              </Typography>
+            </Box>
+            <Box sx={{ textAlign: "right" }}>
+              <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                Energy Volume
+              </Typography>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, fontFamily: "monospace" }}>
+                {monthlyKwh} kWh/mo
+              </Typography>
+            </Box>
+          </Paper>
+        </DialogContent>
+
+        <Divider />
+
+        <DialogActions sx={{ p: 2.5, px: 3 }}>
+          <Button variant="outlined" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" size="md" type="submit">
-            {applianceToEdit ? "Save Changes" : "Register Appliance"}
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={isCreating || isUpdating}
+            startIcon={<SaveIcon />}
+          >
+            {applianceToEdit ? "Save Changes" : "Save Appliance"}
           </Button>
-        </div>
+        </DialogActions>
       </form>
-    </Modal>
+    </Dialog>
   );
 };
+
+export default ApplianceModal;

@@ -1,20 +1,21 @@
 import React from "react";
-import { GlassCard } from "./GlassCard";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { clsx } from "clsx";
+import Card from "@mui/material/Card";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Chip from "@mui/material/Chip";
+import { TrendingUp, TrendingDown, Remove } from "@mui/icons-material";
 
-interface MetricCardProps {
+export interface MetricCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
-  icon?: React.ReactNode;
+  icon: React.ReactNode;
   trend?: {
-    value: string | number;
-    direction: "up" | "down" | "neutral";
+    value: string;
+    direction?: "up" | "down" | "neutral";
     label?: string;
   };
-  glow?: string;
-  highlightColor?: string;
+  onClick?: () => void;
 }
 
 export const MetricCard: React.FC<MetricCardProps> = ({
@@ -23,42 +24,95 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   subtitle,
   icon,
   trend,
+  onClick,
 }) => {
-  return (
-    <GlassCard className="flex flex-col justify-between">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider t-muted">{title}</p>
-          <h3 className="mt-1.5 text-2xl sm:text-3xl font-black tracking-tight t-primary font-mono">
-            {value}
-          </h3>
-        </div>
-        {icon && (
-          <div className="p-2.5 rounded-xl bg-[#5c68db]/15 text-[#8183fc] border border-[#5c68db]/25 shadow-xs">
-            {icon}
-          </div>
-        )}
-      </div>
+  const getTrendColor = () => {
+    if (!trend?.direction) return "default";
+    if (trend.direction === "up") return "success";
+    if (trend.direction === "down") return "info";
+    return "default";
+  };
 
-      <div className="mt-3 flex items-center justify-between pt-2.5 border-t pf-divider text-xs">
-        {trend && (
-          <div
-            className={clsx(
-              "flex items-center gap-1 font-semibold",
-              trend.direction === "up" && "text-amber-500 dark:text-amber-400",
-              trend.direction === "down" && "text-emerald-600 dark:text-emerald-400",
-              trend.direction === "neutral" && "t-muted"
-            )}
-          >
-            {trend.direction === "up" && <TrendingUp className="w-3.5 h-3.5" />}
-            {trend.direction === "down" && <TrendingDown className="w-3.5 h-3.5" />}
-            {trend.direction === "neutral" && <Minus className="w-3.5 h-3.5" />}
-            <span>{trend.value}</span>
-            {trend.label && <span className="t-muted ml-0.5 font-normal">{trend.label}</span>}
-          </div>
+  const getTrendIcon = () => {
+    if (!trend?.direction) return null;
+    if (trend.direction === "up") return <TrendingUp sx={{ fontSize: 14 }} />;
+    if (trend.direction === "down") return <TrendingDown sx={{ fontSize: 14 }} />;
+    return <Remove sx={{ fontSize: 14 }} />;
+  };
+
+  return (
+    <Card
+      onClick={onClick}
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        height: "100%",
+        cursor: onClick ? "pointer" : "default",
+        p: 2.25,
+      }}
+    >
+      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 1 }}>
+        <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 600 }}>
+          {title}
+        </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 36,
+            height: 36,
+            borderRadius: 2,
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.15)" : "rgba(99, 102, 241, 0.1)",
+            color: "primary.main",
+            border: "1px solid",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.25)" : "rgba(99, 102, 241, 0.2)",
+          }}
+        >
+          {icon}
+        </Box>
+      </Box>
+
+      <Box sx={{ my: 0.5 }}>
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 800,
+            fontFamily: "monospace",
+            color: "text.primary",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {value}
+        </Typography>
+      </Box>
+
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1 }}>
+        {subtitle && (
+          <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
+            {subtitle}
+          </Typography>
         )}
-        {subtitle && <span className="t-muted ml-auto font-medium text-[11px]">{subtitle}</span>}
-      </div>
-    </GlassCard>
+        {trend && (
+          <Chip
+            size="small"
+            icon={getTrendIcon() || undefined}
+            label={trend.label ? `${trend.value} ${trend.label}` : trend.value}
+            color={getTrendColor() as any}
+            sx={{
+              height: 20,
+              fontSize: "0.6875rem",
+              fontWeight: 700,
+              ml: "auto",
+            }}
+          />
+        )}
+      </Box>
+    </Card>
   );
 };
+
+export default MetricCard;

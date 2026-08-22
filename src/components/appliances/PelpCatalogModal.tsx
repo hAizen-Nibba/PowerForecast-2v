@@ -1,16 +1,28 @@
 import React, { useState, useEffect } from "react";
-import { Modal } from "../common/Modal";
-import { Button } from "../common/Button";
-import { Badge } from "../common/Badge";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import TextField from "@mui/material/TextField";
+import MenuItem from "@mui/material/MenuItem";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
+import Card from "@mui/material/Card";
+import InputAdornment from "@mui/material/InputAdornment";
+import CircularProgress from "@mui/material/CircularProgress";
 import {
-  Search,
-  Download,
-  Star,
-  CheckCircle2,
-  Zap,
-  Info,
-  Layers,
-} from "lucide-react";
+  Storage as DatabaseIcon,
+  Close as CloseIcon,
+  Search as SearchIcon,
+  Download as ImportIcon,
+  Star as StarIcon,
+  CheckCircle as CheckCircleIcon,
+} from "@mui/icons-material";
 import { PELP_CATEGORIES, searchPelpDatabase } from "../../lib/pelpService";
 import { PelpItem } from "../../types";
 import { useCreate } from "@refinedev/core";
@@ -27,13 +39,11 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({ isOpen, onCl
   const [items, setItems] = useState<PelpItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [importedControlNo, setImportedControlNo] = useState<string | null>(null);
-  const [displayLimit, setDisplayLimit] = useState<number>(30);
 
   const { mutate: createAppliance } = useCreate();
 
   useEffect(() => {
     if (isOpen) {
-      setDisplayLimit(30);
       loadData();
     }
   }, [isOpen, selectedCategory, searchQuery]);
@@ -53,215 +63,221 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({ isOpen, onCl
   const handleImport = (item: PelpItem) => {
     const monthlyKwh = item.monthly_energy_consumption_kwh || 120;
     const watts = item.power_watts || 750;
-    const estimatedCost = monthlyKwh * 14.8261;
 
-    // Room guess based on category
     let room = "Living Room";
     if (item.category.includes("Refrigerat") || item.category.includes("Kitchen")) room = "Kitchen";
-    else if (item.category.includes("Washing")) room = "Laundry Area";
-    else if (item.category.includes("Television")) room = "Living Room";
-    else if (item.category.includes("Air")) room = "Master Bedroom";
-    else if (item.category.includes("Fan")) room = "Living Room";
 
-    const startH = getDefaultStartHour(item.category);
-    let hoursPerDay = 8;
-    if (item.category.includes("Refrigerat")) hoursPerDay = 24;
-    else if (item.category.includes("Fan")) hoursPerDay = 10;
-    else if (item.category.includes("Television")) hoursPerDay = 5;
-    else if (item.category.includes("Washing")) hoursPerDay = 1.5;
-
-    createAppliance({
-      resource: "user_appliances",
-      values: {
-        name: `${item.brand} ${item.model}`,
-        category: item.category,
-        brand: item.brand,
-        model: item.model,
-        control_no: item.control_no,
-        source: "pelp_db",
-        watts: watts,
-        voltage: 230,
-        quantity: 1,
-        hours_per_day: hoursPerDay,
-        days_per_month: 30,
-        start_hour: startH,
-        monthly_kwh: monthlyKwh,
-        estimated_cost: Math.round(estimatedCost * 100) / 100,
-        energy_rating: `${item.star_rating}-Star Official DOE`,
-        room_location: room,
-        is_active: true,
-        is_currently_on: false,
+    createAppliance(
+      {
+        resource: "user_appliances",
+        values: {
+          name: `${item.brand} ${item.model}`,
+          category: item.category,
+          brand: item.brand,
+          model: item.model,
+          watts: watts,
+          quantity: 1,
+          hours_per_day: 8,
+          days_per_month: 30,
+          start_hour: getDefaultStartHour(item.category),
+          room_location: room,
+          energy_rating: `${item.star_rating || 5}-Star (PELP)`,
+          monthly_kwh: monthlyKwh,
+        },
       },
-    });
-
-    setImportedControlNo(item.control_no);
-    setTimeout(() => setImportedControlNo(null), 2500);
+      {
+        onSuccess: () => {
+          setImportedControlNo(item.control_no);
+          setTimeout(() => setImportedControlNo(null), 3000);
+        },
+      }
+    );
   };
 
-  const currentCategoryObj = PELP_CATEGORIES.find((c) => c.slug === selectedCategory);
-  const displayedItems = items.slice(0, displayLimit);
-
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="DOE Philippine Energy Labeling Program (PELP) Database"
-      subtitle="Official Department of Energy certified laboratory ratings & technical specifications"
-      maxWidth="4xl"
-    >
-      <div className="space-y-4">
-        {/* Category Tabs with exact counts */}
-        <div className="flex flex-wrap gap-1.5 pb-2 border-b pf-divider">
-          {PELP_CATEGORIES.map((cat) => (
-            <button
-              key={cat.slug}
-              onClick={() => {
-                setSelectedCategory(cat.slug);
-                setDisplayLimit(30);
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                selectedCategory === cat.slug
-                  ? "bg-[#5c68db] text-white shadow-xs"
-                  : "btn-secondary"
-              }`}
-            >
-              <span>{cat.name}</span>
-              <span
-                className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
-                  selectedCategory === cat.slug
-                    ? "bg-[#3e47ad] text-white"
-                    : "bg-[#5c68db]/15 text-[#8183fc]"
-                }`}
-              >
-                {cat.count.toLocaleString()}
-              </span>
-            </button>
-          ))}
-        </div>
+    <Dialog open={isOpen} onClose={onClose} fullWidth maxWidth="md">
+      <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: 2,
+              bgcolor: "primary.main",
+              color: "#ffffff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <DatabaseIcon sx={{ color: "#ffd54f" }} />
+          </Box>
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              DOE PELP Certified Catalog
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              Official Philippine Energy Labeling Program certified appliance database
+            </Typography>
+          </Box>
+        </Box>
+        <IconButton onClick={onClose} size="small">
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </DialogTitle>
 
-        {/* Search Toolbar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 t-muted absolute left-3 top-2.5" />
-            <input
-              type="text"
-              placeholder={`Search in ${currentCategoryObj?.name || "appliances"} by brand, model, or control number...`}
+      <Divider />
+
+      <DialogContent sx={{ p: 3 }}>
+        {/* Search & Category Filter */}
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          <Grid size={{ xs: 12, sm: 7 }}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Search by brand (e.g. Panasonic, Carrier) or model..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pf-input rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none"
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" sx={{ color: "text.secondary" }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
             />
-          </div>
+          </Grid>
 
-          <span className="text-xs t-muted shrink-0">
-            Showing <strong className="t-primary">{displayedItems.length}</strong> of <strong className="t-primary">{items.length}</strong> matching models
-          </span>
-        </div>
+          <Grid size={{ xs: 12, sm: 5 }}>
+            <TextField
+              select
+              fullWidth
+              size="small"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              {PELP_CATEGORIES.map((cat) => (
+                <MenuItem key={cat.slug} value={cat.slug}>
+                  {cat.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+        </Grid>
 
-        {/* Appliance Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[480px] overflow-y-auto pr-1">
-          {loading ? (
-            <div className="col-span-2 py-16 text-center space-y-2">
-              <div className="w-8 h-8 border-2 border-[#5c68db] border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-xs t-muted">Loading verified DOE certified registry...</p>
-            </div>
-          ) : items.length === 0 ? (
-            <div className="col-span-2 py-16 text-center rounded-2xl pf-input space-y-2">
-              <Info className="w-6 h-6 t-muted mx-auto" />
-              <p className="text-xs font-bold t-primary">No Certified Models Found</p>
-              <p className="text-xs t-muted max-w-sm mx-auto">
-                No official models in this category matched "{searchQuery}". Try searching by brand (e.g. Carrier, Panasonic, Sharp, Daikin, LG, Samsung).
-              </p>
-            </div>
-          ) : (
-            displayedItems.map((item) => {
+        {/* Results List */}
+        {loading ? (
+          <Box sx={{ py: 8, textAlign: "center" }}>
+            <CircularProgress size={36} color="primary" />
+            <Typography variant="caption" sx={{ display: "block", color: "text.secondary", mt: 1.5 }}>
+              Loading PELP certified models...
+            </Typography>
+          </Box>
+        ) : items.length === 0 ? (
+          <Box sx={{ py: 6, textAlign: "center" }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+              No PELP models found matching "{searchQuery}"
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
+              Try searching with a broader keyword or select a different appliance category.
+            </Typography>
+          </Box>
+        ) : (
+          <Grid container spacing={2} sx={{ maxHeight: 420, overflowY: "auto", pr: 0.5 }}>
+            {items.map((item) => {
               const isImported = importedControlNo === item.control_no;
-              const extraSpec = item.raw_specs?._extraSpec || item.type;
+              const estMonthlyCost = (item.monthly_energy_consumption_kwh || 120) * 14.8261;
 
               return (
-                <div
-                  key={item.control_no}
-                  className="p-4 rounded-2xl pf-input hover:border-[#5c68db] transition-all flex flex-col justify-between space-y-3"
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <span className="text-[11px] font-bold uppercase text-amber-500 dark:text-yellow-400 tracking-wide block">
-                          {item.brand}
-                        </span>
-                        <h4 className="text-xs font-bold t-primary line-clamp-1 mt-0.5">
-                          {item.model}
-                        </h4>
-                        {extraSpec && (
-                          <p className="text-[11px] t-accent line-clamp-1 mt-0.5 font-medium">
-                            {extraSpec}
-                          </p>
+                <Grid size={{ xs: 12, sm: 6 }} key={item.control_no}>
+                  <Card
+                    variant="outlined"
+                    sx={{
+                      p: 2,
+                      borderRadius: 2.5,
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      height: "100%",
+                    }}
+                  >
+                    <Box>
+                      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 1 }}>
+                        <Box sx={{ maxWidth: "70%" }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                            {item.brand} {item.model}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+                            {item.category}
+                          </Typography>
+                        </Box>
+                        <Chip
+                          icon={<StarIcon sx={{ color: "#ffd54f !important", fontSize: "14px !important" }} />}
+                          label={`${item.star_rating || 5}-Star`}
+                          size="small"
+                          color="secondary"
+                          sx={{ fontWeight: 700, fontSize: "0.6875rem" }}
+                        />
+                      </Box>
+
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, my: 1 }}>
+                        <Chip
+                          label={`${item.power_watts || 750}W`}
+                          size="small"
+                          sx={{ fontWeight: 700, fontFamily: "monospace", height: 20, fontSize: "0.6875rem" }}
+                        />
+                        {(item.cspf || item.energy_efficiency_rating) && (
+                          <Chip
+                            label={`EER: ${item.cspf || item.energy_efficiency_rating}`}
+                            size="small"
+                            variant="outlined"
+                            sx={{ height: 20, fontSize: "0.6875rem" }}
+                          />
                         )}
-                      </div>
+                        <Chip
+                          label={`${item.monthly_energy_consumption_kwh || 120} kWh/mo`}
+                          size="small"
+                          variant="outlined"
+                          sx={{ height: 20, fontSize: "0.6875rem" }}
+                        />
+                      </Box>
+                    </Box>
 
-                      {item.star_rating ? (
-                        <div className="flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20 text-amber-500 dark:text-yellow-400 text-xs font-bold font-mono">
-                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                          <span>{item.star_rating}★</span>
-                        </div>
-                      ) : null}
-                    </div>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1.5, pt: 1, borderTop: "1px solid", borderColor: "divider" }}>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "#ffd54f", fontFamily: "monospace" }}>
+                        ~₱{estMonthlyCost.toFixed(2)}/mo
+                      </Typography>
 
-                    <div className="grid grid-cols-2 gap-2 mt-3 pt-2.5 border-t pf-divider text-xs">
-                      <div>
-                        <span className="text-[10px] t-muted block">Power Draw</span>
-                        <span className="font-bold t-primary font-mono">
-                          {item.power_watts ? `${item.power_watts} W` : "Standard"}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] t-muted block">Monthly Consumption</span>
-                        <span className="font-bold t-primary font-mono">
-                          {item.monthly_energy_consumption_kwh ? `${item.monthly_energy_consumption_kwh} kWh` : "Standard"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t pf-divider flex items-center justify-between">
-                    <span className="text-[10px] font-mono t-muted truncate max-w-[150px]">
-                      {item.control_no}
-                    </span>
-
-                    {isImported ? (
-                      <button
-                        disabled
-                        className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5"
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Imported!</span>
-                      </button>
-                    ) : (
-                      <button
+                      <Button
+                        size="small"
+                        variant={isImported ? "contained" : "outlined"}
+                        color={isImported ? "success" : "primary"}
                         onClick={() => handleImport(item)}
-                        className="px-3 py-1.5 rounded-xl btn-primary text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
+                        startIcon={isImported ? <CheckCircleIcon /> : <ImportIcon />}
+                        sx={{ fontSize: "0.75rem", py: "2px", px: 1.5 }}
                       >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>Add to Inventory</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
+                        {isImported ? "Imported!" : "Add to Inventory"}
+                      </Button>
+                    </Box>
+                  </Card>
+                </Grid>
               );
-            })
-          )}
-        </div>
-
-        {items.length > displayLimit && (
-          <div className="pt-2 text-center">
-            <button
-              onClick={() => setDisplayLimit((prev) => prev + 30)}
-              className="px-4 py-2 rounded-xl btn-secondary text-xs font-bold cursor-pointer"
-            >
-              Load More Models ({items.length - displayLimit} remaining)
-            </button>
-          </div>
+            })}
+          </Grid>
         )}
-      </div>
-    </Modal>
+      </DialogContent>
+
+      <Divider />
+
+      <DialogActions sx={{ p: 2, px: 3 }}>
+        <Button variant="outlined" onClick={onClose}>
+          Close Catalog
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
+
+export default PelpCatalogModal;

@@ -6,8 +6,12 @@ export type LogSource =
   | 'Calculator'
   | 'Calendar'
   | 'Storage'
+  | 'Auth'
+  | 'Database'
+  | 'Changelog'
   | 'System'
-  | 'Console';
+  | 'Console'
+  | string;
 
 export interface DevLogEntry {
   id: string;

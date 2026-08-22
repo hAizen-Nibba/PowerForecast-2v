@@ -1,5 +1,7 @@
-﻿import { DataProvider } from "@refinedev/core";
-import { UserAppliance, UserCalendarEvent } from "../types";
+import { DataProvider, BaseRecord } from "@refinedev/core";
+import { dataProvider as refineSupabaseDataProvider } from "@refinedev/supabase";
+import { supabaseClient } from "../lib/supabaseClient";
+import { devLog } from "../lib/devLogger";
 
 function getStorage<T>(key: string, defaultVal: T): T {
   try {
@@ -18,18 +20,21 @@ function setStorage<T>(key: string, val: T): void {
   }
 }
 
-// Clean slate: ensure no mock data is seeded
-if (!localStorage.getItem("powerforecast_clean_slate_v1")) {
+// Clean slate: ensure no stale mock data is seeded
+if (typeof window !== "undefined" && !localStorage.getItem("powerforecast_clean_slate_v1")) {
   localStorage.removeItem("powerforecast_user_appliances");
   localStorage.removeItem("powerforecast_user_calendar_events");
   localStorage.removeItem("powerforecast_appliance_usage_logs");
+  localStorage.removeItem("powerforecast_accounts");
   localStorage.setItem("powerforecast_clean_slate_v1", "true");
   setStorage("user_appliances", []);
   setStorage("user_calendar_events", []);
+  setStorage("appliance_usage_logs", []);
+  setStorage("accounts", []);
 }
 
 export const localDataProvider: DataProvider = {
-  getList: async ({ resource, pagination, filters, sorters }: any) => {
+  getList: async <TData extends BaseRecord = BaseRecord>({ resource, pagination, filters, sorters }: any): Promise<any> => {
     let data = getStorage<any[]>(resource, []);
 
     if (filters) {
@@ -60,19 +65,19 @@ export const localDataProvider: DataProvider = {
     const paginated = data.slice(start, start + pageSize);
 
     return {
-      data: paginated,
+      data: paginated as unknown as TData[],
       total: data.length,
     };
   },
 
-  getOne: async ({ resource, id }: any) => {
+  getOne: async <TData extends BaseRecord = BaseRecord>({ resource, id }: any): Promise<any> => {
     const data = getStorage<any[]>(resource, []);
     const item = data.find((x) => String(x.id) === String(id));
     if (!item) throw new Error(`Resource ${resource} with id ${id} not found`);
-    return { data: item };
+    return { data: item as unknown as TData };
   },
 
-  create: async ({ resource, variables }: any) => {
+  create: async <TData extends BaseRecord = BaseRecord, TVariables = {}>({ resource, variables }: any): Promise<any> => {
     const data = getStorage<any[]>(resource, []);
     const newItem: any = {
       id: `item-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -82,10 +87,10 @@ export const localDataProvider: DataProvider = {
     };
     data.unshift(newItem);
     setStorage(resource, data);
-    return { data: newItem } as any;
+    return { data: newItem as unknown as TData };
   },
 
-  update: async ({ resource, id, variables }: any) => {
+  update: async <TData extends BaseRecord = BaseRecord, TVariables = {}>({ resource, id, variables }: any): Promise<any> => {
     const data = getStorage<any[]>(resource, []);
     const index = data.findIndex((x) => String(x.id) === String(id));
     if (index === -1) throw new Error(`Resource ${resource} with id ${id} not found`);
@@ -96,16 +101,117 @@ export const localDataProvider: DataProvider = {
       updated_at: new Date().toISOString(),
     };
     setStorage(resource, data);
-    return { data: data[index] } as any;
+    return { data: data[index] as unknown as TData };
   },
 
-  deleteOne: async ({ resource, id }: any) => {
+  deleteOne: async <TData extends BaseRecord = BaseRecord, TVariables = {}>({ resource, id }: any): Promise<any> => {
     let data = getStorage<any[]>(resource, []);
     const target = data.find((x) => String(x.id) === String(id));
     data = data.filter((x) => String(x.id) !== String(id));
     setStorage(resource, data);
-    return { data: target } as any;
+    return { data: target as unknown as TData };
   },
 
   getApiUrl: () => "",
+};
+
+const rawSupabaseDataProvider = refineSupabaseDataProvider(supabaseClient);
+
+/**
+ * Resilient Hybrid DataProvider:
+ * - Attempts Supabase Cloud database first
+ * - Injects authenticated user_id automatically on creations
+ * - Mirrors live fetched records to localStorage for instant hydration & offline fallback
+ */
+export const resilientDataProvider: DataProvider = {
+  getList: async <TData extends BaseRecord = BaseRecord>(params: any): Promise<any> => {
+    const useLocalMock = import.meta.env.VITE_USE_LOCAL_MOCK === "true";
+    if (useLocalMock) {
+      return localDataProvider.getList<TData>(params);
+    }
+    try {
+      const res = await rawSupabaseDataProvider.getList<TData>(params);
+      devLog.api("Supabase DataProvider", `Fetched ${res?.data?.length || 0} records from [${params.resource}]`, res);
+      
+      // Mirror to local cache
+      if (res?.data && Array.isArray(res.data)) {
+        setStorage(params.resource, res.data);
+      }
+      return res;
+    } catch (err: any) {
+      devLog.warn("Supabase DataProvider", `getList failed on remote [${params.resource}]: ${err.message}. Falling back to local storage.`);
+      return localDataProvider.getList<TData>(params);
+    }
+  },
+
+  getOne: async <TData extends BaseRecord = BaseRecord>(params: any): Promise<any> => {
+    const useLocalMock = import.meta.env.VITE_USE_LOCAL_MOCK === "true";
+    if (useLocalMock) {
+      return localDataProvider.getOne<TData>(params);
+    }
+    try {
+      const res = await rawSupabaseDataProvider.getOne<TData>(params);
+      return res;
+    } catch (err: any) {
+      devLog.warn("Supabase DataProvider", `getOne fallback for [${params.resource}/${params.id}]: ${err.message}`);
+      return localDataProvider.getOne<TData>(params);
+    }
+  },
+
+  create: async <TData extends BaseRecord = BaseRecord, TVariables = {}>(params: any): Promise<any> => {
+    const useLocalMock = import.meta.env.VITE_USE_LOCAL_MOCK === "true";
+    if (useLocalMock) {
+      return localDataProvider.create<TData, TVariables>(params);
+    }
+    try {
+      // Auto-inject authenticated user_id if missing and available
+      const sessionUser = (await supabaseClient.auth.getSession()).data.session?.user;
+      let enrichedVariables = { ...(params.variables as any) };
+      if (sessionUser?.id && !enrichedVariables.user_id) {
+        enrichedVariables.user_id = sessionUser.id;
+      }
+
+      const res = await rawSupabaseDataProvider.create<TData, TVariables>({
+        ...params,
+        variables: enrichedVariables,
+      });
+      devLog.api("Supabase DataProvider", `Created record in [${params.resource}]`, res);
+      return res;
+    } catch (err: any) {
+      devLog.warn("Supabase DataProvider", `create fallback for [${params.resource}]: ${err.message}`);
+      return localDataProvider.create<TData, TVariables>(params);
+    }
+  },
+
+  update: async <TData extends BaseRecord = BaseRecord, TVariables = {}>(params: any): Promise<any> => {
+    const useLocalMock = import.meta.env.VITE_USE_LOCAL_MOCK === "true";
+    if (useLocalMock) {
+      return localDataProvider.update<TData, TVariables>(params);
+    }
+    try {
+      const res = await rawSupabaseDataProvider.update<TData, TVariables>(params);
+      devLog.api("Supabase DataProvider", `Updated record in [${params.resource}]`, res);
+      return res;
+    } catch (err: any) {
+      devLog.warn("Supabase DataProvider", `update fallback for [${params.resource}]: ${err.message}`);
+      return localDataProvider.update<TData, TVariables>(params);
+    }
+  },
+
+  deleteOne: async <TData extends BaseRecord = BaseRecord, TVariables = {}>(params: any): Promise<any> => {
+    const useLocalMock = import.meta.env.VITE_USE_LOCAL_MOCK === "true";
+    if (useLocalMock) {
+      return localDataProvider.deleteOne<TData, TVariables>(params);
+    }
+    try {
+      const res = await rawSupabaseDataProvider.deleteOne<TData, TVariables>(params);
+      devLog.api("Supabase DataProvider", `Deleted record from [${params.resource}]`, res);
+      return res;
+    } catch (err: any) {
+      devLog.warn("Supabase DataProvider", `deleteOne fallback for [${params.resource}]: ${err.message}`);
+      return localDataProvider.deleteOne<TData, TVariables>(params);
+    }
+  },
+
+  getApiUrl: () => rawSupabaseDataProvider.getApiUrl?.() || "",
 };

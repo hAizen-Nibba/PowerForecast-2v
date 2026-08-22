@@ -1,20 +1,29 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Avatar from "@mui/material/Avatar";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Tooltip from "@mui/material/Tooltip";
 import {
-  Menu,
-  Sun,
-  Moon,
-  Sparkles,
-  Zap,
-  Clock,
-  Flame,
-  LogOut,
-  Home,
-  RotateCw,
-} from "lucide-react";
-import { Button } from "../common/Button";
-import { Badge } from "../common/Badge";
+  Menu as MenuIcon,
+  LightMode as SunIcon,
+  DarkMode as MoonIcon,
+  AutoAwesome as SparklesIcon,
+  Bolt as BoltIcon,
+  AccessTime as ClockIcon,
+  Whatshot as FlameIcon,
+  Logout as LogoutIcon,
+  CloudDone as CloudDoneIcon,
+  CloudOff as CloudOffIcon,
+} from "@mui/icons-material";
 import { useGetIdentity, useLogout } from "@refinedev/core";
+import { checkSupabaseConnection } from "../../lib/supabaseClient";
 
 interface HeaderProps {
   onOpenSidebar: () => void;
@@ -31,6 +40,26 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { data: identity } = useGetIdentity<any>();
   const { mutate: logout } = useLogout();
+
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [dbStatus, setDbStatus] = useState<{ ok: boolean; latency?: number }>({ ok: true, latency: 45 });
+
+  // Check Supabase connection health on mount and every 30s
+  useEffect(() => {
+    let isMounted = true;
+    const verifyConnection = async () => {
+      const res = await checkSupabaseConnection();
+      if (isMounted) {
+        setDbStatus({ ok: res.ok, latency: res.latencyMs });
+      }
+    };
+    verifyConnection();
+    const interval = setInterval(verifyConnection, 30000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   // Real-time Clock
   const [timeStr, setTimeStr] = useState<string>("");
@@ -49,11 +78,10 @@ export const Header: React.FC<HeaderProps> = ({
       );
       setDateStr(
         now.toLocaleDateString("en-US", {
-          weekday: "long",
-          month: "long",
+          weekday: "short",
+          month: "short",
           day: "numeric",
-          year: "numeric",
-        }) + " (GMT+8)"
+        })
       );
     };
 
@@ -66,106 +94,204 @@ export const Header: React.FC<HeaderProps> = ({
   const isPeak = (currentHour >= 11 && currentHour < 16) || (currentHour >= 18 && currentHour < 21);
 
   return (
-    <header
-      className="sticky top-0 z-30 w-full h-16 border-b px-4 sm:px-6 flex items-center justify-between transition-colors backdrop-blur-md"
-      style={{
-        backgroundColor: "var(--topbar-bg)",
-        borderColor: "rgba(255, 255, 255, 0.08)",
+    <AppBar
+      position="sticky"
+      sx={{
+        zIndex: (theme) => theme.zIndex.drawer + 1,
+        backdropFilter: "blur(16px)",
       }}
     >
-      {/* Left: Mobile Hamburger & Rate / Peak Pills */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onOpenSidebar}
-          className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 lg:hidden cursor-pointer"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
-
-        {/* Live Generation Rate Badge */}
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-xl bg-white/[0.06] border border-white/10 text-xs text-white">
-          <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-          <span className="font-mono font-bold">₱9.2800/kWh</span>
-          <RotateCw className="w-3 h-3 text-slate-400 hover:text-white cursor-pointer transition-transform hover:rotate-180" />
-        </div>
-
-        {/* Peak Status Badge */}
-        <div className="hidden md:flex items-center">
-          {isPeak ? (
-            <Badge variant="amber" size="sm">
-              <Flame className="w-3 h-3 text-amber-400" />
-              <span>PEAK (₱16.83/kWh)</span>
-            </Badge>
-          ) : (
-            <Badge variant="emerald" size="sm">
-              <Clock className="w-3 h-3 text-emerald-400" />
-              <span>OFF-PEAK (₱12.45/kWh)</span>
-            </Badge>
-          )}
-        </div>
-      </div>
-
-      {/* Center: Live Clock & Date */}
-      <div className="hidden lg:flex flex-col items-center text-center">
-        <span className="text-xs font-mono font-bold text-white tracking-wider">
-          {timeStr}
-        </span>
-        <span className="text-[10px] text-slate-300 -mt-0.5">
-          {dateStr}
-        </span>
-      </div>
-
-      {/* Right Controls */}
-      <div className="flex items-center gap-3">
-        {onOpenAiScanner && (
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={onOpenAiScanner}
-            icon={<Sparkles className="w-3.5 h-3.5 text-yellow-300" />}
+      <Toolbar sx={{ justifyContent: "space-between", minHeight: { xs: 56, sm: 64 }, px: { xs: 2, sm: 3 } }}>
+        {/* Left: Mobile Menu Toggle, DB Status, and Tariff Indicators */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <IconButton
+            color="inherit"
+            edge="start"
+            onClick={onOpenSidebar}
+            sx={{ display: { lg: "none" } }}
           >
-            AI Scanner
-          </Button>
-        )}
+            <MenuIcon />
+          </IconButton>
 
-        {/* User Identity Pill */}
-        <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-white/[0.06] border border-white/10">
-          <img
-            src={identity?.avatar || "https://api.dicebear.com/7.x/bottts/svg?seed=Powerforecast"}
-            alt="Avatar"
-            className="w-5 h-5 rounded-md bg-[#5c68db] p-0.5"
+          {/* Database Connection Status Chip */}
+          <Tooltip title={dbStatus.ok ? `Supabase Connected (${dbStatus.latency || 0}ms)` : "Supabase Offline / Local Mode"}>
+            <Chip
+              icon={
+                dbStatus.ok ? (
+                  <CloudDoneIcon sx={{ color: "#34d399 !important", fontSize: "15px !important" }} />
+                ) : (
+                  <CloudOffIcon sx={{ color: "#f87171 !important", fontSize: "15px !important" }} />
+                )
+              }
+              label={dbStatus.ok ? "Supabase Live" : "Local Mode"}
+              size="small"
+              sx={{
+                fontWeight: 700,
+                fontSize: "0.6875rem",
+                bgcolor: dbStatus.ok ? "rgba(52, 211, 153, 0.12)" : "rgba(248, 113, 113, 0.12)",
+                color: dbStatus.ok ? "#34d399" : "#f87171",
+                border: "1px solid",
+                borderColor: dbStatus.ok ? "rgba(52, 211, 153, 0.3)" : "rgba(248, 113, 113, 0.3)",
+                display: { xs: "none", sm: "inline-flex" },
+              }}
+            />
+          </Tooltip>
+
+          {/* Rate Badge */}
+          <Chip
+            icon={<BoltIcon sx={{ color: "#ffd54f !important" }} />}
+            label="₱9.2800/kWh"
+            size="small"
+            sx={{
+              display: { xs: "none", md: "inline-flex" },
+              fontWeight: 700,
+              fontFamily: "monospace",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(99, 102, 241, 0.08)",
+              border: "1px solid",
+              borderColor: "divider",
+            }}
           />
-          <span className="text-xs font-bold text-white truncate max-w-[110px]">
-            {identity?.name || "Demo User"}
-          </span>
-          <button
-            onClick={() => logout()}
-            className="text-slate-400 hover:text-red-400 transition-colors ml-1 cursor-pointer"
-            title="Sign Out"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-          </button>
-        </div>
 
-        {/* Light / Dark Mode Toggle Pill Switch */}
-        <div className="flex items-center gap-2 pl-1">
-          <span className="text-xs font-bold text-white hidden sm:inline select-none">
-            {isDark ? "Dark" : "Light"}
-          </span>
-          <button
-            type="button"
-            onClick={onToggleTheme}
-            className={`w-11 h-6 rounded-full p-0.5 transition-colors cursor-pointer flex items-center shadow-inner ${
-              isDark ? "bg-[#4341aa] justify-start" : "bg-[#6c7ae0] justify-end"
-            }`}
-            title="Toggle Light / Dark Mode"
+          {/* Peak / Off-Peak status */}
+          <Chip
+            icon={
+              isPeak ? (
+                <FlameIcon sx={{ color: "#f59e0b !important", fontSize: "16px !important" }} />
+              ) : (
+                <ClockIcon sx={{ color: "#10b981 !important", fontSize: "16px !important" }} />
+              )
+            }
+            label={isPeak ? "PEAK (₱16.83/kWh)" : "OFF-PEAK (₱12.45/kWh)"}
+            size="small"
+            color={isPeak ? "warning" : "success"}
+            sx={{
+              display: { xs: "none", lg: "inline-flex" },
+              fontWeight: 700,
+              fontSize: "0.6875rem",
+            }}
+          />
+        </Box>
+
+        {/* Center: Live Time / Date */}
+        <Box sx={{ display: { xs: "none", lg: "flex" }, flexDirection: "column", alignItems: "center" }}>
+          <Typography variant="body2" sx={{ fontWeight: 800, fontFamily: "monospace", letterSpacing: "0.05em" }}>
+            {timeStr}
+          </Typography>
+          <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+            {dateStr} (GMT+8)
+          </Typography>
+        </Box>
+
+        {/* Right: AI Scanner CTA, Theme Switch, and User Profile */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          {onOpenAiScanner && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={onOpenAiScanner}
+              startIcon={<SparklesIcon sx={{ color: "#ffd54f" }} />}
+              sx={{
+                display: { xs: "none", sm: "inline-flex" },
+                borderRadius: 2,
+                borderColor: "primary.main",
+              }}
+            >
+              AI Scanner
+            </Button>
+          )}
+
+          {/* Theme Mode Toggle Button */}
+          <Tooltip title={`Switch to ${isDark ? "Light" : "Dark"} Mode`}>
+            <IconButton
+              onClick={onToggleTheme}
+              color="inherit"
+              size="small"
+              sx={{
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
+                border: "1px solid",
+                borderColor: "divider",
+                p: 0.75,
+              }}
+            >
+              {isDark ? <SunIcon sx={{ color: "#ffd54f", fontSize: 18 }} /> : <MoonIcon sx={{ color: "#4f46e5", fontSize: 18 }} />}
+            </IconButton>
+          </Tooltip>
+
+          {/* User Profile Pill & Menu */}
+          <Box
+            onClick={(e) => setAnchorEl(e.currentTarget)}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              p: "4px 8px 4px 4px",
+              borderRadius: 2,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
+              border: "1px solid",
+              borderColor: "divider",
+              cursor: "pointer",
+              "&:hover": { borderColor: "primary.main" },
+              transition: "border-color 0.2s",
+            }}
           >
-            <div className="w-5 h-5 rounded-full bg-white shadow-md flex items-center justify-center text-xs transition-transform">
-              {isDark ? <Moon className="w-3 h-3 text-[#4341aa]" /> : <Sun className="w-3 h-3 text-amber-500" />}
-            </div>
-          </button>
-        </div>
-      </div>
-    </header>
+            <Avatar
+              src={identity?.avatar || "https://api.dicebear.com/7.x/bottts/svg?seed=Powerforecast"}
+              sx={{ width: 26, height: 26, bgcolor: "primary.main" }}
+            />
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 700,
+                maxWidth: 100,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                display: { xs: "none", sm: "block" },
+              }}
+            >
+              {identity?.name || "Demo User"}
+            </Typography>
+          </Box>
+
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={() => setAnchorEl(null)}
+            slotProps={{
+              paper: {
+                sx: {
+                  minWidth: 180,
+                  p: 0.5,
+                },
+              },
+            }}
+          >
+            <Box sx={{ px: 2, py: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                {identity?.name || "Demo User"}
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                {identity?.email || "demo@powerforecast.ph"}
+              </Typography>
+            </Box>
+            <MenuItem
+              onClick={() => {
+                setAnchorEl(null);
+                logout();
+              }}
+              sx={{ gap: 1, color: "error.main", fontSize: "0.8125rem", fontWeight: 600 }}
+            >
+              <LogoutIcon fontSize="small" />
+              Sign Out
+            </MenuItem>
+          </Menu>
+        </Box>
+      </Toolbar>
+    </AppBar>
   );
 };
+
+export default Header;

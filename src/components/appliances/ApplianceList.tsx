@@ -1,30 +1,38 @@
 import React, { useState, useEffect } from "react";
-import { GlassCard } from "../common/GlassCard";
-import { Button } from "../common/Button";
-import { Badge } from "../common/Badge";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import TextField from "@mui/material/TextField";
+import MenuItem from "@mui/material/MenuItem";
+import Chip from "@mui/material/Chip";
+import InputAdornment from "@mui/material/InputAdornment";
+import Tooltip from "@mui/material/Tooltip";
+import Divider from "@mui/material/Divider";
+import Paper from "@mui/material/Paper";
 import {
-  Zap,
-  Search,
-  Filter,
-  Plus,
-  Edit2,
-  Trash2,
-  Power,
-  Sparkles,
-  Database,
-  Wind,
-  Refrigerator,
-  Tv,
-  Fan,
-  Shirt,
-  Lightbulb,
-  Clock,
-  Coins,
-} from "lucide-react";
-import { UserAppliance } from "../../types";
-import { useList, useDelete, useUpdate } from "@refinedev/core";
+  Bolt as BoltIcon,
+  Search as SearchIcon,
+  Add as PlusIcon,
+  Edit as EditIcon,
+  Delete as TrashIcon,
+  PowerSettingsNew as PowerIcon,
+  AutoAwesome as SparklesIcon,
+  Storage as DatabaseIcon,
+  AccessTime as ClockIcon,
+  Speed as SpeedIcon,
+  CalendarMonth as CalendarIcon,
+  FileDownload as FileDownloadIcon,
+  DeleteSweep as DeleteSweepIcon,
+} from "@mui/icons-material";
+import { UserAppliance, UserCalendarEvent } from "../../types";
+import { useList, useDelete, useUpdate, useCreate } from "@refinedev/core";
 import { ApplianceModal } from "./ApplianceModal";
 import { PelpCatalogModal } from "./PelpCatalogModal";
+import { ScheduleQueueModal } from "../calendar/ScheduleQueueModal";
+import { useToast } from "../common/ToastProvider";
 import { devLog } from "../../lib/devLogger";
 
 interface ApplianceListProps {
@@ -40,17 +48,27 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
   const [isPelpModalOpen, setIsPelpModalOpen] = useState(false);
   const [applianceToEdit, setApplianceToEdit] = useState<UserAppliance | null>(null);
 
+  const [selectedApplianceForQueue, setSelectedApplianceForQueue] = useState<UserAppliance | null>(null);
+  const [isQueueModalOpen, setIsQueueModalOpen] = useState(false);
+
+  const { showSuccess, showInfo } = useToast();
+
   const appliancesRes = useList<UserAppliance>({
     resource: "user_appliances",
   }) as any;
 
+  const eventsRes = useList<UserCalendarEvent>({
+    resource: "user_calendar_events",
+  }) as any;
+
   const { mutate: deleteAppliance } = useDelete();
   const { mutate: updateAppliance } = useUpdate();
+  const { mutate: createEvent } = useCreate();
+  const { mutate: deleteEvent } = useDelete();
 
   const appliances: UserAppliance[] = appliancesRes?.data?.data || appliancesRes?.result?.data || [];
-  const isLoading = appliancesRes?.isLoading;
+  const events: UserCalendarEvent[] = eventsRes?.data?.data || eventsRes?.result?.data || [];
 
-  // Global live 1-second ticker for synchronized real-time counters
   const [now, setNow] = useState<number>(Date.now());
   useEffect(() => {
     const timer = setInterval(() => {
@@ -85,7 +103,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
       watts: app.watts,
       is_currently_on: newState,
       last_turned_on_at: nowIso,
-      ratePerHourPHP: ((app.watts * (app.quantity || 1) / 1000) * 14.8261).toFixed(2),
+      ratePerHourPHP: (((app.watts * (app.quantity || 1)) / 1000) * 14.8261).toFixed(2),
     });
 
     updateAppliance({
@@ -96,36 +114,10 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
         last_turned_on_at: nowIso,
       },
     });
+
+    showInfo(`${app.name} turned ${newState ? "ON" : "OFF"}.`);
   };
 
-  const handleDelete = (id: string, name: string) => {
-    if (window.confirm(`Remove "${name}" from your appliance list?`)) {
-      devLog.warn("Storage", `Appliance deleted from inventory: "${name}"`, { id });
-      deleteAppliance({
-        resource: "user_appliances",
-        id,
-      });
-    }
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch (category?.toLowerCase()) {
-      case "air conditioners":
-        return <Wind className="w-4 h-4 text-[#8183fc]" />;
-      case "refrigerators & freezers":
-        return <Refrigerator className="w-4 h-4 text-[#8183fc]" />;
-      case "television sets":
-        return <Tv className="w-4 h-4 text-[#8183fc]" />;
-      case "electric fans":
-        return <Fan className="w-4 h-4 text-[#8183fc]" />;
-      case "washing machines":
-        return <Shirt className="w-4 h-4 text-[#8183fc]" />;
-      default:
-        return <Lightbulb className="w-4 h-4 text-[#8183fc]" />;
-    }
-  };
-
-  // Precise real-time runtime duration
   const getRunningDuration = (turnedOnAt?: string | null) => {
     if (!turnedOnAt) return "00:00:00";
     const start = new Date(turnedOnAt).getTime();
@@ -136,352 +128,407 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
     return `${hrs}:${mins}:${secs}`;
   };
 
-  // Precise real-time accumulated Pesos spent since turned on
   const getAccumulatedPesos = (app: UserAppliance) => {
     if (!app.is_currently_on || !app.last_turned_on_at) return 0;
     const start = new Date(app.last_turned_on_at).getTime();
     const diffSeconds = Math.max(0, (now - start) / 1000);
     const totalWatts = app.watts * (app.quantity || 1);
-    const accumulatedKwh = (totalWatts / 1000) * (diffSeconds / 3600);
-    return accumulatedKwh * 14.8261;
+    const totalKwh = (totalWatts * (diffSeconds / 3600)) / 1000;
+    return totalKwh * 14.8261;
   };
 
-  // Combined totals for active running devices
-  const runningAppliances = appliances.filter((a) => a.is_currently_on);
-  const totalActiveWatts = runningAppliances.reduce((acc, curr) => acc + curr.watts * (curr.quantity || 1), 0);
-  const totalActiveHourlyRate = (totalActiveWatts / 1000) * 14.8261;
-  const totalActiveAccumulatedCost = runningAppliances.reduce((acc, curr) => acc + getAccumulatedPesos(curr), 0);
+  const exportLoadListJson = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appliances, null, 2));
+    const downloadAnchor = document.createElement("a");
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `powerforecast_inventory_${new Date().toISOString().split("T")[0]}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    showSuccess("Household inventory exported to JSON.");
+  };
+
+  const handleClearAll = () => {
+    if (!window.confirm("Are you sure you want to clear all registered appliances?")) return;
+    appliances.forEach((a) => deleteAppliance({ resource: "user_appliances", id: a.id }));
+    showInfo("Cleared all appliances.");
+  };
+
+  const totalRegisteredWatts = appliances.reduce(
+    (acc, curr) => acc + curr.watts * (curr.quantity || 1),
+    0
+  );
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-black t-primary tracking-tight flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-[#5c68db] text-white shadow-md shadow-[#5c68db]/20">
-              <Zap className="w-5 h-5" />
-            </div>
-            Appliance Inventory & Live Telemetry
-          </h2>
-          <p className="text-xs sm:text-sm t-muted mt-0.5">
-            Real-time wattage telemetry, live operating stopwatch, and live accumulated Peso counters
-          </p>
-        </div>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* 1. Header & Live Stats Banner */}
+      <Card
+        sx={{
+          p: { xs: 2.5, sm: 3.5 },
+          borderRadius: 3.5,
+          background: (theme) =>
+            theme.palette.mode === "dark"
+              ? "linear-gradient(135deg, rgba(15, 14, 58, 0.9) 0%, rgba(20, 18, 80, 0.8) 100%)"
+              : "linear-gradient(135deg, #ffffff 0%, #f4f6ff 100%)",
+          border: "1px solid",
+          borderColor: "rgba(108, 122, 224, 0.3)",
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", md: "center" },
+          gap: 2.5,
+        }}
+      >
+        <Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: 2.5,
+                bgcolor: "primary.main",
+                color: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 4px 14px rgba(108, 122, 224, 0.4)",
+              }}
+            >
+              <BoltIcon sx={{ color: "#ffd54f" }} />
+            </Box>
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: "-0.02em" }}>
+                Registered Household Appliances
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                Manage, schedule, and track all DOE PELP-certified and custom appliances in your household.
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+          <Chip
+            icon={<SpeedIcon sx={{ color: "#ffd54f !important" }} />}
+            label={`Total Load: ${totalRegisteredWatts} W`}
+            sx={{ fontWeight: 800, bgcolor: "rgba(15, 14, 58, 0.5)", border: "1px solid rgba(108, 122, 224, 0.3)" }}
+          />
+          <Chip
+            label={`${appliances.length} Devices`}
+            color="primary"
+            variant="outlined"
+            sx={{ fontWeight: 700 }}
+          />
           <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setIsPelpModalOpen(true)}
-            icon={<Database className="w-3.5 h-3.5 text-[#8183fc]" />}
+            variant="outlined"
+            size="small"
+            startIcon={<FileDownloadIcon />}
+            onClick={exportLoadListJson}
+            sx={{ borderRadius: 2, fontWeight: 700 }}
           >
-            PELP Database
+            Export
+          </Button>
+          {appliances.length > 0 && (
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              startIcon={<DeleteSweepIcon />}
+              onClick={handleClearAll}
+              sx={{ borderRadius: 2, fontWeight: 700 }}
+            >
+              Clear All
+            </Button>
+          )}
+        </Box>
+      </Card>
+
+      {/* 2. Search, Filters & Action Buttons */}
+      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, alignItems: "center", justifyContent: "space-between" }}>
+        <TextField
+          size="small"
+          placeholder="Search by name, brand, model..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" sx={{ color: "text.secondary" }} />
+                </InputAdornment>
+              ),
+            },
+          }}
+          sx={{ width: { xs: "100%", sm: 320 } }}
+        />
+
+        <Box sx={{ display: "flex", gap: 1.5, width: { xs: "100%", sm: "auto" }, flexWrap: "wrap" }}>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<DatabaseIcon />}
+            onClick={() => setIsPelpModalOpen(true)}
+            sx={{ borderRadius: 2, fontWeight: 700 }}
+          >
+            + DOE Catalog
           </Button>
 
           {onOpenAiScanner && (
             <Button
-              variant="secondary"
-              size="sm"
+              variant="outlined"
+              size="small"
+              color="secondary"
+              startIcon={<SparklesIcon />}
               onClick={onOpenAiScanner}
-              icon={<Sparkles className="w-3.5 h-3.5 text-yellow-400" />}
+              sx={{ borderRadius: 2, fontWeight: 700 }}
             >
-              AI Scanner
+              AI Vision Scan
             </Button>
           )}
 
           <Button
-            variant="primary"
-            size="sm"
+            variant="contained"
+            size="small"
+            startIcon={<PlusIcon />}
             onClick={() => {
               setApplianceToEdit(null);
               setIsAddModalOpen(true);
             }}
-            icon={<Plus className="w-3.5 h-3.5" />}
+            sx={{ borderRadius: 2, fontWeight: 800 }}
           >
             Add Appliance
           </Button>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
-      {/* Real-time Telemetry Banner */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-        <div className="p-4 rounded-2xl pf-input flex items-center justify-between shadow-xs">
-          <div>
-            <span className="text-[11px] font-semibold t-accent uppercase tracking-wider block">
-              Active Circuits
-            </span>
-            <div className="text-2xl font-black t-primary mt-0.5 flex items-center gap-2 font-mono">
-              <span className={`w-2.5 h-2.5 rounded-full ${runningAppliances.length > 0 ? "bg-emerald-400 animate-pulse" : "bg-slate-400"}`} />
-              {runningAppliances.length} <span className="text-xs font-normal t-muted font-sans">of {appliances.length} ON</span>
-            </div>
-          </div>
-          <span className="text-xs font-bold text-emerald-500 dark:text-emerald-300 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 font-mono">
-            {totalActiveWatts} W Live
-          </span>
-        </div>
+      {/* 3. Cards Grid */}
+      <Grid container spacing={2.5}>
+        {filteredAppliances.length === 0 ? (
+          <Grid size={{ xs: 12 }}>
+            <Paper sx={{ p: 6, textAlign: "center", borderRadius: 3, border: "1px dashed", borderColor: "divider" }}>
+              <BoltIcon sx={{ fontSize: 48, opacity: 0.3, mb: 1 }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                No appliances found.
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
+                Add your household devices using the manual form, DOE catalog search, or AI camera scan.
+              </Typography>
+            </Paper>
+          </Grid>
+        ) : (
+          filteredAppliances.map((app: UserAppliance) => {
+            const isOn = app.is_currently_on;
+            const liveSpent = getAccumulatedPesos(app);
+            const monthlyKwh = Number(app.monthly_kwh) || ((app.watts * app.hours_per_day * (app.quantity || 1) * 30) / 1000);
+            const monthlyCost = monthlyKwh * 14.8261;
+            const hourlyCost = ((app.watts * (app.quantity || 1)) / 1000) * 14.8261;
 
-        <div className="p-4 rounded-2xl pf-input flex items-center justify-between shadow-xs">
-          <div>
-            <span className="text-[11px] font-semibold t-accent uppercase tracking-wider block">
-              Live Hourly Rate
-            </span>
-            <div className="text-2xl font-black text-amber-500 dark:text-amber-400 mt-0.5 font-mono">
-              ₱{totalActiveHourlyRate.toFixed(2)}<span className="text-xs font-normal t-muted font-sans">/hr</span>
-            </div>
-          </div>
-          <span className="text-xs font-bold t-accent bg-[#5c68db]/15 px-2.5 py-1 rounded-lg border border-[#5c68db]/25 font-mono">
-            ₱14.82/kWh
-          </span>
-        </div>
+            return (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={app.id}>
+                <Card
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 3.5,
+                    border: "1px solid",
+                    borderColor: isOn ? "success.main" : "rgba(108, 122, 224, 0.2)",
+                    bgcolor: isOn ? "rgba(6, 78, 59, 0.15)" : "background.paper",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    position: "relative",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      borderColor: "primary.main",
+                      transform: "translateY(-3px)",
+                      boxShadow: "0 8px 24px rgba(108, 122, 224, 0.15)",
+                    },
+                  }}
+                >
+                  <Box>
+                    {/* Top Row: Category & Power Toggle */}
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
+                      <Chip
+                        label={app.category}
+                        size="small"
+                        sx={{ fontWeight: 700, fontSize: "0.7rem", bgcolor: "rgba(108, 122, 224, 0.15)" }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => togglePower(app)}
+                        sx={{
+                          bgcolor: isOn ? "success.main" : "rgba(108, 122, 224, 0.15)",
+                          color: isOn ? "#ffffff" : "text.secondary",
+                          "&:hover": {
+                            bgcolor: isOn ? "success.dark" : "rgba(108, 122, 224, 0.3)",
+                          },
+                        }}
+                      >
+                        <PowerIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
 
-        <div className="p-4 rounded-2xl pf-input flex items-center justify-between shadow-xs">
-          <div>
-            <span className="text-[11px] font-semibold t-accent uppercase tracking-wider block">
-              Live Session Spent (Accumulated)
-            </span>
-            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 font-mono">
-              ₱{totalActiveAccumulatedCost.toFixed(4)}
-            </div>
-          </div>
-          <Coins className="w-6 h-6 text-yellow-400" />
-        </div>
-      </div>
+                    {/* Appliance Name & Details */}
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
+                      {app.name}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                      {app.brand ? `${app.brand} • ` : ""}{app.model || app.room_location || "General"}
+                    </Typography>
 
-      {/* Filter Toolbar */}
-      <GlassCard className="space-y-3 p-4">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 t-muted absolute left-3 top-2.5" />
-            <input
-              type="text"
-              placeholder="Search by appliance name, brand, or model..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pf-input rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none"
-            />
-          </div>
+                    {/* Stats Badges */}
+                    <Box sx={{ display: "flex", gap: 1, mt: 1.5, flexWrap: "wrap" }}>
+                      <Chip
+                        icon={<BoltIcon sx={{ fontSize: "14px !important", color: "#ffd54f !important" }} />}
+                        label={`${app.watts} W`}
+                        size="small"
+                        sx={{ fontWeight: 800 }}
+                      />
+                      {app.quantity > 1 && (
+                        <Chip
+                          label={`Qty: ${app.quantity}`}
+                          size="small"
+                          sx={{ fontWeight: 700 }}
+                        />
+                      )}
+                      <Chip
+                        label={`${app.hours_per_day}h/day`}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontWeight: 600 }}
+                      />
+                    </Box>
 
-          <div className="flex items-center gap-2">
-            <Filter className="w-3.5 h-3.5 text-[#8183fc]" />
-            <select
-              value={selectedRoom}
-              onChange={(e) => setSelectedRoom(e.target.value)}
-              className="pf-input rounded-xl px-3 py-2 text-xs focus:outline-none cursor-pointer"
-            >
-              <option value="all">All Rooms</option>
-              <option value="Living Room">Living Room</option>
-              <option value="Master Bedroom">Master Bedroom</option>
-              <option value="Kitchen">Kitchen</option>
-              <option value="Laundry Area">Laundry Area</option>
-              <option value="Home Office">Home Office</option>
-            </select>
-          </div>
-        </div>
+                    <Divider sx={{ my: 1.5 }} />
 
-        <div className="flex flex-wrap gap-1.5 pt-1 border-t pf-divider">
-          {["all", "Air Conditioners", "Refrigerators & Freezers", "Television Sets", "Electric Fans", "Washing Machines", "Lighting Products"].map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                selectedCategory === cat
-                  ? "bg-[#5c68db] text-white shadow-xs"
-                  : "btn-secondary"
-              }`}
-            >
-              {cat === "all" ? "All" : cat}
-            </button>
-          ))}
-        </div>
-      </GlassCard>
-
-      {/* Appliance Table with Live Timer & Live Peso Counter Columns */}
-      <GlassCard className="p-0 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs t-secondary">
-            <thead className="bg-[#5c68db]/10 text-[11px] uppercase tracking-wider t-accent border-b pf-divider">
-              <tr>
-                <th className="py-3.5 px-4 font-bold">Appliance</th>
-                <th className="py-3.5 px-4 font-bold">Room</th>
-                <th className="py-3.5 px-4 font-bold">Power</th>
-                <th className="py-3.5 px-4 font-bold">Live Time ON</th>
-                <th className="py-3.5 px-4 font-bold">Live Accumulated Cost</th>
-                <th className="py-3.5 px-4 font-bold">Hourly Rate</th>
-                <th className="py-3.5 px-4 font-bold">Est. Month</th>
-                <th className="py-3.5 px-4 font-bold text-center">Circuit</th>
-                <th className="py-3.5 px-4 font-bold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y pf-divider">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={9} className="py-10 text-center t-muted">
-                    Loading appliance registry...
-                  </td>
-                </tr>
-              ) : filteredAppliances.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="py-12 text-center t-muted">
-                    <div className="max-w-sm mx-auto space-y-2">
-                      <Zap className="w-6 h-6 text-yellow-400 mx-auto" />
-                      <p className="text-xs font-bold t-primary">No Appliances Found</p>
-                      <p className="text-xs t-muted">Add an appliance manually or import verified specs from the PELP catalog.</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredAppliances.map((app: UserAppliance) => {
-                  const isOn = app.is_currently_on;
-                  const totalWatts = app.watts * (app.quantity || 1);
-                  const hourlyRate = (totalWatts / 1000) * 14.8261;
-                  const liveSpent = getAccumulatedPesos(app);
-                  const monthlyKwh = Number(app.monthly_kwh) || ((totalWatts * app.hours_per_day * app.days_per_month) / 1000);
-                  const monthlyCost = monthlyKwh * 14.8261;
-
-                  return (
-                    <tr
-                      key={app.id}
-                      className={`transition-colors ${isOn ? "bg-emerald-500/10" : "hover:bg-black/5 dark:hover:bg-white/5"}`}
-                    >
-                      {/* Appliance Name & Brand */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`p-2 rounded-xl border ${isOn ? "bg-emerald-500/20 border-emerald-500/40" : "bg-[#5c68db]/15 border-[#5c68db]/25"}`}>
-                            {getCategoryIcon(app.category)}
-                          </div>
-                          <div>
-                            <div className="font-bold t-primary flex items-center gap-1.5">
-                              <span>{app.name}</span>
-                              {app.source === "ai_vision" && (
-                                <Badge variant="primary" size="sm">
-                                  <Sparkles className="w-2.5 h-2.5" /> AI
-                                </Badge>
-                              )}
-                              {app.source === "pelp_db" && (
-                                <Badge variant="emerald" size="sm">
-                                  PELP
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="text-[11px] t-muted">
-                              {app.brand ? `${app.brand} • ` : ""}
-                              {app.model || app.category}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Room */}
-                      <td className="py-3.5 px-4 text-xs t-secondary font-medium">
-                        {app.room_location || "General"}
-                      </td>
-
-                      {/* Power Rating & Quantity */}
-                      <td className="py-3.5 px-4 font-mono">
-                        <div className="font-bold t-primary">
-                          {totalWatts} W
-                        </div>
-                        {app.quantity > 1 && (
-                          <span className="text-[10px] t-muted">
-                            ({app.watts}W x {app.quantity})
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Live Running Stopwatch Column */}
-                      <td className="py-3.5 px-4 font-mono font-bold">
-                        {isOn ? (
-                          <span className="text-emerald-500 dark:text-emerald-400 flex items-center gap-1.5">
-                            <Clock className="w-3 h-3 animate-spin" />
-                            {getRunningDuration(app.last_turned_on_at)}
-                          </span>
-                        ) : (
-                          <span className="t-muted font-sans text-xs">--:--:--</span>
-                        )}
-                      </td>
-
-                      {/* Live Accumulated Peso Spent Column */}
-                      <td className="py-3.5 px-4 font-mono font-bold">
-                        {isOn ? (
-                          <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">
-                            ₱{liveSpent.toFixed(4)}
-                          </span>
-                        ) : (
-                          <span className="t-muted text-xs font-sans">₱0.00</span>
-                        )}
-                      </td>
-
-                      {/* Hourly Rate */}
-                      <td className="py-3.5 px-4 font-mono text-amber-500 dark:text-amber-400 font-bold">
-                        ₱{hourlyRate.toFixed(2)}/hr
-                      </td>
-
-                      {/* Monthly Estimate */}
-                      <td className="py-3.5 px-4 font-mono">
-                        <div className="font-bold t-primary">
-                          ₱{monthlyCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>
-                        <span className="text-[10px] t-muted font-medium">
+                    {/* Monthly estimated cost */}
+                    <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                      <Box>
+                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                          Monthly Projected Cost
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f" }}>
+                          ₱{monthlyCost.toFixed(2)}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ textAlign: "right" }}>
+                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                          Energy Load
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: "monospace" }}>
                           {monthlyKwh.toFixed(1)} kWh/mo
-                        </span>
-                      </td>
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
 
-                      {/* Circuit Switch Toggle */}
-                      <td className="py-3.5 px-4 text-center">
-                        <button
-                          onClick={() => togglePower(app)}
-                          className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                            isOn
-                              ? "bg-emerald-600 border-emerald-500 text-white shadow-md shadow-emerald-600/30 ring-2 ring-emerald-400/40"
-                              : "btn-secondary"
-                          }`}
-                          title={isOn ? "Active circuit (Click to turn off)" : "Standby circuit (Click to turn on)"}
+                  {/* Card Footer with Live Cost & Actions */}
+                  <Box sx={{ mt: 2, pt: 1.5, borderTop: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    {isOn ? (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "success.main" }}>
+                        <ClockIcon sx={{ fontSize: 14 }} />
+                        <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: "monospace" }}>
+                          {getRunningDuration(app.last_turned_on_at)} (₱{liveSpent.toFixed(4)})
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+                        ₱{hourlyCost.toFixed(2)}/hr rate
+                      </Typography>
+                    )}
+
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                      <Tooltip title="Manage Schedule Queue">
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => {
+                            setSelectedApplianceForQueue(app);
+                            setIsQueueModalOpen(true);
+                          }}
                         >
-                          <Power className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
+                          <CalendarIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
 
-                      {/* Edit / Delete Actions */}
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => {
-                              setApplianceToEdit(app);
-                              setIsAddModalOpen(true);
-                            }}
-                            className="p-1.5 rounded-lg btn-secondary text-slate-400 hover:text-white"
-                            title="Edit specs"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(app.id, app.name)}
-                            className="p-1.5 rounded-lg btn-secondary text-slate-400 hover:text-red-400"
-                            title="Remove appliance"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </GlassCard>
+                      <Tooltip title="Edit Appliance">
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setApplianceToEdit(app);
+                            setIsAddModalOpen(true);
+                          }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
 
-      <ApplianceModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        applianceToEdit={applianceToEdit}
-      />
+                      <Tooltip title="Delete Appliance">
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => {
+                            if (window.confirm(`Delete ${app.name}?`)) {
+                              deleteAppliance({ resource: "user_appliances", id: app.id });
+                              showInfo(`Removed ${app.name}`);
+                            }
+                          }}
+                        >
+                          <TrashIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </Box>
+                </Card>
+              </Grid>
+            );
+          })
+        )}
+      </Grid>
 
-      <PelpCatalogModal
-        isOpen={isPelpModalOpen}
-        onClose={() => setIsPelpModalOpen(false)}
-      />
-    </div>
+      {/* Add / Edit Modal */}
+      {isAddModalOpen && (
+        <ApplianceModal
+          isOpen={isAddModalOpen}
+          onClose={() => {
+            setIsAddModalOpen(false);
+            setApplianceToEdit(null);
+          }}
+          applianceToEdit={applianceToEdit}
+        />
+      )}
+
+      {/* DOE PELP Catalog Modal */}
+      {isPelpModalOpen && (
+        <PelpCatalogModal
+          isOpen={isPelpModalOpen}
+          onClose={() => setIsPelpModalOpen(false)}
+        />
+      )}
+
+      {/* Schedule Queue Manager Modal */}
+      {isQueueModalOpen && selectedApplianceForQueue && (
+        <ScheduleQueueModal
+          isOpen={isQueueModalOpen}
+          onClose={() => {
+            setIsQueueModalOpen(false);
+            setSelectedApplianceForQueue(null);
+          }}
+          appliance={selectedApplianceForQueue}
+          events={events}
+          onCreateEvent={async (eventData: Partial<UserCalendarEvent>) => {
+            createEvent({ resource: "user_calendar_events", values: eventData });
+            showSuccess("Scheduled slot added!");
+          }}
+          onDeleteEvent={async (id: string) => {
+            deleteEvent({ resource: "user_calendar_events", id });
+            showInfo("Scheduled slot deleted.");
+          }}
+          onBulkDeleteEvents={async (ids: string[]) => {
+            ids.forEach((id) => deleteEvent({ resource: "user_calendar_events", id }));
+            showInfo(`Removed ${ids.length} slots.`);
+          }}
+        />
+      )}
+    </Box>
   );
 };

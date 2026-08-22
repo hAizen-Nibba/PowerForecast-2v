@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { GlassCard } from "../common/GlassCard";
-import { Button } from "../common/Button";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Grid from "@mui/material/Grid";
+import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
+import Tooltip from "@mui/material/Tooltip";
 import {
-  Power,
-  Zap,
-  Wind,
-  Refrigerator,
-  Tv,
-  Fan,
-  Shirt,
-  Lightbulb,
-  Plus,
-  Clock,
-} from "lucide-react";
+  PowerSettingsNew as PowerIcon,
+  Bolt as BoltIcon,
+  Air as WindIcon,
+  Kitchen as RefrigeratorIcon,
+  Tv as TvIcon,
+  LocalLaundryService as WashingMachineIcon,
+  Lightbulb as LightbulbIcon,
+  Add as PlusIcon,
+  AccessTime as ClockIcon,
+  Speed as SpeedIcon,
+} from "@mui/icons-material";
 import { UserAppliance } from "../../types";
 import { useUpdate, useList } from "@refinedev/core";
 import { devLog } from "../../lib/devLogger";
@@ -38,17 +45,17 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
   const getCategoryIcon = (category: string) => {
     switch (category?.toLowerCase()) {
       case "air conditioners":
-        return <Wind className="w-4 h-4 text-[#8183fc]" />;
+        return <WindIcon fontSize="small" sx={{ color: "primary.light" }} />;
       case "refrigerators & freezers":
-        return <Refrigerator className="w-4 h-4 text-[#8183fc]" />;
+        return <RefrigeratorIcon fontSize="small" sx={{ color: "primary.light" }} />;
       case "television sets":
-        return <Tv className="w-4 h-4 text-[#8183fc]" />;
+        return <TvIcon fontSize="small" sx={{ color: "primary.light" }} />;
       case "electric fans":
-        return <Fan className="w-4 h-4 text-[#8183fc]" />;
+        return <SpeedIcon fontSize="small" sx={{ color: "primary.light" }} />;
       case "washing machines":
-        return <Shirt className="w-4 h-4 text-[#8183fc]" />;
+        return <WashingMachineIcon fontSize="small" sx={{ color: "primary.light" }} />;
       default:
-        return <Lightbulb className="w-4 h-4 text-[#8183fc]" />;
+        return <LightbulbIcon fontSize="small" sx={{ color: "primary.light" }} />;
     }
   };
 
@@ -61,7 +68,6 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
       name: app.name,
       category: app.category,
       watts: app.watts,
-      quantity: app.quantity || 1,
       is_currently_on: newState,
       last_turned_on_at: nowIso,
       ratePerHourPHP: ((app.watts * (app.quantity || 1) / 1000) * 14.8261).toFixed(2),
@@ -97,117 +103,145 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
   };
 
   return (
-    <GlassCard className="space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b pf-divider">
-        <div>
-          <h3 className="text-sm font-bold t-primary flex items-center gap-2">
-            <Zap className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-            Appliance Power Board
-          </h3>
-          <p className="text-xs t-muted">
-            Real-time circuit status, active stopwatches, and live accumulating cost
-          </p>
-        </div>
+    <Card sx={{ p: 3, borderRadius: 3, height: "100%" }}>
+      {/* Header */}
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2.5, flexWrap: "wrap", gap: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: 2,
+              bgcolor: "primary.main",
+              color: "#ffffff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <BoltIcon sx={{ color: "#ffd54f" }} />
+          </Box>
+          <Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+              Live Circuit Power Board
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              Toggle circuit breakers to inspect live wattage and costs
+            </Typography>
+          </Box>
+        </Box>
+
         <Button
-          variant="secondary"
-          size="sm"
+          variant="outlined"
+          size="small"
           onClick={onOpenAddModal}
-          icon={<Plus className="w-3.5 h-3.5" />}
+          startIcon={<PlusIcon />}
         >
           Add Appliance
         </Button>
-      </div>
+      </Box>
 
+      <Divider sx={{ mb: 2 }} />
+
+      {/* Grid of circuit switches */}
       {appliances.length === 0 ? (
-        <div className="py-12 px-4 text-center rounded-2xl pf-input space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-[#5c68db]/15 border border-[#5c68db]/30 flex items-center justify-center mx-auto text-[#8183fc]">
-            <Zap className="w-6 h-6 text-yellow-400" />
-          </div>
-          <div>
-            <h4 className="text-sm font-bold t-primary">No Appliances Registered Yet</h4>
-            <p className="text-xs t-muted max-w-sm mx-auto mt-0.5">
-              Add your household appliances or import official energy specs from the PELP catalog to start tracking live wattage and real-time costs.
-            </p>
-          </div>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={onOpenAddModal}
-            icon={<Plus className="w-3.5 h-3.5" />}
-          >
-            Add Your First Appliance
+        <Box sx={{ py: 6, textAlign: "center" }}>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
+            No appliances configured in your household yet.
+          </Typography>
+          <Button variant="contained" size="small" onClick={onOpenAddModal} startIcon={<PlusIcon />}>
+            Add First Appliance
           </Button>
-        </div>
+        </Box>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 pt-1">
+        <Grid container spacing={2}>
           {appliances.map((app: UserAppliance) => {
             const isOn = app.is_currently_on;
             const totalWatts = app.watts * (app.quantity || 1);
-            const hourlyCost = (totalWatts / 1000) * 14.8261;
+            const hourlyRate = ((totalWatts / 1000) * 14.8261).toFixed(2);
             const liveSpent = getAccumulatedPesos(app);
 
             return (
-              <div
-                key={app.id}
-                className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between ${
-                  isOn
-                    ? "bg-emerald-500/10 border-emerald-500/30 ring-1 ring-emerald-500/30 shadow-sm"
-                    : "pf-input opacity-85 hover:opacity-100"
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-xl bg-[#5c68db]/15 border border-[#5c68db]/25">
+              <Grid size={{ xs: 12, sm: 6 }} key={app.id}>
+                <Card
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: 2.5,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    borderColor: isOn ? "success.main" : "divider",
+                    bgcolor: isOn
+                      ? (theme) => (theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.1)" : "rgba(16, 185, 129, 0.05)")
+                      : "transparent",
+                    transition: "all 0.15s ease-in-out",
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
+                    <Box
+                      sx={{
+                        p: 1,
+                        borderRadius: 2,
+                        bgcolor: "action.hover",
+                        display: "flex",
+                      }}
+                    >
                       {getCategoryIcon(app.category)}
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold t-primary line-clamp-1">{app.name}</h4>
-                      <p className="text-[11px] t-accent font-medium">
-                        {app.room_location || "General"} • {app.watts}W {app.quantity > 1 ? `(x${app.quantity})` : ""}
-                      </p>
-                    </div>
-                  </div>
+                    </Box>
 
-                  <button
-                    onClick={() => togglePower(app)}
-                    className={`p-1.5 rounded-xl border transition-all cursor-pointer ${
-                      isOn
-                        ? "bg-emerald-600 border-emerald-500 text-white shadow-sm ring-1 ring-emerald-400"
-                        : "btn-secondary"
-                    }`}
-                    title={isOn ? "Turn Off" : "Turn On"}
-                  >
-                    <Power className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
+                        {app.name}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                        {totalWatts}W • {app.room_location || "General"}
+                      </Typography>
 
-                <div className="mt-3 pt-2.5 border-t pf-divider flex items-center justify-between text-xs font-mono">
-                  {isOn ? (
-                    <div className="flex items-center gap-1.5 text-emerald-500 dark:text-emerald-400 font-bold">
-                      <Clock className="w-3 h-3 animate-spin" />
-                      <span>{getRunningDuration(app.last_turned_on_at)}</span>
-                    </div>
-                  ) : (
-                    <span className="t-muted text-[11px] font-sans">Standby</span>
-                  )}
+                      {isOn && (
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5 }}>
+                          <ClockIcon sx={{ fontSize: 12, color: "success.main" }} />
+                          <Typography variant="caption" sx={{ color: "success.main", fontWeight: 700, fontFamily: "monospace", fontSize: "0.6875rem" }}>
+                            {getRunningDuration(app.last_turned_on_at)} (₱{liveSpent.toFixed(3)})
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
 
-                  <div className="text-right">
-                    {isOn ? (
-                      <span className="font-bold text-amber-500 dark:text-amber-400">
-                        ₱{liveSpent.toFixed(4)}
-                      </span>
-                    ) : (
-                      <span className="t-muted font-sans text-[11px]">
-                        ₱{hourlyCost.toFixed(2)}/hr
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
+                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
+                    <Chip
+                      label={`₱${hourlyRate}/hr`}
+                      size="small"
+                      sx={{ fontWeight: 700, fontFamily: "monospace", height: 20, fontSize: "0.6875rem" }}
+                    />
+
+                    <Tooltip title={isOn ? "Click to Switch OFF" : "Click to Switch ON"}>
+                      <IconButton
+                        size="small"
+                        onClick={() => togglePower(app)}
+                        sx={{
+                          bgcolor: isOn ? "success.main" : "action.hover",
+                          color: isOn ? "#ffffff" : "text.secondary",
+                          border: "1px solid",
+                          borderColor: isOn ? "success.dark" : "divider",
+                          "&:hover": {
+                            bgcolor: isOn ? "success.dark" : "action.selected",
+                          },
+                        }}
+                      >
+                        <PowerIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </Card>
+              </Grid>
             );
           })}
-        </div>
+        </Grid>
       )}
-    </GlassCard>
+    </Card>
   );
 };
+
+export default LivePowerBoard;

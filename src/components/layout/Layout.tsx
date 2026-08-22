@@ -1,77 +1,70 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
+import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { AiVisionScannerModal } from "../vision/AiVisionScannerModal";
 import { DevLogsFloatingWidget } from "../devlogs/DevLogsFloatingWidget";
-import { useList } from "@refinedev/core";
-import { UserAppliance } from "../../types";
+import { VersionBadge } from "../common/VersionBadge";
+import { useColorMode } from "../../theme/AppTheme";
 
 export const Layout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAiScannerOpen, setIsAiScannerOpen] = useState(false);
-
-  // Initialize theme from localStorage or default to dark
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    const saved = localStorage.getItem("powerforecast_theme");
-    return saved ? saved === "dark" : true;
-  });
-
-  // Synchronize document theme attributes and localStorage
-  useEffect(() => {
-    const theme = isDark ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme", theme);
-    if (isDark) {
-      document.documentElement.classList.remove("light");
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      document.documentElement.classList.add("light");
-    }
-    localStorage.setItem("powerforecast_theme", theme);
-  }, [isDark]);
-
-  const toggleTheme = () => {
-    setIsDark((prev) => !prev);
-  };
-
-  const appliancesRes = useList<UserAppliance>({
-    resource: "user_appliances",
-  }) as any;
-
-  const appliances: UserAppliance[] = appliancesRes?.data?.data || appliancesRes?.result?.data || [];
-  const runningAppliances = appliances.filter((a: UserAppliance) => a.is_currently_on);
-  const activeWattage = runningAppliances.reduce(
-    (acc: number, curr: UserAppliance) => acc + curr.watts * (curr.quantity || 1),
-    0
-  );
+  const { mode, toggleColorMode } = useColorMode();
 
   return (
-    <div
-      className="min-h-screen flex transition-colors duration-300 relative overflow-x-hidden"
-      style={{ backgroundColor: "var(--page-bg)", color: "var(--text-primary)" }}
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh",
+        bgcolor: "background.default",
+        color: "text.primary",
+        transition: "background-color 0.3s ease, color 0.3s ease",
+        position: "relative",
+        overflowX: "hidden",
+      }}
     >
       {/* Left Navigation Sidebar */}
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        activeWattage={activeWattage}
-        runningCount={runningAppliances.length}
       />
 
       {/* Main Viewport & Header */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-64 relative z-10">
+      <Box
+        sx={{
+          flexGrow: 1,
+          display: "flex",
+          flexDirection: "column",
+          minWidth: 0,
+          pl: { xs: 0, lg: "260px" },
+          position: "relative",
+          zIndex: 10,
+        }}
+      >
         <Header
           onOpenSidebar={() => setSidebarOpen(true)}
-          isDark={isDark}
-          onToggleTheme={toggleTheme}
+          isDark={mode === "dark"}
+          onToggleTheme={toggleColorMode}
           onOpenAiScanner={() => setIsAiScannerOpen(true)}
         />
 
-        <main className="flex-1 p-4 sm:p-6 max-w-6xl w-full mx-auto space-y-6">
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: { xs: 2, sm: 3, md: 4 },
+            maxWidth: 1280,
+            width: "100%",
+            mx: "auto",
+            pb: 10,
+          }}
+        >
           <Outlet />
-        </main>
-      </div>
+        </Box>
+      </Box>
 
       {/* Global Modals & Widgets */}
       <AiVisionScannerModal
@@ -79,8 +72,13 @@ export const Layout: React.FC = () => {
         onClose={() => setIsAiScannerOpen(false)}
       />
 
-      {/* Global Draggable Floating Dev Logs & Telemetry Bubble */}
+      {/* Global Draggable Floating Dev Logs & Telemetry Widget */}
       <DevLogsFloatingWidget />
-    </div>
+
+      {/* Persistent Version Display on Bottom-Right Corner */}
+      <VersionBadge />
+    </Box>
   );
 };
+
+export default Layout;

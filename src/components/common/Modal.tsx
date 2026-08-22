@@ -1,15 +1,22 @@
-import React, { useEffect } from "react";
-import { createPortal } from "react-dom";
-import { X } from "lucide-react";
-import { clsx } from "clsx";
+import React from "react";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import IconButton from "@mui/material/IconButton";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import { Close as CloseIcon } from "@mui/icons-material";
 
-interface ModalProps {
+export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   subtitle?: string;
+  icon?: React.ReactNode;
   children: React.ReactNode;
-  maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl";
+  footer?: React.ReactNode;
+  maxWidth?: "xs" | "sm" | "md" | "lg" | "xl";
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -17,69 +24,87 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   subtitle,
+  icon,
   children,
-  maxWidth = "2xl",
+  footer,
+  maxWidth = "sm",
 }) => {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      window.addEventListener("keydown", handleKeyDown);
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
-  const maxWidthMap = {
-    sm: "max-w-sm",
-    md: "max-w-md",
-    lg: "max-w-lg",
-    xl: "max-w-xl",
-    "2xl": "max-w-2xl",
-    "3xl": "max-w-3xl",
-    "4xl": "max-w-4xl",
-    "5xl": "max-w-5xl",
-  };
-
-  return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-xs z-[9999]"
-        onClick={onClose}
-      />
-
-      {/* Modal Dialog Content */}
-      <div
-        className={clsx(
-          "relative w-full rounded-2xl glass-card border pf-divider p-6 shadow-2xl t-primary my-8 max-h-[90vh] flex flex-col z-[10000]",
-          maxWidthMap[maxWidth]
-        )}
+  return (
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      fullWidth
+      maxWidth={maxWidth}
+      sx={{
+        "& .MuiDialog-paper": {
+          p: 0,
+          overflow: "hidden",
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          px: 3,
+          py: 2,
+          borderBottom: "1px solid",
+          borderColor: "divider",
+        }}
       >
-        <div className="flex items-start justify-between pb-4 border-b pf-divider">
-          <div>
-            <h3 className="text-lg font-black t-primary flex items-center gap-2">
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          {icon && (
+            <Box
+              sx={{
+                p: 1,
+                borderRadius: 1.5,
+                bgcolor: "primary.main",
+                color: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {icon}
+            </Box>
+          )}
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
               {title}
-            </h3>
-            {subtitle && <p className="text-xs t-accent mt-0.5">{subtitle}</p>}
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-xl t-muted hover:t-primary hover:bg-[#5c68db]/15 transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+            </Typography>
+            {subtitle && (
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                {subtitle}
+              </Typography>
+            )}
+          </Box>
+        </Box>
+        <IconButton onClick={onClose} size="small" sx={{ color: "text.secondary" }}>
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </DialogTitle>
 
-        <div className="mt-4 overflow-y-auto pr-1 flex-1">{children}</div>
-      </div>
-    </div>,
-    document.body
+      <DialogContent sx={{ p: 3 }}>
+        {children}
+      </DialogContent>
+
+      {footer && (
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2,
+            borderTop: "1px solid",
+            borderColor: "divider",
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(9, 9, 56, 0.4)" : "rgba(248, 250, 252, 0.8)",
+          }}
+        >
+          {footer}
+        </DialogActions>
+      )}
+    </Dialog>
   );
 };
+
+export default Modal;

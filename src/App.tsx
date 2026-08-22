@@ -4,7 +4,7 @@ import routerBindings, {
   UnsavedChangesNotifier,
 } from "@refinedev/react-router-v6";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
-import { localDataProvider } from "./providers/dataProvider";
+import { resilientDataProvider } from "./providers/dataProvider";
 import { authProvider } from "./providers/authProvider";
 import { Layout } from "./components/layout/Layout";
 import { LandingPage } from "./pages/LandingPage";
@@ -13,88 +13,153 @@ import { CalculatorPage } from "./pages/CalculatorPage";
 import { AppliancesPage } from "./pages/AppliancesPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { AnalyticsPage } from "./pages/AnalyticsPage";
+import { ForecastingPage } from "./pages/ForecastingPage";
+import { ApiDocsPage } from "./pages/ApiDocsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
-import { LayoutDashboard, Calendar, Zap, Calculator, BarChart3 } from "lucide-react";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
+import { VersionBadge } from "./components/common/VersionBadge";
+import { ToastProvider } from "./components/common/ToastProvider";
+import { AppTheme } from "./theme/AppTheme";
+import {
+  Dashboard as DashboardIcon,
+  CalendarMonth as CalendarIcon,
+  Bolt as BoltIcon,
+  Calculate as CalculatorIcon,
+  BarChart as AnalyticsIcon,
+  AutoGraph as ForecastingIcon,
+  Api as ApiIcon,
+  ReceiptLong as ReceiptIcon,
+  ManageAccounts as AccountIcon,
+  HistoryEdu as ChangelogIcon,
+} from "@mui/icons-material";
 
 export const App: React.FC = () => {
   return (
-    <HashRouter>
-      <Refine
-        dataProvider={localDataProvider}
-        authProvider={authProvider}
-        routerProvider={routerBindings}
-        resources={[
-          {
-            name: "dashboard",
-            list: "/dashboard",
-            meta: {
-              label: "Dashboard",
-              icon: <LayoutDashboard className="w-4 h-4" />,
-            },
-          },
-          {
-            name: "calculator",
-            list: "/calculator",
-            meta: {
-              label: "Bill Calculator",
-              icon: <Calculator className="w-4 h-4" />,
-            },
-          },
-          {
-            name: "user_appliances",
-            list: "/appliances",
-            meta: {
-              label: "Appliances Hub",
-              icon: <Zap className="w-4 h-4" />,
-            },
-          },
-          {
-            name: "user_calendar_events",
-            list: "/calendar",
-            meta: {
-              label: "Smart Calendar",
-              icon: <Calendar className="w-4 h-4" />,
-            },
-          },
-          {
-            name: "analytics",
-            list: "/analytics",
-            meta: {
-              label: "Analytics & Forecast",
-              icon: <BarChart3 className="w-4 h-4" />,
-            },
-          },
-        ]}
-        options={{
-          syncWithLocation: true,
-          warnWhenUnsavedChanges: true,
-        }}
-      >
-        <Routes>
-          {/* Public Landing / Home Page */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/landing" element={<LandingPage />} />
+    <AppTheme>
+      <ToastProvider>
+        <HashRouter>
+          <Refine
+            dataProvider={resilientDataProvider}
+            authProvider={authProvider}
+            routerProvider={routerBindings}
+            resources={[
+              {
+                name: "dashboard",
+                list: "/dashboard",
+                meta: {
+                  label: "Dashboard",
+                  icon: <DashboardIcon fontSize="small" />,
+                },
+              },
+              {
+                name: "calculator",
+                list: "/calculator",
+                meta: {
+                  label: "Bill Calculator",
+                  icon: <CalculatorIcon fontSize="small" />,
+                },
+              },
+              {
+                name: "user_appliances",
+                list: "/appliances",
+                meta: {
+                  label: "Appliances Hub",
+                  icon: <BoltIcon fontSize="small" />,
+                },
+              },
+              {
+                name: "user_calendar_events",
+                list: "/calendar",
+                meta: {
+                  label: "Smart Calendar",
+                  icon: <CalendarIcon fontSize="small" />,
+                },
+              },
+              {
+                name: "appliance_usage_logs",
+                list: "/calendar",
+                meta: {
+                  label: "Usage Receipts",
+                  icon: <ReceiptIcon fontSize="small" />,
+                },
+              },
+              {
+                name: "accounts",
+                list: "/dashboard",
+                meta: {
+                  label: "User Accounts",
+                  icon: <AccountIcon fontSize="small" />,
+                },
+              },
+              {
+                name: "system_changelogs",
+                list: "/docs",
+                meta: {
+                  label: "Audit Logs",
+                  icon: <ChangelogIcon fontSize="small" />,
+                },
+              },
+              {
+                name: "analytics",
+                list: "/analytics",
+                meta: {
+                  label: "Analytics",
+                  icon: <AnalyticsIcon fontSize="small" />,
+                },
+              },
+              {
+                name: "forecasting",
+                list: "/forecasting",
+                meta: {
+                  label: "Forecasting",
+                  icon: <ForecastingIcon fontSize="small" />,
+                },
+              },
+              {
+                name: "docs",
+                list: "/docs",
+                meta: {
+                  label: "API Docs",
+                  icon: <ApiIcon fontSize="small" />,
+                },
+              },
+            ]}
+            options={{
+              syncWithLocation: true,
+              warnWhenUnsavedChanges: true,
+            }}
+          >
+            <Routes>
+              {/* Public Landing / Marketing Page */}
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/landing" element={<LandingPage />} />
 
-          {/* Authentication Pages */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
+              {/* Authentication Pages */}
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
-          {/* App Workspace Pages (under Layout) */}
-          <Route element={<Layout />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/calculator" element={<CalculatorPage />} />
-            <Route path="/appliances" element={<AppliancesPage />} />
-            <Route path="/calendar" element={<CalendarPage />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
-          </Route>
+              {/* App Workspace Pages (under Layout) */}
+              <Route element={<Layout />}>
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/calculator" element={<CalculatorPage />} />
+                <Route path="/appliances" element={<AppliancesPage />} />
+                <Route path="/calendar" element={<CalendarPage />} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="/forecasting" element={<ForecastingPage />} />
+                <Route path="/docs" element={<ApiDocsPage />} />
+              </Route>
 
-          {/* Catch-all fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-        <UnsavedChangesNotifier />
-      </Refine>
-    </HashRouter>
+              {/* Catch-all fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+            <UnsavedChangesNotifier />
+            <VersionBadge />
+          </Refine>
+        </HashRouter>
+      </ToastProvider>
+    </AppTheme>
   );
 };
 
