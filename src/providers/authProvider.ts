@@ -82,7 +82,7 @@ export const authProvider: AuthProvider = {
     }
   },
 
-  register: async ({ email, password, name, householdType }) => {
+  register: async ({ email, password, name, householdType, securityQuestion, securityAnswer }: any) => {
     if (!email || !password) {
       return {
         success: false,
@@ -94,13 +94,16 @@ export const authProvider: AuthProvider = {
     }
 
     try {
+      const trimmedEmail = email.trim().toLowerCase();
       const { data, error } = await supabaseClient.auth.signUp({
-        email: email.trim(),
+        email: trimmedEmail,
         password: password.trim(),
         options: {
           data: {
-            name: name?.trim() || email.split("@")[0],
+            name: name?.trim() || trimmedEmail.split("@")[0],
             householdType: householdType || "Residential (Meralco 230V)",
+            security_question: securityQuestion || "",
+            security_answer: (securityAnswer || "").trim().toLowerCase(),
           },
         },
       });
@@ -116,12 +119,26 @@ export const authProvider: AuthProvider = {
         };
       }
 
+      // Record security question map in local persistent cache for rapid password recovery
+      if (securityQuestion && securityAnswer) {
+        try {
+          const secDirectory = JSON.parse(localStorage.getItem("powerforecast_sec_dir") || "{}");
+          secDirectory[trimmedEmail] = {
+            question: securityQuestion,
+            answer: securityAnswer.trim().toLowerCase(),
+          };
+          localStorage.setItem("powerforecast_sec_dir", JSON.stringify(secDirectory));
+        } catch (e) {
+          devLog.warn("Auth", "Failed to cache security directory entry", e);
+        }
+      }
+
       if (data?.user) {
         const activeUser = {
           id: data.user.id,
-          email: data.user.email || email,
-          name: name?.trim() || data.user.user_metadata?.name || email.split("@")[0],
-          avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${email}`,
+          email: data.user.email || trimmedEmail,
+          name: name?.trim() || data.user.user_metadata?.name || trimmedEmail.split("@")[0],
+          avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${trimmedEmail}`,
           role: "authenticated",
           householdType: householdType || "Residential (Meralco 230V)",
         };

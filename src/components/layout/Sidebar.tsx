@@ -100,20 +100,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }}
         >
           <Box
+            component="img"
+            src="/Assets/LOGO.png"
+            alt="PowerForecast Logo"
             sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 36,
-              height: 36,
+              width: 38,
+              height: 38,
               borderRadius: 2,
-              bgcolor: "primary.main",
-              color: "#ffffff",
-              boxShadow: "0 2px 8px rgba(99, 102, 241, 0.4)",
+              objectFit: "contain",
+              filter: "drop-shadow(0 2px 8px rgba(99, 102, 241, 0.4))",
             }}
-          >
-            <BoltIcon sx={{ color: "#ffd54f" }} />
-          </Box>
+          />
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 800, letterSpacing: "-0.01em", color: "#ffffff" }}>
               PowerForecast

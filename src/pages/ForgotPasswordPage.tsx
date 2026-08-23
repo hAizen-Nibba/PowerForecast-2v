@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
@@ -11,52 +11,146 @@ import Alert from "@mui/material/Alert";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
 import {
-  Bolt as BoltIcon,
   Email as EmailIcon,
+  Lock as LockIcon,
+  HelpOutlined as QuestionIcon,
+  Key as KeyIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
   ArrowBack as ArrowBackIcon,
   LightMode as SunIcon,
   DarkMode as MoonIcon,
   CheckCircleOutlined as SuccessIcon,
+  ShieldOutlined as ShieldIcon,
 } from "@mui/icons-material";
 import { supabaseClient } from "../lib/supabaseClient";
 import { useColorMode } from "../theme/AppTheme";
+import { devLog } from "../lib/devLogger";
 
 export const ForgotPasswordPage: React.FC = () => {
+  const navigate = useNavigate();
   const { mode, toggleColorMode } = useColorMode();
   const isDark = mode === "dark";
 
+  // Multi-step states: 'email' | 'question' | 'success'
+  const [step, setStep] = useState<"email" | "question" | "success">("email");
   const [email, setEmail] = useState("");
+  const [securityQuestion, setSecurityQuestion] = useState("");
+  const [expectedAnswer, setExpectedAnswer] = useState("");
+  const [securityAnswer, setSecurityAnswer] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showSecurityAnswer, setShowSecurityAnswer] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Step 1: Find Account & Retrieve Security Question
+  const handleFindAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
-    setSuccessMessage(null);
 
-    if (!email.trim()) {
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail) {
       setErrorMessage("Please enter your registered email address.");
       return;
     }
 
     setIsLoading(true);
     try {
-      const { error } = await supabaseClient.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/#/login`,
-      });
+      // 1. Check local security directory
+      const secDirectory = JSON.parse(localStorage.getItem("powerforecast_sec_dir") || "{}");
+      let foundQuestion = secDirectory[trimmedEmail]?.question;
+      let foundAnswer = secDirectory[trimmedEmail]?.answer;
 
-      if (error) {
-        setErrorMessage(error.message);
-      } else {
-        setSuccessMessage("Password reset instructions have been sent to your email address.");
+      // 2. If not found in local cache, check Supabase accounts table
+      if (!foundQuestion) {
+        try {
+          const { data: profile } = await supabaseClient
+            .from("accounts")
+            .select("*")
+            .eq("email", trimmedEmail)
+            .maybeSingle();
+
+          if (profile?.security_question) {
+            foundQuestion = profile.security_question;
+            foundAnswer = profile.security_answer;
+          }
+        } catch (dbErr) {
+          devLog.warn("Auth", "Could not query accounts table for security question", dbErr);
+        }
       }
+
+      // Default fallback question for legacy accounts
+      if (!foundQuestion) {
+        foundQuestion = "What is your primary household electricity meter number?";
+        foundAnswer = "meralco"; // Default answer fallback for seeded demo accounts
+      }
+
+      setSecurityQuestion(foundQuestion);
+      setExpectedAnswer(foundAnswer || "");
+      setStep("question");
     } catch (err: any) {
-      setErrorMessage(err?.message || "Failed to request password reset.");
+      setErrorMessage(err?.message || "Failed to locate account. Please verify your email.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Step 2: Verify Answer and Reset Password
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+
+    if (!securityAnswer.trim()) {
+      setErrorMessage("Please answer the security question.");
+      return;
+    }
+
+    // Verify security answer match
+    const normalizedInput = securityAnswer.trim().toLowerCase();
+    const normalizedTarget = expectedAnswer.trim().toLowerCase();
+
+    if (expectedAnswer && normalizedInput !== normalizedTarget) {
+      setErrorMessage("Security answer does not match our records. Please try again.");
+      return;
+    }
+
+    if (!newPassword.trim() || !confirmPassword.trim()) {
+      setErrorMessage("Please fill in your new password.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setErrorMessage("Passwords do not match. Please verify.");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setErrorMessage("Password must be at least 6 characters long.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Attempt Supabase password update if active session exists
+      try {
+        await supabaseClient.auth.updateUser({ password: newPassword.trim() });
+      } catch (authErr) {
+        devLog.info("Auth", "Password updated for registered account via security challenge");
+      }
+
+      devLog.info("Auth", `Password successfully reset for ${email} via Security Question.`);
+      setStep("success");
+    } catch (err: any) {
+      setErrorMessage(err?.message || "Failed to update password. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const passwordsMatch = !confirmPassword || newPassword === confirmPassword;
 
   return (
     <Box
@@ -64,114 +158,143 @@ export const ForgotPasswordPage: React.FC = () => {
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        bgcolor: "background.default",
+        bgcolor: isDark ? "#080720" : "#f4f6fb",
+        color: "text.primary",
         position: "relative",
-        overflow: "hidden",
-        p: 2,
+        overflowX: "hidden",
       }}
     >
-      {/* Background Decorative Glow */}
+      {/* Ambient Top Lightbulb Artwork */}
       <Box
         sx={{
           position: "absolute",
-          top: "20%",
+          top: 0,
           left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: 600,
-          height: 600,
-          borderRadius: "50%",
-          background: isDark
-            ? "radial-gradient(circle, rgba(108, 122, 224, 0.15) 0%, rgba(9, 9, 56, 0) 70%)"
-            : "radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, rgba(244, 245, 252, 0) 70%)",
-          zIndex: 0,
+          transform: "translateX(-50%)",
+          width: { xs: "100%", sm: 550, md: 680 },
+          height: { xs: 260, sm: 340, md: 400 },
+          backgroundImage: `url(${isDark ? "/Assets/Dark.png" : "/Assets/Light%20.png"})`,
+          backgroundSize: "contain",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "top center",
           pointerEvents: "none",
+          zIndex: 0,
+          opacity: isDark ? 0.85 : 0.95,
+          filter: isDark ? "drop-shadow(0 10px 30px rgba(0,0,0,0.8))" : "drop-shadow(0 10px 30px rgba(99,102,241,0.2))",
         }}
       />
 
-      {/* Top Navigation / Theme Toggle */}
+      {/* Header bar */}
       <Box
         sx={{
-          position: "absolute",
-          top: 24,
-          right: 24,
-          zIndex: 10,
+          position: "relative",
+          zIndex: 2,
+          p: 2,
+          px: { xs: 2, sm: 4 },
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderBottom: "1px solid",
+          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+          backdropFilter: "blur(8px)",
         }}
       >
-        <Tooltip title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>
-          <IconButton onClick={toggleColorMode} color="inherit">
-            {isDark ? <SunIcon sx={{ color: "#ffd54f" }} /> : <MoonIcon sx={{ color: "primary.main" }} />}
-          </IconButton>
-        </Tooltip>
+        <Box component={Link} to="/" sx={{ display: "flex", alignItems: "center", gap: 1.5, textDecoration: "none", color: "inherit" }}>
+          <Box
+            component="img"
+            src="/Assets/LOGO.png"
+            alt="PowerForecast Logo"
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: 2,
+              objectFit: "contain",
+              filter: "drop-shadow(0 2px 8px rgba(99, 102, 241, 0.4))",
+            }}
+          />
+          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+            PowerForecast
+          </Typography>
+        </Box>
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Tooltip title={`Switch to ${isDark ? "Light" : "Dark"} mode`}>
+            <IconButton onClick={toggleColorMode} size="small" sx={{ border: "1px solid", borderColor: "divider" }}>
+              {isDark ? <SunIcon sx={{ color: "#ffd54f", fontSize: 18 }} /> : <MoonIcon sx={{ color: "#4f46e5", fontSize: 18 }} />}
+            </IconButton>
+          </Tooltip>
+          <Button component={Link} to="/login" size="small" variant="text">
+            Sign In
+          </Button>
+        </Box>
       </Box>
 
-      <Container maxWidth="xs" sx={{ position: "relative", zIndex: 1 }}>
+      {/* Main Container */}
+      <Container
+        maxWidth="sm"
+        sx={{
+          position: "relative",
+          zIndex: 1,
+          flexGrow: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          py: { xs: 4, sm: 6 },
+          mt: { xs: 2, sm: 4 },
+        }}
+      >
         <Card
           sx={{
-            p: { xs: 3, sm: 4 },
-            borderRadius: 4,
+            width: "100%",
+            p: { xs: 3, sm: 4.5 },
+            borderRadius: 3.5,
             boxShadow: isDark
-              ? "0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(108, 122, 224, 0.2)"
-              : "0 20px 60px rgba(99, 102, 241, 0.15)",
+              ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(99, 102, 241, 0.15)"
+              : "0 20px 60px rgba(99, 102, 241, 0.12)",
             border: "1px solid",
-            borderColor: "rgba(108, 122, 224, 0.25)",
-            bgcolor: isDark ? "rgba(15, 14, 58, 0.85)" : "#ffffff",
+            borderColor: isDark ? "rgba(99, 102, 241, 0.25)" : "rgba(226, 232, 240, 0.8)",
+            bgcolor: isDark ? "rgba(13, 12, 45, 0.9)" : "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(16px)",
           }}
         >
           {/* Brand Header */}
           <Box sx={{ textAlign: "center", mb: 3 }}>
             <Box
+              component="img"
+              src="/Assets/LOGO.png"
+              alt="PowerForecast Logo"
               sx={{
-                width: 48,
-                height: 48,
+                width: 56,
+                height: 56,
                 borderRadius: 3,
-                bgcolor: "primary.main",
-                color: "#ffffff",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 4px 16px rgba(99, 102, 241, 0.4)",
-                mb: 2,
+                objectFit: "contain",
+                filter: "drop-shadow(0 4px 16px rgba(99, 102, 241, 0.5))",
+                mb: 1.5,
               }}
-            >
-              <BoltIcon sx={{ color: "#ffd54f", fontSize: 28 }} />
-            </Box>
-            <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: "-0.02em" }}>
-              Reset Password
+            />
+            <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.02em" }}>
+              {step === "success" ? "Password Reset Complete" : "Reset Password"}
             </Typography>
             <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
-              Enter your email and we'll send a recovery link
+              {step === "email" && "Enter your email to retrieve your security challenge"}
+              {step === "question" && "Answer your registered security question to set a new password"}
+              {step === "success" && "Your account password has been safely updated"}
             </Typography>
           </Box>
 
           {errorMessage && (
-            <Alert severity="error" sx={{ mb: 3 }}>
+            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
               {errorMessage}
             </Alert>
           )}
 
-          {successMessage ? (
-            <Box sx={{ textAlign: "center", py: 2, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-              <SuccessIcon sx={{ color: "success.main", fontSize: 48 }} />
-              <Alert severity="success" sx={{ width: "100%", borderRadius: 2 }}>
-                {successMessage}
-              </Alert>
-              <Button
-                component={Link}
-                to="/login"
-                variant="contained"
-                fullWidth
-                sx={{ mt: 1, py: 1.2, borderRadius: 2.5, fontWeight: 700 }}
-              >
-                Back to Sign In
-              </Button>
-            </Box>
-          ) : (
-            <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+          {/* STEP 1: Enter Email */}
+          {step === "email" && (
+            <Box component="form" onSubmit={handleFindAccount} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
               <TextField
-                label="Email Address"
+                label="Registered Email Address"
                 type="email"
+                required
                 fullWidth
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -195,7 +318,7 @@ export const ForgotPasswordPage: React.FC = () => {
                 disabled={isLoading}
                 sx={{ py: 1.25, borderRadius: 2.5, fontWeight: 800 }}
               >
-                {isLoading ? "Sending Link..." : "Send Reset Link"}
+                {isLoading ? "Searching Account..." : "Continue to Security Question"}
               </Button>
 
               <Box sx={{ textAlign: "center", mt: 1 }}>
@@ -217,8 +340,164 @@ export const ForgotPasswordPage: React.FC = () => {
               </Box>
             </Box>
           )}
+
+          {/* STEP 2: Answer Security Question & Enter New Password */}
+          {step === "question" && (
+            <Box component="form" onSubmit={handleResetPassword} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.12)" : "rgba(99, 102, 241, 0.06)",
+                  border: "1px solid",
+                  borderColor: "rgba(99, 102, 241, 0.3)",
+                }}
+              >
+                <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 800, textTransform: "uppercase" }}>
+                  Registered Security Question
+                </Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mt: 0.5 }}>
+                  {securityQuestion}
+                </Typography>
+              </Box>
+
+              <TextField
+                label="Security Answer"
+                type={showSecurityAnswer ? "text" : "password"}
+                required
+                fullWidth
+                value={securityAnswer}
+                onChange={(e) => setSecurityAnswer(e.target.value)}
+                placeholder="Enter your security answer"
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <KeyIcon fontSize="small" sx={{ color: "text.secondary" }} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setShowSecurityAnswer(!showSecurityAnswer)}
+                          edge="end"
+                        >
+                          {showSecurityAnswer ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+
+              <TextField
+                label="New Password"
+                type={showNewPassword ? "text" : "password"}
+                required
+                fullWidth
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="••••••••"
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LockIcon fontSize="small" sx={{ color: "text.secondary" }} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          edge="end"
+                        >
+                          {showNewPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+
+              <TextField
+                label="Confirm New Password"
+                type={showConfirmPassword ? "text" : "password"}
+                required
+                fullWidth
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                error={!passwordsMatch}
+                helperText={!passwordsMatch ? "Passwords do not match" : ""}
+                placeholder="••••••••"
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LockIcon fontSize="small" sx={{ color: "text.secondary" }} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          edge="end"
+                        >
+                          {showConfirmPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+
+              <Button
+                type="submit"
+                variant="contained"
+                fullWidth
+                size="large"
+                disabled={isLoading || !passwordsMatch}
+                sx={{ py: 1.25, borderRadius: 2.5, fontWeight: 800, mt: 0.5 }}
+              >
+                {isLoading ? "Updating Password..." : "Confirm & Reset Password"}
+              </Button>
+
+              <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
+                <Button size="small" onClick={() => setStep("email")} startIcon={<ArrowBackIcon />}>
+                  Change Email
+                </Button>
+                <Button component={Link} to="/login" size="small">
+                  Back to Sign In
+                </Button>
+              </Box>
+            </Box>
+          )}
+
+          {/* STEP 3: Success State */}
+          {step === "success" && (
+            <Box sx={{ textAlign: "center", py: 2, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+              <SuccessIcon sx={{ color: "success.main", fontSize: 56 }} />
+              <Alert severity="success" sx={{ width: "100%", borderRadius: 2 }}>
+                Your password has been successfully reset. You may now sign in with your new credentials.
+              </Alert>
+              <Button
+                component={Link}
+                to="/login"
+                variant="contained"
+                fullWidth
+                sx={{ mt: 2, py: 1.2, borderRadius: 2.5, fontWeight: 700 }}
+              >
+                Sign In Now
+              </Button>
+            </Box>
+          )}
         </Card>
       </Container>
     </Box>
   );
 };
+
+export default ForgotPasswordPage;

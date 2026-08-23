@@ -92,20 +92,17 @@ export const LandingPage: React.FC = () => {
             {/* Logo */}
             <Box component={Link} to="/" sx={{ display: "flex", alignItems: "center", gap: 1.5, textDecoration: "none", color: "inherit" }}>
               <Box
+                component="img"
+                src="/Assets/LOGO.png"
+                alt="PowerForecast Logo"
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
                   width: 38,
                   height: 38,
                   borderRadius: 2,
-                  bgcolor: "primary.main",
-                  color: "#ffffff",
-                  boxShadow: "0 2px 10px rgba(99, 102, 241, 0.5)",
+                  objectFit: "contain",
+                  filter: "drop-shadow(0 2px 10px rgba(99, 102, 241, 0.5))",
                 }}
-              >
-                <BoltIcon sx={{ color: "#ffd54f", fontSize: 24 }} />
-              </Box>
+              />
               <Typography variant="h6" sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}>
                 power<Typography component="span" variant="h6" sx={{ fontWeight: 900, color: "#ffd54f" }}>forecast</Typography>
               </Typography>
@@ -649,7 +646,7 @@ export const LandingPage: React.FC = () => {
         <Container maxWidth="lg">
           <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-              <BoltIcon sx={{ color: "#ffd54f" }} />
+              <Box component="img" src="/Assets/LOGO.png" alt="PowerForecast Logo" sx={{ width: 28, height: 28, objectFit: "contain" }} />
               <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
                 PowerForecast Refine & MUI
               </Typography>

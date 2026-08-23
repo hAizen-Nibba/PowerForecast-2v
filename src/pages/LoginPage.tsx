@@ -12,10 +12,8 @@ import Checkbox from "@mui/material/Checkbox";
 import InputAdornment from "@mui/material/InputAdornment";
 import IconButton from "@mui/material/IconButton";
 import Alert from "@mui/material/Alert";
-import Divider from "@mui/material/Divider";
 import Tooltip from "@mui/material/Tooltip";
 import {
-  Bolt as BoltIcon,
   Email as EmailIcon,
   Lock as LockIcon,
   Visibility as VisibilityIcon,
@@ -63,41 +61,60 @@ export const LoginPage: React.FC = () => {
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        bgcolor: "background.default",
+        bgcolor: isDark ? "#080720" : "#f4f6fb",
         color: "text.primary",
-        background: (theme) =>
-          theme.palette.mode === "dark"
-            ? "radial-gradient(ellipse 70% 60% at 50% 10%, rgba(99, 102, 241, 0.2), #090938)"
-            : "radial-gradient(ellipse 70% 60% at 50% 10%, rgba(99, 102, 241, 0.1), #f8faff)",
+        position: "relative",
+        overflowX: "hidden",
       }}
     >
+      {/* Ambient Top Lightbulb Artwork */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 0,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: { xs: "100%", sm: 550, md: 680 },
+          height: { xs: 260, sm: 340, md: 400 },
+          backgroundImage: `url(${isDark ? "/Assets/Dark.png" : "/Assets/Light%20.png"})`,
+          backgroundSize: "contain",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "top center",
+          pointerEvents: "none",
+          zIndex: 0,
+          opacity: isDark ? 0.85 : 0.95,
+          filter: isDark ? "drop-shadow(0 10px 30px rgba(0,0,0,0.8))" : "drop-shadow(0 10px 30px rgba(99,102,241,0.2))",
+        }}
+      />
+
       {/* Header bar */}
       <Box
         sx={{
+          position: "relative",
+          zIndex: 2,
           p: 2,
           px: { xs: 2, sm: 4 },
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           borderBottom: "1px solid",
-          borderColor: "divider",
+          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+          backdropFilter: "blur(8px)",
         }}
       >
         <Box component={Link} to="/" sx={{ display: "flex", alignItems: "center", gap: 1.5, textDecoration: "none", color: "inherit" }}>
           <Box
+            component="img"
+            src="/Assets/LOGO.png"
+            alt="PowerForecast Logo"
             sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
               width: 36,
               height: 36,
               borderRadius: 2,
-              bgcolor: "primary.main",
-              color: "#ffffff",
+              objectFit: "contain",
+              filter: "drop-shadow(0 2px 8px rgba(99, 102, 241, 0.4))",
             }}
-          >
-            <BoltIcon sx={{ color: "#ffd54f" }} />
-          </Box>
+          />
           <Typography variant="h6" sx={{ fontWeight: 800 }}>
             PowerForecast
           </Typography>
@@ -119,11 +136,14 @@ export const LoginPage: React.FC = () => {
       <Container
         maxWidth="sm"
         sx={{
+          position: "relative",
+          zIndex: 1,
           flexGrow: 1,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          py: 6,
+          py: { xs: 4, sm: 6 },
+          mt: { xs: 2, sm: 4 },
         }}
       >
         <Card
@@ -131,26 +151,29 @@ export const LoginPage: React.FC = () => {
             width: "100%",
             p: { xs: 3, sm: 4.5 },
             borderRadius: 3.5,
-            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+            boxShadow: isDark
+              ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(99, 102, 241, 0.15)"
+              : "0 20px 60px rgba(99, 102, 241, 0.12)",
+            border: "1px solid",
+            borderColor: isDark ? "rgba(99, 102, 241, 0.25)" : "rgba(226, 232, 240, 0.8)",
+            bgcolor: isDark ? "rgba(13, 12, 45, 0.9)" : "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(16px)",
           }}
         >
           <Box sx={{ textAlign: "center", mb: 3 }}>
             <Box
+              component="img"
+              src="/Assets/LOGO.png"
+              alt="PowerForecast Logo"
               sx={{
-                width: 48,
-                height: 48,
+                width: 56,
+                height: 56,
                 borderRadius: 3,
-                bgcolor: "primary.main",
-                color: "#ffffff",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 4px 16px rgba(99, 102, 241, 0.4)",
-                mb: 2,
+                objectFit: "contain",
+                filter: "drop-shadow(0 4px 16px rgba(99, 102, 241, 0.5))",
+                mb: 1.5,
               }}
-            >
-              <BoltIcon sx={{ color: "#ffd54f", fontSize: 28 }} />
-            </Box>
+            />
             <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.02em" }}>
               Sign In
             </Typography>
@@ -160,7 +183,7 @@ export const LoginPage: React.FC = () => {
           </Box>
 
           {errorMessage && (
-            <Alert severity="error" sx={{ mb: 3 }}>
+            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
               {errorMessage}
             </Alert>
           )}
@@ -241,7 +264,7 @@ export const LoginPage: React.FC = () => {
               fullWidth
               size="large"
               disabled={isLoading}
-              sx={{ py: 1.25, borderRadius: 2.5, mt: 1 }}
+              sx={{ py: 1.25, borderRadius: 2.5, mt: 1, fontWeight: 700 }}
             >
               {isLoading ? "Signing in..." : "Sign In to PowerForecast"}
             </Button>

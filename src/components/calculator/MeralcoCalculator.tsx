@@ -25,8 +25,12 @@ import {
 } from "@mui/icons-material";
 import { calculateMeralcoBill, DEFAULT_MERALCO_RATES } from "../../lib/meralcoCalculator";
 import { devLog } from "../../lib/devLogger";
+import { useColorMode } from "../../theme/AppTheme";
 
 export const MeralcoCalculator: React.FC = () => {
+  const { mode } = useColorMode();
+  const isDark = mode === "dark";
+
   const [activeTab, setActiveTab] = useState<number>(0);
   const [kwh, setKwh] = useState<number>(320);
   const [genRate, setGenRate] = useState<number>(DEFAULT_MERALCO_RATES.defaultGenerationRate);
@@ -76,9 +80,42 @@ export const MeralcoCalculator: React.FC = () => {
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+    <Box sx={{ position: "relative", display: "flex", flexDirection: "column", gap: 3, overflow: "hidden" }}>
+      {/* Background Lightbulb Art (On.png for Light Mode, Off.png for Dark Mode) */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: "40%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: { xs: 340, sm: 480, md: 560, lg: 640 },
+          height: { xs: 450, sm: 600, md: 720, lg: 820 },
+          backgroundImage: `url(${isDark ? "/Assets/Off.png" : "/Assets/On.png"})`,
+          backgroundSize: "contain",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center center",
+          pointerEvents: "none",
+          zIndex: 0,
+          opacity: isDark ? 0.4 : 0.45,
+          filter: isDark
+            ? "drop-shadow(0 0 50px rgba(0, 0, 0, 0.9))"
+            : "drop-shadow(0 0 60px rgba(255, 213, 79, 0.4))",
+          transition: "background-image 0.4s ease, opacity 0.4s ease",
+        }}
+      />
+
       {/* Top Banner Header */}
-      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "flex-start", sm: "center" }, justifyContent: "space-between", gap: 2 }}>
+      <Box
+        sx={{
+          position: "relative",
+          zIndex: 1,
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: { xs: "flex-start", sm: "center" },
+          justifyContent: "space-between",
+          gap: 2,
+        }}
+      >
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 1.5 }}>
             <Box
@@ -123,19 +160,30 @@ export const MeralcoCalculator: React.FC = () => {
       </Box>
 
       {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+      <Box sx={{ position: "relative", zIndex: 1, borderBottom: 1, borderColor: "divider" }}>
         <Tabs value={activeTab} onChange={(_, val) => setActiveTab(val)}>
           <Tab icon={<BoltIcon fontSize="small" />} iconPosition="start" label="Bill Parameters" />
           <Tab icon={<SparklesIcon fontSize="small" />} iconPosition="start" label="What-If Energy Savings" />
         </Tabs>
       </Box>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={3} sx={{ position: "relative", zIndex: 1 }}>
         {/* Left Column: Config Inputs */}
         <Grid size={{ xs: 12, lg: 5 }}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {activeTab === 0 ? (
-              <Card sx={{ p: 3, borderRadius: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
+              <Card
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2.5,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(13, 12, 45, 0.88)" : "rgba(255, 255, 255, 0.92)",
+                  backdropFilter: "blur(16px)",
+                }}
+              >
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <Box>
                     <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
@@ -287,8 +335,18 @@ export const MeralcoCalculator: React.FC = () => {
                 </Paper>
               </Card>
             ) : (
-              /* What-If Energy Savings Simulator Card */
-              <Card sx={{ p: 3, borderRadius: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
+              <Card
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2.5,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(13, 12, 45, 0.88)" : "rgba(255, 255, 255, 0.92)",
+                  backdropFilter: "blur(16px)",
+                }}
+              >
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <Box>
                     <Typography variant="subtitle1" sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 1 }}>
@@ -371,6 +429,9 @@ export const MeralcoCalculator: React.FC = () => {
                 p: { xs: 3, sm: 4 },
                 textAlign: "center",
                 borderRadius: 3.5,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(13, 12, 45, 0.88)" : "rgba(255, 255, 255, 0.92)",
+                backdropFilter: "blur(16px)",
                 boxShadow: (theme) =>
                   theme.palette.mode === "dark"
                     ? "0 0 32px rgba(99, 102, 241, 0.25)"
@@ -415,7 +476,15 @@ export const MeralcoCalculator: React.FC = () => {
             </Card>
 
             {/* Cost Share Distribution Bar */}
-            <Card sx={{ p: 3, borderRadius: 3 }}>
+            <Card
+              sx={{
+                p: 3,
+                borderRadius: 3,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(13, 12, 45, 0.88)" : "rgba(255, 255, 255, 0.92)",
+                backdropFilter: "blur(16px)",
+              }}
+            >
               <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 0.5 }}>
                 Cost Share Distribution
               </Typography>
