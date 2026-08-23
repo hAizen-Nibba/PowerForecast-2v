@@ -10,7 +10,7 @@ export const inputsCustomizations: Components<Theme> = {
     styleOverrides: {
       root: {
         boxSizing: 'border-box',
-        transition: 'all 120ms ease-in',
+        transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
         '&:focus-visible': {
           outline: `3px solid ${alpha(brand[500], 0.5)}`,
           outlineOffset: '2px',
@@ -22,13 +22,18 @@ export const inputsCustomizations: Components<Theme> = {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
         boxShadow: 'none',
-        borderRadius: theme.shape.borderRadius,
+        borderRadius: 10,
         textTransform: 'none',
         fontWeight: 600,
         letterSpacing: 0,
         padding: '8px 16px',
+        transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
         '&:hover': {
-          boxShadow: 'none',
+          boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)',
+          transform: 'translateY(-1px)',
+        },
+        '&:active': {
+          transform: 'translateY(0)',
         },
       }),
       contained: ({ theme }: { theme: Theme }) => ({
@@ -49,6 +54,7 @@ export const inputsCustomizations: Components<Theme> = {
       sizeSmall: {
         padding: '6px 12px',
         fontSize: '0.8125rem',
+        borderRadius: 8,
       },
       sizeMedium: {
         padding: '8px 16px',
@@ -64,12 +70,16 @@ export const inputsCustomizations: Components<Theme> = {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
         boxShadow: 'none',
-        borderRadius: theme.shape.borderRadius,
+        borderRadius: 10,
         color: theme.palette.text.secondary,
-        transition: 'all 120ms ease-in',
+        transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
         '&:hover': {
           backgroundColor: alpha(theme.palette.primary.main, 0.1),
           color: theme.palette.text.primary,
+          transform: 'scale(1.05)',
+        },
+        '&:active': {
+          transform: 'scale(0.98)',
         },
       }),
     },
@@ -77,12 +87,13 @@ export const inputsCustomizations: Components<Theme> = {
   MuiOutlinedInput: {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
-        borderRadius: theme.shape.borderRadius,
+        borderRadius: 10,
         backgroundColor: theme.palette.mode === 'dark' ? 'rgba(15, 14, 58, 0.6)' : 'rgba(255, 255, 255, 0.9)',
         borderColor: alpha(theme.palette.primary.main, 0.25),
-        transition: 'border-color 120ms ease-in, box-shadow 120ms ease-in',
+        transition: 'border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease',
         '& .MuiOutlinedInput-notchedOutline': {
           borderColor: alpha(theme.palette.primary.main, 0.2),
+          transition: 'border-color 180ms ease',
         },
         '&:hover .MuiOutlinedInput-notchedOutline': {
           borderColor: alpha(theme.palette.primary.main, 0.45),
@@ -108,6 +119,7 @@ export const inputsCustomizations: Components<Theme> = {
       },
       switchBase: ({ theme }: { theme: Theme }) => ({
         padding: 2,
+        transition: 'transform 200ms cubic-bezier(0.4, 0, 0.2, 1)',
         '&.Mui-checked': {
           transform: 'translateX(20px)',
           color: '#ffffff',
@@ -127,6 +139,7 @@ export const inputsCustomizations: Components<Theme> = {
         opacity: 1,
         backgroundColor: gray[600],
         boxSizing: 'border-box',
+        transition: 'background-color 200ms ease',
       },
     },
   },
@@ -135,14 +148,17 @@ export const inputsCustomizations: Components<Theme> = {
       root: ({ theme }: { theme: Theme }) => ({
         color: theme.palette.primary.main,
         height: 6,
+        padding: '13px 0',
       }),
       thumb: {
         height: 18,
         width: 18,
         backgroundColor: '#ffffff',
         border: '2px solid currentColor',
+        transition: 'box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1), transform 150ms cubic-bezier(0.4, 0, 0.2, 1)',
         '&:focus, &:hover, &.Mui-active, &.Mui-focusVisible': {
-          boxShadow: 'inherit',
+          boxShadow: '0 0 0 8px rgba(99, 102, 241, 0.16)',
+          transform: 'scale(1.15)',
         },
       },
       track: {

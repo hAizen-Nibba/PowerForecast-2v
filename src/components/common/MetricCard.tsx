@@ -49,11 +49,16 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         justifyContent: "space-between",
         height: "100%",
         cursor: onClick ? "pointer" : "default",
-        p: 2.25,
+        p: { xs: 2.25, sm: 2.5 },
+        borderRadius: 3.5,
+        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+        "&:hover": onClick ? {
+          transform: "translateY(-2px)",
+        } : {},
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 1 }}>
-        <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 600 }}>
+      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 1.25, gap: 1 }}>
+        <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 600, fontSize: "0.8125rem", letterSpacing: "-0.01em" }}>
           {title}
         </Typography>
         <Box
@@ -70,13 +75,14 @@ export const MetricCard: React.FC<MetricCardProps> = ({
             border: "1px solid",
             borderColor: (theme) =>
               theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.25)" : "rgba(99, 102, 241, 0.2)",
+            flexShrink: 0,
           }}
         >
           {icon}
         </Box>
       </Box>
 
-      <Box sx={{ my: 0.5 }}>
+      <Box sx={{ my: 0.75 }}>
         <Typography
           variant="h4"
           sx={{
@@ -84,15 +90,26 @@ export const MetricCard: React.FC<MetricCardProps> = ({
             fontFamily: "monospace",
             color: "text.primary",
             letterSpacing: "-0.02em",
+            fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
+            lineHeight: 1.2,
           }}
         >
           {value}
         </Typography>
       </Box>
 
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1, gap: 1 }}>
         {subtitle && (
-          <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: "text.secondary",
+              fontSize: "0.75rem",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             {subtitle}
           </Typography>
         )}
@@ -107,6 +124,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
               fontSize: "0.6875rem",
               fontWeight: 700,
               ml: "auto",
+              flexShrink: 0,
             }}
           />
         )}

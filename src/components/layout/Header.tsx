@@ -17,8 +17,6 @@ import {
   DarkMode as MoonIcon,
   AutoAwesome as SparklesIcon,
   Bolt as BoltIcon,
-  AccessTime as ClockIcon,
-  Whatshot as FlameIcon,
   Logout as LogoutIcon,
   CloudDone as CloudDoneIcon,
   CloudOff as CloudOffIcon,
@@ -51,7 +49,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [dbStatus, setDbStatus] = useState<{ ok: boolean; latency?: number }>({ ok: true, latency: 45 });
   const notifPermission = getNotificationPermission();
 
-  // Check Supabase connection health on mount and every 30s
+  // Check Supabase connection health on mount and periodically
   useEffect(() => {
     let isMounted = true;
     const verifyConnection = async () => {
@@ -102,17 +100,26 @@ export const Header: React.FC<HeaderProps> = ({
       position="sticky"
       sx={{
         zIndex: (theme) => theme.zIndex.drawer + 1,
-        backdropFilter: "blur(16px)",
+        backdropFilter: "blur(20px)",
+        borderBottom: "1px solid",
+        borderColor: "divider",
       }}
     >
-      <Toolbar sx={{ justifyContent: "space-between", minHeight: { xs: 56, sm: 64 }, px: { xs: 2, sm: 3 } }}>
+      <Toolbar
+        sx={{
+          justifyContent: "space-between",
+          minHeight: { xs: 58, sm: 64 },
+          px: { xs: 2, sm: 3, md: 4 },
+          gap: 1.5,
+        }}
+      >
         {/* Left: Mobile Menu Toggle, DB Status, and Tariff Indicators */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
           <IconButton
             color="inherit"
             edge="start"
             onClick={onOpenSidebar}
-            sx={{ display: { lg: "none" } }}
+            sx={{ display: { lg: "none" }, p: 0.75 }}
           >
             <MenuIcon />
           </IconButton>
@@ -137,6 +144,7 @@ export const Header: React.FC<HeaderProps> = ({
                 border: "1px solid",
                 borderColor: dbStatus.ok ? "rgba(52, 211, 153, 0.3)" : "rgba(248, 113, 113, 0.3)",
                 display: { xs: "none", sm: "inline-flex" },
+                height: 26,
               }}
             />
           </Tooltip>
@@ -154,22 +162,23 @@ export const Header: React.FC<HeaderProps> = ({
                 theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(99, 102, 241, 0.08)",
               border: "1px solid",
               borderColor: "divider",
+              height: 26,
             }}
           />
         </Box>
 
         {/* Center: Live Time / Date */}
         <Box sx={{ display: { xs: "none", lg: "flex" }, flexDirection: "column", alignItems: "center" }}>
-          <Typography variant="body2" sx={{ fontWeight: 800, fontFamily: "monospace", letterSpacing: "0.05em" }}>
+          <Typography variant="body2" sx={{ fontWeight: 800, fontFamily: "monospace", letterSpacing: "0.05em", lineHeight: 1.2 }}>
             {timeStr}
           </Typography>
-          <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+          <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", mt: 0.25 }}>
             {dateStr} (GMT+8)
           </Typography>
         </Box>
 
         {/* Right: AI Scanner CTA, Theme Switch, and User Profile */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
           {onOpenAiScanner && (
             <Button
               variant="outlined"
@@ -180,6 +189,8 @@ export const Header: React.FC<HeaderProps> = ({
                 display: { xs: "none", sm: "inline-flex" },
                 borderRadius: 2,
                 borderColor: "primary.main",
+                fontWeight: 700,
+                py: 0.5,
               }}
             >
               AI Scanner
@@ -198,6 +209,7 @@ export const Header: React.FC<HeaderProps> = ({
                 border: "1px solid",
                 borderColor: "divider",
                 p: 0.75,
+                borderRadius: 2,
               }}
             >
               {isDark ? <SunIcon sx={{ color: "#ffd54f", fontSize: 18 }} /> : <MoonIcon sx={{ color: "#4f46e5", fontSize: 18 }} />}
@@ -216,6 +228,7 @@ export const Header: React.FC<HeaderProps> = ({
                 border: "1px solid",
                 borderColor: "divider",
                 p: 0.75,
+                borderRadius: 2,
               }}
             >
               <Badge
@@ -245,20 +258,20 @@ export const Header: React.FC<HeaderProps> = ({
               display: "flex",
               alignItems: "center",
               gap: 1,
-              p: "4px 8px 4px 4px",
+              p: "4px 10px 4px 4px",
               borderRadius: 2,
               bgcolor: (theme) =>
                 theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
               border: "1px solid",
               borderColor: "divider",
               cursor: "pointer",
-              "&:hover": { borderColor: "primary.main" },
-              transition: "border-color 0.2s",
+              "&:hover": { borderColor: "primary.main", transform: "translateY(-1px)" },
+              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           >
             <Avatar
               src={identity?.avatar}
-              sx={{ width: 26, height: 26, bgcolor: "primary.main", fontSize: "0.75rem", fontWeight: 700 }}
+              sx={{ width: 28, height: 28, bgcolor: "primary.main", fontSize: "0.75rem", fontWeight: 700 }}
             >
               {identity?.name?.charAt(0) || "U"}
             </Avatar>
@@ -266,7 +279,7 @@ export const Header: React.FC<HeaderProps> = ({
               variant="caption"
               sx={{
                 fontWeight: 700,
-                maxWidth: 110,
+                maxWidth: 120,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -284,8 +297,9 @@ export const Header: React.FC<HeaderProps> = ({
             slotProps={{
               paper: {
                 sx: {
-                  minWidth: 180,
-                  p: 0.5,
+                  minWidth: 200,
+                  p: 0.75,
+                  borderRadius: 3,
                 },
               },
             }}
@@ -303,7 +317,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setAnchorEl(null);
                 logout();
               }}
-              sx={{ gap: 1, color: "error.main", fontSize: "0.8125rem", fontWeight: 600 }}
+              sx={{ gap: 1, color: "error.main", fontSize: "0.8125rem", fontWeight: 600, borderRadius: 1.5 }}
             >
               <LogoutIcon fontSize="small" />
               Sign Out

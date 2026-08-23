@@ -8,26 +8,18 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import Paper from "@mui/material/Paper";
-import ButtonGroup from "@mui/material/ButtonGroup";
 import Chip from "@mui/material/Chip";
 import Tooltip from "@mui/material/Tooltip";
-import Stack from "@mui/material/Stack";
 import {
   CalendarMonth as CalendarIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
-  Today as TodayIcon,
-  ViewWeek as ListViewIcon,
-  GridView as GridViewIcon,
-  Add as AddIcon,
   FormatListBulleted as QueueIcon,
   ReceiptLong as ReceiptIcon,
-  Bolt as BoltIcon,
   PowerSettingsNew as PowerIcon,
   Whatshot as FlameIcon,
   AccessTime as ClockIcon,
   CheckCircle as CheckCircleIcon,
-  AutoAwesome as SparklesIcon,
   Insights as InsightsIcon,
   Home as HomeIcon,
   Store as StoreIcon,
@@ -60,7 +52,7 @@ export const SmartCalendar: React.FC = () => {
   const [isQueueModalOpen, setIsQueueModalOpen] = useState(false);
   const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
 
-  const { showSuccess, showInfo, showError } = useToast();
+  const { showSuccess, showInfo } = useToast();
 
   const [now, setNow] = useState<number>(Date.now());
   useEffect(() => {
@@ -137,10 +129,6 @@ export const SmartCalendar: React.FC = () => {
 
   const handleNextMonth = () => {
     setCurrentDate(new Date(year, month + 1, 1));
-  };
-
-  const handleToday = () => {
-    setCurrentDate(new Date());
   };
 
   // Active running appliances
@@ -354,7 +342,7 @@ export const SmartCalendar: React.FC = () => {
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3 } }}>
       {/* 1. Header Banner & Quick Modals Triggers */}
       <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "flex-start", sm: "center" }, justifyContent: "space-between", gap: 2 }}>
         <Box>
@@ -369,6 +357,7 @@ export const SmartCalendar: React.FC = () => {
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
+                flexShrink: 0,
               }}
             >
               <CalendarIcon sx={{ color: "#ffd54f" }} />
@@ -380,7 +369,7 @@ export const SmartCalendar: React.FC = () => {
           </Typography>
         </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexWrap: "wrap" }}>
           <Button
             variant="outlined"
             size="small"
@@ -458,16 +447,16 @@ export const SmartCalendar: React.FC = () => {
       )}
 
       {/* 2. MONTH SUMMARY & PROJECTED CONSUMPTION DIAGNOSTIC BANNER */}
-      <Grid container spacing={2}>
+      <Grid container spacing={{ xs: 1.5, sm: 2 }}>
         <Grid size={{ xs: 6, sm: 3 }}>
           <Paper sx={{ p: 2, borderRadius: 3, bgcolor: "rgba(15, 14, 58, 0.6)", border: "1px solid rgba(108, 122, 224, 0.25)" }}>
             <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 0.75 }}>
               <CheckCircleIcon sx={{ fontSize: 16, color: "#34d399" }} /> Audited Actuals
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 900, color: "#34d399", mt: 0.5 }}>
+            <Typography variant="h6" sx={{ fontWeight: 900, color: "#34d399", mt: 0.5, fontFamily: "monospace" }}>
               ₱{monthSummary.actualCost.toFixed(2)}
             </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
               {monthSummary.loggedDaysCount} Days Logged ({monthSummary.actualKwh} kWh)
             </Typography>
           </Paper>
@@ -478,10 +467,10 @@ export const SmartCalendar: React.FC = () => {
             <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 0.75 }}>
               <ClockIcon sx={{ fontSize: 16, color: "#818cf8" }} /> Remaining Projected
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 900, color: "#818cf8", mt: 0.5 }}>
+            <Typography variant="h6" sx={{ fontWeight: 900, color: "#818cf8", mt: 0.5, fontFamily: "monospace" }}>
               ~₱{monthSummary.projectedCost.toFixed(2)}
             </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
               {monthSummary.unloggedDaysCount} Days Forecast ({monthSummary.projectedKwh} kWh)
             </Typography>
           </Paper>
@@ -492,10 +481,10 @@ export const SmartCalendar: React.FC = () => {
             <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 0.75 }}>
               <InsightsIcon sx={{ fontSize: 16, color: "#ffd54f" }} /> Projected Month Bill
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 900, color: "#ffd54f", mt: 0.5 }}>
+            <Typography variant="h6" sx={{ fontWeight: 900, color: "#ffd54f", mt: 0.5, fontFamily: "monospace" }}>
               ₱{monthSummary.totalMonthCost.toFixed(2)}
             </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
               Est. Total: {monthSummary.totalMonthKwh} kWh
             </Typography>
           </Paper>
@@ -504,12 +493,12 @@ export const SmartCalendar: React.FC = () => {
         <Grid size={{ xs: 6, sm: 3 }}>
           <Paper sx={{ p: 2, borderRadius: 3, bgcolor: "rgba(15, 14, 58, 0.6)", border: "1px solid rgba(108, 122, 224, 0.25)" }}>
             <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 0.75 }}>
-              ⏱️ Live Stopwatch Power
+              ⏱️ Live Power Load
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 900, color: activeWattage > 2000 ? "#f87171" : "#34d399", mt: 0.5 }}>
+            <Typography variant="h6" sx={{ fontWeight: 900, color: activeWattage > 2000 ? "#f87171" : "#34d399", mt: 0.5, fontFamily: "monospace" }}>
               {activeWattage} W ({activeAppliances.length} ⏱️ Running)
             </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
               {appliances.length} Registered Circuits
             </Typography>
           </Paper>
@@ -518,10 +507,10 @@ export const SmartCalendar: React.FC = () => {
 
       {/* 3. Active Stopwatch Sessions Quick Bar (if any running) */}
       {activeAppliances.length > 0 && (
-        <Card sx={{ p: 2.5, borderRadius: 3, bgcolor: "rgba(6, 78, 59, 0.2)", border: "1px solid rgba(52, 211, 153, 0.4)" }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
+        <Card sx={{ p: 2.5, borderRadius: 3.5, bgcolor: "rgba(6, 78, 59, 0.2)", border: "1px solid rgba(52, 211, 153, 0.4)" }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5, flexWrap: "wrap", gap: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#34d399", display: "flex", alignItems: "center", gap: 1 }}>
-              <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#34d399", animation: "pulse 1.5s infinite" }} />
+              <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#34d399" }} />
               ⏱️ Active Stopwatch Sessions ({activeAppliances.length})
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -529,7 +518,7 @@ export const SmartCalendar: React.FC = () => {
             </Typography>
           </Box>
 
-          <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+          <Box sx={{ display: "flex", gap: 1.25, flexWrap: "wrap" }}>
             {activeAppliances.map((app) => (
               <Chip
                 key={app.id}
@@ -537,7 +526,7 @@ export const SmartCalendar: React.FC = () => {
                 label={`${app.name} (${app.watts}W)`}
                 color="success"
                 onClick={() => handleOpenLiveModal(app)}
-                sx={{ fontWeight: 700, cursor: "pointer", py: 2 }}
+                sx={{ fontWeight: 700, cursor: "pointer", height: 32 }}
               />
             ))}
           </Box>
@@ -545,14 +534,14 @@ export const SmartCalendar: React.FC = () => {
       )}
 
       {/* 4. Calendar Controls & Month Navigator Card */}
-      <Card sx={{ p: 2.5, borderRadius: 3 }}>
+      <Card sx={{ p: 2.5, borderRadius: 3.5 }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <IconButton onClick={handlePrevMonth} size="small" sx={{ border: "1px solid", borderColor: "divider" }}>
               <ChevronLeftIcon />
             </IconButton>
 
-            <Typography variant="h5" sx={{ fontWeight: 800, minWidth: 200, textAlign: "center" }}>
+            <Typography variant="h5" sx={{ fontWeight: 800, minWidth: 200, textAlign: "center", letterSpacing: "-0.01em" }}>
               {monthNames[month]} {year}
             </Typography>
 
@@ -647,7 +636,7 @@ export const SmartCalendar: React.FC = () => {
                     justifyContent: "space-between",
                     position: "relative",
                     overflow: "hidden",
-                    transition: "all 0.15s ease-in-out",
+                    transition: "all 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
                     bgcolor: isCurrentToday
                       ? (theme) => (theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.18)" : "rgba(99, 102, 241, 0.08)")
                       : metrics.isLogged

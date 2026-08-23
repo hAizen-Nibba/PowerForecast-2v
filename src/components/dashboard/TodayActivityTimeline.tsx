@@ -9,8 +9,6 @@ import Paper from "@mui/material/Paper";
 import Tooltip from "@mui/material/Tooltip";
 import {
   Timeline as TimelineIcon,
-  CalendarMonth as CalendarIcon,
-  Timer as TimerIcon,
   FlashOn as FlashOnIcon,
   ArrowForward as ArrowForwardIcon,
 } from "@mui/icons-material";
@@ -206,7 +204,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
         bgcolor: (theme) =>
           theme.palette.mode === "dark" ? "rgba(10, 10, 36, 0.65)" : "rgba(255, 255, 255, 0.9)",
         boxShadow: activeLiveCount > 0 ? "0 0 24px rgba(52, 211, 153, 0.08)" : "none",
-        transition: "all 0.3s ease",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
       {/* Header */}
@@ -219,6 +217,9 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
               bgcolor: activeLiveCount > 0 ? "rgba(16, 185, 129, 0.15)" : "rgba(99, 102, 241, 0.15)",
               color: activeLiveCount > 0 ? "#34d399" : "primary.light",
               display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
             }}
           >
             <TimelineIcon fontSize="small" />
@@ -234,7 +235,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                   label={`${activeLiveCount} Live Active`}
                   size="small"
                   color="success"
-                  sx={{ height: 20, fontSize: "0.6875rem", fontWeight: 800, animation: "pulse 2s infinite" }}
+                  sx={{ height: 20, fontSize: "0.6875rem", fontWeight: 800 }}
                 />
               )}
             </Box>
@@ -245,7 +246,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
         </Box>
 
         {/* Legend & Smart Calendar Link */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
           <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
               <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#10b981", boxShadow: "0 0 6px #34d399" }} />
@@ -315,6 +316,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                   bgcolor: (theme) =>
                     theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.04)",
                 },
+                transition: "all 0.2s ease",
               }}
             >
               {/* Appliance Label Column */}
@@ -409,8 +411,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                           background: bgGradient,
                           boxShadow: glowColor,
                           cursor: "pointer",
-                          transition: "all 0.2s ease",
-                          animation: block.type === "live_stopwatch" ? "pulse 2s infinite" : "none",
+                          transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                           "&:hover": {
                             transform: "scaleY(1.15)",
                             zIndex: 10,
@@ -439,3 +440,5 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
     </Card>
   );
 };
+
+export default TodayActivityTimeline;

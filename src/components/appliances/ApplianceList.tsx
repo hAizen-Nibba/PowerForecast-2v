@@ -21,7 +21,6 @@ import {
   Edit as EditIcon,
   Delete as TrashIcon,
   PowerSettingsNew as PowerIcon,
-  AutoAwesome as SparklesIcon,
   Storage as DatabaseIcon,
   AccessTime as ClockIcon,
   Speed as SpeedIcon,
@@ -33,7 +32,6 @@ import {
   Settings as SettingsIcon,
   Create as PenIcon,
   CameraAlt as CameraIcon,
-  LocationCity as CityIcon,
 } from "@mui/icons-material";
 import { UserAppliance, UserCalendarEvent, ApplianceList as ApplianceSpace } from "../../types";
 import { useList, useDelete, useUpdate, useCreate } from "@refinedev/core";
@@ -251,59 +249,44 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
   // -------------------------------------------------------------
   if (spaces.length === 0) {
     return (
-      <Box sx={{ maxWidth: 640, mx: "auto", py: 4 }}>
-        <Card
-          sx={{
-            p: { xs: 3, sm: 5 },
-            borderRadius: 4,
-            border: "1px solid",
-            borderColor: "rgba(108, 122, 224, 0.3)",
-            bgcolor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(13, 12, 45, 0.95)" : "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(16px)",
-            boxShadow: "0 12px 36px rgba(99, 102, 241, 0.15)",
-          }}
-        >
-          <Box sx={{ textAlign: "center", mb: 3.5 }}>
-            <Box
-              sx={{
-                width: 56,
-                height: 56,
-                borderRadius: 3,
-                bgcolor: "primary.main",
-                color: "#ffffff",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                mb: 2,
-                boxShadow: "0 6px 20px rgba(99, 102, 241, 0.4)",
-              }}
-            >
-              <CityIcon sx={{ fontSize: 32, color: "#ffd54f" }} />
-            </Box>
-            <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}>
-              Create Your Space First
-            </Typography>
-            <Typography variant="body2" sx={{ color: "text.secondary", mt: 1, maxWidth: 460, mx: "auto" }}>
-              To start tracking and categorizing appliances, set up your first household or commercial space.
-            </Typography>
+      <Box sx={{ maxWidth: 640, mx: "auto", py: { xs: 4, sm: 6 } }}>
+        <Card sx={{ p: { xs: 3, sm: 4.5 }, borderRadius: 4, textAlign: "center", border: "1px solid", borderColor: "primary.main" }}>
+          <Box
+            sx={{
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              bgcolor: "rgba(99, 102, 241, 0.15)",
+              color: "primary.main",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              mb: 2,
+            }}
+          >
+            <BoltIcon sx={{ fontSize: 32 }} />
           </Box>
+          <Typography variant="h4" sx={{ fontWeight: 900, mb: 1, letterSpacing: "-0.02em" }}>
+            Welcome to Appliances Hub
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 3.5, lineHeight: 1.6 }}>
+            Organize your appliances into physical spaces (such as your Main Residence, Bakery, or Rental Unit) for exact sub-metering and unbundled tariff calculations.
+          </Typography>
 
           <form onSubmit={handleCreateInitialSpace}>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, textAlign: "left" }}>
               <TextField
-                required
-                fullWidth
-                label="Space / Property Name"
-                placeholder="e.g. Burat's House or Burat's Sari-Sari Store"
+                label="Space Name"
+                placeholder="e.g. Main Residence or Cafe Store"
                 value={initialSpaceName}
                 onChange={(e) => setInitialSpaceName(e.target.value)}
-                autoFocus
+                required
+                fullWidth
               />
 
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 1 }}>
-                  TARIFF CLASSIFICATION
+                <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: "block" }}>
+                  Select Tariff Classification
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid size={6}>
@@ -381,9 +364,9 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
   // 2. BENTO-STYLE MULTI-SPACE HUB (ACTIVE SPACE VIEW)
   // -------------------------------------------------------------
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3 } }}>
       {/* Bento Row 1: Space Switcher Bar & Add Space */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1.5 }}>
         <Tabs
           value={activeSpaceId}
           onChange={(_, val) => setActiveSpaceId(val)}
@@ -396,7 +379,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               borderRadius: 2.5,
               textTransform: "none",
               fontWeight: 700,
-              px: 2.5,
+              px: 2.25,
               mr: 1,
             },
           }}
@@ -470,6 +453,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                 alignItems: "center",
                 justifyContent: "center",
                 boxShadow: "0 4px 14px rgba(108, 122, 224, 0.4)",
+                flexShrink: 0,
               }}
             >
               {spaceTariffType === "commercial" ? <StoreIcon sx={{ color: "#ffffff" }} /> : <HomeIcon sx={{ color: "#ffd54f" }} />}
@@ -487,7 +471,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
           </Box>
         </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexWrap: "wrap" }}>
           <Chip
             icon={<SpeedIcon sx={{ color: "#ffd54f !important" }} />}
             label={`Load: ${spaceTotalWatts} W`}
@@ -550,7 +534,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               setIsAddModalOpen(true);
             }}
             sx={{
-              p: 2.5,
+              p: 2.25,
               borderRadius: 3,
               cursor: "pointer",
               display: "flex",
@@ -560,7 +544,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               borderColor: "primary.main",
               bgcolor: (theme) =>
                 theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.08)" : "rgba(99, 102, 241, 0.04)",
-              transition: "all 0.2s ease",
+              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
               "&:hover": {
                 transform: "translateY(-3px)",
                 boxShadow: "0 8px 24px rgba(99, 102, 241, 0.2)",
@@ -600,7 +584,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             variant="outlined"
             onClick={() => setIsPelpModalOpen(true)}
             sx={{
-              p: 2.5,
+              p: 2.25,
               borderRadius: 3,
               cursor: "pointer",
               display: "flex",
@@ -610,7 +594,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               borderColor: "secondary.main",
               bgcolor: (theme) =>
                 theme.palette.mode === "dark" ? "rgba(244, 63, 94, 0.08)" : "rgba(244, 63, 94, 0.04)",
-              transition: "all 0.2s ease",
+              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
               "&:hover": {
                 transform: "translateY(-3px)",
                 boxShadow: "0 8px 24px rgba(244, 63, 94, 0.2)",
@@ -650,7 +634,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             variant="outlined"
             onClick={() => setIsAiScannerOpen(true)}
             sx={{
-              p: 2.5,
+              p: 2.25,
               borderRadius: 3,
               cursor: "pointer",
               display: "flex",
@@ -660,7 +644,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               borderColor: "warning.main",
               bgcolor: (theme) =>
                 theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.04)",
-              transition: "all 0.2s ease",
+              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
               "&:hover": {
                 transform: "translateY(-3px)",
                 boxShadow: "0 8px 24px rgba(245, 158, 11, 0.2)",
@@ -737,10 +721,10 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
       </Box>
 
       {/* Bento Row 5: Space Appliances Grid */}
-      <Grid container spacing={2.5}>
+      <Grid container spacing={{ xs: 2, sm: 2.5 }}>
         {filteredAppliances.length === 0 ? (
           <Grid size={12}>
-            <Paper sx={{ p: 6, textAlign: "center", borderRadius: 3, border: "1px dashed", borderColor: "divider" }}>
+            <Paper sx={{ p: 6, textAlign: "center", borderRadius: 3.5, border: "1px dashed", borderColor: "divider" }}>
               <BoltIcon sx={{ fontSize: 48, opacity: 0.3, mb: 1 }} />
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                 No appliances in "{activeSpace?.name}" yet.
@@ -765,7 +749,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={app.id}>
                 <Card
                   sx={{
-                    p: 2.5,
+                    p: { xs: 2.25, sm: 2.5 },
                     borderRadius: 3.5,
                     border: "1px solid",
                     borderColor: isOn ? "success.main" : "rgba(108, 122, 224, 0.2)",
@@ -774,7 +758,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                     flexDirection: "column",
                     justifyContent: "space-between",
                     position: "relative",
-                    transition: "all 0.2s ease",
+                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                     "&:hover": {
                       borderColor: "primary.main",
                       transform: "translateY(-3px)",
@@ -784,7 +768,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                 >
                   <Box>
                     {/* Top Row: Category & Power Toggle */}
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5, gap: 1 }}>
                       <Chip
                         label={app.category}
                         size="small"
@@ -798,7 +782,9 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                           color: isOn ? "#ffffff" : "text.secondary",
                           "&:hover": {
                             bgcolor: isOn ? "success.dark" : "rgba(108, 122, 224, 0.3)",
+                            transform: "scale(1.08)",
                           },
+                          transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                         }}
                       >
                         <PowerIcon fontSize="small" />
@@ -839,17 +825,17 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                     <Divider sx={{ my: 1.5 }} />
 
                     {/* Monthly estimated cost */}
-                    <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                    <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 1 }}>
                       <Box>
-                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem" }}>
                           Monthly Cost ({spaceTariffType === "commercial" ? "Commercial" : "Residential"})
                         </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f" }}>
+                        <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f", letterSpacing: "-0.01em" }}>
                           ₱{monthlyCost.toFixed(2)}
                         </Typography>
                       </Box>
                       <Box sx={{ textAlign: "right" }}>
-                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem" }}>
                           Energy Load
                         </Typography>
                         <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: "monospace" }}>

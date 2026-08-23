@@ -4,117 +4,105 @@ import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
 import Card from "@mui/material/Card";
 import Grid from "@mui/material/Grid";
 import Chip from "@mui/material/Chip";
-import Slider from "@mui/material/Slider";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
+import Slider from "@mui/material/Slider";
+import Divider from "@mui/material/Divider";
+import Paper from "@mui/material/Paper";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
-import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
-import Tooltip from "@mui/material/Tooltip";
-import Paper from "@mui/material/Paper";
 import {
-  Bolt as BoltIcon,
-  ArrowForward as ArrowForwardIcon,
-  LightMode as SunIcon,
-  DarkMode as MoonIcon,
-  CameraAlt as CameraIcon,
-  Layers as LayersIcon,
   Calculate as CalculateIcon,
+  Layers as LayersIcon,
+  CameraAlt as CameraIcon,
+  Schedule as ClockIcon,
   BarChart as BarChartIcon,
-  AutoAwesome as SparklesIcon,
-  ExpandMore as ExpandMoreIcon,
-  VerifiedUser as ShieldIcon,
   Memory as CpuIcon,
-  AccessTime as ClockIcon,
+  ArrowForward as ArrowForwardIcon,
+  ExpandMore as ExpandMoreIcon,
+  Security as ShieldIcon,
+  AutoAwesome as SparklesIcon,
   AcUnit as AcIcon,
-  Tv as TvIcon,
   Kitchen as FridgeIcon,
-  Speed as SpeedIcon,
+  Tv as TvIcon,
+  Lightbulb as BulbIcon,
+  Brightness4 as MoonIcon,
+  Brightness7 as SunIcon,
 } from "@mui/icons-material";
-import { APP_VERSION } from "../lib/supabaseClient";
 import { useColorMode } from "../theme/AppTheme";
+import { APP_VERSION } from "../lib/supabaseClient";
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { mode, toggleColorMode } = useColorMode();
   const isDark = mode === "dark";
 
-  // Quick Estimator Demo State
-  const applianceOptions = [
-    { value: 1200, label: "Inverter Air Conditioner (1.5 HP)", icon: <AcIcon sx={{ color: "info.main" }} /> },
-    { value: 150, label: "Two-Door Refrigerator (24/7)", icon: <FridgeIcon sx={{ color: "primary.light" }} /> },
-    { value: 75, label: "Stand Electric Fan", icon: <SpeedIcon sx={{ color: "success.main" }} /> },
-    { value: 120, label: "Smart LED Television 55″", icon: <TvIcon sx={{ color: "warning.main" }} /> },
-    { value: 1800, label: "Induction Cooker", icon: <BoltIcon sx={{ color: "error.main" }} /> },
-  ];
-
-  const [selectedWatts, setSelectedWatts] = useState<number>(1200);
+  // Quick estimator state
+  const [selectedWatts, setSelectedWatts] = useState<number>(1000);
   const [estimatorHours, setEstimatorHours] = useState<number>(8);
-  const [estimatorRate, setEstimatorRate] = useState<number>(14.82);
+  const [estimatorRate, setEstimatorRate] = useState<number>(14.8261);
+
+  const applianceOptions = [
+    { label: "Inverter Split AC (1.5 HP)", value: 1050, icon: <AcIcon fontSize="small" /> },
+    { label: "Window Non-Inverter AC (1.0 HP)", value: 950, icon: <AcIcon fontSize="small" /> },
+    { label: "Two-Door Inverter Refrigerator", value: 140, icon: <FridgeIcon fontSize="small" /> },
+    { label: "55-inch 4K Smart TV", value: 120, icon: <TvIcon fontSize="small" /> },
+    { label: "Electric Stand Fan (16-inch)", value: 65, icon: <BulbIcon fontSize="small" /> },
+    { label: "Induction Cooker", value: 1800, icon: <CalculateIcon fontSize="small" /> },
+  ];
 
   const estimatorCalc = useMemo(() => {
     const dailyKwh = (selectedWatts * estimatorHours) / 1000;
     const monthlyKwh = dailyKwh * 30;
-    const monthlyCost = monthlyKwh * (estimatorRate || 14.82);
+    const monthlyCost = monthlyKwh * estimatorRate;
     return {
       dailyKwh: dailyKwh.toFixed(2),
-      monthlyKwh: monthlyKwh.toFixed(2),
-      monthlyCost: monthlyCost.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }),
+      monthlyKwh: monthlyKwh.toFixed(1),
+      monthlyCost: monthlyCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
     };
   }, [selectedWatts, estimatorHours, estimatorRate]);
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default", color: "text.primary" }}>
-      {/* 1. MUI AppAppBar */}
+      {/* 1. Sticky Navigation Header */}
       <AppBar
         position="sticky"
+        color="transparent"
+        elevation={0}
         sx={{
-          zIndex: 1100,
           backdropFilter: "blur(20px)",
           bgcolor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(9, 9, 56, 0.85)" : "rgba(255, 255, 255, 0.85)",
+            theme.palette.mode === "dark" ? "rgba(10, 10, 36, 0.8)" : "rgba(255, 255, 255, 0.85)",
           borderBottom: "1px solid",
           borderColor: "divider",
         }}
       >
         <Container maxWidth="lg">
-          <Toolbar sx={{ justifyContent: "space-between", px: { xs: 0 } }}>
+          <Toolbar sx={{ justifyContent: "space-between", px: { xs: 0, sm: 2 }, minHeight: { xs: 58, sm: 64 } }}>
             {/* Logo */}
             <Box component={Link} to="/" sx={{ display: "flex", alignItems: "center", gap: 1.5, textDecoration: "none", color: "inherit" }}>
-              <Box
-                component="img"
-                src="/Assets/LOGO.png"
-                alt="PowerForecast Logo"
-                sx={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 2,
-                  objectFit: "contain",
-                  filter: "drop-shadow(0 2px 10px rgba(99, 102, 241, 0.5))",
-                }}
-              />
+              <Box component="img" src="/Assets/LOGO.png" alt="PowerForecast Logo" sx={{ width: 34, height: 34, objectFit: "contain" }} />
               <Typography variant="h6" sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}>
-                power<Typography component="span" variant="h6" sx={{ fontWeight: 900, color: "#ffd54f" }}>forecast</Typography>
+                Power<Box component="span" sx={{ color: "primary.main" }}>Forecast</Box>
               </Typography>
+              <Chip label={APP_VERSION} size="small" sx={{ height: 20, fontSize: "0.625rem", fontWeight: 800, bgcolor: "rgba(99, 102, 241, 0.15)" }} />
             </Box>
 
-            {/* Nav links */}
-            <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 3 }}>
+            {/* Desktop Navigation Links */}
+            <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 3.5 }}>
+              <Typography component="a" href="#estimator" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}>
+                Estimator
+              </Typography>
               <Typography component="a" href="#features" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}>
                 Features
-              </Typography>
-              <Typography component="a" href="#estimator" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}>
-                Live Estimator
               </Typography>
               <Typography component="a" href="#tariffs" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}>
                 Tariff Tiers
@@ -137,7 +125,7 @@ export const LandingPage: React.FC = () => {
                 to="/login"
                 variant="outlined"
                 size="small"
-                sx={{ display: { xs: "none", sm: "inline-flex" } }}
+                sx={{ display: { xs: "none", sm: "inline-flex" }, fontWeight: 700 }}
               >
                 Sign In
               </Button>
@@ -148,6 +136,7 @@ export const LandingPage: React.FC = () => {
                 variant="contained"
                 size="small"
                 endIcon={<ArrowForwardIcon />}
+                sx={{ fontWeight: 700 }}
               >
                 Get Started
               </Button>
@@ -159,8 +148,8 @@ export const LandingPage: React.FC = () => {
       {/* 2. Hero Section */}
       <Box
         sx={{
-          pt: { xs: 8, md: 12 },
-          pb: { xs: 8, md: 12 },
+          pt: { xs: 6, sm: 8, md: 10 },
+          pb: { xs: 6, sm: 8, md: 10 },
           position: "relative",
           overflow: "hidden",
           background: (theme) =>
@@ -170,7 +159,7 @@ export const LandingPage: React.FC = () => {
         }}
       >
         <Container maxWidth="lg">
-          <Box sx={{ textAlign: "center", maxWidth: 860, mx: "auto", mb: { xs: 6, md: 8 } }}>
+          <Box sx={{ textAlign: "center", maxWidth: 860, mx: "auto", mb: { xs: 5, md: 7 } }}>
             <Chip
               icon={<SparklesIcon sx={{ color: "#ffd54f !important", fontSize: "16px !important" }} />}
               label="Next-Gen Meralco Energy Intelligence Platform"
@@ -227,7 +216,7 @@ export const LandingPage: React.FC = () => {
                 variant="contained"
                 size="large"
                 endIcon={<ArrowForwardIcon />}
-                sx={{ px: 3.5, py: 1.25, fontSize: "1rem", borderRadius: 2.5 }}
+                sx={{ px: 3.5, py: 1.25, fontSize: "1rem", borderRadius: 2.5, fontWeight: 800 }}
               >
                 Get Started Free
               </Button>
@@ -236,7 +225,7 @@ export const LandingPage: React.FC = () => {
                 to="/login"
                 variant="outlined"
                 size="large"
-                sx={{ px: 3.5, py: 1.25, fontSize: "1rem", borderRadius: 2.5 }}
+                sx={{ px: 3.5, py: 1.25, fontSize: "1rem", borderRadius: 2.5, fontWeight: 800 }}
               >
                 Sign In
               </Button>
@@ -254,7 +243,7 @@ export const LandingPage: React.FC = () => {
               boxShadow: "0 20px 60px rgba(0, 0, 0, 0.25)",
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3, flexWrap: "wrap", gap: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3, flexWrap: "wrap", gap: 1.5 }}>
               <Box>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>
                   ⚡ Quick Appliance Bill Estimator
@@ -271,7 +260,7 @@ export const LandingPage: React.FC = () => {
               />
             </Box>
 
-            <Grid container spacing={3}>
+            <Grid container spacing={{ xs: 2.5, sm: 3 }}>
               {/* Controls */}
               <Grid size={{ xs: 12, md: 7 }}>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -339,12 +328,12 @@ export const LandingPage: React.FC = () => {
               <Grid size={{ xs: 12, md: 5 }}>
                 <Paper
                   sx={{
-                    p: 3,
+                    p: { xs: 2.5, sm: 3 },
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
-                    borderRadius: 3,
+                    borderRadius: 3.5,
                     bgcolor: (theme) =>
                       theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.12)" : "rgba(99, 102, 241, 0.06)",
                     border: "1px solid",
@@ -362,6 +351,7 @@ export const LandingPage: React.FC = () => {
                         fontFamily: "monospace",
                         color: "#ffd54f",
                         my: 1,
+                        fontSize: { xs: "2rem", sm: "2.5rem" },
                       }}
                     >
                       ₱{estimatorCalc.monthlyCost}
@@ -399,7 +389,7 @@ export const LandingPage: React.FC = () => {
                     fullWidth
                     size="small"
                     onClick={() => navigate("/calculator")}
-                    sx={{ mt: 2 }}
+                    sx={{ mt: 2, fontWeight: 700 }}
                   >
                     Open Full Unbundled Calculator
                   </Button>
@@ -411,12 +401,12 @@ export const LandingPage: React.FC = () => {
       </Box>
 
       {/* 3. Logo Collection / Trusted Partners */}
-      <Box sx={{ py: 6, borderY: "1px solid", borderColor: "divider", bgcolor: "action.hover" }}>
+      <Box sx={{ py: 5, borderY: "1px solid", borderColor: "divider", bgcolor: "action.hover" }}>
         <Container maxWidth="lg">
           <Typography variant="caption" sx={{ display: "block", textAlign: "center", fontWeight: 700, color: "text.secondary", letterSpacing: "0.08em", mb: 3 }}>
             COMPATIBLE WITH PHILIPPINE ENERGY STANDARDS & UTILITY GRIDS
           </Typography>
-          <Grid container spacing={3} sx={{ justifyContent: "center", alignItems: "center" }}>
+          <Grid container spacing={2} sx={{ justifyContent: "center", alignItems: "center" }}>
             {["DOE PELP Certified", "Meralco Unbundled Rates", "ERC Compliant", "Solar Net-Metering Ready"].map((label) => (
               <Grid size={{ xs: 6, sm: 3 }} key={label} sx={{ textAlign: "center" }}>
                 <Chip
@@ -432,10 +422,10 @@ export const LandingPage: React.FC = () => {
       </Box>
 
       {/* 4. Core Features Grid */}
-      <Box id="features" sx={{ py: { xs: 8, md: 12 } }}>
+      <Box id="features" sx={{ py: { xs: 8, md: 10 } }}>
         <Container maxWidth="lg">
-          <Box sx={{ textAlign: "center", maxWidth: 700, mx: "auto", mb: 8 }}>
-            <Typography variant="h3" sx={{ fontWeight: 800, mb: 1.5 }}>
+          <Box sx={{ textAlign: "center", maxWidth: 700, mx: "auto", mb: { xs: 5, md: 7 } }}>
+            <Typography variant="h3" sx={{ fontWeight: 800, mb: 1.5, letterSpacing: "-0.02em" }}>
               Engineered for Precision & Energy Savings
             </Typography>
             <Typography variant="body1" sx={{ color: "text.secondary" }}>
@@ -443,7 +433,7 @@ export const LandingPage: React.FC = () => {
             </Typography>
           </Box>
 
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 2.5, sm: 3 }}>
             {[
               {
                 icon: <CalculateIcon sx={{ fontSize: 28, color: "#ffd54f" }} />,
@@ -477,7 +467,20 @@ export const LandingPage: React.FC = () => {
               },
             ].map((f, idx) => (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
-                <Card sx={{ height: "100%", p: 3, display: "flex", flexDirection: "column" }}>
+                <Card
+                  sx={{
+                    height: "100%",
+                    p: 3,
+                    display: "flex",
+                    flexDirection: "column",
+                    borderRadius: 3.5,
+                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                    "&:hover": {
+                      transform: "translateY(-3px)",
+                      boxShadow: "0 8px 24px rgba(99, 102, 241, 0.15)",
+                    },
+                  }}
+                >
                   <Box
                     sx={{
                       width: 48,
@@ -510,8 +513,8 @@ export const LandingPage: React.FC = () => {
       {/* 5. Tariff Tiers Comparison */}
       <Box id="tariffs" sx={{ py: { xs: 8, md: 10 }, bgcolor: "action.hover" }}>
         <Container maxWidth="lg">
-          <Box sx={{ textAlign: "center", maxWidth: 700, mx: "auto", mb: 6 }}>
-            <Typography variant="h3" sx={{ fontWeight: 800, mb: 1.5 }}>
+          <Box sx={{ textAlign: "center", maxWidth: 700, mx: "auto", mb: { xs: 5, md: 6 } }}>
+            <Typography variant="h3" sx={{ fontWeight: 800, mb: 1.5, letterSpacing: "-0.02em" }}>
               Meralco Residential Tariff Tiers
             </Typography>
             <Typography variant="body2" sx={{ color: "text.secondary" }}>
@@ -519,7 +522,7 @@ export const LandingPage: React.FC = () => {
             </Typography>
           </Box>
 
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 2.5, sm: 3 }}>
             {[
               {
                 title: "Lifeline Subsidy Tier",
@@ -551,12 +554,16 @@ export const LandingPage: React.FC = () => {
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
-                    borderRadius: 3,
+                    borderRadius: 3.5,
                     position: "relative",
+                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                     ...(tier.popular && {
                       borderColor: "primary.main",
                       boxShadow: "0 8px 30px rgba(99, 102, 241, 0.2)",
                     }),
+                    "&:hover": {
+                      transform: "translateY(-3px)",
+                    },
                   }}
                 >
                   {tier.popular && (
@@ -588,6 +595,7 @@ export const LandingPage: React.FC = () => {
                     to="/signup"
                     variant={tier.popular ? "contained" : "outlined"}
                     fullWidth
+                    sx={{ fontWeight: 700 }}
                   >
                     Start with this Tier
                   </Button>
@@ -601,11 +609,11 @@ export const LandingPage: React.FC = () => {
       {/* 6. FAQ Section */}
       <Box id="faq" sx={{ py: { xs: 8, md: 10 } }}>
         <Container maxWidth="md">
-          <Typography variant="h3" sx={{ fontWeight: 800, textAlign: "center", mb: 6 }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, textAlign: "center", mb: { xs: 4, md: 6 }, letterSpacing: "-0.02em" }}>
             Frequently Asked Questions
           </Typography>
 
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
             {[
               {
                 q: "How accurate is the unbundled Meralco calculation formula?",

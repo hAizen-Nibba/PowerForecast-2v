@@ -3,119 +3,93 @@ import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
-import Slider from "@mui/material/Slider";
 import Chip from "@mui/material/Chip";
+import Slider from "@mui/material/Slider";
 import Paper from "@mui/material/Paper";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import {
-  EnergySavingsLeaf as LeafIcon,
-  Tune as TuneIcon,
   AutoGraph as AutoGraphIcon,
-  InfoOutlined as InfoIcon,
+  Tune as TuneIcon,
   Bolt as BoltIcon,
-  TrendingUp as TrendingUpIcon,
-  ShieldOutlined as ShieldIcon,
+  EnergySavingsLeaf as LeafIcon,
+  WbSunny as SunIcon,
+  InfoOutlined as InfoIcon,
+  Security as ShieldIcon,
   Home as HomeIcon,
   Store as StoreIcon,
-  WbSunny as SunIcon,
 } from "@mui/icons-material";
+import { UserAppliance, ApplianceList } from "../../types";
 import { useList } from "@refinedev/core";
-import { UserAppliance, ApplianceList as ApplianceSpace } from "../../types";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
 
 export const ForecastingView: React.FC = () => {
-  const [selectedSpaceId, setSelectedSpaceId] = useState<string>("all");
   const [genRateDelta, setGenRateDelta] = useState<number>(0);
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string>("all");
 
   const appliancesRes = useList<UserAppliance>({
     resource: "user_appliances",
   }) as any;
 
-  const spacesRes = useList<ApplianceSpace>({
+  const spacesRes = useList<ApplianceList>({
     resource: "appliance_lists",
   }) as any;
 
   const appliances: UserAppliance[] = appliancesRes?.data?.data || appliancesRes?.result?.data || [];
-  const spaces: ApplianceSpace[] = spacesRes?.data?.data || spacesRes?.result?.data || [];
+  const spaces: ApplianceList[] = spacesRes?.data?.data || spacesRes?.result?.data || [];
 
-  // Filter appliances based on selected space
+  // Filter target appliances based on space selection
   const targetAppliances = useMemo(() => {
     if (selectedSpaceId === "all") return appliances;
     return appliances.filter((a) => a.list_id === selectedSpaceId);
   }, [appliances, selectedSpaceId]);
 
-  // Base generation rate is ₱7.1246/kWh + delta
-  const simulatedGenRate = Math.max(4.0, 7.1246 + genRateDelta);
+  const baseGenRate = 7.1246;
+  const simulatedGenRate = Math.max(4.0, baseGenRate + genRateDelta);
 
-  // Compute baseline, conservation, and summer heavy load
+  // Derive simulation scenarios
   const simulation = useMemo(() => {
     let baselineKwh = 0;
-    let baselineBill = 0;
-
     let ecoKwh = 0;
-    let ecoBill = 0;
-
     let summerKwh = 0;
-    let summerBill = 0;
 
-    // When all spaces are selected, compute per-space tariff math and sum
-    if (selectedSpaceId === "all") {
-      spaces.forEach((space) => {
-        const spaceApps = appliances.filter((a) => a.list_id === space.id || (!a.list_id && space.is_default));
-        const sKwh = spaceApps.reduce((acc, curr) => {
-          return acc + (Number(curr.monthly_kwh) || ((curr.watts * curr.hours_per_day * (curr.quantity || 1) * 30) / 1000));
-        }, 0);
+    targetAppliances.forEach((app) => {
+      const hours = app.hours_per_day || 0;
+      const qty = app.quantity || 1;
+      const baseMonthly = (app.watts * hours * qty * 30) / 1000;
 
-        const bBill = calculateMeralcoBill(sKwh, simulatedGenRate, 0, false, space.tariff_type);
-        const eBill = calculateMeralcoBill(sKwh * 0.85, simulatedGenRate, 0, false, space.tariff_type);
-        const smBill = calculateMeralcoBill(sKwh * 1.25, simulatedGenRate, 0, false, space.tariff_type);
+      baselineKwh += baseMonthly;
 
-        baselineKwh += sKwh;
-        baselineBill += bBill.totalBill;
+      // Eco scenario: 15% reduction in cooling/heavy devices
+      const isCooling = app.category.toLowerCase().includes("air") || app.category.toLowerCase().includes("fan") || app.category.toLowerCase().includes("ref");
+      const ecoHours = isCooling ? Math.max(0, hours * 0.85) : hours;
+      ecoKwh += (app.watts * ecoHours * qty * 30) / 1000;
 
-        ecoKwh += sKwh * 0.85;
-        ecoBill += eBill.totalBill;
+      // Summer scenario: 25% increase in cooling devices due to ambient heat
+      const summerHours = isCooling ? hours * 1.25 : hours;
+      summerKwh += (app.watts * summerHours * qty * 30) / 1000;
+    });
 
-        summerKwh += sKwh * 1.25;
-        summerBill += smBill.totalBill;
-      });
-
-      // If user has no spaces registered, use fallback defaults
-      if (spaces.length === 0) {
-        const fallbackKwh = 250;
-        const b = calculateMeralcoBill(fallbackKwh, simulatedGenRate, 0, false, "residential");
-        const e = calculateMeralcoBill(fallbackKwh * 0.85, simulatedGenRate, 0, false, "residential");
-        const sm = calculateMeralcoBill(fallbackKwh * 1.25, simulatedGenRate, 0, false, "residential");
-        baselineKwh = fallbackKwh;
-        baselineBill = b.totalBill;
-        ecoKwh = fallbackKwh * 0.85;
-        ecoBill = e.totalBill;
-        summerKwh = fallbackKwh * 1.25;
-        summerBill = sm.totalBill;
-      }
-    } else {
-      const activeSpace = spaces.find((s) => s.id === selectedSpaceId);
-      const spaceTariff = activeSpace?.tariff_type || "residential";
-
-      baselineKwh = targetAppliances.reduce((acc, curr) => {
-        return acc + (Number(curr.monthly_kwh) || ((curr.watts * curr.hours_per_day * (curr.quantity || 1) * 30) / 1000));
-      }, 0);
-
-      ecoKwh = baselineKwh * 0.85;
-      summerKwh = baselineKwh * 1.25;
-
-      baselineBill = calculateMeralcoBill(baselineKwh, simulatedGenRate, 0, false, spaceTariff).totalBill;
-      ecoBill = calculateMeralcoBill(ecoKwh, simulatedGenRate, 0, false, spaceTariff).totalBill;
-      summerBill = calculateMeralcoBill(summerKwh, simulatedGenRate, 0, false, spaceTariff).totalBill;
+    if (baselineKwh === 0) {
+      baselineKwh = 240;
+      ecoKwh = 204;
+      summerKwh = 300;
     }
+
+    // Determine tariff type for the space (or default residential)
+    const activeSpace = spaces.find((s) => s.id === selectedSpaceId);
+    const tariffType = activeSpace?.tariff_type || "residential";
+
+    const baselineBill = calculateMeralcoBill(baselineKwh, simulatedGenRate, 0, false, tariffType).totalBill;
+    const ecoBill = calculateMeralcoBill(ecoKwh, simulatedGenRate, 0, false, tariffType).totalBill;
+    const summerBill = calculateMeralcoBill(summerKwh, simulatedGenRate, 0, false, tariffType).totalBill;
 
     return {
       baselineKwh,
-      baselineBill,
       ecoKwh,
-      ecoBill,
       summerKwh,
+      baselineBill,
+      ecoBill,
       summerBill,
       ecoSavings: baselineBill - ecoBill,
       summerExtra: summerBill - baselineBill,
@@ -123,7 +97,7 @@ export const ForecastingView: React.FC = () => {
   }, [appliances, spaces, selectedSpaceId, targetAppliances, simulatedGenRate]);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3.5 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3, md: 3.5 } }}>
       {/* 1. Header Banner */}
       <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, gap: 2, pb: 2, borderBottom: "1px solid", borderColor: "divider" }}>
         <Box>
@@ -191,7 +165,7 @@ export const ForecastingView: React.FC = () => {
           borderColor: "rgba(108, 122, 224, 0.25)",
         }}
       >
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 1 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 1.5 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <TuneIcon sx={{ color: "primary.main" }} />
             <Box>
@@ -236,7 +210,7 @@ export const ForecastingView: React.FC = () => {
         </Box>
 
         <Box sx={{ mt: 3, p: 2, borderRadius: 2.5, bgcolor: "rgba(108, 122, 224, 0.08)", border: "1px solid rgba(108, 122, 224, 0.15)", display: "flex", alignItems: "center", gap: 2 }}>
-          <InfoIcon sx={{ color: "primary.main", fontSize: 20 }} />
+          <InfoIcon sx={{ color: "primary.main", fontSize: 20, flexShrink: 0 }} />
           <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.5 }}>
             Adjust the slider to simulate Meralco generation cost fluctuations driven by WESM spot market prices, fuel pass-through, and ERC rate adjustments.
           </Typography>
@@ -244,12 +218,12 @@ export const ForecastingView: React.FC = () => {
       </Card>
 
       {/* 4. Three Realistic Scenario Comparison Cards */}
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2.5, sm: 3 }}>
         {/* Scenario 1: Simulated Baseline */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Card
             sx={{
-              p: 3,
+              p: { xs: 2.5, sm: 3 },
               borderRadius: 3.5,
               height: "100%",
               display: "flex",
@@ -259,6 +233,11 @@ export const ForecastingView: React.FC = () => {
               borderColor: "primary.main",
               bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(15, 14, 58, 0.7)" : "background.paper"),
               position: "relative",
+              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": {
+                transform: "translateY(-3px)",
+                boxShadow: "0 8px 24px rgba(99, 102, 241, 0.2)",
+              },
             }}
           >
             <Box>
@@ -268,7 +247,7 @@ export const ForecastingView: React.FC = () => {
                 </Typography>
                 <Chip label="Current Runtimes" size="small" sx={{ fontWeight: 700, fontSize: "0.7rem" }} />
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 900, color: "text.primary", mb: 0.5, fontFamily: "monospace" }}>
+              <Typography variant="h4" sx={{ fontWeight: 900, color: "text.primary", mb: 0.5, fontFamily: "monospace", letterSpacing: "-0.02em" }}>
                 ₱{simulation.baselineBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -291,7 +270,7 @@ export const ForecastingView: React.FC = () => {
         <Grid size={{ xs: 12, md: 4 }}>
           <Card
             sx={{
-              p: 3,
+              p: { xs: 2.5, sm: 3 },
               borderRadius: 3.5,
               height: "100%",
               display: "flex",
@@ -301,6 +280,11 @@ export const ForecastingView: React.FC = () => {
               borderColor: "success.main",
               bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(6, 78, 59, 0.2)" : "rgba(16, 185, 129, 0.05)"),
               position: "relative",
+              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": {
+                transform: "translateY(-3px)",
+                boxShadow: "0 8px 24px rgba(52, 211, 153, 0.2)",
+              },
             }}
           >
             <Box>
@@ -310,7 +294,7 @@ export const ForecastingView: React.FC = () => {
                 </Typography>
                 <Chip icon={<LeafIcon sx={{ fontSize: "14px !important", color: "white !important" }} />} label="Eco Target" color="success" size="small" sx={{ fontWeight: 700, fontSize: "0.7rem" }} />
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 900, color: "#34d399", mb: 0.5, fontFamily: "monospace" }}>
+              <Typography variant="h4" sx={{ fontWeight: 900, color: "#34d399", mb: 0.5, fontFamily: "monospace", letterSpacing: "-0.02em" }}>
                 ₱{simulation.ecoBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -333,7 +317,7 @@ export const ForecastingView: React.FC = () => {
         <Grid size={{ xs: 12, md: 4 }}>
           <Card
             sx={{
-              p: 3,
+              p: { xs: 2.5, sm: 3 },
               borderRadius: 3.5,
               height: "100%",
               display: "flex",
@@ -343,6 +327,11 @@ export const ForecastingView: React.FC = () => {
               borderColor: "warning.main",
               bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(120, 53, 15, 0.2)" : "rgba(245, 158, 11, 0.05)"),
               position: "relative",
+              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": {
+                transform: "translateY(-3px)",
+                boxShadow: "0 8px 24px rgba(251, 191, 36, 0.2)",
+              },
             }}
           >
             <Box>
@@ -352,7 +341,7 @@ export const ForecastingView: React.FC = () => {
                 </Typography>
                 <Chip icon={<SunIcon sx={{ fontSize: "14px !important", color: "white !important" }} />} label="Summer Surge" color="warning" size="small" sx={{ fontWeight: 700, fontSize: "0.7rem" }} />
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 900, color: "#fbbf24", mb: 0.5, fontFamily: "monospace" }}>
+              <Typography variant="h4" sx={{ fontWeight: 900, color: "#fbbf24", mb: 0.5, fontFamily: "monospace", letterSpacing: "-0.02em" }}>
                 ₱{simulation.summerBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -376,7 +365,7 @@ export const ForecastingView: React.FC = () => {
       <Paper
         sx={{
           p: 3,
-          borderRadius: 3,
+          borderRadius: 3.5,
           bgcolor: "background.paper",
           border: "1px solid",
           borderColor: "divider",
@@ -386,7 +375,7 @@ export const ForecastingView: React.FC = () => {
           gap: 2.5,
         }}
       >
-        <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: "rgba(108, 122, 224, 0.15)", color: "primary.main" }}>
+        <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: "rgba(108, 122, 224, 0.15)", color: "primary.main", flexShrink: 0 }}>
           <ShieldIcon sx={{ fontSize: 28 }} />
         </Box>
         <Box sx={{ flex: 1 }}>

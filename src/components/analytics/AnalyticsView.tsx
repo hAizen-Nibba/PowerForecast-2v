@@ -36,7 +36,7 @@ import ButtonGroup from "@mui/material/ButtonGroup";
 
 export const AnalyticsView: React.FC = () => {
   const [zoomPreset, setZoomPreset] = useState<"24h" | "morning" | "day" | "evening">("24h");
-  const [resolutionMinutes, setResolutionMinutes] = useState<1 | 5 | 15 | 30>(5);
+  const [resolutionMinutes] = useState<1 | 5 | 15 | 30>(5);
 
   const appliancesRes = useList<UserAppliance>({
     resource: "user_appliances",
@@ -111,7 +111,7 @@ export const AnalyticsView: React.FC = () => {
   ];
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3.5 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3, md: 3.5 } }}>
       {/* Header Banner */}
       <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "flex-start", sm: "center" }, justifyContent: "space-between", gap: 2 }}>
         <Box>
@@ -126,6 +126,7 @@ export const AnalyticsView: React.FC = () => {
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
+                flexShrink: 0,
               }}
             >
               <AnalyticsIcon sx={{ color: "#ffd54f" }} />
@@ -142,13 +143,14 @@ export const AnalyticsView: React.FC = () => {
           size="small"
           onClick={() => window.print()}
           startIcon={<DownloadIcon />}
+          sx={{ fontWeight: 700 }}
         >
           Export Report
         </Button>
       </Box>
 
       {/* KPI Cards Row */}
-      <Grid container spacing={2.5}>
+      <Grid container spacing={{ xs: 2, sm: 2.5 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
             title="Monthly Energy Volume"
@@ -187,10 +189,10 @@ export const AnalyticsView: React.FC = () => {
       </Grid>
 
       {/* Grouped Category Breakdown & Unbundled Cost Distribution Row */}
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2.5, sm: 3 }}>
         {/* Left: Appliance Category Breakdown Bars */}
         <Grid size={{ xs: 12, md: 7 }}>
-          <Card sx={{ p: 3, borderRadius: 3.5, height: "100%", display: "flex", flexDirection: "column", gap: 2.5 }}>
+          <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5, height: "100%", display: "flex", flexDirection: "column", gap: 2.5 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                 <PieChartIcon sx={{ color: "primary.main" }} />
@@ -198,10 +200,10 @@ export const AnalyticsView: React.FC = () => {
                   Energy Usage by Appliance Category
                 </Typography>
               </Box>
-              <Chip label={`${categoryEntries.length} Categories`} size="small" variant="outlined" />
+              <Chip label={`${categoryEntries.length} Categories`} size="small" variant="outlined" sx={{ fontWeight: 700 }} />
             </Box>
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, flex: 1, justifyContent: "center" }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.25, flex: 1, justifyContent: "center" }}>
               {categoryEntries.length === 0 ? (
                 <Typography variant="caption" sx={{ color: "text.secondary", textAlign: "center", py: 4 }}>
                   No appliances registered yet. Add appliances to inspect category proportions.
@@ -243,7 +245,7 @@ export const AnalyticsView: React.FC = () => {
 
         {/* Right: Unbundled Rate Component Proportions */}
         <Grid size={{ xs: 12, md: 5 }}>
-          <Card sx={{ p: 3, borderRadius: 3.5, height: "100%", display: "flex", flexDirection: "column", gap: 2 }}>
+          <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5, height: "100%", display: "flex", flexDirection: "column", gap: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
               <ReceiptIcon sx={{ color: "primary.main" }} />
               <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
@@ -251,7 +253,7 @@ export const AnalyticsView: React.FC = () => {
               </Typography>
             </Box>
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, flex: 1, justifyContent: "center" }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25, flex: 1, justifyContent: "center" }}>
               {rateComponents.map((item) => {
                 const pct = totalCost > 0 ? Math.round((item.amount / totalCost) * 100) : 0;
                 return (
@@ -265,15 +267,21 @@ export const AnalyticsView: React.FC = () => {
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
+                      gap: 1.5,
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        borderColor: "primary.main",
+                        transform: "translateX(2px)",
+                      },
                     }}
                   >
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                      <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: item.color }} />
+                      <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: item.color, flexShrink: 0 }} />
                       <Typography variant="body2" sx={{ fontWeight: 600, color: "text.secondary", fontSize: "0.8rem" }}>
                         {item.name}
                       </Typography>
                     </Box>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: "text.primary", fontSize: "0.85rem" }}>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: "text.primary", fontSize: "0.85rem", fontFamily: "monospace", flexShrink: 0 }}>
                       ₱{item.amount.toFixed(2)} <span style={{ color: item.color, fontSize: "0.75rem" }}>({pct}%)</span>
                     </Typography>
                   </Box>
@@ -285,7 +293,7 @@ export const AnalyticsView: React.FC = () => {
       </Grid>
 
       {/* 24-Hour Continuous Load Curve Card */}
-      <Card sx={{ p: 3, borderRadius: 3.5 }}>
+      <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5 }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2, mb: 2.5 }}>
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
@@ -307,6 +315,7 @@ export const AnalyticsView: React.FC = () => {
                 key={b.val}
                 variant={zoomPreset === b.val ? "contained" : "outlined"}
                 onClick={() => setZoomPreset(b.val as any)}
+                sx={{ fontWeight: 700 }}
               >
                 {b.label}
               </Button>
@@ -351,7 +360,7 @@ export const AnalyticsView: React.FC = () => {
       </Card>
 
       {/* Multi-Month Trend & Forecast Bar Chart */}
-      <Card sx={{ p: 3, borderRadius: 3.5 }}>
+      <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5 }}>
         <Box sx={{ mb: 2.5 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
             Multi-Month Energy Trend & Seasonal Forecast

@@ -8,7 +8,7 @@ import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { UserAppliance, ApplianceList } from "../../types";
-import { PieChart as PieIcon, Bolt as BoltIcon, Home as HomeIcon, Store as StoreIcon } from "@mui/icons-material";
+import { PieChart as PieIcon } from "@mui/icons-material";
 import { useList } from "@refinedev/core";
 
 interface ConsumptionDonutProps {
@@ -65,9 +65,9 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
   const totalKwh = data.reduce((acc, curr) => acc + curr.value, 0);
 
   return (
-    <Card sx={{ p: 3, borderRadius: 3, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+    <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
       <Box>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1, gap: 1 }}>
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1 }}>
               <PieIcon sx={{ color: "primary.light" }} />
@@ -81,7 +81,7 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
             label={`${totalKwh.toFixed(1)} kWh Total`}
             size="small"
             color="primary"
-            sx={{ fontWeight: 700, fontFamily: "monospace" }}
+            sx={{ fontWeight: 700, fontFamily: "monospace", height: 24 }}
           />
         </Box>
 
@@ -187,7 +187,7 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
                   pointerEvents: "none",
                 }}
               >
-                <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace" }}>
+                <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", letterSpacing: "-0.02em" }}>
                   {Math.round(totalKwh)}
                 </Typography>
                 <Typography variant="caption" sx={{ color: "primary.light", fontWeight: 700, fontSize: "0.6875rem", textTransform: "uppercase" }}>
@@ -198,14 +198,14 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1, maxHeight: 150, overflowY: "auto", pr: 0.5, pt: 1, borderTop: "1px solid", borderColor: "divider" }}>
               {data.map((item) => (
-                <Box key={item.name} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Box key={item.name} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1, maxWidth: "70%" }}>
                     <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: item.color, flexShrink: 0 }} />
                     <Typography variant="caption" sx={{ color: "text.secondary", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {item.name}
                     </Typography>
                   </Box>
-                  <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: "monospace" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: "monospace", flexShrink: 0 }}>
                     {item.value} kWh
                   </Typography>
                 </Box>

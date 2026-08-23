@@ -4,13 +4,13 @@ export const surfacesCustomizations: Components<Theme> = {
   MuiCard: {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
-        padding: 16,
+        padding: 20,
         gap: 16,
-        transition: 'all 200ms ease-in-out',
+        transition: 'all 240ms cubic-bezier(0.4, 0, 0.2, 1)',
         backgroundColor: theme.palette.mode === 'dark' 
-          ? 'rgba(15, 14, 58, 0.8)' 
+          ? 'rgba(15, 14, 58, 0.82)' 
           : 'rgba(255, 255, 255, 0.95)',
-        borderRadius: theme.shape.borderRadius,
+        borderRadius: 16,
         border: `1px solid ${
           theme.palette.mode === 'dark' 
             ? 'rgba(129, 140, 248, 0.18)' 
@@ -22,8 +22,11 @@ export const surfacesCustomizations: Components<Theme> = {
           : '0 4px 20px rgba(99, 102, 241, 0.08)',
         '&:hover': {
           borderColor: theme.palette.mode === 'dark' 
-            ? 'rgba(129, 140, 248, 0.35)' 
-            : 'rgba(99, 102, 241, 0.3)',
+            ? 'rgba(129, 140, 248, 0.38)' 
+            : 'rgba(99, 102, 241, 0.32)',
+          boxShadow: theme.palette.mode === 'dark'
+            ? '0 8px 32px rgba(0, 0, 0, 0.45)'
+            : '0 8px 28px rgba(99, 102, 241, 0.12)',
         },
       }),
     },
@@ -35,7 +38,8 @@ export const surfacesCustomizations: Components<Theme> = {
         backgroundColor: theme.palette.mode === 'dark' 
           ? 'rgba(15, 14, 58, 0.9)' 
           : '#ffffff',
-        borderRadius: theme.shape.borderRadius,
+        borderRadius: 14,
+        transition: 'background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease',
       }),
     },
   },
@@ -43,20 +47,22 @@ export const surfacesCustomizations: Components<Theme> = {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
         backgroundColor: theme.palette.mode === 'dark' 
-          ? 'rgba(15, 14, 58, 0.7)' 
-          : 'rgba(255, 255, 255, 0.9)',
+          ? 'rgba(15, 14, 58, 0.72)' 
+          : 'rgba(255, 255, 255, 0.92)',
         border: `1px solid ${
           theme.palette.mode === 'dark' 
-            ? 'rgba(129, 140, 248, 0.15)' 
+            ? 'rgba(129, 140, 248, 0.16)' 
             : 'rgba(99, 102, 241, 0.15)'
         }`,
-        borderRadius: `${Number(theme.shape.borderRadius) || 12}px !important`,
-        marginBottom: 8,
+        borderRadius: '14px !important',
+        marginBottom: 10,
+        transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
         '&:before': {
           display: 'none',
         },
         '&.Mui-expanded': {
-          margin: '0 0 8px 0',
+          margin: '0 0 10px 0',
+          borderColor: theme.palette.mode === 'dark' ? 'rgba(129, 140, 248, 0.35)' : 'rgba(99, 102, 241, 0.3)',
         },
       }),
     },
@@ -64,7 +70,8 @@ export const surfacesCustomizations: Components<Theme> = {
   MuiAccordionSummary: {
     styleOverrides: {
       root: {
-        padding: '0 16px',
+        padding: '0 18px',
+        minHeight: 52,
         fontWeight: 600,
       },
     },
@@ -72,7 +79,7 @@ export const surfacesCustomizations: Components<Theme> = {
   MuiDialog: {
     styleOverrides: {
       paper: ({ theme }: { theme: Theme }) => ({
-        borderRadius: Number(theme.shape.borderRadius) * 1.5 || 18,
+        borderRadius: 20,
         backgroundColor: theme.palette.mode === 'dark' 
           ? '#0c0a33' 
           : '#ffffff',
@@ -81,7 +88,8 @@ export const surfacesCustomizations: Components<Theme> = {
             ? 'rgba(129, 140, 248, 0.25)' 
             : 'rgba(99, 102, 241, 0.2)'
         }`,
-        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+        boxShadow: '0 24px 64px rgba(0, 0, 0, 0.55)',
+        backdropFilter: 'blur(20px)',
       }),
     },
   },

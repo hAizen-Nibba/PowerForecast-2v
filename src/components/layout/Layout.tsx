@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Box from "@mui/material/Box";
-import Container from "@mui/material/Container";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { AiVisionScannerModal } from "../vision/AiVisionScannerModal";
@@ -21,7 +20,7 @@ export const Layout: React.FC = () => {
         minHeight: "100vh",
         bgcolor: "background.default",
         color: "text.primary",
-        transition: "background-color 0.3s ease, color 0.3s ease",
+        transition: "background-color 0.24s cubic-bezier(0.4, 0, 0.2, 1), color 0.24s cubic-bezier(0.4, 0, 0.2, 1)",
         position: "relative",
         overflowX: "hidden",
       }}
@@ -42,6 +41,7 @@ export const Layout: React.FC = () => {
           pl: { xs: 0, lg: "260px" },
           position: "relative",
           zIndex: 10,
+          transition: "padding-left 0.24s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       >
         <Header
@@ -55,11 +55,13 @@ export const Layout: React.FC = () => {
           component="main"
           sx={{
             flexGrow: 1,
-            p: { xs: 2, sm: 3, md: 4 },
-            maxWidth: 1280,
+            px: { xs: 2, sm: 3, md: 4, lg: 4.5 },
+            py: { xs: 2.5, sm: 3.5, md: 4 },
+            maxWidth: 1360,
             width: "100%",
             mx: "auto",
-            pb: 10,
+            pb: { xs: 8, sm: 10, md: 12 },
+            boxSizing: "border-box",
           }}
         >
           <Outlet />

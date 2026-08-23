@@ -22,8 +22,6 @@ import {
   AccessTime as ClockIcon,
   Speed as SpeedIcon,
   Warning as WarningIcon,
-  Home as HomeIcon,
-  Store as StoreIcon,
 } from "@mui/icons-material";
 import { UserAppliance, ApplianceList } from "../../types";
 import { useUpdate, useList } from "@refinedev/core";
@@ -117,10 +115,10 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
   };
 
   return (
-    <Card sx={{ p: 3, borderRadius: 3, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+    <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
       <Box>
         {/* Header */}
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2, flexWrap: "wrap", gap: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2, flexWrap: "wrap", gap: 1.5 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <Box
               sx={{
@@ -132,6 +130,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                flexShrink: 0,
               }}
             >
               <BoltIcon sx={{ color: "#ffd54f" }} />
@@ -151,6 +150,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
             size="small"
             onClick={onOpenAddModal}
             startIcon={<PlusIcon />}
+            sx={{ fontWeight: 700 }}
           >
             Add Appliance
           </Button>
@@ -160,7 +160,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
         <Paper
           variant="outlined"
           sx={{
-            p: 2,
+            p: { xs: 1.75, sm: 2 },
             mb: 2.5,
             borderRadius: 2.5,
             bgcolor: demand.isOverloaded
@@ -169,9 +169,10 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
               ? "rgba(245, 158, 11, 0.1)"
               : "action.hover",
             borderColor: demand.isOverloaded ? "error.main" : "divider",
+            transition: "all 0.2s ease",
           }}
         >
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1, gap: 1 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <SpeedIcon sx={{ fontSize: 18, color: demand.isOverloaded ? "error.main" : "primary.main" }} />
               <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>
@@ -190,7 +191,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
             sx={{ height: 8, borderRadius: 4, mb: 1 }}
           />
 
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
             <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
               {demand.activeCircuitsCount} circuits active • 40A Main Breaker Rating
             </Typography>
@@ -223,7 +224,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
             </Button>
           </Box>
         ) : (
-          <Grid container spacing={2}>
+          <Grid container spacing={{ xs: 1.5, sm: 2 }}>
             {appliances.map((app: UserAppliance) => {
               const isOn = app.is_currently_on;
               const totalWatts = app.watts * (app.quantity || 1);
@@ -237,31 +238,39 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
                   <Card
                     variant="outlined"
                     sx={{
-                      p: 2,
+                      p: { xs: 1.75, sm: 2 },
                       borderRadius: 2.5,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
+                      gap: 1.5,
                       borderColor: isOn ? "success.main" : "divider",
                       bgcolor: isOn
-                        ? (theme) => (theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.1)" : "rgba(16, 185, 129, 0.05)")
+                        ? (theme) => (theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.12)" : "rgba(16, 185, 129, 0.06)")
                         : "transparent",
-                      transition: "all 0.15s ease-in-out",
+                      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                      "&:hover": {
+                        borderColor: isOn ? "success.main" : "primary.main",
+                        transform: "translateY(-1px)",
+                      },
                     }}
                   >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0, flexGrow: 1 }}>
                       <Box
                         sx={{
                           p: 1,
                           borderRadius: 2,
                           bgcolor: "action.hover",
                           display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
                         }}
                       >
                         {getCategoryIcon(app.category)}
                       </Box>
 
-                      <Box sx={{ minWidth: 0 }}>
+                      <Box sx={{ minWidth: 0, flexGrow: 1 }}>
                         <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
                           {app.name}
                         </Typography>
@@ -280,7 +289,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
                       </Box>
                     </Box>
 
-                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1, flexShrink: 0 }}>
                       <Chip
                         label={`₱${hourlyRate}/hr`}
                         size="small"
@@ -298,7 +307,9 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
                             borderColor: isOn ? "success.dark" : "divider",
                             "&:hover": {
                               bgcolor: isOn ? "success.dark" : "action.selected",
+                              transform: "scale(1.08)",
                             },
+                            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                           }}
                         >
                           <PowerIcon fontSize="small" />
@@ -317,4 +328,3 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
 };
 
 export default LivePowerBoard;
-

@@ -90,13 +90,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             alignItems: "center",
             gap: 1.5,
             px: 2.5,
-            py: 2,
+            py: 2.25,
             textDecoration: "none",
             color: "inherit",
             borderBottom: "1px solid",
             borderColor: "divider",
             "&:hover": { bgcolor: "action.hover" },
-            transition: "background-color 0.2s",
+            transition: "background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
           }}
         >
           <Box
@@ -112,17 +112,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
           />
           <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, letterSpacing: "-0.01em", color: "#ffffff" }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, letterSpacing: "-0.01em", color: "#ffffff", lineHeight: 1.2 }}>
               PowerForecast
             </Typography>
-            <Typography variant="caption" sx={{ color: "primary.light", fontSize: "0.6875rem" }}>
+            <Typography variant="caption" sx={{ color: "primary.light", fontSize: "0.6875rem", mt: 0.25, display: "block" }}>
               Meralco Energy Intel
             </Typography>
           </Box>
         </Box>
 
         {/* Navigation List */}
-        <List sx={{ px: 1.25, py: 1.5 }}>
+        <List sx={{ px: 1.25, py: 1.75 }}>
           {navItems.map((item) => {
             const isActive =
               location.pathname === item.path || (item.path === "/dashboard" && location.pathname === "/");
@@ -137,12 +137,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     borderRadius: 2,
                     py: 1,
                     px: 1.5,
+                    position: "relative",
+                    "&.Mui-selected": {
+                      "&::before": {
+                        content: '""',
+                        position: "absolute",
+                        left: 0,
+                        top: "18%",
+                        bottom: "18%",
+                        width: 3,
+                        borderRadius: "0 4px 4px 0",
+                        bgcolor: "#ffd54f",
+                      },
+                    },
                   }}
                 >
                   <ListItemIcon
                     sx={{
-                      minWidth: 32,
+                      minWidth: 34,
                       color: isActive ? "#ffd54f" : "primary.light",
+                      transition: "color 0.2s ease",
                     }}
                   >
                     {item.icon}
@@ -155,6 +169,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           fontSize: "0.8125rem",
                           fontWeight: isActive ? 700 : 500,
                           color: isActive ? "#ffffff" : "text.secondary",
+                          letterSpacing: "-0.01em",
                         },
                       },
                     }}
@@ -172,7 +187,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           elevation={0}
           sx={{
             p: 1.75,
-            borderRadius: 2,
+            borderRadius: 2.5,
             bgcolor: (theme) =>
               theme.palette.mode === "dark" ? "rgba(15, 16, 56, 0.85)" : "rgba(255, 255, 255, 0.08)",
             border: "1px solid",
@@ -189,6 +204,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   borderRadius: "50%",
                   bgcolor: runningCount > 0 ? "success.main" : "text.disabled",
                   boxShadow: runningCount > 0 ? "0 0 8px #10b981" : "none",
+                  transition: "all 0.3s ease",
                 }}
               />
               <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>

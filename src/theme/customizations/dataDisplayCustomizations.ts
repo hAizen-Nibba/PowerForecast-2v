@@ -1,4 +1,4 @@
-import { Components, Theme, alpha } from '@mui/material/styles';
+import { Components, Theme } from '@mui/material/styles';
 
 export const dataDisplayCustomizations: Components<Theme> = {
   MuiChip: {
@@ -8,6 +8,7 @@ export const dataDisplayCustomizations: Components<Theme> = {
         fontWeight: 600,
         fontSize: '0.75rem',
         border: '1px solid transparent',
+        transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
       },
       sizeSmall: {
         height: 22,
@@ -49,7 +50,8 @@ export const dataDisplayCustomizations: Components<Theme> = {
         fontSize: '0.75rem',
         borderRadius: 8,
         padding: '6px 10px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+        boxShadow: '0 4px 14px rgba(0,0,0,0.35)',
+        border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(129, 140, 248, 0.2)' : 'rgba(255,255,255,0.1)'}`,
       }),
     },
   },

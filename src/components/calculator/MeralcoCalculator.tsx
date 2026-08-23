@@ -25,14 +25,10 @@ import {
   Home as HomeIcon,
   Store as StoreIcon,
 } from "@mui/icons-material";
-import { calculateMeralcoBill, DEFAULT_MERALCO_RATES, DEFAULT_COMMERCIAL_RATES } from "../../lib/meralcoCalculator";
+import { calculateMeralcoBill, DEFAULT_MERALCO_RATES } from "../../lib/meralcoCalculator";
 import { devLog } from "../../lib/devLogger";
-import { useColorMode } from "../../theme/AppTheme";
 
 export const MeralcoCalculator: React.FC = () => {
-  const { mode } = useColorMode();
-  const isDark = mode === "dark";
-
   const [activeTab, setActiveTab] = useState<number>(0);
   const [tariffType, setTariffType] = useState<"residential" | "commercial">("residential");
   const [kwh, setKwh] = useState<number>(320);
@@ -84,7 +80,7 @@ export const MeralcoCalculator: React.FC = () => {
   };
 
   return (
-    <Box sx={{ position: "relative", display: "flex", flexDirection: "column", gap: 3 }}>
+    <Box sx={{ position: "relative", display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3 } }}>
       {/* Top Banner Header */}
       <Box
         sx={{
@@ -109,6 +105,7 @@ export const MeralcoCalculator: React.FC = () => {
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
+                flexShrink: 0,
               }}
             >
               <CalcIcon sx={{ color: "#ffd54f" }} />
@@ -120,12 +117,13 @@ export const MeralcoCalculator: React.FC = () => {
           </Typography>
         </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
           <Button
             variant="outlined"
             size="small"
             onClick={handleReset}
             startIcon={<RotateCcwIcon />}
+            sx={{ fontWeight: 700 }}
           >
             Reset
           </Button>
@@ -134,6 +132,7 @@ export const MeralcoCalculator: React.FC = () => {
             size="small"
             onClick={() => window.print()}
             startIcon={<PrinterIcon />}
+            sx={{ fontWeight: 700 }}
           >
             Print Breakdown
           </Button>
@@ -148,15 +147,15 @@ export const MeralcoCalculator: React.FC = () => {
         </Tabs>
       </Box>
 
-      <Grid container spacing={3} sx={{ position: "relative", zIndex: 1 }}>
+      <Grid container spacing={{ xs: 2.5, sm: 3 }} sx={{ position: "relative", zIndex: 1 }}>
         {/* Left Column: Config Inputs */}
         <Grid size={{ xs: 12, lg: 5 }}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {activeTab === 0 ? (
               <Card
                 sx={{
-                  p: 3,
-                  borderRadius: 3,
+                  p: { xs: 2.5, sm: 3 },
+                  borderRadius: 3.5,
                   display: "flex",
                   flexDirection: "column",
                   gap: 2.5,
@@ -256,7 +255,7 @@ export const MeralcoCalculator: React.FC = () => {
                       },
                     }}
                   />
-                  <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
+                  <Box sx={{ display: "flex", gap: 1, mt: 1, flexWrap: "wrap" }}>
                     {[
                       { label: "Current (₱9.25)", val: 9.2504 },
                       { label: "Low (₱8.91)", val: 8.91 },
@@ -380,8 +379,8 @@ export const MeralcoCalculator: React.FC = () => {
             ) : (
               <Card
                 sx={{
-                  p: 3,
-                  borderRadius: 3,
+                  p: { xs: 2.5, sm: 3 },
+                  borderRadius: 3.5,
                   display: "flex",
                   flexDirection: "column",
                   gap: 2.5,
@@ -445,7 +444,7 @@ export const MeralcoCalculator: React.FC = () => {
                     <Typography variant="caption" sx={{ fontWeight: 800, color: "success.main", textTransform: "uppercase" }}>
                       Estimated Monthly Savings
                     </Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 900, fontFamily: "monospace", color: "success.main" }}>
+                    <Typography variant="h4" sx={{ fontWeight: 900, fontFamily: "monospace", color: "success.main", letterSpacing: "-0.02em" }}>
                       ₱{simMonthlyPesosSaved.toFixed(2)}
                     </Typography>
                   </Box>
@@ -465,7 +464,7 @@ export const MeralcoCalculator: React.FC = () => {
 
         {/* Right Column: Output Receipt & Breakdown */}
         <Grid size={{ xs: 12, lg: 7 }}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3 } }}>
             {/* Total Amount Due Display */}
             <Card
               sx={{
@@ -496,6 +495,7 @@ export const MeralcoCalculator: React.FC = () => {
                   letterSpacing: "-0.03em",
                   my: 1,
                   color: "#ffd54f",
+                  fontSize: { xs: "2.25rem", sm: "3rem", md: "3.5rem" },
                 }}
               >
                 ₱
@@ -505,7 +505,7 @@ export const MeralcoCalculator: React.FC = () => {
                 })}
               </Typography>
 
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2, color: "text.secondary", fontSize: "0.8125rem", mt: 0.5 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, color: "text.secondary", fontSize: "0.8125rem", mt: 0.5, flexWrap: "wrap", justifyContent: "center" }}>
                 <span>Power Supply: ₱{bill.generationTotal.toFixed(2)}</span>
                 <span>•</span>
                 <span>Other Grid Fees: ₱{(bill.totalBill - bill.generationTotal).toFixed(2)}</span>
@@ -514,15 +514,15 @@ export const MeralcoCalculator: React.FC = () => {
               <Chip
                 label={`Calculated for ${kwh} kWh (Effective: ₱${bill.effectiveRatePerKwh.toFixed(4)}/kWh)`}
                 size="small"
-                sx={{ mt: 2, fontWeight: 700, fontFamily: "monospace" }}
+                sx={{ mt: 2, fontWeight: 700, fontFamily: "monospace", height: 26 }}
               />
             </Card>
 
             {/* Cost Share Distribution Bar */}
             <Card
               sx={{
-                p: 3,
-                borderRadius: 3,
+                p: { xs: 2.5, sm: 3 },
+                borderRadius: 3.5,
                 bgcolor: (theme) =>
                   theme.palette.mode === "dark" ? "rgba(13, 12, 45, 0.88)" : "rgba(255, 255, 255, 0.92)",
                 backdropFilter: "blur(16px)",
@@ -582,7 +582,7 @@ export const MeralcoCalculator: React.FC = () => {
                   size="small"
                   onClick={() => setShowItemized(!showItemized)}
                   endIcon={showItemized ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                  sx={{ textTransform: "none" }}
+                  sx={{ textTransform: "none", fontWeight: 700 }}
                 >
                   {showItemized ? "Hide" : "Show"}
                 </Button>
@@ -604,7 +604,7 @@ export const MeralcoCalculator: React.FC = () => {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        py: 0.5,
+                        py: 0.75,
                         borderBottom: "1px solid",
                         borderColor: "divider",
                       }}

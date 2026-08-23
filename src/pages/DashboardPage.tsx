@@ -16,7 +16,6 @@ import {
   Storage as DatabaseIcon,
   TrendingUp as TrendingUpIcon,
   Speed as SpeedIcon,
-  Whatshot as FlameIcon,
   AccessTime as ClockIcon,
   Add as PlusIcon,
   ArrowForward as ArrowForwardIcon,
@@ -115,22 +114,22 @@ export const DashboardPage: React.FC = () => {
   });
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3, md: 3.5 } }}>
       {/* 1. Hero Welcome Header Card */}
       <Card
         sx={{
-          p: { xs: 2.5, sm: 3.5 },
+          p: { xs: 2.5, sm: 3.5, md: 4 },
           display: "flex",
           flexDirection: { xs: "column", md: "row" },
           alignItems: { xs: "flex-start", md: "center" },
           justifyContent: "space-between",
-          gap: 3,
+          gap: { xs: 2.5, md: 3.5 },
           borderRadius: 3.5,
           position: "relative",
           overflow: "hidden",
         }}
       >
-        <Box sx={{ maxWidth: 640 }}>
+        <Box sx={{ maxWidth: 660 }}>
           <Chip
             icon={<BoltIcon sx={{ color: "#ffd54f !important", fontSize: "14px !important" }} />}
             label="Active Grid Telemetry"
@@ -142,6 +141,7 @@ export const DashboardPage: React.FC = () => {
               bgcolor: "rgba(99, 102, 241, 0.15)",
               color: "primary.light",
               border: "1px solid rgba(99, 102, 241, 0.3)",
+              height: 24,
             }}
           />
 
@@ -153,7 +153,7 @@ export const DashboardPage: React.FC = () => {
             Real-time household & business telemetry, Meralco unbundled tariff projections, DOE PELP certified inventory, and sub-metering cost split.
           </Typography>
 
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.25 }}>
             {spaces.length === 0 ? (
               <Button
                 component={Link}
@@ -200,7 +200,7 @@ export const DashboardPage: React.FC = () => {
         <Paper
           elevation={0}
           sx={{
-            p: 2.5,
+            p: { xs: 2, sm: 2.5 },
             borderRadius: 3,
             bgcolor: (theme) =>
               theme.palette.mode === "dark" ? "rgba(9, 9, 56, 0.75)" : "rgba(240, 243, 255, 0.8)",
@@ -208,22 +208,23 @@ export const DashboardPage: React.FC = () => {
             borderColor: "divider",
             minWidth: { xs: "100%", md: 240 },
             textAlign: { xs: "left", md: "right" },
+            boxSizing: "border-box",
           }}
         >
-          <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.light", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.light", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>
             Current Draw Load
           </Typography>
-          <Typography variant="h3" sx={{ fontWeight: 900, fontFamily: "monospace", my: 0.5 }}>
-            {activeWattage} <Typography component="span" variant="body2" sx={{ color: "text.secondary" }}>Watts</Typography>
+          <Typography variant="h3" sx={{ fontWeight: 900, fontFamily: "monospace", my: 0.5, letterSpacing: "-0.02em" }}>
+            {activeWattage} <Typography component="span" variant="body2" sx={{ color: "text.secondary", fontWeight: 600 }}>Watts</Typography>
           </Typography>
-          <Typography variant="caption" sx={{ color: "#f59e0b", fontWeight: 700, fontFamily: "monospace" }}>
+          <Typography variant="caption" sx={{ color: "#f59e0b", fontWeight: 700, fontFamily: "monospace", display: "block" }}>
             ₱{((activeWattage / 1000) * 14.8261).toFixed(2)}/hr running rate
           </Typography>
         </Paper>
       </Card>
 
       {/* 2. Main KPI Stat Cards */}
-      <Grid container spacing={2.5}>
+      <Grid container spacing={{ xs: 2, sm: 2.5 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
             title="Consolidated Monthly Bill"
@@ -264,8 +265,8 @@ export const DashboardPage: React.FC = () => {
 
       {/* 3. Sub-Metering & Space Cost Allocation (When Multiple Spaces Exist) */}
       {spaces.length > 1 && (
-        <Card sx={{ p: 3, borderRadius: 3.5, border: "1px solid", borderColor: "rgba(108, 122, 224, 0.25)" }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1 }}>
+        <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5, border: "1px solid", borderColor: "rgba(108, 122, 224, 0.25)" }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1.5 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
               <Box sx={{ p: 1, borderRadius: 2, bgcolor: "primary.main", color: "#ffffff", display: "flex" }}>
                 <WalletIcon fontSize="small" />
@@ -280,7 +281,7 @@ export const DashboardPage: React.FC = () => {
               </Box>
             </Box>
 
-            <Box sx={{ display: "flex", gap: 1 }}>
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
               <Chip
                 icon={<HomeIcon sx={{ fontSize: "14px !important" }} />}
                 label={`Residential: ₱${spaceAnalytics.resTotalBill.toFixed(2)} (${spaceAnalytics.resPercent.toFixed(0)}%)`}
@@ -325,6 +326,12 @@ export const DashboardPage: React.FC = () => {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    gap: 1.5,
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      borderColor: "primary.main",
+                      transform: "translateY(-1px)",
+                    },
                   }}
                 >
                   <Box>
@@ -338,7 +345,7 @@ export const DashboardPage: React.FC = () => {
                         {item.space.name}
                       </Typography>
                     </Box>
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.25, display: "block" }}>
                       {item.devicesCount} devices • {item.kwh} kWh
                     </Typography>
                   </Box>
@@ -347,7 +354,7 @@ export const DashboardPage: React.FC = () => {
                     <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: item.space.tariff_type === "commercial" ? "secondary.main" : "primary.main" }}>
                       ₱{item.bill.toFixed(2)}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
                       {item.space.tariff_type === "commercial" ? "General Power" : "230V Stepped"}
                     </Typography>
                   </Box>
@@ -359,7 +366,7 @@ export const DashboardPage: React.FC = () => {
       )}
 
       {/* 4. Main Grid: Live Power Board & Energy Distribution Donut */}
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2.5, sm: 3 }}>
         <Grid size={{ xs: 12, lg: 8 }}>
           <LivePowerBoard onOpenAddModal={() => setIsAddModalOpen(true)} />
         </Grid>
@@ -372,7 +379,7 @@ export const DashboardPage: React.FC = () => {
       <TodayActivityTimeline appliances={appliances} />
 
       {/* 6. Quick Module Launchpad */}
-      <Grid container spacing={2.5}>
+      <Grid container spacing={{ xs: 2, sm: 2.5 }}>
         {[
           {
             title: "Bill Calculator",
@@ -398,18 +405,18 @@ export const DashboardPage: React.FC = () => {
               component={Link}
               to={item.link}
               sx={{
-                p: 2.5,
+                p: { xs: 2.25, sm: 2.5 },
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
                 textDecoration: "none",
                 color: "inherit",
-                borderRadius: 3,
+                borderRadius: 3.5,
                 "&:hover": {
                   borderColor: "primary.main",
                   transform: "translateY(-2px)",
                 },
-                transition: "all 0.2s ease-in-out",
+                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -421,6 +428,9 @@ export const DashboardPage: React.FC = () => {
                     border: "1px solid",
                     borderColor: "divider",
                     display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
                   }}
                 >
                   {item.icon}
@@ -434,7 +444,7 @@ export const DashboardPage: React.FC = () => {
                   </Typography>
                 </Box>
               </Box>
-              <ArrowForwardIcon fontSize="small" sx={{ color: "primary.main" }} />
+              <ArrowForwardIcon fontSize="small" sx={{ color: "primary.main", flexShrink: 0 }} />
             </Card>
           </Grid>
         ))}
@@ -460,4 +470,3 @@ export const DashboardPage: React.FC = () => {
 };
 
 export default DashboardPage;
-
