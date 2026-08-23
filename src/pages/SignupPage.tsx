@@ -16,7 +16,6 @@ import {
   Person as PersonIcon,
   Email as EmailIcon,
   Lock as LockIcon,
-  Home as HomeIcon,
   HelpOutlined as QuestionIcon,
   Key as KeyIcon,
   Visibility as VisibilityIcon,
@@ -46,7 +45,6 @@ export const SignupPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [securityQuestion, setSecurityQuestion] = useState(SECURITY_QUESTION_PRESETS[0]);
   const [securityAnswer, setSecurityAnswer] = useState("");
-  const [householdType, setHouseholdType] = useState("Residential (Meralco 230V)");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showSecurityAnswer, setShowSecurityAnswer] = useState(false);
@@ -81,7 +79,6 @@ export const SignupPage: React.FC = () => {
         name,
         email,
         password,
-        householdType,
         securityQuestion,
         securityAnswer,
       },
@@ -406,27 +403,6 @@ export const SignupPage: React.FC = () => {
                 },
               }}
             />
-
-            <TextField
-              select
-              label="Household & Tariff Type"
-              fullWidth
-              value={householdType}
-              onChange={(e) => setHouseholdType(e.target.value)}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <HomeIcon fontSize="small" sx={{ color: "text.secondary" }} />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            >
-              <MenuItem value="Residential (Meralco 230V)">Residential (Meralco 230V Single-Phase)</MenuItem>
-              <MenuItem value="Small Commercial (Meralco)">Small Commercial / Business (General Power)</MenuItem>
-              <MenuItem value="Solar Net-Metering Setup">Solar Net-Metering Household (Bidirectional)</MenuItem>
-            </TextField>
 
             <Button
               type="submit"
