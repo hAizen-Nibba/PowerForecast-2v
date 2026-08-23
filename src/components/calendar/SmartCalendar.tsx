@@ -24,6 +24,7 @@ import {
   Home as HomeIcon,
   Store as StoreIcon,
   Public as PublicIcon,
+  AutoAwesome as SparklesIcon,
 } from "@mui/icons-material";
 import { UserCalendarEvent, UserAppliance, ApplianceUsageLog, DailyApplianceUsage, ApplianceList } from "../../types";
 import { useList, useUpdate, useCreate, useDelete } from "@refinedev/core";
@@ -31,6 +32,7 @@ import { DateAnalyticsModal } from "./DateAnalyticsModal";
 import { LiveSessionModal } from "./LiveSessionModal";
 import { ScheduleQueueModal } from "./ScheduleQueueModal";
 import { SessionLogsModal } from "./SessionLogsModal";
+import { RoutineAutofillModal } from "./RoutineAutofillModal";
 import { useToast } from "../common/ToastProvider";
 import {
   formatDateToKey,
@@ -51,6 +53,7 @@ export const SmartCalendar: React.FC = () => {
   const [selectedApplianceForQueue, setSelectedApplianceForQueue] = useState<UserAppliance | null>(null);
   const [isQueueModalOpen, setIsQueueModalOpen] = useState(false);
   const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
+  const [isRoutineAutofillOpen, setIsRoutineAutofillOpen] = useState(false);
 
   const { showSuccess, showInfo } = useToast();
 
@@ -550,25 +553,38 @@ export const SmartCalendar: React.FC = () => {
             </IconButton>
           </Box>
 
-          {/* Visual Legend */}
+          {/* Actions & Visual Legend */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#34d399" }} />
-              <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
-                Actual Logged
-              </Typography>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#818cf8" }} />
-              <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
-                Projected Estimate
-              </Typography>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#fbbf24" }} />
-              <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
-                Heavy / Peak Load
-              </Typography>
+            <Button
+              size="small"
+              variant="outlined"
+              color="primary"
+              startIcon={<SparklesIcon sx={{ color: "#ffd54f" }} />}
+              onClick={() => setIsRoutineAutofillOpen(true)}
+              sx={{ borderRadius: 2, fontWeight: 700, fontSize: "0.75rem", textTransform: "none" }}
+            >
+              Autofill Routine Defaults
+            </Button>
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#34d399" }} />
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
+                  Actual Logged
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#818cf8" }} />
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
+                  Projected Estimate
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#fbbf24" }} />
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
+                  Heavy / Peak Load
+                </Typography>
+              </Box>
             </Box>
           </Box>
         </Box>
@@ -805,6 +821,21 @@ export const SmartCalendar: React.FC = () => {
           onUpdateLog={handleUpdateLog}
         />
       )}
+
+      {/* Routine Defaults Autofill Modal across Date Ranges */}
+      <RoutineAutofillModal
+        isOpen={isRoutineAutofillOpen}
+        onClose={() => setIsRoutineAutofillOpen(false)}
+        currentSelectedDate={currentDate}
+        appliances={appliances}
+        spaces={spaces}
+        onApplyToCurrentDay={() => {
+          if (dailyUsageRes?.refetch) dailyUsageRes.refetch();
+        }}
+        onBatchSaved={() => {
+          if (dailyUsageRes?.refetch) dailyUsageRes.refetch();
+        }}
+      />
     </Box>
   );
 };

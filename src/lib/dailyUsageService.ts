@@ -179,6 +179,120 @@ export async function batchSaveDailyUsage(
   }
 }
 
+/**
+ * Batch saves appliance routine baseline defaults across a multi-day date range (e.g. Aug 1 - Aug 23 or Aug 1 - Aug 31)
+ */
+export async function batchSaveDailyUsageAcrossRange(params: {
+  startDate: Date;
+  endDate: Date;
+  appliances: UserAppliance[];
+  effectiveRate?: number;
+  source?: "routine_default" | "manual";
+  overwriteExisting?: boolean;
+  userId?: string | null;
+}): Promise<{ success: boolean; totalDays: number; totalRows: number }> {
+  const {
+    startDate,
+    endDate,
+    appliances,
+    effectiveRate = DEFAULT_EFFECTIVE_RATE,
+    source = "routine_default",
+    overwriteExisting = true,
+    userId = null,
+  } = params;
+
+  if (appliances.length === 0 || endDate < startDate) {
+    return { success: true, totalDays: 0, totalRows: 0 };
+  }
+
+  // Generate list of dates in the range
+  const dateKeys: string[] = [];
+  const current = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+  const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+
+  while (current <= end) {
+    dateKeys.push(formatDateToKey(current));
+    current.setDate(current.getDate() + 1);
+  }
+
+  if (dateKeys.length === 0) {
+    return { success: true, totalDays: 0, totalRows: 0 };
+  }
+
+  // If not overwriting existing, find dates that already have logged data
+  let existingKeys = new Set<string>();
+  if (!overwriteExisting) {
+    try {
+      const { data } = await supabaseClient
+        .from("daily_appliance_usage")
+        .select("usage_date, appliance_id")
+        .in("usage_date", dateKeys);
+
+      if (data) {
+        data.forEach((row: any) => existingKeys.add(`${row.usage_date}_${row.appliance_id}`));
+      }
+    } catch (e) {
+      devLog.warn("DailyUsageService", "Could not check existing records:", e);
+    }
+  }
+
+  const allRows: any[] = [];
+
+  dateKeys.forEach((dKey) => {
+    appliances.forEach((app) => {
+      if (!overwriteExisting && existingKeys.has(`${dKey}_${app.id}`)) {
+        return; // skip existing
+      }
+
+      const hours = Number(app.hours_per_day) || 0;
+      const qty = app.quantity || 1;
+      const kwh = calculateKwh(app.watts, hours, qty);
+      const cost = calculateCost(kwh, effectiveRate);
+
+      allRows.push({
+        appliance_id: app.id,
+        usage_date: dKey,
+        hours_used: hours,
+        kwh_consumed: kwh,
+        estimated_cost: cost,
+        source,
+        notes: `Routine default baseline (${hours}h/day)`,
+        user_id: app.user_id || userId,
+        updated_at: new Date().toISOString(),
+      });
+    });
+  });
+
+  if (allRows.length === 0) {
+    return { success: true, totalDays: dateKeys.length, totalRows: 0 };
+  }
+
+  try {
+    // Chunk inserts in batches of 200 rows for safety
+    const chunkSize = 200;
+    for (let i = 0; i < allRows.length; i += chunkSize) {
+      const chunk = allRows.slice(i, i + chunkSize);
+      const { error } = await supabaseClient
+        .from("daily_appliance_usage")
+        .upsert(chunk, {
+          onConflict: "user_id,appliance_id,usage_date",
+        });
+
+      if (error) {
+        devLog.error("DailyUsageService", `Error bulk upserting chunk ${i}: ${error.message}`, error);
+        return { success: false, totalDays: dateKeys.length, totalRows: i };
+      }
+    }
+
+    devLog.info("DailyUsageService", `Successfully batch saved ${allRows.length} rows across ${dateKeys.length} days.`);
+    return { success: true, totalDays: dateKeys.length, totalRows: allRows.length };
+  } catch (err: any) {
+    devLog.error("DailyUsageService", `Exception in batchSaveDailyUsageAcrossRange: ${err?.message}`, err);
+    return { success: false, totalDays: dateKeys.length, totalRows: 0 };
+  }
+}
+
+
 export interface DaySessionSlice {
   dateKey: string;
   hours: number;

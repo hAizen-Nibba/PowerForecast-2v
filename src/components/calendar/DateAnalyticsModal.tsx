@@ -52,6 +52,7 @@ import {
 } from "../../lib/dailyUsageService";
 import { supabaseClient } from "../../lib/supabaseClient";
 import { useToast } from "../common/ToastProvider";
+import { RoutineAutofillModal } from "./RoutineAutofillModal";
 
 interface DateAnalyticsModalProps {
   isOpen: boolean;
@@ -73,6 +74,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
   appliances,
   events,
   initialUsageRecords = [],
+  spaces = [],
   logs = [],
   onUsageSaved,
 }) => {
@@ -101,6 +103,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
   // Past Time Range Logger State
   const [isPastSessionModalOpen, setIsPastSessionModalOpen] = useState(false);
+  const [isRoutineModalOpen, setIsRoutineModalOpen] = useState(false);
   const [selectedApplianceForPastSession, setSelectedApplianceForPastSession] = useState<UserAppliance | null>(null);
   const [pastStartDateTime, setPastStartDateTime] = useState("");
   const [pastEndDateTime, setPastEndDateTime] = useState("");
@@ -278,6 +281,10 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
   // Action: Populate with Routine Baseline Defaults (hours_per_day from inventory)
   const handleApplyDefaults = () => {
+    setIsRoutineModalOpen(true);
+  };
+
+  const handleApplyRoutineToCurrentDay = () => {
     setUsageState((prev) => {
       const next = { ...prev };
       appliances.forEach((app) => {
@@ -289,7 +296,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       return next;
     });
     setIsDirty(true);
-    showInfo("Loaded routine baseline hours for all inventory appliances.");
+    showInfo("Loaded routine baseline hours for this day.");
   };
 
   // Action: Copy from yesterday's usage
@@ -1721,6 +1728,21 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
           </DialogActions>
         </Dialog>
       )}
+
+      {/* Routine Defaults Autofill Modal across Date Ranges */}
+      <RoutineAutofillModal
+        isOpen={isRoutineModalOpen}
+        onClose={() => setIsRoutineModalOpen(false)}
+        currentSelectedDate={selectedDate}
+        appliances={appliances}
+        spaces={spaces}
+        onApplyToCurrentDay={handleApplyRoutineToCurrentDay}
+        onBatchSaved={() => {
+          handleApplyRoutineToCurrentDay();
+          setIsDirty(false);
+          if (onUsageSaved) onUsageSaved();
+        }}
+      />
     </>
   );
 };
