@@ -113,7 +113,7 @@ export const LoginPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Main 2-Column Split: Bulb on Left, Bento Card on Right */}
+      {/* Main 2-Column Split: Bulb on Left (hanging from header), Bento Card on Right */}
       <Container
         maxWidth="lg"
         sx={{
@@ -121,7 +121,7 @@ export const LoginPage: React.FC = () => {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          py: { xs: 3, md: 5 },
+          py: { xs: 3, md: 0 },
           px: { xs: 2, sm: 3 },
         }}
       >
@@ -134,27 +134,44 @@ export const LoginPage: React.FC = () => {
             alignItems: "center",
           }}
         >
-          {/* Left Column: Bulb Artwork */}
+          {/* Left Column: Bulb Artwork Hanging from Header */}
           <Box
             sx={{
               display: { xs: "none", md: "flex" },
               flexDirection: "column",
               alignItems: "center",
-              justifyContent: "center",
+              justifyContent: "flex-start",
               position: "relative",
-              py: 4,
+              pt: 0,
+              pb: 3,
             }}
           >
+            {/* Hanging Cord from Header */}
+            <Box
+              sx={{
+                width: 4,
+                height: { md: 16, lg: 24 },
+                bgcolor: isDark ? "#475569" : "#94a3b8",
+                borderRadius: "0 0 2px 2px",
+                boxShadow: isDark ? "0 0 10px rgba(99, 102, 241, 0.4)" : "none",
+                zIndex: 2,
+              }}
+            />
+
+            {/* Ambient Radial Glow behind the bulb */}
             <Box
               sx={{
                 position: "absolute",
-                width: 380,
-                height: 380,
+                top: "45%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                width: { md: 440, lg: 520 },
+                height: { md: 440, lg: 520 },
                 borderRadius: "50%",
                 background: isDark
-                  ? "radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, rgba(8, 7, 32, 0) 70%)"
-                  : "radial-gradient(circle, rgba(255, 213, 79, 0.35) 0%, rgba(244, 246, 251, 0) 70%)",
-                filter: "blur(40px)",
+                  ? "radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, rgba(8, 7, 32, 0) 70%)"
+                  : "radial-gradient(circle, rgba(255, 213, 79, 0.45) 0%, rgba(244, 246, 251, 0) 70%)",
+                filter: "blur(50px)",
                 zIndex: 0,
                 pointerEvents: "none",
               }}
@@ -166,15 +183,16 @@ export const LoginPage: React.FC = () => {
               alt="PowerForecast Energy Bulb"
               sx={{
                 width: "100%",
-                maxWidth: 420,
-                maxHeight: 520,
+                maxWidth: { md: 480, lg: 540 },
+                maxHeight: { md: 620, lg: 700 },
                 objectFit: "contain",
                 position: "relative",
                 zIndex: 1,
+                mt: -0.5,
                 filter: isDark
-                  ? "drop-shadow(0 15px 35px rgba(0, 0, 0, 0.8))"
-                  : "drop-shadow(0 15px 45px rgba(255, 213, 79, 0.5))",
-                transition: "filter 0.3s ease",
+                  ? "drop-shadow(0 20px 45px rgba(0, 0, 0, 0.9))"
+                  : "drop-shadow(0 20px 60px rgba(255, 213, 79, 0.6))",
+                transition: "all 0.3s ease",
               }}
             />
 
@@ -183,7 +201,7 @@ export const LoginPage: React.FC = () => {
               sx={{
                 fontWeight: 800,
                 textAlign: "center",
-                mt: 3,
+                mt: 1.5,
                 letterSpacing: "-0.01em",
                 zIndex: 1,
                 color: isDark ? "#ffffff" : "#0f172a",
@@ -196,7 +214,7 @@ export const LoginPage: React.FC = () => {
               sx={{
                 color: "text.secondary",
                 textAlign: "center",
-                mt: 1,
+                mt: 0.5,
                 maxWidth: 380,
                 zIndex: 1,
               }}
@@ -206,7 +224,7 @@ export const LoginPage: React.FC = () => {
           </Box>
 
           {/* Right Column: Bento Card */}
-          <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
+          <Box sx={{ display: "flex", justifyContent: "center", width: "100%", py: { xs: 2, md: 4 } }}>
             <Card
               sx={{
                 width: "100%",
