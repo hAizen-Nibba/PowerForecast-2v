@@ -658,7 +658,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                       </Box>
 
                       {/* Slider + Stepper Controls */}
-                      <Grid container spacing={2} alignItems="center">
+                      <Grid container spacing={2} sx={{ alignItems: "center" }}>
                         <Grid size={{ xs: 12, sm: 7 }}>
                           <Box sx={{ px: 1 }}>
                             <Slider

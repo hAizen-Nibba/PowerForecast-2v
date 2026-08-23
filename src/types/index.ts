@@ -47,7 +47,7 @@ export interface ApplianceUsageLog {
   is_peak_window?: boolean;
   estimated_cost?: number;
   source?: string;
-  notes?: string;
+  notes?: string | null;
   created_at?: string;
 }
 
@@ -60,7 +60,7 @@ export interface DailyApplianceUsage {
   kwh_consumed: number;
   estimated_cost: number;
   source?: 'manual' | 'live_session' | 'schedule_autofill' | 'routine_default';
-  notes?: string;
+  notes?: string | null;
   created_at?: string;
   updated_at?: string;
 }
