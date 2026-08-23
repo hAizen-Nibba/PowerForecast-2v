@@ -24,6 +24,7 @@ import { UserAppliance, ApplianceList } from "../../types";
 import { useCreate, useUpdate, useList } from "@refinedev/core";
 import { getDefaultStartHour } from "../../lib/loadCurveService";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
+import { DuplicateApplianceModal } from "./DuplicateApplianceModal";
 
 interface ApplianceModalProps {
   isOpen: boolean;
@@ -51,11 +52,21 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
   const [energyRating, setEnergyRating] = useState("5-Star Inverter");
   const [selectedListId, setSelectedListId] = useState<string>("");
 
+  // Duplicate modal states
+  const [duplicateIncoming, setDuplicateIncoming] = useState<Partial<UserAppliance> | null>(null);
+  const [duplicateExisting, setDuplicateExisting] = useState<UserAppliance | null>(null);
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+
   const listsRes = useList<ApplianceList>({
     resource: "appliance_lists",
   }) as any;
 
+  const appliancesRes = useList<UserAppliance>({
+    resource: "user_appliances",
+  }) as any;
+
   const spaces: ApplianceList[] = listsRes?.data?.data || listsRes?.result?.data || [];
+  const appliances: UserAppliance[] = appliancesRes?.data?.data || appliancesRes?.result?.data || [];
 
   const { mutate: createAppliance, isLoading: isCreating } = useCreate();
   const { mutate: updateAppliance, isLoading: isUpdating } = useUpdate();
@@ -134,6 +145,28 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
         }
       );
     } else {
+      // Check for duplicate in the same space
+      const existing = appliances.find((a) => {
+        const isSameSpace = a.list_id === targetListId || (!a.list_id && spaces.find((s) => s.id === targetListId)?.is_default);
+        if (!isSameSpace) return false;
+
+        const isSameName = a.name.trim().toLowerCase() === name.trim().toLowerCase();
+        const isSameModel =
+          brand.trim() &&
+          model.trim() &&
+          a.brand?.trim().toLowerCase() === brand.trim().toLowerCase() &&
+          a.model?.trim().toLowerCase() === model.trim().toLowerCase();
+
+        return isSameName || isSameModel;
+      });
+
+      if (existing) {
+        setDuplicateExisting(existing);
+        setDuplicateIncoming(payload);
+        setIsDuplicateModalOpen(true);
+        return;
+      }
+
       createAppliance(
         {
           resource: "user_appliances",
@@ -146,8 +179,36 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
     }
   };
 
+  const handleCombineQuantity = (existing: UserAppliance) => {
+    updateAppliance(
+      {
+        resource: "user_appliances",
+        id: existing.id,
+        values: {
+          quantity: (existing.quantity || 1) + quantity,
+        },
+      },
+      {
+        onSuccess: () => onClose(),
+      }
+    );
+  };
+
+  const handleAddDistinct = (distinctPayload: Partial<UserAppliance>) => {
+    createAppliance(
+      {
+        resource: "user_appliances",
+        values: distinctPayload,
+      },
+      {
+        onSuccess: () => onClose(),
+      }
+    );
+  };
+
   return (
-    <Dialog open={isOpen} onClose={onClose} fullWidth maxWidth="sm">
+    <>
+      <Dialog open={isOpen} onClose={onClose} fullWidth maxWidth="sm">
       <form onSubmit={handleSubmit}>
         <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -386,6 +447,24 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
         </DialogActions>
       </form>
     </Dialog>
+
+    {/* Duplicate Appliance Resolution Modal */}
+    {isDuplicateModalOpen && (
+      <DuplicateApplianceModal
+        isOpen={isDuplicateModalOpen}
+        onClose={() => {
+          setIsDuplicateModalOpen(false);
+          setDuplicateIncoming(null);
+          setDuplicateExisting(null);
+        }}
+        incomingAppliance={duplicateIncoming}
+        existingAppliance={duplicateExisting}
+        spaceName={spaces.find((s) => s.id === (selectedListId || spaces[0]?.id))?.name || "Current Space"}
+        onCombineQuantity={handleCombineQuantity}
+        onAddDistinct={handleAddDistinct}
+      />
+    )}
+    </>
   );
 };
 

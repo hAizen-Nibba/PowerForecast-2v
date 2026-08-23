@@ -29,10 +29,11 @@ import {
   Close as CloseIcon,
 } from "@mui/icons-material";
 import { analyzeMultipleApplianceImages, ImageItem } from "../../lib/visionService";
-import { VisionScanResult } from "../../types";
-import { useCreate } from "@refinedev/core";
+import { VisionScanResult, UserAppliance, ApplianceList } from "../../types";
+import { useCreate, useUpdate, useList } from "@refinedev/core";
 import { getDefaultStartHour } from "../../lib/loadCurveService";
 import { devLog } from "../../lib/devLogger";
+import { DuplicateApplianceModal } from "../appliances/DuplicateApplianceModal";
 
 interface AiVisionScannerModalProps {
   isOpen: boolean;
@@ -63,7 +64,24 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
   const [editCategory, setEditCategory] = useState("Electric Fans");
   const [editRoom, setEditRoom] = useState("Living Room");
 
+  // Duplicate modal states
+  const [duplicateIncoming, setDuplicateIncoming] = useState<Partial<UserAppliance> | null>(null);
+  const [duplicateExisting, setDuplicateExisting] = useState<UserAppliance | null>(null);
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+
+  const appliancesRes = useList<UserAppliance>({
+    resource: "user_appliances",
+  }) as any;
+
+  const listsRes = useList<ApplianceList>({
+    resource: "appliance_lists",
+  }) as any;
+
+  const appliances: UserAppliance[] = appliancesRes?.data?.data || appliancesRes?.result?.data || [];
+  const spaces: ApplianceList[] = listsRes?.data?.data || listsRes?.result?.data || [];
+
   const { mutate: createAppliance, isLoading: isSaving } = useCreate();
+  const { mutate: updateAppliance } = useUpdate();
 
   useEffect(() => {
     const envKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || "";
@@ -143,24 +161,52 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
   };
 
   const handleSaveToInventory = () => {
+    const targetListId = defaultListId || (spaces[0]?.id ?? null);
+    const targetSpace = spaces.find((s) => s.id === targetListId);
+
+    const incomingPayload: Partial<UserAppliance> = {
+      name: editName || "Scanned Appliance",
+      category: editCategory,
+      brand: editBrand,
+      model: editModel,
+      watts: editWatts,
+      quantity: 1,
+      hours_per_day: 8,
+      days_per_month: 30,
+      start_hour: getDefaultStartHour(editCategory),
+      room_location: editRoom,
+      energy_rating: scanResult?.detected_energy_rating || `${scanResult?.detected_star_rating || 5}-Star (AI Scan)`,
+      monthly_kwh: editMonthlyKwh,
+      list_id: targetListId,
+      tariff_type: targetSpace?.tariff_type || "residential",
+    };
+
+    // Check if duplicate already exists in target space
+    const existing = appliances.find((a) => {
+      const isSameSpace = a.list_id === targetListId || (!a.list_id && spaces.find((s) => s.id === targetListId)?.is_default);
+      if (!isSameSpace) return false;
+
+      const isSameName = a.name?.trim().toLowerCase() === editName.trim().toLowerCase();
+      const isSameModel =
+        editBrand.trim() &&
+        editModel.trim() &&
+        a.brand?.trim().toLowerCase() === editBrand.trim().toLowerCase() &&
+        a.model?.trim().toLowerCase() === editModel.trim().toLowerCase();
+
+      return isSameName || isSameModel;
+    });
+
+    if (existing) {
+      setDuplicateExisting(existing);
+      setDuplicateIncoming(incomingPayload);
+      setIsDuplicateModalOpen(true);
+      return;
+    }
+
     createAppliance(
       {
         resource: "user_appliances",
-        values: {
-          name: editName || "Scanned Appliance",
-          category: editCategory,
-          brand: editBrand,
-          model: editModel,
-          watts: editWatts,
-          quantity: 1,
-          hours_per_day: 8,
-          days_per_month: 30,
-          start_hour: getDefaultStartHour(editCategory),
-          room_location: editRoom,
-          energy_rating: scanResult?.detected_energy_rating || `${scanResult?.detected_star_rating || 5}-Star (AI Scan)`,
-          monthly_kwh: editMonthlyKwh,
-          list_id: defaultListId || null,
-        },
+        values: incomingPayload,
       },
       {
         onSuccess: () => {
@@ -171,8 +217,42 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
     );
   };
 
+  const handleCombineQuantity = (existing: UserAppliance) => {
+    updateAppliance(
+      {
+        resource: "user_appliances",
+        id: existing.id,
+        values: {
+          quantity: (existing.quantity || 1) + 1,
+        },
+      },
+      {
+        onSuccess: () => {
+          devLog.info("AI Scanner", `Incremented quantity for duplicate "${existing.name}".`);
+          onClose();
+        },
+      }
+    );
+  };
+
+  const handleAddDistinct = (distinctPayload: Partial<UserAppliance>) => {
+    createAppliance(
+      {
+        resource: "user_appliances",
+        values: distinctPayload,
+      },
+      {
+        onSuccess: () => {
+          devLog.info("AI Scanner", `Saved separate scanned unit "${distinctPayload.name}" to inventory.`);
+          onClose();
+        },
+      }
+    );
+  };
+
   return (
-    <Dialog open={isOpen} onClose={onClose} fullWidth maxWidth="md">
+    <>
+      <Dialog open={isOpen} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 2 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Box
@@ -482,6 +562,24 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
         )}
       </DialogActions>
     </Dialog>
+
+    {/* Duplicate Appliance Resolution Modal */}
+    {isDuplicateModalOpen && (
+      <DuplicateApplianceModal
+        isOpen={isDuplicateModalOpen}
+        onClose={() => {
+          setIsDuplicateModalOpen(false);
+          setDuplicateIncoming(null);
+          setDuplicateExisting(null);
+        }}
+        incomingAppliance={duplicateIncoming}
+        existingAppliance={duplicateExisting}
+        spaceName={spaces.find((s) => s.id === (defaultListId || spaces[0]?.id))?.name || "Current Space"}
+        onCombineQuantity={handleCombineQuantity}
+        onAddDistinct={handleAddDistinct}
+      />
+    )}
+    </>
   );
 };
 

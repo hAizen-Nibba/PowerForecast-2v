@@ -26,9 +26,10 @@ import {
   Store as StoreIcon,
 } from "@mui/icons-material";
 import { PELP_CATEGORIES, searchPelpDatabase } from "../../lib/pelpService";
-import { PelpItem, ApplianceList } from "../../types";
-import { useCreate, useList } from "@refinedev/core";
+import { PelpItem, ApplianceList, UserAppliance } from "../../types";
+import { useCreate, useList, useUpdate } from "@refinedev/core";
 import { getDefaultStartHour } from "../../lib/loadCurveService";
+import { DuplicateApplianceModal } from "./DuplicateApplianceModal";
 
 interface PelpCatalogModalProps {
   isOpen: boolean;
@@ -48,11 +49,21 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
   const [importedControlNo, setImportedControlNo] = useState<string | null>(null);
   const [selectedListId, setSelectedListId] = useState<string>("");
 
+  // Duplicate modal states
+  const [duplicateIncoming, setDuplicateIncoming] = useState<Partial<UserAppliance> | null>(null);
+  const [duplicateExisting, setDuplicateExisting] = useState<UserAppliance | null>(null);
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+
   const listsRes = useList<ApplianceList>({
     resource: "appliance_lists",
   }) as any;
 
+  const appliancesRes = useList<UserAppliance>({
+    resource: "user_appliances",
+  }) as any;
+
   const spaces: ApplianceList[] = listsRes?.data?.data || listsRes?.result?.data || [];
+  const appliances: UserAppliance[] = appliancesRes?.data?.data || appliancesRes?.result?.data || [];
 
   useEffect(() => {
     if (defaultListId) {
@@ -63,6 +74,7 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
   }, [defaultListId, spaces]);
 
   const { mutate: createAppliance } = useCreate();
+  const { mutate: updateAppliance } = useUpdate();
 
   useEffect(() => {
     if (isOpen) {
@@ -92,25 +104,49 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
     const targetListId = selectedListId || (spaces[0]?.id ?? null);
     const targetSpace = spaces.find((s) => s.id === targetListId);
 
+    const incomingPayload: Partial<UserAppliance> = {
+      name: `${item.brand} ${item.model}`,
+      category: item.category,
+      brand: item.brand,
+      model: item.model,
+      control_no: item.control_no,
+      watts: watts,
+      quantity: 1,
+      hours_per_day: 8,
+      days_per_month: 30,
+      start_hour: getDefaultStartHour(item.category),
+      room_location: room,
+      energy_rating: `${item.star_rating || 5}-Star (PELP)`,
+      monthly_kwh: monthlyKwh,
+      list_id: targetListId,
+      tariff_type: targetSpace?.tariff_type || "residential",
+    };
+
+    // Check if duplicate already exists in this space
+    const existing = appliances.find((a) => {
+      const isSameSpace = a.list_id === targetListId || (!a.list_id && spaces.find((s) => s.id === targetListId)?.is_default);
+      if (!isSameSpace) return false;
+
+      const isMatchModel =
+        a.brand?.trim().toLowerCase() === item.brand?.trim().toLowerCase() &&
+        a.model?.trim().toLowerCase() === item.model?.trim().toLowerCase();
+      const isMatchName = a.name?.toLowerCase().includes(`${item.brand} ${item.model}`.toLowerCase());
+      const isMatchControl = a.control_no && a.control_no === item.control_no;
+
+      return isMatchModel || isMatchName || isMatchControl;
+    });
+
+    if (existing) {
+      setDuplicateExisting(existing);
+      setDuplicateIncoming(incomingPayload);
+      setIsDuplicateModalOpen(true);
+      return;
+    }
+
     createAppliance(
       {
         resource: "user_appliances",
-        values: {
-          name: `${item.brand} ${item.model}`,
-          category: item.category,
-          brand: item.brand,
-          model: item.model,
-          watts: watts,
-          quantity: 1,
-          hours_per_day: 8,
-          days_per_month: 30,
-          start_hour: getDefaultStartHour(item.category),
-          room_location: room,
-          energy_rating: `${item.star_rating || 5}-Star (PELP)`,
-          monthly_kwh: monthlyKwh,
-          list_id: targetListId,
-          tariff_type: targetSpace?.tariff_type || "residential",
-        },
+        values: incomingPayload,
       },
       {
         onSuccess: () => {
@@ -121,8 +157,43 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
     );
   };
 
+  const handleCombineQuantity = (existing: UserAppliance) => {
+    const newQty = (existing.quantity || 1) + 1;
+    updateAppliance(
+      {
+        resource: "user_appliances",
+        id: existing.id,
+        values: {
+          quantity: newQty,
+        },
+      },
+      {
+        onSuccess: () => {
+          setImportedControlNo(existing.control_no || existing.id);
+          setTimeout(() => setImportedControlNo(null), 3000);
+        },
+      }
+    );
+  };
+
+  const handleAddDistinct = (payload: Partial<UserAppliance>) => {
+    createAppliance(
+      {
+        resource: "user_appliances",
+        values: payload,
+      },
+      {
+        onSuccess: () => {
+          setImportedControlNo(payload.control_no || payload.name || null);
+          setTimeout(() => setImportedControlNo(null), 3000);
+        },
+      }
+    );
+  };
+
   return (
-    <Dialog open={isOpen} onClose={onClose} fullWidth maxWidth="md">
+    <>
+      <Dialog open={isOpen} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 2 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Box
@@ -341,6 +412,24 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
         </Button>
       </DialogActions>
     </Dialog>
+
+    {/* Duplicate Appliance Resolution Modal */}
+    {isDuplicateModalOpen && (
+      <DuplicateApplianceModal
+        isOpen={isDuplicateModalOpen}
+        onClose={() => {
+          setIsDuplicateModalOpen(false);
+          setDuplicateIncoming(null);
+          setDuplicateExisting(null);
+        }}
+        incomingAppliance={duplicateIncoming}
+        existingAppliance={duplicateExisting}
+        spaceName={spaces.find((s) => s.id === (selectedListId || spaces[0]?.id))?.name || "Current Space"}
+        onCombineQuantity={handleCombineQuantity}
+        onAddDistinct={handleAddDistinct}
+      />
+    )}
+    </>
   );
 };
 
