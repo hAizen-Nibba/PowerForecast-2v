@@ -50,7 +50,6 @@ import {
 export const SmartCalendar: React.FC = () => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDateForModal, setSelectedDateForModal] = useState<Date | null>(null);
-  const [viewMode, setViewMode] = useState<"month" | "week">("month");
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>("all");
 
   // Modals state
@@ -133,23 +132,11 @@ export const SmartCalendar: React.FC = () => {
   const firstDayIndex = new Date(year, month, 1).getDay();
 
   const handlePrevMonth = () => {
-    if (viewMode === "week") {
-      const prev = new Date(currentDate);
-      prev.setDate(prev.getDate() - 7);
-      setCurrentDate(prev);
-    } else {
-      setCurrentDate(new Date(year, month - 1, 1));
-    }
+    setCurrentDate(new Date(year, month - 1, 1));
   };
 
   const handleNextMonth = () => {
-    if (viewMode === "week") {
-      const next = new Date(currentDate);
-      next.setDate(next.getDate() + 7);
-      setCurrentDate(next);
-    } else {
-      setCurrentDate(new Date(year, month + 1, 1));
-    }
+    setCurrentDate(new Date(year, month + 1, 1));
   };
 
   const handleToday = () => {
@@ -349,32 +336,6 @@ export const SmartCalendar: React.FC = () => {
               Schedule Queue
             </Button>
           )}
-
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={handleToday}
-            startIcon={<TodayIcon />}
-          >
-            Today
-          </Button>
-
-          <ButtonGroup size="small" variant="outlined">
-            <Button
-              variant={viewMode === "month" ? "contained" : "outlined"}
-              onClick={() => setViewMode("month")}
-              startIcon={<GridViewIcon />}
-            >
-              Month
-            </Button>
-            <Button
-              variant={viewMode === "week" ? "contained" : "outlined"}
-              onClick={() => setViewMode("week")}
-              startIcon={<ListViewIcon />}
-            >
-              Week
-            </Button>
-          </ButtonGroup>
         </Box>
       </Box>
 
@@ -733,6 +694,7 @@ export const SmartCalendar: React.FC = () => {
           initialUsageRecords={dailyUsageList}
           spaces={spaces}
           selectedSpaceId={selectedSpaceId}
+          logs={logs}
           onUsageSaved={() => {
             if (dailyUsageRes?.refetch) {
               dailyUsageRes.refetch();

@@ -37,6 +37,8 @@ import {
   Speed as SpeedIcon,
   Home as HomeIcon,
   Store as StoreIcon,
+  Timer as TimerIcon,
+  PlayArrow as PlayIcon,
 } from "@mui/icons-material";
 import {
   AreaChart,
@@ -47,7 +49,7 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
 } from "recharts";
-import { UserAppliance, UserCalendarEvent, DailyApplianceUsage, ApplianceList } from "../../types";
+import { UserAppliance, UserCalendarEvent, DailyApplianceUsage, ApplianceList, ApplianceUsageLog } from "../../types";
 import { useCreate, useDelete } from "@refinedev/core";
 import {
   formatDateToKey,
@@ -70,6 +72,7 @@ interface DateAnalyticsModalProps {
   initialUsageRecords?: DailyApplianceUsage[];
   spaces?: ApplianceList[];
   selectedSpaceId?: string;
+  logs?: ApplianceUsageLog[];
   onUsageSaved?: () => void;
 }
 
@@ -82,6 +85,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
   initialUsageRecords = [],
   spaces = [],
   selectedSpaceId: parentSpaceId = "all",
+  logs = [],
   onUsageSaved,
 }) => {
   const [activeTab, setActiveTab] = useState<number>(0);
@@ -363,6 +367,106 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
   const peakWatts = Math.max(...hourlyData.map((d) => d.watts), 0);
 
+  const isSelectedToday = dateKey === formatDateToKey(new Date());
+
+  interface TimelineSessionBlock {
+    id: string;
+    type: "logged_session" | "live_stopwatch" | "manual_routine";
+    startHour: number;
+    endHour: number;
+    durationHours: number;
+    kwh: number;
+    cost: number;
+    startTimeStr: string;
+    endTimeStr: string;
+  }
+
+  // Compute 24-Hour Visual Activity & Stopwatch Timeline Data
+  const timelineData = useMemo(() => {
+    return filteredAppliances.map((app) => {
+      // 1. Logs for this appliance on this date
+      const appLogs = (logs || []).filter((l) => {
+        if (l.appliance_id !== app.id) return false;
+        const logDateKey = formatDateToKey(new Date(l.started_at));
+        return logDateKey === dateKey;
+      });
+
+      const sessionBlocks: TimelineSessionBlock[] = appLogs.map((log): TimelineSessionBlock => {
+        const start = new Date(log.started_at);
+        const startHourFraction = start.getHours() + start.getMinutes() / 60 + start.getSeconds() / 3600;
+        const durationHours = (log.duration_minutes || 60) / 60;
+        const endHourFraction = Math.min(24, startHourFraction + durationHours);
+
+        return {
+          id: log.id,
+          type: "logged_session" as const,
+          startHour: startHourFraction,
+          endHour: endHourFraction,
+          durationHours,
+          kwh: log.kwh_consumed || calculateKwh(app.watts, durationHours, app.quantity || 1),
+          cost: log.estimated_cost || calculateCost(calculateKwh(app.watts, durationHours, app.quantity || 1)),
+          startTimeStr: start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          endTimeStr: log.ended_at
+            ? new Date(log.ended_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            : "Completed",
+        };
+      });
+
+      // 2. If viewing today and appliance is currently running stopwatch
+      if (isSelectedToday && app.is_currently_on && app.last_turned_on_at) {
+        const start = new Date(app.last_turned_on_at);
+        const now = new Date();
+        const startHourFraction = start.getHours() + start.getMinutes() / 60 + start.getSeconds() / 3600;
+        const nowHourFraction = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+        const durationHours = Math.max(0.05, nowHourFraction - startHourFraction);
+
+        const liveKwh = calculateKwh(app.watts, durationHours, app.quantity || 1);
+        const liveCost = calculateCost(liveKwh, DEFAULT_EFFECTIVE_RATE);
+
+        sessionBlocks.push({
+          id: `live-${app.id}`,
+          type: "live_stopwatch" as const,
+          startHour: startHourFraction,
+          endHour: nowHourFraction,
+          durationHours,
+          kwh: liveKwh,
+          cost: liveCost,
+          startTimeStr: start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          endTimeStr: "LIVE RUNNING",
+        });
+      }
+
+      // 3. Fallback: If no session logs, but user logged manual hours
+      const manualHours = usageState[app.id]?.hours || 0;
+      if (sessionBlocks.length === 0 && manualHours > 0) {
+        const startH = app.start_hour !== undefined ? app.start_hour : 8;
+        const endH = Math.min(24, startH + manualHours);
+        const kwh = calculateKwh(app.watts, manualHours, app.quantity || 1);
+        const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
+
+        sessionBlocks.push({
+          id: `manual-${app.id}`,
+          type: "manual_routine" as const,
+          startHour: startH,
+          endHour: endH,
+          durationHours: manualHours,
+          kwh,
+          cost,
+          startTimeStr: `${String(startH).padStart(2, "0")}:00`,
+          endTimeStr: `${String(Math.floor(endH)).padStart(2, "0")}:${String(Math.round((endH % 1) * 60)).padStart(2, "0")}`,
+        });
+      }
+
+      const totalAppHours = sessionBlocks.reduce((acc, curr) => acc + curr.durationHours, 0);
+
+      return {
+        appliance: app,
+        sessions: sessionBlocks,
+        totalHours: totalAppHours,
+      };
+    });
+  }, [filteredAppliances, logs, dateKey, isSelectedToday, usageState]);
+
   const handleAddEvent = (e: React.FormEvent) => {
     e.preventDefault();
     if (!eventTitle.trim()) return;
@@ -463,7 +567,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
           <Tab
             icon={<TimelineIcon fontSize="small" />}
             iconPosition="start"
-            label="24-Hour Load Profile"
+            label="24-Hour Activity Timeline"
             sx={{ fontWeight: 700 }}
           />
           <Tab
@@ -750,52 +854,226 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
           </Box>
         )}
 
-        {/* TAB 1: 24-HOUR LOAD PROFILE */}
+        {/* TAB 1: 24-HOUR DAY ACTIVITY & STOPWATCH TIMELINE */}
         {activeTab === 1 && (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
             <Card sx={{ p: 2.5, borderRadius: 3 }}>
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                  24-Hour Power Load Simulation (Watts)
-                </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                  Peak: {peakWatts} W
-                </Typography>
+              {/* Header & Legend */}
+              <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "flex-start", sm: "center" }, justifyContent: "space-between", gap: 1.5, mb: 2 }}>
+                <Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1 }}>
+                    <TimelineIcon sx={{ color: "primary.main" }} />
+                    24-Hour Activity & Stopwatch Timeline
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    Exact session blocks throughout the day (00:00 – 24:00) with real-time stopwatch metering
+                  </Typography>
+                </Box>
+
+                {/* Timeline Legend */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                    <Box sx={{ width: 10, height: 10, borderRadius: 1, bgcolor: "#34d399", animation: "pulse 1.5s infinite" }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: "#34d399", fontSize: "0.6875rem" }}>
+                      Live Running Stopwatch
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                    <Box sx={{ width: 10, height: 10, borderRadius: 1, bgcolor: "#6366f1" }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: "#818cf8", fontSize: "0.6875rem" }}>
+                      Logged Session
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                    <Box sx={{ width: 10, height: 10, borderRadius: 1, bgcolor: "rgba(168, 85, 247, 0.6)" }} />
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", fontSize: "0.6875rem" }}>
+                      Daily Routine
+                    </Typography>
+                  </Box>
+                </Box>
               </Box>
 
-              <Box sx={{ height: 240, width: "100%" }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={hourlyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorWatts" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                    <XAxis dataKey="hour" tick={{ fontSize: 11 }} interval={2} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <RechartsTooltip
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const d = payload[0].payload;
-                          return (
-                            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: "#0f0e3a", border: "1px solid rgba(99, 102, 241, 0.4)", color: "#ffffff" }}>
-                              <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                                {d.hour}
-                              </Typography>
-                              <Typography variant="caption" sx={{ display: "block", color: "#ffd54f", fontWeight: 800, fontFamily: "monospace" }}>
-                                {d.watts} Watts (₱{d.cost.toFixed(2)}/hr)
-                              </Typography>
-                            </Box>
-                          );
-                        }
-                        return null;
+              {/* 24-Hour Time Header Axis */}
+              <Box sx={{ pl: { xs: 0, sm: "220px" }, mb: 1 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", position: "relative", px: 0.5 }}>
+                  {["12 AM", "3 AM", "6 AM", "9 AM", "12 PM", "3 PM", "6 PM", "9 PM", "12 AM"].map((timeLabel, idx) => (
+                    <Typography
+                      key={idx}
+                      variant="caption"
+                      sx={{
+                        fontSize: "0.625rem",
+                        fontWeight: 700,
+                        color: "text.secondary",
+                        fontFamily: "monospace",
                       }}
-                    />
-                    <Area type="monotone" dataKey="watts" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#colorWatts)" />
-                  </AreaChart>
-                </ResponsiveContainer>
+                    >
+                      {timeLabel}
+                    </Typography>
+                  ))}
+                </Box>
+              </Box>
+
+              {/* Appliance Tracks List */}
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                {timelineData.map(({ appliance, sessions, totalHours }) => {
+                  return (
+                    <Paper
+                      key={appliance.id}
+                      variant="outlined"
+                      sx={{
+                        p: 1.5,
+                        borderRadius: 2.5,
+                        display: "flex",
+                        flexDirection: { xs: "column", sm: "row" },
+                        alignItems: { xs: "stretch", sm: "center" },
+                        gap: 1.5,
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "rgba(0, 0, 0, 0.01)",
+                      }}
+                    >
+                      {/* Left: Appliance Info */}
+                      <Box sx={{ minWidth: { xs: "100%", sm: 205 }, maxWidth: { xs: "100%", sm: 205 } }}>
+                        <Typography noWrap variant="body2" sx={{ fontWeight: 800 }}>
+                          {appliance.name}
+                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.25 }}>
+                          <Chip
+                            label={`${appliance.watts}W`}
+                            size="small"
+                            sx={{ height: 18, fontSize: "0.625rem", fontWeight: 700 }}
+                          />
+                          <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+                            {totalHours > 0 ? `${totalHours.toFixed(1)}h total` : "Inactive"}
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      {/* Right: 24-Hour Track */}
+                      <Box
+                        sx={{
+                          flex: 1,
+                          height: 32,
+                          borderRadius: 2,
+                          bgcolor: (theme) =>
+                            theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.4)" : "rgba(0, 0, 0, 0.05)",
+                          border: "1px solid",
+                          borderColor: "divider",
+                          position: "relative",
+                          overflow: "hidden",
+                        }}
+                      >
+                        {/* 3-Hour Grid Divider Lines */}
+                        {[12.5, 25, 37.5, 50, 62.5, 75, 87.5].map((pct) => (
+                          <Box
+                            key={pct}
+                            sx={{
+                              position: "absolute",
+                              left: `${pct}%`,
+                              top: 0,
+                              bottom: 0,
+                              width: "1px",
+                              bgcolor: "rgba(255, 255, 255, 0.05)",
+                              pointerEvents: "none",
+                            }}
+                          />
+                        ))}
+
+                        {/* Session Blocks */}
+                        {sessions.length === 0 ? (
+                          <Box sx={{ height: "100%", display: "flex", alignItems: "center", px: 2 }}>
+                            <Typography variant="caption" sx={{ color: "text.secondary", opacity: 0.4, fontSize: "0.6875rem" }}>
+                              No activity recorded on this day
+                            </Typography>
+                          </Box>
+                        ) : (
+                          sessions.map((session) => {
+                            const left = (session.startHour / 24) * 100;
+                            const width = Math.max(1.5, (session.durationHours / 24) * 100);
+                            const isLive = session.type === "live_stopwatch";
+                            const isManual = session.type === "manual_routine";
+
+                            return (
+                              <Tooltip
+                                key={session.id}
+                                arrow
+                                title={
+                                  <Box sx={{ p: 0.5 }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 800, color: isLive ? "#34d399" : "#a5b4fc", display: "block" }}>
+                                      {isLive ? "⏱️ LIVE RUNNING STOPWATCH" : isManual ? "🟣 Routine Log" : "🔵 Logged Session"}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ display: "block" }}>
+                                      Time: {session.startTimeStr} ➔ {session.endTimeStr}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ display: "block" }}>
+                                      Duration: {session.durationHours >= 1 ? `${session.durationHours.toFixed(1)} hrs` : `${Math.round(session.durationHours * 60)} mins`}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ display: "block", color: "#ffd54f", fontWeight: 800, fontFamily: "monospace" }}>
+                                      {session.kwh.toFixed(3)} kWh • ₱{session.cost.toFixed(2)}
+                                    </Typography>
+                                  </Box>
+                                }
+                              >
+                                <Box
+                                  sx={{
+                                    position: "absolute",
+                                    left: `${left}%`,
+                                    width: `${width}%`,
+                                    top: 3,
+                                    bottom: 3,
+                                    borderRadius: 1.5,
+                                    cursor: "pointer",
+                                    bgcolor: isLive
+                                      ? "#10b981"
+                                      : isManual
+                                      ? "rgba(168, 85, 247, 0.7)"
+                                      : "#6366f1",
+                                    border: isLive ? "1px solid #34d399" : "1px solid rgba(255, 255, 255, 0.2)",
+                                    boxShadow: isLive ? "0 0 10px rgba(52, 211, 153, 0.6)" : "none",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    px: 0.5,
+                                    transition: "all 0.15s ease",
+                                    "&:hover": {
+                                      transform: "scaleY(1.1)",
+                                      filter: "brightness(1.2)",
+                                      zIndex: 2,
+                                    },
+                                  }}
+                                >
+                                  {width > 8 && (
+                                    <Typography
+                                      noWrap
+                                      variant="caption"
+                                      sx={{
+                                        color: "#ffffff",
+                                        fontSize: "0.5625rem",
+                                        fontWeight: 800,
+                                        fontFamily: "monospace",
+                                      }}
+                                    >
+                                      {session.startTimeStr}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </Tooltip>
+                            );
+                          })
+                        )}
+                      </Box>
+                    </Paper>
+                  );
+                })}
+              </Box>
+
+              {/* Concurrency Summary */}
+              <Box sx={{ mt: 3, pt: 2, borderTop: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  Peak Simultaneous Demand: <strong>{peakWatts} W</strong> ({((peakWatts / 1000) * DEFAULT_EFFECTIVE_RATE).toFixed(2)} ₱/hr)
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  💡 Hover over any colored session block to inspect metered kWh and peso cost.
+                </Typography>
               </Box>
             </Card>
           </Box>

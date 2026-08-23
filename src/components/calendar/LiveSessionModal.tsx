@@ -142,6 +142,80 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
               </Grid>
             </Grid>
 
+            {/* 24-Hour Visual Day Progress Track */}
+            {appliance?.last_turned_on_at && (() => {
+              const start = new Date(appliance.last_turned_on_at);
+              const now = new Date();
+              const startFrac = start.getHours() + start.getMinutes() / 60 + start.getSeconds() / 3600;
+              const nowFrac = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+              const leftPct = (startFrac / 24) * 100;
+              const widthPct = Math.max(2, ((nowFrac - startFrac) / 24) * 100);
+              const startTimeStr = start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+              return (
+                <Box sx={{ mt: 0.5, p: 1.5, borderRadius: 2, bgcolor: "rgba(0, 0, 0, 0.3)", border: "1px solid rgba(52, 211, 153, 0.2)" }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", fontSize: "0.6875rem" }}>
+                      Today's 24-Hour Activity
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: "#34d399", fontSize: "0.6875rem" }}>
+                      Started at {startTimeStr} ➔ LIVE
+                    </Typography>
+                  </Box>
+
+                  {/* 24h Visual Bar */}
+                  <Box
+                    sx={{
+                      height: 20,
+                      borderRadius: 1.5,
+                      bgcolor: "rgba(255, 255, 255, 0.05)",
+                      position: "relative",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {/* Time ticks at 6h intervals */}
+                    {[25, 50, 75].map((pct) => (
+                      <Box
+                        key={pct}
+                        sx={{
+                          position: "absolute",
+                          left: `${pct}%`,
+                          top: 0,
+                          bottom: 0,
+                          width: "1px",
+                          bgcolor: "rgba(255, 255, 255, 0.1)",
+                        }}
+                      />
+                    ))}
+
+                    {/* Active Pulsating Session Block */}
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        left: `${leftPct}%`,
+                        width: `${widthPct}%`,
+                        top: 2,
+                        bottom: 2,
+                        borderRadius: 1,
+                        bgcolor: "#10b981",
+                        boxShadow: "0 0 8px #34d399",
+                        animation: "pulse 2s infinite",
+                      }}
+                    />
+                  </Box>
+
+                  {/* Time Axis Labels */}
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.5 }}>
+                    <Typography variant="caption" sx={{ fontSize: "0.5625rem", color: "text.secondary" }}>12 AM</Typography>
+                    <Typography variant="caption" sx={{ fontSize: "0.5625rem", color: "text.secondary" }}>6 AM</Typography>
+                    <Typography variant="caption" sx={{ fontSize: "0.5625rem", color: "text.secondary" }}>12 PM</Typography>
+                    <Typography variant="caption" sx={{ fontSize: "0.5625rem", color: "text.secondary" }}>6 PM</Typography>
+                    <Typography variant="caption" sx={{ fontSize: "0.5625rem", color: "text.secondary" }}>12 AM</Typography>
+                  </Box>
+                </Box>
+              );
+            })()}
+
             <Button
               variant="contained"
               color="error"
