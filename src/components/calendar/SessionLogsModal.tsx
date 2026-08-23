@@ -7,12 +7,19 @@ import InputAdornment from "@mui/material/InputAdornment";
 import IconButton from "@mui/material/IconButton";
 import Chip from "@mui/material/Chip";
 import Paper from "@mui/material/Paper";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import Grid from "@mui/material/Grid";
 import {
   Search as SearchIcon,
   ReceiptLong as ReceiptIcon,
   DeleteOutlined as DeleteIcon,
   DeleteSweep as DeleteSweepIcon,
   History as HistoryIcon,
+  Edit as EditIcon,
+  CheckCircle as CheckCircleIcon,
 } from "@mui/icons-material";
 import { Modal } from "../common/Modal";
 import { ApplianceUsageLog, UserAppliance } from "../../types";
@@ -25,6 +32,7 @@ interface SessionLogsModalProps {
   onViewReceipt: (log: ApplianceUsageLog, appliance?: UserAppliance) => void;
   onDeleteLog: (id: string) => Promise<void>;
   onClearAllLogs: () => Promise<void>;
+  onUpdateLog?: (id: string, newDurationMinutes: number) => Promise<void>;
 }
 
 export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
@@ -35,11 +43,36 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
   onViewReceipt,
   onDeleteLog,
   onClearAllLogs,
+  onUpdateLog,
 }) => {
   const [filterText, setFilterText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editingLog, setEditingLog] = useState<ApplianceUsageLog | null>(null);
+  const [editHours, setEditHours] = useState(0);
+  const [editMinutes, setEditMinutes] = useState(0);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const getAppliance = (appId: string) => appliances.find((a) => a.id === appId);
+
+  const handleStartEdit = (log: ApplianceUsageLog) => {
+    setEditingLog(log);
+    const totalMins = log.duration_minutes || 60;
+    setEditHours(Math.floor(totalMins / 60));
+    setEditMinutes(Math.round(totalMins % 60));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingLog || !onUpdateLog) return;
+    const totalMins = editHours * 60 + editMinutes;
+    if (totalMins <= 0) return;
+    setIsUpdating(true);
+    try {
+      await onUpdateLog(editingLog.id, totalMins);
+      setEditingLog(null);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   const filteredLogs = logs.filter((log) => {
     const app = getAppliance(log.appliance_id);
@@ -221,6 +254,15 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
                     <Box sx={{ display: "flex", gap: 0.5 }}>
                       <Button
                         size="small"
+                        variant="outlined"
+                        startIcon={<EditIcon />}
+                        onClick={() => handleStartEdit(log)}
+                        sx={{ borderRadius: 1.5, fontWeight: 700, fontSize: "0.75rem", py: 0.5 }}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="small"
                         variant="contained"
                         startIcon={<ReceiptIcon />}
                         onClick={() => onViewReceipt(log, app)}
@@ -250,6 +292,84 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
           </Button>
         </Box>
       </Box>
+
+      {/* Edit Session Log Duration Dialog */}
+      {editingLog && (
+        <Dialog
+          open={Boolean(editingLog)}
+          onClose={() => setEditingLog(null)}
+          maxWidth="xs"
+          fullWidth
+          slotProps={{ paper: { sx: { borderRadius: 3, p: 1 } } }}
+        >
+          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, fontWeight: 800 }}>
+            <EditIcon sx={{ color: "primary.main" }} />
+            Edit Session Duration
+          </DialogTitle>
+          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              Appliance: <strong>{getAppliance(editingLog.appliance_id)?.name || "Appliance"}</strong>
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              Logged on {new Date(editingLog.started_at).toLocaleString()}
+            </Typography>
+
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 6 }}>
+                <TextField
+                  label="Hours"
+                  type="number"
+                  size="small"
+                  value={editHours}
+                  onChange={(e) => setEditHours(Math.max(0, parseInt(e.target.value) || 0))}
+                  slotProps={{ htmlInput: { min: 0, max: 120 } }}
+                  fullWidth
+                />
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <TextField
+                  label="Minutes"
+                  type="number"
+                  size="small"
+                  value={editMinutes}
+                  onChange={(e) => setEditMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
+                  slotProps={{ htmlInput: { min: 0, max: 59 } }}
+                  fullWidth
+                />
+              </Grid>
+            </Grid>
+
+            {(() => {
+              const app = getAppliance(editingLog.appliance_id);
+              const watts = app?.watts || 1000;
+              const totalH = editHours + editMinutes / 60;
+              const kwh = (watts * totalH) / 1000;
+              const cost = kwh * 14.8261;
+              return (
+                <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: "rgba(0,0,0,0.2)" }}>
+                  <Typography variant="caption" sx={{ display: "block", color: "#ffd54f", fontWeight: 800 }}>
+                    Preview: {totalH.toFixed(2)} hrs • {kwh.toFixed(3)} kWh • ₱{cost.toFixed(2)}
+                  </Typography>
+                </Paper>
+              );
+            })()}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={() => setEditingLog(null)} color="inherit" sx={{ fontWeight: 700 }}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleSaveEdit}
+              disabled={isUpdating || (editHours === 0 && editMinutes === 0)}
+              startIcon={<CheckCircleIcon />}
+              sx={{ fontWeight: 800, borderRadius: 2 }}
+            >
+              {isUpdating ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </Modal>
   );
 };

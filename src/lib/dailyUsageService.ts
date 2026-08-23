@@ -179,8 +179,54 @@ export async function batchSaveDailyUsage(
   }
 }
 
+export interface DaySessionSlice {
+  dateKey: string;
+  hours: number;
+  startHourFrac: number;
+  endHourFrac: number;
+  startTime: Date;
+  endTime: Date;
+}
+
 /**
- * Accumulates live stopwatch runtime into the daily usage table for today
+ * Splits any session (single-day, overnight, or multi-day) across 12:00 AM midnight boundaries
+ */
+export function splitSessionAcrossDays(startTime: Date, endTime: Date): DaySessionSlice[] {
+  const slices: DaySessionSlice[] = [];
+  if (endTime.getTime() <= startTime.getTime()) return slices;
+
+  let currentStart = new Date(startTime);
+
+  while (currentStart < endTime) {
+    const dateKey = formatDateToKey(currentStart);
+
+    // Midnight end of the current day
+    const endOfDay = new Date(currentStart.getFullYear(), currentStart.getMonth(), currentStart.getDate() + 1, 0, 0, 0, 0);
+    const sliceEnd = endTime < endOfDay ? new Date(endTime) : endOfDay;
+
+    const startHourFrac = currentStart.getHours() + currentStart.getMinutes() / 60 + currentStart.getSeconds() / 3600;
+    const isEndOfDay = sliceEnd.getTime() === endOfDay.getTime();
+    const endHourFrac = isEndOfDay ? 24 : (sliceEnd.getHours() + sliceEnd.getMinutes() / 60 + sliceEnd.getSeconds() / 3600);
+
+    const hours = Math.max(0.001, (sliceEnd.getTime() - currentStart.getTime()) / 3600000);
+
+    slices.push({
+      dateKey,
+      hours: Number(hours.toFixed(4)),
+      startHourFrac,
+      endHourFrac,
+      startTime: new Date(currentStart),
+      endTime: new Date(sliceEnd),
+    });
+
+    currentStart = endOfDay;
+  }
+
+  return slices;
+}
+
+/**
+ * Accumulates live stopwatch runtime into the daily usage table across midnight boundaries
  */
 export async function accumulateLiveSessionDailyUsage(params: {
   appliance_id: string;
@@ -189,52 +235,59 @@ export async function accumulateLiveSessionDailyUsage(params: {
   quantity?: number;
   effectiveRate?: number;
   user_id?: string | null;
+  startTime?: Date;
+  endTime?: Date;
 }): Promise<void> {
-  const todayKey = formatDateToKey(new Date());
-  const addedHours = params.durationMinutes / 60;
   const quantity = params.quantity || 1;
+  const rate = params.effectiveRate || DEFAULT_EFFECTIVE_RATE;
 
-  try {
-    // Check if an existing row exists for today
-    let query = supabaseClient
-      .from("daily_appliance_usage")
-      .select("*")
-      .eq("appliance_id", params.appliance_id)
-      .eq("usage_date", todayKey);
+  const endTime = params.endTime || new Date();
+  const startTime = params.startTime || new Date(endTime.getTime() - params.durationMinutes * 60000);
 
-    if (params.user_id) {
-      query = query.eq("user_id", params.user_id);
-    }
+  const slices = splitSessionAcrossDays(startTime, endTime);
 
-    const { data: existing } = await query.maybeSingle();
+  for (const slice of slices) {
+    try {
+      let query = supabaseClient
+        .from("daily_appliance_usage")
+        .select("*")
+        .eq("appliance_id", params.appliance_id)
+        .eq("usage_date", slice.dateKey);
 
-    const currentHours = existing ? Number(existing.hours_used || 0) : 0;
-    const totalHours = Number((currentHours + addedHours).toFixed(2));
-    const kwh = calculateKwh(params.watts, totalHours, quantity);
-    const cost = calculateCost(kwh, params.effectiveRate || DEFAULT_EFFECTIVE_RATE);
-
-    await supabaseClient.from("daily_appliance_usage").upsert(
-      {
-        appliance_id: params.appliance_id,
-        user_id: params.user_id || null,
-        usage_date: todayKey,
-        hours_used: totalHours,
-        kwh_consumed: kwh,
-        estimated_cost: cost,
-        source: "live_session",
-        updated_at: new Date().toISOString(),
-      },
-      {
-        onConflict: "user_id,appliance_id,usage_date",
+      if (params.user_id) {
+        query = query.eq("user_id", params.user_id);
       }
-    );
 
-    devLog.info(
-      "DailyUsageService",
-      `Accumulated live session for ${params.appliance_id}: +${params.durationMinutes}m -> Total: ${totalHours}h`
-    );
-  } catch (err: any) {
-    devLog.warn("DailyUsageService", `Failed to accumulate live session: ${err?.message}`);
+      const { data: existing } = await query.maybeSingle();
+
+      const currentHours = existing ? Number(existing.hours_used || 0) : 0;
+      const totalHours = Number((currentHours + slice.hours).toFixed(2));
+      const kwh = calculateKwh(params.watts, totalHours, quantity);
+      const cost = calculateCost(kwh, rate);
+
+      await supabaseClient.from("daily_appliance_usage").upsert(
+        {
+          appliance_id: params.appliance_id,
+          user_id: params.user_id || null,
+          usage_date: slice.dateKey,
+          hours_used: totalHours,
+          kwh_consumed: kwh,
+          estimated_cost: cost,
+          source: "live_session",
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "user_id,appliance_id,usage_date",
+        }
+      );
+
+      devLog.info(
+        "DailyUsageService",
+        `Accumulated live slice for ${params.appliance_id} on ${slice.dateKey}: +${slice.hours.toFixed(2)}h -> Total: ${totalHours}h`
+      );
+    } catch (err: any) {
+      devLog.warn("DailyUsageService", `Failed to accumulate live session for ${slice.dateKey}: ${err?.message}`);
+    }
   }
 }
 

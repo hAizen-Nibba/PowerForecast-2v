@@ -59,6 +59,7 @@ import {
   DEFAULT_EFFECTIVE_RATE,
   hmsToDecimalHours,
   decimalHoursToHms,
+  splitSessionAcrossDays,
 } from "../../lib/dailyUsageService";
 import { supabaseClient } from "../../lib/supabaseClient";
 import { useToast } from "../common/ToastProvider";
@@ -130,6 +131,51 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
   const dayStr = dayOfWeekMap[selectedDate.getDay()];
   const dayEvents = events.filter((e) => e.day === dayStr || e.is_recurring);
 
+  // Precompute stopwatch session runtime per appliance for this specific date
+  const applianceStopwatchMap = useMemo(() => {
+    const map: Record<string, { totalHours: number; sessionCount: number; isLive: boolean }> = {};
+
+    appliances.forEach((app) => {
+      let totalHours = 0;
+      let sessionCount = 0;
+
+      // 1. Logs for this appliance
+      (logs || []).forEach((log) => {
+        if (log.appliance_id !== app.id) return;
+        const start = new Date(log.started_at);
+        const end = log.ended_at ? new Date(log.ended_at) : new Date(start.getTime() + (log.duration_minutes || 60) * 60000);
+        const slices = splitSessionAcrossDays(start, end);
+        const matchingSlice = slices.find((s) => s.dateKey === dateKey);
+        if (matchingSlice) {
+          totalHours += matchingSlice.hours;
+          sessionCount += 1;
+        }
+      });
+
+      // 2. If viewing today and live stopwatch running
+      const isToday = dateKey === formatDateToKey(new Date());
+      const isLive = Boolean(isToday && app.is_currently_on && app.last_turned_on_at);
+      if (isLive && app.last_turned_on_at) {
+        const start = new Date(app.last_turned_on_at);
+        const now = new Date();
+        const slices = splitSessionAcrossDays(start, now);
+        const matchingSlice = slices.find((s) => s.dateKey === dateKey);
+        if (matchingSlice) {
+          totalHours += matchingSlice.hours;
+          sessionCount += 1;
+        }
+      }
+
+      map[app.id] = {
+        totalHours: Number(totalHours.toFixed(2)),
+        sessionCount,
+        isLive,
+      };
+    });
+
+    return map;
+  }, [appliances, logs, dateKey]);
+
   // Initialize usage state when modal opens or selectedDate/initialUsageRecords change
   useEffect(() => {
     if (!isOpen) return;
@@ -146,11 +192,12 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       }
     });
 
-    // 2. For any appliances without a record for this day: default to 0 (or let user autofill)
+    // 2. For any appliances without a record for this day: default to stopwatch total if any, otherwise 0
     appliances.forEach((app) => {
       if (!initialMap[app.id]) {
+        const swHours = applianceStopwatchMap[app.id]?.totalHours || 0;
         initialMap[app.id] = {
-          hours: 0,
+          hours: swHours,
           notes: "",
         };
       }
@@ -158,7 +205,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
     setUsageState(initialMap);
     setIsDirty(false);
-  }, [isOpen, dateKey, initialUsageRecords, appliances]);
+  }, [isOpen, dateKey, initialUsageRecords, appliances, applianceStopwatchMap]);
 
   // Check if date has logged data
   const hasLoggedData = initialUsageRecords.some(
@@ -384,56 +431,57 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
   // Compute 24-Hour Visual Activity & Stopwatch Timeline Data
   const timelineData = useMemo(() => {
     return filteredAppliances.map((app) => {
-      // 1. Logs for this appliance on this date
-      const appLogs = (logs || []).filter((l) => {
-        if (l.appliance_id !== app.id) return false;
-        const logDateKey = formatDateToKey(new Date(l.started_at));
-        return logDateKey === dateKey;
-      });
+      const sessionBlocks: TimelineSessionBlock[] = [];
 
-      const sessionBlocks: TimelineSessionBlock[] = appLogs.map((log): TimelineSessionBlock => {
+      // 1. Logs for this appliance that have a slice on this date
+      (logs || []).forEach((log) => {
+        if (log.appliance_id !== app.id) return;
         const start = new Date(log.started_at);
-        const startHourFraction = start.getHours() + start.getMinutes() / 60 + start.getSeconds() / 3600;
-        const durationHours = (log.duration_minutes || 60) / 60;
-        const endHourFraction = Math.min(24, startHourFraction + durationHours);
+        const end = log.ended_at ? new Date(log.ended_at) : new Date(start.getTime() + (log.duration_minutes || 60) * 60000);
+        const slices = splitSessionAcrossDays(start, end);
+        const matchingSlice = slices.find((s) => s.dateKey === dateKey);
 
-        return {
-          id: log.id,
-          type: "logged_session" as const,
-          startHour: startHourFraction,
-          endHour: endHourFraction,
-          durationHours,
-          kwh: log.kwh_consumed || calculateKwh(app.watts, durationHours, app.quantity || 1),
-          cost: log.estimated_cost || calculateCost(calculateKwh(app.watts, durationHours, app.quantity || 1)),
-          startTimeStr: start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          endTimeStr: log.ended_at
-            ? new Date(log.ended_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-            : "Completed",
-        };
+        if (matchingSlice) {
+          const sliceKwh = calculateKwh(app.watts, matchingSlice.hours, app.quantity || 1);
+          const sliceCost = calculateCost(sliceKwh, DEFAULT_EFFECTIVE_RATE);
+
+          sessionBlocks.push({
+            id: `${log.id}-${matchingSlice.dateKey}`,
+            type: "logged_session",
+            startHour: matchingSlice.startHourFrac,
+            endHour: matchingSlice.endHourFrac,
+            durationHours: matchingSlice.hours,
+            kwh: sliceKwh,
+            cost: sliceCost,
+            startTimeStr: matchingSlice.startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            endTimeStr: matchingSlice.endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          });
+        }
       });
 
       // 2. If viewing today and appliance is currently running stopwatch
       if (isSelectedToday && app.is_currently_on && app.last_turned_on_at) {
         const start = new Date(app.last_turned_on_at);
         const now = new Date();
-        const startHourFraction = start.getHours() + start.getMinutes() / 60 + start.getSeconds() / 3600;
-        const nowHourFraction = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
-        const durationHours = Math.max(0.05, nowHourFraction - startHourFraction);
+        const slices = splitSessionAcrossDays(start, now);
+        const matchingSlice = slices.find((s) => s.dateKey === dateKey);
 
-        const liveKwh = calculateKwh(app.watts, durationHours, app.quantity || 1);
-        const liveCost = calculateCost(liveKwh, DEFAULT_EFFECTIVE_RATE);
+        if (matchingSlice) {
+          const liveKwh = calculateKwh(app.watts, matchingSlice.hours, app.quantity || 1);
+          const liveCost = calculateCost(liveKwh, DEFAULT_EFFECTIVE_RATE);
 
-        sessionBlocks.push({
-          id: `live-${app.id}`,
-          type: "live_stopwatch" as const,
-          startHour: startHourFraction,
-          endHour: nowHourFraction,
-          durationHours,
-          kwh: liveKwh,
-          cost: liveCost,
-          startTimeStr: start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          endTimeStr: "LIVE RUNNING",
-        });
+          sessionBlocks.push({
+            id: `live-${app.id}`,
+            type: "live_stopwatch",
+            startHour: matchingSlice.startHourFrac,
+            endHour: matchingSlice.endHourFrac,
+            durationHours: matchingSlice.hours,
+            kwh: liveKwh,
+            cost: liveCost,
+            startTimeStr: matchingSlice.startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            endTimeStr: "LIVE RUNNING",
+          });
+        }
       }
 
       // 3. Fallback: If no session logs, but user logged manual hours
@@ -742,13 +790,31 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                     >
                       <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 1 }}>
                         <Box>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
                             {app.name}
                             {app.quantity && app.quantity > 1 && (
                               <Chip label={`x${app.quantity}`} size="small" sx={{ height: 18, fontSize: "0.625rem", fontWeight: 700 }} />
                             )}
                             {app.room_location && (
                               <Chip label={app.room_location} size="small" variant="outlined" sx={{ height: 18, fontSize: "0.625rem" }} />
+                            )}
+                            {applianceStopwatchMap[app.id]?.totalHours > 0 && (
+                              <Chip
+                                icon={<TimerIcon sx={{ fontSize: "13px !important", color: "#34d399 !important" }} />}
+                                label={`⏱️ ${applianceStopwatchMap[app.id].totalHours >= 1 ? applianceStopwatchMap[app.id].totalHours.toFixed(1) + 'h' : Math.round(applianceStopwatchMap[app.id].totalHours * 60) + 'm'} (Stopwatch)`}
+                                size="small"
+                                color="success"
+                                variant="outlined"
+                                sx={{ height: 18, fontSize: "0.625rem", fontWeight: 800 }}
+                              />
+                            )}
+                            {applianceStopwatchMap[app.id]?.isLive && (
+                              <Chip
+                                label="🟢 Live Active"
+                                size="small"
+                                color="success"
+                                sx={{ height: 18, fontSize: "0.625rem", fontWeight: 800 }}
+                              />
                             )}
                           </Typography>
                           <Typography variant="caption" sx={{ color: "text.secondary" }}>

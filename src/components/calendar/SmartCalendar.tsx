@@ -196,31 +196,49 @@ export const SmartCalendar: React.FC = () => {
   }, [daysInMonth, year, month, dailyUsageMap, appliances, events]);
 
   // Handle Stop Live Session
-  const handleStopLiveSession = async (applianceId: string) => {
+  const handleStopLiveSession = async (
+    applianceId: string,
+    customDurationMinutes?: number,
+    customEndTime?: Date
+  ) => {
     const app = appliances.find((a) => a.id === applianceId);
     if (!app) return;
 
-    const startTime = app.last_turned_on_at ? new Date(app.last_turned_on_at).getTime() : Date.now() - 3600000;
-    const durationMins = Math.max(1, Math.round((Date.now() - startTime) / 60000));
-    const kwh = ((app.watts * (app.quantity || 1) * (durationMins / 60)) / 1000);
+    const startDate = app.last_turned_on_at ? new Date(app.last_turned_on_at) : new Date(Date.now() - 3600000);
+    const durationMins =
+      customDurationMinutes !== undefined
+        ? customDurationMinutes
+        : Math.max(1, Math.round((Date.now() - startDate.getTime()) / 60000));
+    const endDate = customEndTime || new Date(startDate.getTime() + durationMins * 60000);
+
+    const kwh = (app.watts * (app.quantity || 1) * (durationMins / 60)) / 1000;
     const cost = kwh * DEFAULT_EFFECTIVE_RATE;
 
     // 1. Record in appliance_usage_logs
-    createLog({
-      resource: "appliance_usage_logs",
-      values: {
-        appliance_id: app.id,
-        user_id: app.user_id,
-        started_at: app.last_turned_on_at || new Date().toISOString(),
-        ended_at: new Date().toISOString(),
-        duration_minutes: durationMins,
-        kwh_consumed: kwh,
-        estimated_cost: cost,
-        source: "calendar_live_stop",
+    createLog(
+      {
+        resource: "appliance_usage_logs",
+        values: {
+          appliance_id: app.id,
+          user_id: app.user_id,
+          started_at: startDate.toISOString(),
+          ended_at: endDate.toISOString(),
+          duration_minutes: durationMins,
+          kwh_consumed: kwh,
+          estimated_cost: cost,
+          source: customDurationMinutes !== undefined ? "stopwatch_adjusted" : "stopwatch_live",
+        },
       },
-    });
+      {
+        onSuccess: () => {
+          if (logsRes?.refetch) {
+            logsRes.refetch();
+          }
+        },
+      }
+    );
 
-    // 2. Accumulate in daily_appliance_usage
+    // 2. Accumulate across midnight boundaries in daily_appliance_usage
     await accumulateLiveSessionDailyUsage({
       appliance_id: app.id,
       durationMinutes: durationMins,
@@ -228,6 +246,8 @@ export const SmartCalendar: React.FC = () => {
       quantity: app.quantity || 1,
       effectiveRate: DEFAULT_EFFECTIVE_RATE,
       user_id: app.user_id || null,
+      startTime: startDate,
+      endTime: endDate,
     });
 
     // 3. Stop stopwatch
@@ -239,6 +259,10 @@ export const SmartCalendar: React.FC = () => {
         last_turned_on_at: null,
       },
     });
+
+    if (dailyUsageRes?.refetch) {
+      dailyUsageRes.refetch();
+    }
 
     showSuccess(`Stopwatch stopped for ${app.name}. Log saved (₱${cost.toFixed(2)})!`, "⏹️ Stopwatch Stopped");
   };
@@ -259,6 +283,51 @@ export const SmartCalendar: React.FC = () => {
   const handleDeleteLog = async (id: string) => {
     deleteLog({ resource: "appliance_usage_logs", id });
     showInfo("Session log deleted.");
+  };
+
+  const handleUpdateLog = async (id: string, newDurationMinutes: number) => {
+    const log = logs.find((l) => l.id === id);
+    if (!log) return;
+    const app = appliances.find((a) => a.id === log.appliance_id);
+    const watts = app?.watts || 1000;
+    const qty = app?.quantity || 1;
+
+    const start = new Date(log.started_at);
+    const end = new Date(start.getTime() + newDurationMinutes * 60000);
+    const kwh = (watts * qty * (newDurationMinutes / 60)) / 1000;
+    const cost = kwh * DEFAULT_EFFECTIVE_RATE;
+
+    updateAppliance(
+      {
+        resource: "appliance_usage_logs",
+        id,
+        values: {
+          duration_minutes: newDurationMinutes,
+          ended_at: end.toISOString(),
+          kwh_consumed: kwh,
+          estimated_cost: cost,
+        },
+      },
+      {
+        onSuccess: async () => {
+          if (app) {
+            await accumulateLiveSessionDailyUsage({
+              appliance_id: app.id,
+              durationMinutes: newDurationMinutes,
+              watts: app.watts,
+              quantity: app.quantity || 1,
+              effectiveRate: DEFAULT_EFFECTIVE_RATE,
+              user_id: app.user_id || null,
+              startTime: start,
+              endTime: end,
+            });
+          }
+          if (logsRes?.refetch) logsRes.refetch();
+          if (dailyUsageRes?.refetch) dailyUsageRes.refetch();
+          showSuccess("Session log updated successfully!");
+        },
+      }
+    );
   };
 
   const handleClearAllLogs = async () => {
@@ -744,6 +813,7 @@ export const SmartCalendar: React.FC = () => {
           onViewReceipt={handleViewReceiptFromLogs}
           onDeleteLog={handleDeleteLog}
           onClearAllLogs={handleClearAllLogs}
+          onUpdateLog={handleUpdateLog}
         />
       )}
     </Box>
