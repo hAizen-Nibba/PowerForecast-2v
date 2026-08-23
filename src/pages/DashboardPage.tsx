@@ -149,30 +149,45 @@ export const DashboardPage: React.FC = () => {
           </Typography>
 
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={() => setIsAddModalOpen(true)}
-              startIcon={<PlusIcon />}
-            >
-              Add Appliance
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => setIsPelpModalOpen(true)}
-              startIcon={<DatabaseIcon sx={{ color: "primary.light" }} />}
-            >
-              PELP Catalog
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => setIsAiScannerOpen(true)}
-              startIcon={<SparklesIcon sx={{ color: "#ffd54f" }} />}
-            >
-              AI Scanner
-            </Button>
+            {spaces.length === 0 ? (
+              <Button
+                component={Link}
+                to="/appliances"
+                variant="contained"
+                size="small"
+                startIcon={<PlusIcon />}
+                sx={{ fontWeight: 800 }}
+              >
+                Create Your First Space
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() => setIsAddModalOpen(true)}
+                  startIcon={<PlusIcon />}
+                >
+                  Add Appliance
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setIsPelpModalOpen(true)}
+                  startIcon={<DatabaseIcon sx={{ color: "primary.light" }} />}
+                >
+                  PELP Catalog
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setIsAiScannerOpen(true)}
+                  startIcon={<SparklesIcon sx={{ color: "#ffd54f" }} />}
+                >
+                  AI Scanner
+                </Button>
+              </>
+            )}
           </Box>
         </Box>
 

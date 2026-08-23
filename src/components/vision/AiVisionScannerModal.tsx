@@ -37,11 +37,13 @@ import { devLog } from "../../lib/devLogger";
 interface AiVisionScannerModalProps {
   isOpen: boolean;
   onClose: () => void;
+  defaultListId?: string | null;
 }
 
 export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
   isOpen,
   onClose,
+  defaultListId,
 }) => {
   const [preset, setPreset] = useState<"energy_guide" | "nameplate" | "inverter_check">("energy_guide");
   const [isScanning, setIsScanning] = useState(false);
@@ -157,6 +159,7 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
           room_location: editRoom,
           energy_rating: scanResult?.detected_energy_rating || `${scanResult?.detected_star_rating || 5}-Star (AI Scan)`,
           monthly_kwh: editMonthlyKwh,
+          list_id: defaultListId || null,
         },
       },
       {

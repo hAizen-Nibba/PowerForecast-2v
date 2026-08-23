@@ -31,13 +31,16 @@ import {
   Home as HomeIcon,
   Store as StoreIcon,
   Settings as SettingsIcon,
-  ViewModule as AllSpacesIcon,
+  Create as PenIcon,
+  CameraAlt as CameraIcon,
+  LocationCity as CityIcon,
 } from "@mui/icons-material";
 import { UserAppliance, UserCalendarEvent, ApplianceList as ApplianceSpace } from "../../types";
 import { useList, useDelete, useUpdate, useCreate } from "@refinedev/core";
 import { ApplianceModal } from "./ApplianceModal";
 import { PelpCatalogModal } from "./PelpCatalogModal";
 import { SpaceManagementModal } from "./SpaceManagementModal";
+import { AiVisionScannerModal } from "../vision/AiVisionScannerModal";
 import { ScheduleQueueModal } from "../calendar/ScheduleQueueModal";
 import { useToast } from "../common/ToastProvider";
 import { devLog } from "../../lib/devLogger";
@@ -47,22 +50,28 @@ interface ApplianceListProps {
   onOpenAiScanner?: () => void;
 }
 
-export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner }) => {
+export const ApplianceList: React.FC<ApplianceListProps> = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedRoom, setSelectedRoom] = useState("all");
-  const [activeSpaceId, setActiveSpaceId] = useState<string>("all");
+  const [activeSpaceId, setActiveSpaceId] = useState<string>("");
 
+  // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPelpModalOpen, setIsPelpModalOpen] = useState(false);
+  const [isAiScannerOpen, setIsAiScannerOpen] = useState(false);
   const [isSpaceModalOpen, setIsSpaceModalOpen] = useState(false);
   const [spaceToEdit, setSpaceToEdit] = useState<ApplianceSpace | null>(null);
   const [applianceToEdit, setApplianceToEdit] = useState<UserAppliance | null>(null);
 
+  // First-time space creation form state
+  const [initialSpaceName, setInitialSpaceName] = useState("");
+  const [initialTariffType, setInitialTariffType] = useState<"residential" | "commercial">("residential");
+
   const [selectedApplianceForQueue, setSelectedApplianceForQueue] = useState<UserAppliance | null>(null);
   const [isQueueModalOpen, setIsQueueModalOpen] = useState(false);
 
-  const { showSuccess, showInfo } = useToast();
+  const { showSuccess, showInfo, showError } = useToast();
 
   const appliancesRes = useList<UserAppliance>({
     resource: "user_appliances",
@@ -80,32 +89,22 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
   const { mutate: updateAppliance } = useUpdate();
   const { mutate: createEvent } = useCreate();
   const { mutate: deleteEvent } = useDelete();
-  const { mutate: createSpace } = useCreate();
+  const { mutate: createSpace, isLoading: isCreatingSpace } = useCreate();
 
   const appliances: UserAppliance[] = appliancesRes?.data?.data || appliancesRes?.result?.data || [];
   const spaces: ApplianceSpace[] = spacesRes?.data?.data || spacesRes?.result?.data || [];
   const events: UserCalendarEvent[] = eventsRes?.data?.data || eventsRes?.result?.data || [];
 
-  // Seed default "Main Residence" if user has no spaces
+  // Sync activeSpaceId when spaces list changes
   useEffect(() => {
-    if (spacesRes?.data && spaces.length === 0 && !spacesRes.isLoading) {
-      createSpace({
-        resource: "appliance_lists",
-        values: {
-          name: "Main Residence",
-          tariff_type: "residential",
-          is_default: true,
-        },
-      });
+    if (spaces.length > 0) {
+      if (!activeSpaceId || !spaces.some((s) => s.id === activeSpaceId)) {
+        setActiveSpaceId(spaces[0].id);
+      }
+    } else {
+      setActiveSpaceId("");
     }
-  }, [spaces, spacesRes, createSpace]);
-
-  // Set default active tab once spaces load
-  useEffect(() => {
-    if (activeSpaceId === "all" && spaces.length > 0) {
-      setActiveSpaceId(spaces[0].id);
-    }
-  }, [spaces]);
+  }, [spaces, activeSpaceId]);
 
   const [now, setNow] = useState<number>(Date.now());
   useEffect(() => {
@@ -115,16 +114,46 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
     return () => clearInterval(timer);
   }, []);
 
-  const activeSpace = spaces.find((s) => s.id === activeSpaceId);
+  const activeSpace = spaces.find((s) => s.id === activeSpaceId) || spaces[0];
 
-  // Filter appliances
+  // First-time space submission handler
+  const handleCreateInitialSpace = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!initialSpaceName.trim()) {
+      showError("Please enter a name for your space.");
+      return;
+    }
+
+    createSpace(
+      {
+        resource: "appliance_lists",
+        values: {
+          name: initialSpaceName.trim(),
+          tariff_type: initialTariffType,
+          is_default: true,
+        },
+      },
+      {
+        onSuccess: (data: any) => {
+          const newId = data?.data?.id;
+          if (newId) setActiveSpaceId(newId);
+          setInitialSpaceName("");
+          showSuccess(`Space "${initialSpaceName.trim()}" created! You can now add appliances.`);
+        },
+      }
+    );
+  };
+
+  // Filter appliances strictly to the active space
+  const currentSpaceAppliances = useMemo(() => {
+    if (!activeSpace) return [];
+    return appliances.filter(
+      (app) => app.list_id === activeSpace.id || (!app.list_id && activeSpace.is_default)
+    );
+  }, [appliances, activeSpace]);
+
   const filteredAppliances = useMemo(() => {
-    return appliances.filter((app: UserAppliance) => {
-      const matchesSpace =
-        activeSpaceId === "all" ||
-        app.list_id === activeSpaceId ||
-        (!app.list_id && spaces[0]?.id === activeSpaceId);
-
+    return currentSpaceAppliances.filter((app: UserAppliance) => {
       const matchesSearch =
         app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (app.brand && app.brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -136,16 +165,11 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
       const matchesRoom =
         selectedRoom === "all" || (app.room_location && app.room_location.toLowerCase() === selectedRoom.toLowerCase());
 
-      return matchesSpace && matchesSearch && matchesCategory && matchesRoom;
+      return matchesSearch && matchesCategory && matchesRoom;
     });
-  }, [appliances, activeSpaceId, searchQuery, selectedCategory, selectedRoom, spaces]);
+  }, [currentSpaceAppliances, searchQuery, selectedCategory, selectedRoom]);
 
   // Space-specific stats
-  const currentSpaceAppliances = useMemo(() => {
-    if (activeSpaceId === "all") return appliances;
-    return appliances.filter((app) => app.list_id === activeSpaceId || (!app.list_id && spaces[0]?.id === activeSpaceId));
-  }, [appliances, activeSpaceId, spaces]);
-
   const spaceTotalWatts = currentSpaceAppliances.reduce(
     (acc, curr) => acc + curr.watts * (curr.quantity || 1),
     0
@@ -209,7 +233,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentSpaceAppliances, null, 2));
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `powerforecast_${activeSpace?.name || "all_spaces"}_inventory.json`);
+    downloadAnchor.setAttribute("download", `powerforecast_${activeSpace?.name || "space"}_inventory.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -217,20 +241,152 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
   };
 
   const handleClearAll = () => {
-    if (!window.confirm(`Are you sure you want to clear all registered appliances in ${activeSpace?.name || "this list"}?`)) return;
+    if (!window.confirm(`Are you sure you want to clear all registered appliances in ${activeSpace?.name}?`)) return;
     currentSpaceAppliances.forEach((a) => deleteAppliance({ resource: "user_appliances", id: a.id }));
     showInfo("Cleared space appliances.");
   };
 
+  // -------------------------------------------------------------
+  // 1. FIRST-TIME ONBOARDING (ZERO SPACES GATE)
+  // -------------------------------------------------------------
+  if (spaces.length === 0) {
+    return (
+      <Box sx={{ maxWidth: 640, mx: "auto", py: 4 }}>
+        <Card
+          sx={{
+            p: { xs: 3, sm: 5 },
+            borderRadius: 4,
+            border: "1px solid",
+            borderColor: "rgba(108, 122, 224, 0.3)",
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(13, 12, 45, 0.95)" : "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(16px)",
+            boxShadow: "0 12px 36px rgba(99, 102, 241, 0.15)",
+          }}
+        >
+          <Box sx={{ textAlign: "center", mb: 3.5 }}>
+            <Box
+              sx={{
+                width: 56,
+                height: 56,
+                borderRadius: 3,
+                bgcolor: "primary.main",
+                color: "#ffffff",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                mb: 2,
+                boxShadow: "0 6px 20px rgba(99, 102, 241, 0.4)",
+              }}
+            >
+              <CityIcon sx={{ fontSize: 32, color: "#ffd54f" }} />
+            </Box>
+            <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}>
+              Create Your Space First
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", mt: 1, maxWidth: 460, mx: "auto" }}>
+              To start tracking and categorizing appliances, set up your first household or commercial space.
+            </Typography>
+          </Box>
+
+          <form onSubmit={handleCreateInitialSpace}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <TextField
+                required
+                fullWidth
+                label="Space / Property Name"
+                placeholder="e.g. Burat's House or Burat's Sari-Sari Store"
+                value={initialSpaceName}
+                onChange={(e) => setInitialSpaceName(e.target.value)}
+                autoFocus
+              />
+
+              <Box>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 1 }}>
+                  TARIFF CLASSIFICATION
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid size={6}>
+                    <Paper
+                      variant="outlined"
+                      onClick={() => setInitialTariffType("residential")}
+                      sx={{
+                        p: 2,
+                        borderRadius: 3,
+                        cursor: "pointer",
+                        textAlign: "center",
+                        border: "2px solid",
+                        borderColor: initialTariffType === "residential" ? "primary.main" : "divider",
+                        bgcolor: initialTariffType === "residential" ? "rgba(99, 102, 241, 0.1)" : "transparent",
+                        transition: "all 0.15s ease",
+                        "&:hover": { borderColor: "primary.main" },
+                      }}
+                    >
+                      <HomeIcon sx={{ color: initialTariffType === "residential" ? "primary.main" : "text.secondary", fontSize: 28, mb: 0.5 }} />
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: initialTariffType === "residential" ? "primary.main" : "text.primary" }}>
+                        Residential
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem", mt: 0.5 }}>
+                        230V Stepped Tiers & Lifeline
+                      </Typography>
+                    </Paper>
+                  </Grid>
+
+                  <Grid size={6}>
+                    <Paper
+                      variant="outlined"
+                      onClick={() => setInitialTariffType("commercial")}
+                      sx={{
+                        p: 2,
+                        borderRadius: 3,
+                        cursor: "pointer",
+                        textAlign: "center",
+                        border: "2px solid",
+                        borderColor: initialTariffType === "commercial" ? "secondary.main" : "divider",
+                        bgcolor: initialTariffType === "commercial" ? "rgba(244, 63, 94, 0.1)" : "transparent",
+                        transition: "all 0.15s ease",
+                        "&:hover": { borderColor: "secondary.main" },
+                      }}
+                    >
+                      <StoreIcon sx={{ color: initialTariffType === "commercial" ? "secondary.main" : "text.secondary", fontSize: 28, mb: 0.5 }} />
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: initialTariffType === "commercial" ? "secondary.main" : "text.primary" }}>
+                        Commercial
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem", mt: 0.5 }}>
+                        General Power Flat Rate
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Box>
+
+              <Button
+                type="submit"
+                variant="contained"
+                size="large"
+                disabled={isCreatingSpace}
+                startIcon={<PlusIcon />}
+                sx={{ py: 1.5, borderRadius: 2.5, fontWeight: 800, mt: 1 }}
+              >
+                {isCreatingSpace ? "Creating Space..." : "Create Space & Start Adding Appliances"}
+              </Button>
+            </Box>
+          </form>
+        </Card>
+      </Box>
+    );
+  }
+
+  // -------------------------------------------------------------
+  // 2. BENTO-STYLE MULTI-SPACE HUB (ACTIVE SPACE VIEW)
+  // -------------------------------------------------------------
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      {/* 1. Space Tabs Header Navigation */}
+      {/* Bento Row 1: Space Switcher Bar & Add Space */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
         <Tabs
           value={activeSpaceId}
-          onChange={(_, val) => {
-            if (val !== "new_space") setActiveSpaceId(val);
-          }}
+          onChange={(_, val) => setActiveSpaceId(val)}
           variant="scrollable"
           scrollButtons="auto"
           sx={{
@@ -240,7 +396,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
               borderRadius: 2.5,
               textTransform: "none",
               fontWeight: 700,
-              px: 2,
+              px: 2.5,
               mr: 1,
             },
           }}
@@ -264,33 +420,9 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
               }
             />
           ))}
-
-          {spaces.length > 1 && (
-            <Tab
-              value="all"
-              icon={<AllSpacesIcon fontSize="small" />}
-              iconPosition="start"
-              label="All Spaces"
-            />
-          )}
         </Tabs>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          {activeSpace && activeSpaceId !== "all" && (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<SettingsIcon />}
-              onClick={() => {
-                setSpaceToEdit(activeSpace);
-                setIsSpaceModalOpen(true);
-              }}
-              sx={{ borderRadius: 2, fontWeight: 700 }}
-            >
-              Configure Space
-            </Button>
-          )}
-
           <Button
             variant="contained"
             size="small"
@@ -307,7 +439,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
         </Box>
       </Box>
 
-      {/* 2. Space Banner & Stats Card */}
+      {/* Bento Row 2: Active Space Banner Tile */}
       <Card
         sx={{
           p: { xs: 2.5, sm: 3.5 },
@@ -329,8 +461,8 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
             <Box
               sx={{
-                width: 44,
-                height: 44,
+                width: 46,
+                height: 46,
                 borderRadius: 2.5,
                 bgcolor: spaceTariffType === "commercial" ? "secondary.main" : "primary.main",
                 color: "#ffffff",
@@ -343,13 +475,13 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
               {spaceTariffType === "commercial" ? <StoreIcon sx={{ color: "#ffffff" }} /> : <HomeIcon sx={{ color: "#ffd54f" }} />}
             </Box>
             <Box>
-              <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: "-0.02em" }}>
-                {activeSpace ? activeSpace.name : "All Household & Commercial Spaces"}
+              <Typography variant="h5" sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}>
+                {activeSpace?.name}
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
                 {spaceTariffType === "commercial"
-                  ? "💼 Commercial General Power Tariff • Unbundled flat distribution & commercial metering"
-                  : "🏠 Residential 230V Tariff • ERC stepped distribution tiers & Lifeline protection"}
+                  ? "💼 Commercial General Power Tariff • Flat distribution & commercial metering"
+                  : "🏠 Residential 230V Tariff • Stepped distribution tiers & Lifeline subsidy"}
               </Typography>
             </Box>
           </Box>
@@ -358,11 +490,11 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
           <Chip
             icon={<SpeedIcon sx={{ color: "#ffd54f !important" }} />}
-            label={`Total Load: ${spaceTotalWatts} W`}
+            label={`Load: ${spaceTotalWatts} W`}
             sx={{ fontWeight: 800, bgcolor: "rgba(15, 14, 58, 0.5)", border: "1px solid rgba(108, 122, 224, 0.3)" }}
           />
           <Chip
-            label={`${currentSpaceAppliances.length} Devices`}
+            label={`${currentSpaceAppliances.length} Appliances`}
             color="primary"
             variant="outlined"
             sx={{ fontWeight: 700 }}
@@ -372,6 +504,18 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
             color={spaceTariffType === "commercial" ? "secondary" : "default"}
             sx={{ fontWeight: 800, fontFamily: "monospace" }}
           />
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<SettingsIcon />}
+            onClick={() => {
+              setSpaceToEdit(activeSpace);
+              setIsSpaceModalOpen(true);
+            }}
+            sx={{ borderRadius: 2, fontWeight: 700 }}
+          >
+            Configure
+          </Button>
           <Button
             variant="outlined"
             size="small"
@@ -396,11 +540,167 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
         </Box>
       </Card>
 
-      {/* 3. Search, Filters & Action Buttons */}
+      {/* Bento Row 3: 3-Method Ingestion Action Bento Panel */}
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Paper
+            variant="outlined"
+            onClick={() => {
+              setApplianceToEdit(null);
+              setIsAddModalOpen(true);
+            }}
+            sx={{
+              p: 2.5,
+              borderRadius: 3,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              border: "1px solid",
+              borderColor: "primary.main",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.08)" : "rgba(99, 102, 241, 0.04)",
+              transition: "all 0.2s ease",
+              "&:hover": {
+                transform: "translateY(-3px)",
+                boxShadow: "0 8px 24px rgba(99, 102, 241, 0.2)",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.15)" : "rgba(99, 102, 241, 0.08)",
+              },
+            }}
+          >
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: 2,
+                bgcolor: "primary.main",
+                color: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <PenIcon fontSize="small" />
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                + Manual Entry
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                Add custom device with wattage & daily runtime
+              </Typography>
+            </Box>
+          </Paper>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Paper
+            variant="outlined"
+            onClick={() => setIsPelpModalOpen(true)}
+            sx={{
+              p: 2.5,
+              borderRadius: 3,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              border: "1px solid",
+              borderColor: "secondary.main",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(244, 63, 94, 0.08)" : "rgba(244, 63, 94, 0.04)",
+              transition: "all 0.2s ease",
+              "&:hover": {
+                transform: "translateY(-3px)",
+                boxShadow: "0 8px 24px rgba(244, 63, 94, 0.2)",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(244, 63, 94, 0.15)" : "rgba(244, 63, 94, 0.08)",
+              },
+            }}
+          >
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: 2,
+                bgcolor: "secondary.main",
+                color: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <DatabaseIcon fontSize="small" />
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                + DOE PELP Catalog
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                Search official Philippine certified models
+              </Typography>
+            </Box>
+          </Paper>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Paper
+            variant="outlined"
+            onClick={() => setIsAiScannerOpen(true)}
+            sx={{
+              p: 2.5,
+              borderRadius: 3,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              border: "1px solid",
+              borderColor: "warning.main",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.04)",
+              transition: "all 0.2s ease",
+              "&:hover": {
+                transform: "translateY(-3px)",
+                boxShadow: "0 8px 24px rgba(245, 158, 11, 0.2)",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.15)" : "rgba(245, 158, 11, 0.08)",
+              },
+            }}
+          >
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: 2,
+                bgcolor: "warning.main",
+                color: "#080720",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <CameraIcon fontSize="small" />
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                + AI Vision Scan
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                Scan energy label sticker or nameplate with camera
+              </Typography>
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
+
+      {/* Bento Row 4: Search & Filters */}
       <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, alignItems: "center", justifyContent: "space-between" }}>
         <TextField
           size="small"
-          placeholder="Search by name, brand, model..."
+          placeholder="Search appliances in this space..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           slotProps={{
@@ -412,84 +712,52 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
               ),
             },
           }}
-          sx={{ width: { xs: "100%", sm: 320 } }}
+          sx={{ width: { xs: "100%", sm: 340 } }}
         />
 
-        <Box sx={{ display: "flex", gap: 1.5, width: { xs: "100%", sm: "auto" }, flexWrap: "wrap" }}>
-          <Button
-            variant="outlined"
+        <Box sx={{ display: "flex", gap: 1.5, width: { xs: "100%", sm: "auto" } }}>
+          <TextField
+            select
             size="small"
-            startIcon={<DatabaseIcon />}
-            onClick={() => setIsPelpModalOpen(true)}
-            sx={{ borderRadius: 2, fontWeight: 700 }}
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            sx={{ minWidth: 160 }}
           >
-            + DOE Catalog
-          </Button>
-
-          {onOpenAiScanner && (
-            <Button
-              variant="outlined"
-              size="small"
-              color="secondary"
-              startIcon={<SparklesIcon />}
-              onClick={onOpenAiScanner}
-              sx={{ borderRadius: 2, fontWeight: 700 }}
-            >
-              AI Vision Scan
-            </Button>
-          )}
-
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<PlusIcon />}
-            onClick={() => {
-              setApplianceToEdit(null);
-              setIsAddModalOpen(true);
-            }}
-            sx={{ borderRadius: 2, fontWeight: 800 }}
-          >
-            Add Appliance
-          </Button>
+            <MenuItem value="all">All Categories</MenuItem>
+            <MenuItem value="Air Conditioners">Air Conditioners</MenuItem>
+            <MenuItem value="Refrigerators & Freezers">Refrigerators</MenuItem>
+            <MenuItem value="Television Sets">TV Sets</MenuItem>
+            <MenuItem value="Electric Fans">Fans</MenuItem>
+            <MenuItem value="Washing Machines">Washing Machines</MenuItem>
+            <MenuItem value="Lighting Products">Lighting</MenuItem>
+            <MenuItem value="Kitchen & Cooking">Kitchen</MenuItem>
+            <MenuItem value="Other">Other</MenuItem>
+          </TextField>
         </Box>
       </Box>
 
-      {/* 4. Cards Grid */}
+      {/* Bento Row 5: Space Appliances Grid */}
       <Grid container spacing={2.5}>
         {filteredAppliances.length === 0 ? (
           <Grid size={12}>
             <Paper sx={{ p: 6, textAlign: "center", borderRadius: 3, border: "1px dashed", borderColor: "divider" }}>
               <BoltIcon sx={{ fontSize: 48, opacity: 0.3, mb: 1 }} />
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                No appliances in this space yet.
+                No appliances in "{activeSpace?.name}" yet.
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
-                Add devices to {activeSpace?.name || "your space"} using manual entry, DOE PELP catalog, or AI camera scanner.
+                Use one of the 3 buttons above (Manual Entry, DOE PELP Catalog, or AI Vision Scan) to add devices into this space.
               </Typography>
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<PlusIcon />}
-                onClick={() => {
-                  setApplianceToEdit(null);
-                  setIsAddModalOpen(true);
-                }}
-                sx={{ mt: 2, borderRadius: 2 }}
-              >
-                Add First Appliance
-              </Button>
             </Paper>
           </Grid>
         ) : (
           filteredAppliances.map((app: UserAppliance) => {
             const isOn = app.is_currently_on;
             const liveSpent = getAccumulatedPesos(app);
-            const appSpace = spaces.find((s) => s.id === app.list_id);
-            const appTariff = app.tariff_type || appSpace?.tariff_type || "residential";
             const monthlyKwh = Number(app.monthly_kwh) || ((app.watts * app.hours_per_day * (app.quantity || 1) * 30) / 1000);
             
-            // Calculate deterministic unbundled monthly cost
-            const appBill = calculateMeralcoBill(monthlyKwh, undefined, 0, false, appTariff);
+            // Calculate deterministic unbundled monthly cost with this space's tariff
+            const appBill = calculateMeralcoBill(monthlyKwh, undefined, 0, false, spaceTariffType);
             const monthlyCost = appBill.totalBill;
             const hourlyRate = ((app.watts * (app.quantity || 1)) / 1000) * (appBill.effectiveRatePerKwh || 14.82);
 
@@ -517,22 +785,11 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
                   <Box>
                     {/* Top Row: Category & Power Toggle */}
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
-                      <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-                        <Chip
-                          label={app.category}
-                          size="small"
-                          sx={{ fontWeight: 700, fontSize: "0.7rem", bgcolor: "rgba(108, 122, 224, 0.15)" }}
-                        />
-                        {appSpace && activeSpaceId === "all" && (
-                          <Chip
-                            label={appSpace.name}
-                            size="small"
-                            color={appTariff === "commercial" ? "secondary" : "primary"}
-                            variant="outlined"
-                            sx={{ fontSize: "0.65rem", height: 22 }}
-                          />
-                        )}
-                      </Box>
+                      <Chip
+                        label={app.category}
+                        size="small"
+                        sx={{ fontWeight: 700, fontSize: "0.7rem", bgcolor: "rgba(108, 122, 224, 0.15)" }}
+                      />
                       <IconButton
                         size="small"
                         onClick={() => togglePower(app)}
@@ -577,11 +834,6 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
                         variant="outlined"
                         sx={{ fontWeight: 600 }}
                       />
-                      <Chip
-                        label={appTariff === "commercial" ? "Commercial" : "Residential"}
-                        size="small"
-                        sx={{ fontSize: "0.625rem", height: 20 }}
-                      />
                     </Box>
 
                     <Divider sx={{ my: 1.5 }} />
@@ -590,7 +842,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
                     <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
                       <Box>
                         <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                          Monthly Projected Cost
+                          Monthly Cost ({spaceTariffType === "commercial" ? "Commercial" : "Residential"})
                         </Typography>
                         <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f" }}>
                           ₱{monthlyCost.toFixed(2)}
@@ -611,7 +863,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
                   <Box sx={{ mt: 2, pt: 1.5, borderTop: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     {isOn ? (
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "success.main" }}>
-                        <ClockIcon sx={{ fontSize: 14 }} />
+                        <ClockIcon sx={{ fontSize: 12 }} />
                         <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: "monospace" }}>
                           {getRunningDuration(app.last_turned_on_at)} (₱{liveSpent.toFixed(4)})
                         </Typography>
@@ -680,7 +932,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
             setApplianceToEdit(null);
           }}
           applianceToEdit={applianceToEdit}
-          defaultListId={activeSpaceId !== "all" ? activeSpaceId : (spaces[0]?.id || null)}
+          defaultListId={activeSpace?.id || null}
         />
       )}
 
@@ -693,7 +945,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
             setSpaceToEdit(null);
           }}
           spaceToEdit={spaceToEdit}
-          canDelete={spaces.length > 1}
+          canDelete={spaces.length > 0}
         />
       )}
 
@@ -702,7 +954,16 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
         <PelpCatalogModal
           isOpen={isPelpModalOpen}
           onClose={() => setIsPelpModalOpen(false)}
-          defaultListId={activeSpaceId !== "all" ? activeSpaceId : (spaces[0]?.id || null)}
+          defaultListId={activeSpace?.id || null}
+        />
+      )}
+
+      {/* AI Vision Scanner Modal */}
+      {isAiScannerOpen && (
+        <AiVisionScannerModal
+          isOpen={isAiScannerOpen}
+          onClose={() => setIsAiScannerOpen(false)}
+          defaultListId={activeSpace?.id || null}
         />
       )}
 
@@ -735,4 +996,3 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
 };
 
 export default ApplianceList;
-
