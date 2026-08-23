@@ -164,31 +164,11 @@ export const ForgotPasswordPage: React.FC = () => {
         overflowX: "hidden",
       }}
     >
-      {/* Ambient Top Lightbulb Artwork */}
-      <Box
-        sx={{
-          position: "absolute",
-          top: 0,
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: { xs: "100%", sm: 550, md: 680 },
-          height: { xs: 260, sm: 340, md: 400 },
-          backgroundImage: `url(${isDark ? "/Assets/Dark.png" : "/Assets/Light%20.png"})`,
-          backgroundSize: "contain",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "top center",
-          pointerEvents: "none",
-          zIndex: 0,
-          opacity: isDark ? 0.85 : 0.95,
-          filter: isDark ? "drop-shadow(0 10px 30px rgba(0,0,0,0.8))" : "drop-shadow(0 10px 30px rgba(99,102,241,0.2))",
-        }}
-      />
-
       {/* Header bar */}
       <Box
         sx={{
           position: "relative",
-          zIndex: 2,
+          zIndex: 10,
           p: 2,
           px: { xs: 2, sm: 4 },
           display: "flex",
@@ -196,7 +176,8 @@ export const ForgotPasswordPage: React.FC = () => {
           justifyContent: "space-between",
           borderBottom: "1px solid",
           borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
-          backdropFilter: "blur(8px)",
+          backdropFilter: "blur(12px)",
+          bgcolor: isDark ? "rgba(8, 7, 32, 0.7)" : "rgba(244, 246, 251, 0.7)",
         }}
       >
         <Box component={Link} to="/" sx={{ display: "flex", alignItems: "center", gap: 1.5, textDecoration: "none", color: "inherit" }}>
@@ -229,60 +210,141 @@ export const ForgotPasswordPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Main Container */}
+      {/* Main 2-Column Split: Bulb on Left, Bento Card on Right */}
       <Container
-        maxWidth="sm"
+        maxWidth="lg"
         sx={{
-          position: "relative",
-          zIndex: 1,
           flexGrow: 1,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          py: { xs: 4, sm: 6 },
-          mt: { xs: 2, sm: 4 },
+          py: { xs: 3, md: 5 },
+          px: { xs: 2, sm: 3 },
         }}
       >
-        <Card
+        <Box
           sx={{
             width: "100%",
-            p: { xs: 3, sm: 4.5 },
-            borderRadius: 3.5,
-            boxShadow: isDark
-              ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(99, 102, 241, 0.15)"
-              : "0 20px 60px rgba(99, 102, 241, 0.12)",
-            border: "1px solid",
-            borderColor: isDark ? "rgba(99, 102, 241, 0.25)" : "rgba(226, 232, 240, 0.8)",
-            bgcolor: isDark ? "rgba(13, 12, 45, 0.9)" : "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(16px)",
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "1fr 1.1fr" },
+            gap: { xs: 3, md: 6 },
+            alignItems: "center",
           }}
         >
-          {/* Brand Header */}
-          <Box sx={{ textAlign: "center", mb: 3 }}>
+          {/* Left Column: Bulb Artwork */}
+          <Box
+            sx={{
+              display: { xs: "none", md: "flex" },
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              position: "relative",
+              py: 4,
+            }}
+          >
             <Box
-              component="img"
-              src="/Assets/LOGO.png"
-              alt="PowerForecast Logo"
               sx={{
-                width: 56,
-                height: 56,
-                borderRadius: 3,
-                objectFit: "contain",
-                filter: "drop-shadow(0 4px 16px rgba(99, 102, 241, 0.5))",
-                mb: 1.5,
+                position: "absolute",
+                width: 380,
+                height: 380,
+                borderRadius: "50%",
+                background: isDark
+                  ? "radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, rgba(8, 7, 32, 0) 70%)"
+                  : "radial-gradient(circle, rgba(255, 213, 79, 0.35) 0%, rgba(244, 246, 251, 0) 70%)",
+                filter: "blur(40px)",
+                zIndex: 0,
+                pointerEvents: "none",
               }}
             />
-            <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.02em" }}>
-              {step === "success" ? "Password Reset Complete" : "Reset Password"}
+
+            <Box
+              component="img"
+              src={isDark ? "/Assets/Off.png" : "/Assets/On.png"}
+              alt="PowerForecast Energy Bulb"
+              sx={{
+                width: "100%",
+                maxWidth: 420,
+                maxHeight: 520,
+                objectFit: "contain",
+                position: "relative",
+                zIndex: 1,
+                filter: isDark
+                  ? "drop-shadow(0 15px 35px rgba(0, 0, 0, 0.8))"
+                  : "drop-shadow(0 15px 45px rgba(255, 213, 79, 0.5))",
+                transition: "filter 0.3s ease",
+              }}
+            />
+
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 800,
+                textAlign: "center",
+                mt: 3,
+                letterSpacing: "-0.01em",
+                zIndex: 1,
+                color: isDark ? "#ffffff" : "#0f172a",
+              }}
+            >
+              Secure Account Recovery
             </Typography>
-            <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
-              {step === "email" && "Enter your email to retrieve your security challenge"}
-              {step === "question" && "Answer your registered security question to set a new password"}
-              {step === "success" && "Your account password has been safely updated"}
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                textAlign: "center",
+                mt: 1,
+                maxWidth: 380,
+                zIndex: 1,
+              }}
+            >
+              Fast and private password reset without waiting for email OTP codes.
             </Typography>
           </Box>
 
-          {errorMessage && (
+          {/* Right Column: Bento Card */}
+          <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
+            <Card
+              sx={{
+                width: "100%",
+                maxWidth: 480,
+                p: { xs: 3, sm: 4.5 },
+                borderRadius: 3.5,
+                boxShadow: isDark
+                  ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(99, 102, 241, 0.15)"
+                  : "0 20px 60px rgba(99, 102, 241, 0.12)",
+                border: "1px solid",
+                borderColor: isDark ? "rgba(99, 102, 241, 0.25)" : "rgba(226, 232, 240, 0.8)",
+                bgcolor: isDark ? "rgba(13, 12, 45, 0.92)" : "rgba(255, 255, 255, 0.96)",
+                backdropFilter: "blur(16px)",
+              }}
+            >
+              {/* Brand Header */}
+              <Box sx={{ textAlign: "center", mb: 3 }}>
+                <Box
+                  component="img"
+                  src="/Assets/LOGO.png"
+                  alt="PowerForecast Logo"
+                  sx={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 3,
+                    objectFit: "contain",
+                    filter: "drop-shadow(0 4px 16px rgba(99, 102, 241, 0.5))",
+                    mb: 1.5,
+                  }}
+                />
+                <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.02em" }}>
+                  {step === "success" ? "Password Reset Complete" : "Reset Password"}
+                </Typography>
+                <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+                  {step === "email" && "Enter your email to retrieve your security challenge"}
+                  {step === "question" && "Answer your registered security question to set a new password"}
+                  {step === "success" && "Your account password has been safely updated"}
+                </Typography>
+              </Box>
+
+              {errorMessage && (
             <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
               {errorMessage}
             </Alert>
@@ -495,9 +557,11 @@ export const ForgotPasswordPage: React.FC = () => {
             </Box>
           )}
         </Card>
-      </Container>
+      </Box>
     </Box>
-  );
+  </Container>
+</Box>
+);
 };
 
 export default ForgotPasswordPage;
