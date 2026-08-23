@@ -12,25 +12,31 @@ import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import Divider from "@mui/material/Divider";
 import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
 import {
   Bolt as BoltIcon,
   Close as CloseIcon,
   Save as SaveIcon,
+  Home as HomeIcon,
+  Store as StoreIcon,
 } from "@mui/icons-material";
-import { UserAppliance } from "../../types";
-import { useCreate, useUpdate } from "@refinedev/core";
+import { UserAppliance, ApplianceList } from "../../types";
+import { useCreate, useUpdate, useList } from "@refinedev/core";
 import { getDefaultStartHour } from "../../lib/loadCurveService";
+import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
 
 interface ApplianceModalProps {
   isOpen: boolean;
   onClose: () => void;
   applianceToEdit?: UserAppliance | null;
+  defaultListId?: string | null;
 }
 
 export const ApplianceModal: React.FC<ApplianceModalProps> = ({
   isOpen,
   onClose,
   applianceToEdit,
+  defaultListId,
 }) => {
   const [name, setName] = useState("");
   const [category, setCategory] = useState("Air Conditioners");
@@ -43,6 +49,13 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
   const [startHour, setStartHour] = useState<number>(13);
   const [roomLocation, setRoomLocation] = useState("Living Room");
   const [energyRating, setEnergyRating] = useState("5-Star Inverter");
+  const [selectedListId, setSelectedListId] = useState<string>("");
+
+  const listsRes = useList<ApplianceList>({
+    resource: "appliance_lists",
+  }) as any;
+
+  const spaces: ApplianceList[] = listsRes?.data?.data || listsRes?.result?.data || [];
 
   const { mutate: createAppliance, isLoading: isCreating } = useCreate();
   const { mutate: updateAppliance, isLoading: isUpdating } = useUpdate();
@@ -61,6 +74,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
       setStartHour(applianceToEdit.start_hour !== undefined ? applianceToEdit.start_hour : getDefaultStartHour(cat));
       setRoomLocation(applianceToEdit.room_location || "Living Room");
       setEnergyRating(applianceToEdit.energy_rating || "5-Star");
+      setSelectedListId(applianceToEdit.list_id || (spaces[0]?.id || ""));
     } else {
       setName("");
       setCategory("Air Conditioners");
@@ -73,21 +87,29 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
       setStartHour(13);
       setRoomLocation("Living Room");
       setEnergyRating("5-Star");
+      setSelectedListId(defaultListId || (spaces[0]?.id || ""));
     }
-  }, [applianceToEdit, isOpen]);
+  }, [applianceToEdit, isOpen, spaces, defaultListId]);
 
-  const monthlyKwh = ((watts * quantity * hoursPerDay * daysPerMonth) / 1000).toFixed(1);
-  const estimatedCost = (Number(monthlyKwh) * 14.8261).toFixed(2);
+  const currentSpace = spaces.find((s) => s.id === selectedListId) || spaces[0];
+  const tariffType: "residential" | "commercial" = currentSpace?.tariff_type || "residential";
+
+  const monthlyKwh = Math.round(((watts * quantity * hoursPerDay * daysPerMonth) / 1000) * 10) / 10;
+  const billCalc = calculateMeralcoBill(monthlyKwh, undefined, 0, false, tariffType);
+  const estimatedCost = billCalc.totalBill.toFixed(2);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
+    const targetListId = selectedListId || (spaces[0]?.id ?? null);
+    const targetSpace = spaces.find((s) => s.id === targetListId);
+
     const payload = {
-      name,
+      name: name.trim(),
       category,
-      brand,
-      model,
+      brand: brand.trim(),
+      model: model.trim(),
       watts,
       quantity,
       hours_per_day: hoursPerDay,
@@ -95,7 +117,9 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
       start_hour: startHour,
       room_location: roomLocation,
       energy_rating: energyRating,
-      monthly_kwh: Number(monthlyKwh),
+      monthly_kwh: monthlyKwh,
+      list_id: targetListId,
+      tariff_type: targetSpace?.tariff_type || "residential",
     };
 
     if (applianceToEdit) {
@@ -153,6 +177,43 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
         <Divider />
 
         <DialogContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
+          {/* Explicit Space / List Selection */}
+          {spaces.length > 0 && (
+            <Box>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 1 }}>
+                ASSIGN TO SPACE / LIST
+              </Typography>
+              <TextField
+                select
+                fullWidth
+                size="small"
+                value={selectedListId}
+                onChange={(e) => setSelectedListId(e.target.value)}
+                helperText={`Tariff Applied: ${tariffType === "commercial" ? "💼 Commercial (General Power)" : "🏠 Residential (230V Stepped)"}`}
+              >
+                {spaces.map((space) => (
+                  <MenuItem key={space.id} value={space.id}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      {space.tariff_type === "commercial" ? (
+                        <StoreIcon fontSize="small" sx={{ color: "secondary.main" }} />
+                      ) : (
+                        <HomeIcon fontSize="small" sx={{ color: "primary.main" }} />
+                      )}
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                        {space.name}
+                      </Typography>
+                      <Chip
+                        label={space.tariff_type === "commercial" ? "Commercial" : "Residential"}
+                        size="small"
+                        sx={{ fontSize: "0.6875rem", height: 20 }}
+                      />
+                    </Box>
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Box>
+          )}
+
           <Grid container spacing={2}>
             <Grid size={12}>
               <TextField
@@ -162,7 +223,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
                 label="Appliance Name / Description"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Master Bedroom Inverter AC"
+                placeholder="e.g. Master Bedroom Inverter AC or Store Showcase Chiller"
               />
             </Grid>
 
@@ -192,7 +253,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
                 select
                 fullWidth
                 size="small"
-                label="Room Location"
+                label="Room / Zone Location"
                 value={roomLocation}
                 onChange={(e) => setRoomLocation(e.target.value)}
               >
@@ -203,6 +264,8 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
                 <MenuItem value="Dining">Dining</MenuItem>
                 <MenuItem value="Laundry Area">Laundry Area</MenuItem>
                 <MenuItem value="Home Office">Home Office</MenuItem>
+                <MenuItem value="Store Front / Retail">Store Front / Retail</MenuItem>
+                <MenuItem value="Workshop / Storage">Workshop / Storage</MenuItem>
               </TextField>
             </Grid>
 
@@ -289,7 +352,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
           >
             <Box>
               <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                Monthly Projected Cost
+                Monthly Projected Cost ({tariffType === "commercial" ? "Commercial Rate" : "Residential Rate"})
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f" }}>
                 ₱{estimatedCost}
@@ -327,3 +390,4 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
 };
 
 export default ApplianceModal;
+

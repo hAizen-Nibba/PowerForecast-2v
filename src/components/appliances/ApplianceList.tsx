@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
@@ -12,6 +12,8 @@ import InputAdornment from "@mui/material/InputAdornment";
 import Tooltip from "@mui/material/Tooltip";
 import Divider from "@mui/material/Divider";
 import Paper from "@mui/material/Paper";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
 import {
   Bolt as BoltIcon,
   Search as SearchIcon,
@@ -26,14 +28,20 @@ import {
   CalendarMonth as CalendarIcon,
   FileDownload as FileDownloadIcon,
   DeleteSweep as DeleteSweepIcon,
+  Home as HomeIcon,
+  Store as StoreIcon,
+  Settings as SettingsIcon,
+  ViewModule as AllSpacesIcon,
 } from "@mui/icons-material";
-import { UserAppliance, UserCalendarEvent } from "../../types";
+import { UserAppliance, UserCalendarEvent, ApplianceList as ApplianceSpace } from "../../types";
 import { useList, useDelete, useUpdate, useCreate } from "@refinedev/core";
 import { ApplianceModal } from "./ApplianceModal";
 import { PelpCatalogModal } from "./PelpCatalogModal";
+import { SpaceManagementModal } from "./SpaceManagementModal";
 import { ScheduleQueueModal } from "../calendar/ScheduleQueueModal";
 import { useToast } from "../common/ToastProvider";
 import { devLog } from "../../lib/devLogger";
+import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
 
 interface ApplianceListProps {
   onOpenAiScanner?: () => void;
@@ -43,9 +51,12 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedRoom, setSelectedRoom] = useState("all");
+  const [activeSpaceId, setActiveSpaceId] = useState<string>("all");
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPelpModalOpen, setIsPelpModalOpen] = useState(false);
+  const [isSpaceModalOpen, setIsSpaceModalOpen] = useState(false);
+  const [spaceToEdit, setSpaceToEdit] = useState<ApplianceSpace | null>(null);
   const [applianceToEdit, setApplianceToEdit] = useState<UserAppliance | null>(null);
 
   const [selectedApplianceForQueue, setSelectedApplianceForQueue] = useState<UserAppliance | null>(null);
@@ -57,6 +68,10 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
     resource: "user_appliances",
   }) as any;
 
+  const spacesRes = useList<ApplianceSpace>({
+    resource: "appliance_lists",
+  }) as any;
+
   const eventsRes = useList<UserCalendarEvent>({
     resource: "user_calendar_events",
   }) as any;
@@ -65,9 +80,32 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
   const { mutate: updateAppliance } = useUpdate();
   const { mutate: createEvent } = useCreate();
   const { mutate: deleteEvent } = useDelete();
+  const { mutate: createSpace } = useCreate();
 
   const appliances: UserAppliance[] = appliancesRes?.data?.data || appliancesRes?.result?.data || [];
+  const spaces: ApplianceSpace[] = spacesRes?.data?.data || spacesRes?.result?.data || [];
   const events: UserCalendarEvent[] = eventsRes?.data?.data || eventsRes?.result?.data || [];
+
+  // Seed default "Main Residence" if user has no spaces
+  useEffect(() => {
+    if (spacesRes?.data && spaces.length === 0 && !spacesRes.isLoading) {
+      createSpace({
+        resource: "appliance_lists",
+        values: {
+          name: "Main Residence",
+          tariff_type: "residential",
+          is_default: true,
+        },
+      });
+    }
+  }, [spaces, spacesRes, createSpace]);
+
+  // Set default active tab once spaces load
+  useEffect(() => {
+    if (activeSpaceId === "all" && spaces.length > 0) {
+      setActiveSpaceId(spaces[0].id);
+    }
+  }, [spaces]);
 
   const [now, setNow] = useState<number>(Date.now());
   useEffect(() => {
@@ -77,20 +115,49 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
     return () => clearInterval(timer);
   }, []);
 
-  const filteredAppliances = appliances.filter((app: UserAppliance) => {
-    const matchesSearch =
-      app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (app.brand && app.brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (app.model && app.model.toLowerCase().includes(searchQuery.toLowerCase()));
+  const activeSpace = spaces.find((s) => s.id === activeSpaceId);
 
-    const matchesCategory =
-      selectedCategory === "all" || app.category.toLowerCase().includes(selectedCategory.toLowerCase());
+  // Filter appliances
+  const filteredAppliances = useMemo(() => {
+    return appliances.filter((app: UserAppliance) => {
+      const matchesSpace =
+        activeSpaceId === "all" ||
+        app.list_id === activeSpaceId ||
+        (!app.list_id && spaces[0]?.id === activeSpaceId);
 
-    const matchesRoom =
-      selectedRoom === "all" || (app.room_location && app.room_location.toLowerCase() === selectedRoom.toLowerCase());
+      const matchesSearch =
+        app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (app.brand && app.brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (app.model && app.model.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    return matchesSearch && matchesCategory && matchesRoom;
-  });
+      const matchesCategory =
+        selectedCategory === "all" || app.category.toLowerCase().includes(selectedCategory.toLowerCase());
+
+      const matchesRoom =
+        selectedRoom === "all" || (app.room_location && app.room_location.toLowerCase() === selectedRoom.toLowerCase());
+
+      return matchesSpace && matchesSearch && matchesCategory && matchesRoom;
+    });
+  }, [appliances, activeSpaceId, searchQuery, selectedCategory, selectedRoom, spaces]);
+
+  // Space-specific stats
+  const currentSpaceAppliances = useMemo(() => {
+    if (activeSpaceId === "all") return appliances;
+    return appliances.filter((app) => app.list_id === activeSpaceId || (!app.list_id && spaces[0]?.id === activeSpaceId));
+  }, [appliances, activeSpaceId, spaces]);
+
+  const spaceTotalWatts = currentSpaceAppliances.reduce(
+    (acc, curr) => acc + curr.watts * (curr.quantity || 1),
+    0
+  );
+
+  const spaceMonthlyKwh = currentSpaceAppliances.reduce((acc, curr) => {
+    const kwh = Number(curr.monthly_kwh) || (curr.watts * curr.hours_per_day * (curr.quantity || 1) * 30) / 1000;
+    return acc + kwh;
+  }, 0);
+
+  const spaceTariffType = activeSpace?.tariff_type || "residential";
+  const spaceBillCalc = calculateMeralcoBill(spaceMonthlyKwh, undefined, 0, false, spaceTariffType);
 
   const togglePower = (app: UserAppliance) => {
     const newState = !app.is_currently_on;
@@ -134,34 +201,113 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
     const diffSeconds = Math.max(0, (now - start) / 1000);
     const totalWatts = app.watts * (app.quantity || 1);
     const totalKwh = (totalWatts * (diffSeconds / 3600)) / 1000;
-    return totalKwh * 14.8261;
+    const effectiveRate = spaceTariffType === "commercial" ? 15.2 : 14.8261;
+    return totalKwh * effectiveRate;
   };
 
   const exportLoadListJson = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appliances, null, 2));
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentSpaceAppliances, null, 2));
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `powerforecast_inventory_${new Date().toISOString().split("T")[0]}.json`);
+    downloadAnchor.setAttribute("download", `powerforecast_${activeSpace?.name || "all_spaces"}_inventory.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
-    showSuccess("Household inventory exported to JSON.");
+    showSuccess("Appliance inventory exported to JSON.");
   };
 
   const handleClearAll = () => {
-    if (!window.confirm("Are you sure you want to clear all registered appliances?")) return;
-    appliances.forEach((a) => deleteAppliance({ resource: "user_appliances", id: a.id }));
-    showInfo("Cleared all appliances.");
+    if (!window.confirm(`Are you sure you want to clear all registered appliances in ${activeSpace?.name || "this list"}?`)) return;
+    currentSpaceAppliances.forEach((a) => deleteAppliance({ resource: "user_appliances", id: a.id }));
+    showInfo("Cleared space appliances.");
   };
-
-  const totalRegisteredWatts = appliances.reduce(
-    (acc, curr) => acc + curr.watts * (curr.quantity || 1),
-    0
-  );
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      {/* 1. Header & Live Stats Banner */}
+      {/* 1. Space Tabs Header Navigation */}
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
+        <Tabs
+          value={activeSpaceId}
+          onChange={(_, val) => {
+            if (val !== "new_space") setActiveSpaceId(val);
+          }}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{
+            minHeight: 44,
+            "& .MuiTab-root": {
+              minHeight: 44,
+              borderRadius: 2.5,
+              textTransform: "none",
+              fontWeight: 700,
+              px: 2,
+              mr: 1,
+            },
+          }}
+        >
+          {spaces.map((s) => (
+            <Tab
+              key={s.id}
+              value={s.id}
+              icon={s.tariff_type === "commercial" ? <StoreIcon fontSize="small" /> : <HomeIcon fontSize="small" />}
+              iconPosition="start"
+              label={
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <span>{s.name}</span>
+                  <Chip
+                    label={s.tariff_type === "commercial" ? "Commercial" : "Residential"}
+                    size="small"
+                    color={s.tariff_type === "commercial" ? "secondary" : "primary"}
+                    sx={{ height: 18, fontSize: "0.625rem", fontWeight: 800 }}
+                  />
+                </Box>
+              }
+            />
+          ))}
+
+          {spaces.length > 1 && (
+            <Tab
+              value="all"
+              icon={<AllSpacesIcon fontSize="small" />}
+              iconPosition="start"
+              label="All Spaces"
+            />
+          )}
+        </Tabs>
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {activeSpace && activeSpaceId !== "all" && (
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<SettingsIcon />}
+              onClick={() => {
+                setSpaceToEdit(activeSpace);
+                setIsSpaceModalOpen(true);
+              }}
+              sx={{ borderRadius: 2, fontWeight: 700 }}
+            >
+              Configure Space
+            </Button>
+          )}
+
+          <Button
+            variant="contained"
+            size="small"
+            color="secondary"
+            startIcon={<PlusIcon />}
+            onClick={() => {
+              setSpaceToEdit(null);
+              setIsSpaceModalOpen(true);
+            }}
+            sx={{ borderRadius: 2, fontWeight: 800 }}
+          >
+            Add Space
+          </Button>
+        </Box>
+      </Box>
+
+      {/* 2. Space Banner & Stats Card */}
       <Card
         sx={{
           p: { xs: 2.5, sm: 3.5 },
@@ -186,7 +332,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
                 width: 44,
                 height: 44,
                 borderRadius: 2.5,
-                bgcolor: "primary.main",
+                bgcolor: spaceTariffType === "commercial" ? "secondary.main" : "primary.main",
                 color: "#ffffff",
                 display: "flex",
                 alignItems: "center",
@@ -194,14 +340,16 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
                 boxShadow: "0 4px 14px rgba(108, 122, 224, 0.4)",
               }}
             >
-              <BoltIcon sx={{ color: "#ffd54f" }} />
+              {spaceTariffType === "commercial" ? <StoreIcon sx={{ color: "#ffffff" }} /> : <HomeIcon sx={{ color: "#ffd54f" }} />}
             </Box>
             <Box>
               <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: "-0.02em" }}>
-                Registered Household Appliances
+                {activeSpace ? activeSpace.name : "All Household & Commercial Spaces"}
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                Manage, schedule, and track all DOE PELP-certified and custom appliances in your household.
+                {spaceTariffType === "commercial"
+                  ? "💼 Commercial General Power Tariff • Unbundled flat distribution & commercial metering"
+                  : "🏠 Residential 230V Tariff • ERC stepped distribution tiers & Lifeline protection"}
               </Typography>
             </Box>
           </Box>
@@ -210,14 +358,19 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
           <Chip
             icon={<SpeedIcon sx={{ color: "#ffd54f !important" }} />}
-            label={`Total Load: ${totalRegisteredWatts} W`}
+            label={`Total Load: ${spaceTotalWatts} W`}
             sx={{ fontWeight: 800, bgcolor: "rgba(15, 14, 58, 0.5)", border: "1px solid rgba(108, 122, 224, 0.3)" }}
           />
           <Chip
-            label={`${appliances.length} Devices`}
+            label={`${currentSpaceAppliances.length} Devices`}
             color="primary"
             variant="outlined"
             sx={{ fontWeight: 700 }}
+          />
+          <Chip
+            label={`₱${spaceBillCalc.totalBill.toFixed(2)} / mo`}
+            color={spaceTariffType === "commercial" ? "secondary" : "default"}
+            sx={{ fontWeight: 800, fontFamily: "monospace" }}
           />
           <Button
             variant="outlined"
@@ -228,7 +381,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
           >
             Export
           </Button>
-          {appliances.length > 0 && (
+          {currentSpaceAppliances.length > 0 && (
             <Button
               variant="outlined"
               color="error"
@@ -243,7 +396,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
         </Box>
       </Card>
 
-      {/* 2. Search, Filters & Action Buttons */}
+      {/* 3. Search, Filters & Action Buttons */}
       <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, alignItems: "center", justifyContent: "space-between" }}>
         <TextField
           size="small"
@@ -301,27 +454,44 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
         </Box>
       </Box>
 
-      {/* 3. Cards Grid */}
+      {/* 4. Cards Grid */}
       <Grid container spacing={2.5}>
         {filteredAppliances.length === 0 ? (
-          <Grid size={{ xs: 12 }}>
+          <Grid size={12}>
             <Paper sx={{ p: 6, textAlign: "center", borderRadius: 3, border: "1px dashed", borderColor: "divider" }}>
               <BoltIcon sx={{ fontSize: 48, opacity: 0.3, mb: 1 }} />
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                No appliances found.
+                No appliances in this space yet.
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
-                Add your household devices using the manual form, DOE catalog search, or AI camera scan.
+                Add devices to {activeSpace?.name || "your space"} using manual entry, DOE PELP catalog, or AI camera scanner.
               </Typography>
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<PlusIcon />}
+                onClick={() => {
+                  setApplianceToEdit(null);
+                  setIsAddModalOpen(true);
+                }}
+                sx={{ mt: 2, borderRadius: 2 }}
+              >
+                Add First Appliance
+              </Button>
             </Paper>
           </Grid>
         ) : (
           filteredAppliances.map((app: UserAppliance) => {
             const isOn = app.is_currently_on;
             const liveSpent = getAccumulatedPesos(app);
+            const appSpace = spaces.find((s) => s.id === app.list_id);
+            const appTariff = app.tariff_type || appSpace?.tariff_type || "residential";
             const monthlyKwh = Number(app.monthly_kwh) || ((app.watts * app.hours_per_day * (app.quantity || 1) * 30) / 1000);
-            const monthlyCost = monthlyKwh * 14.8261;
-            const hourlyCost = ((app.watts * (app.quantity || 1)) / 1000) * 14.8261;
+            
+            // Calculate deterministic unbundled monthly cost
+            const appBill = calculateMeralcoBill(monthlyKwh, undefined, 0, false, appTariff);
+            const monthlyCost = appBill.totalBill;
+            const hourlyRate = ((app.watts * (app.quantity || 1)) / 1000) * (appBill.effectiveRatePerKwh || 14.82);
 
             return (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={app.id}>
@@ -347,11 +517,22 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
                   <Box>
                     {/* Top Row: Category & Power Toggle */}
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
-                      <Chip
-                        label={app.category}
-                        size="small"
-                        sx={{ fontWeight: 700, fontSize: "0.7rem", bgcolor: "rgba(108, 122, 224, 0.15)" }}
-                      />
+                      <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                        <Chip
+                          label={app.category}
+                          size="small"
+                          sx={{ fontWeight: 700, fontSize: "0.7rem", bgcolor: "rgba(108, 122, 224, 0.15)" }}
+                        />
+                        {appSpace && activeSpaceId === "all" && (
+                          <Chip
+                            label={appSpace.name}
+                            size="small"
+                            color={appTariff === "commercial" ? "secondary" : "primary"}
+                            variant="outlined"
+                            sx={{ fontSize: "0.65rem", height: 22 }}
+                          />
+                        )}
+                      </Box>
                       <IconButton
                         size="small"
                         onClick={() => togglePower(app)}
@@ -396,6 +577,11 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
                         variant="outlined"
                         sx={{ fontWeight: 600 }}
                       />
+                      <Chip
+                        label={appTariff === "commercial" ? "Commercial" : "Residential"}
+                        size="small"
+                        sx={{ fontSize: "0.625rem", height: 20 }}
+                      />
                     </Box>
 
                     <Divider sx={{ my: 1.5 }} />
@@ -432,7 +618,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
                       </Box>
                     ) : (
                       <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
-                        ₱{hourlyCost.toFixed(2)}/hr rate
+                        ₱{hourlyRate.toFixed(2)}/hr rate
                       </Typography>
                     )}
 
@@ -485,7 +671,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
         )}
       </Grid>
 
-      {/* Add / Edit Modal */}
+      {/* Add / Edit Appliance Modal */}
       {isAddModalOpen && (
         <ApplianceModal
           isOpen={isAddModalOpen}
@@ -494,6 +680,20 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
             setApplianceToEdit(null);
           }}
           applianceToEdit={applianceToEdit}
+          defaultListId={activeSpaceId !== "all" ? activeSpaceId : (spaces[0]?.id || null)}
+        />
+      )}
+
+      {/* Space Management Modal */}
+      {isSpaceModalOpen && (
+        <SpaceManagementModal
+          isOpen={isSpaceModalOpen}
+          onClose={() => {
+            setIsSpaceModalOpen(false);
+            setSpaceToEdit(null);
+          }}
+          spaceToEdit={spaceToEdit}
+          canDelete={spaces.length > 1}
         />
       )}
 
@@ -502,6 +702,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
         <PelpCatalogModal
           isOpen={isPelpModalOpen}
           onClose={() => setIsPelpModalOpen(false)}
+          defaultListId={activeSpaceId !== "all" ? activeSpaceId : (spaces[0]?.id || null)}
         />
       )}
 
@@ -532,3 +733,6 @@ export const ApplianceList: React.FC<ApplianceListProps> = ({ onOpenAiScanner })
     </Box>
   );
 };
+
+export default ApplianceList;
+

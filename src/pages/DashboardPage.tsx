@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
@@ -7,6 +7,7 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Paper from "@mui/material/Paper";
+import LinearProgress from "@mui/material/LinearProgress";
 import {
   Bolt as BoltIcon,
   Calculate as CalculatorIcon,
@@ -19,6 +20,9 @@ import {
   AccessTime as ClockIcon,
   Add as PlusIcon,
   ArrowForward as ArrowForwardIcon,
+  Home as HomeIcon,
+  Store as StoreIcon,
+  AccountBalanceWallet as WalletIcon,
 } from "@mui/icons-material";
 import { MetricCard } from "../components/common/MetricCard";
 import { LivePowerBoard } from "../components/dashboard/LivePowerBoard";
@@ -27,7 +31,8 @@ import { ApplianceModal } from "../components/appliances/ApplianceModal";
 import { PelpCatalogModal } from "../components/appliances/PelpCatalogModal";
 import { AiVisionScannerModal } from "../components/vision/AiVisionScannerModal";
 import { useList } from "@refinedev/core";
-import { UserAppliance } from "../types";
+import { UserAppliance, ApplianceList } from "../types";
+import { calculateMeralcoBill } from "../lib/meralcoCalculator";
 
 export const DashboardPage: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -38,7 +43,13 @@ export const DashboardPage: React.FC = () => {
     resource: "user_appliances",
   }) as any;
 
+  const spacesResponse = useList<ApplianceList>({
+    resource: "appliance_lists",
+  }) as any;
+
   const appliances: UserAppliance[] = listResponse?.data?.data || listResponse?.result?.data || [];
+  const spaces: ApplianceList[] = spacesResponse?.data?.data || spacesResponse?.result?.data || [];
+
   const runningAppliances = appliances.filter((a: UserAppliance) => a.is_currently_on);
   const activeWattage = runningAppliances.reduce(
     (acc: number, curr: UserAppliance) => acc + curr.watts * (curr.quantity || 1),
@@ -46,10 +57,54 @@ export const DashboardPage: React.FC = () => {
   );
 
   const totalMonthlyKwh = appliances.reduce(
-    (acc: number, curr: UserAppliance) => acc + (Number(curr.monthly_kwh) || 0),
+    (acc: number, curr: UserAppliance) => acc + (Number(curr.monthly_kwh) || ((curr.watts * curr.hours_per_day * (curr.quantity || 1) * 30) / 1000)),
     0
   );
-  const estimatedMonthlyBill = totalMonthlyKwh * 14.8261;
+
+  // Calculate space-by-space bills and cost split
+  const spaceAnalytics = useMemo(() => {
+    let resTotalKwh = 0;
+    let resTotalBill = 0;
+    let comTotalKwh = 0;
+    let comTotalBill = 0;
+
+    const breakdownBySpace = spaces.map((space) => {
+      const spaceApps = appliances.filter((a) => a.list_id === space.id || (!a.list_id && space.is_default));
+      const kwh = spaceApps.reduce((acc, curr) => {
+        return acc + (Number(curr.monthly_kwh) || ((curr.watts * curr.hours_per_day * (curr.quantity || 1) * 30) / 1000));
+      }, 0);
+
+      const bill = calculateMeralcoBill(kwh, undefined, 0, false, space.tariff_type);
+
+      if (space.tariff_type === "commercial") {
+        comTotalKwh += kwh;
+        comTotalBill += bill.totalBill;
+      } else {
+        resTotalKwh += kwh;
+        resTotalBill += bill.totalBill;
+      }
+
+      return {
+        space,
+        kwh: Math.round(kwh * 10) / 10,
+        bill: bill.totalBill,
+        devicesCount: spaceApps.length,
+      };
+    });
+
+    const consolidatedTotalBill = breakdownBySpace.reduce((acc, curr) => acc + curr.bill, 0);
+
+    return {
+      breakdownBySpace,
+      consolidatedTotalBill,
+      resTotalBill,
+      comTotalBill,
+      resTotalKwh,
+      comTotalKwh,
+      resPercent: consolidatedTotalBill > 0 ? (resTotalBill / consolidatedTotalBill) * 100 : 100,
+      comPercent: consolidatedTotalBill > 0 ? (comTotalBill / consolidatedTotalBill) * 100 : 0,
+    };
+  }, [appliances, spaces]);
 
   const currentHour = new Date().getHours();
   const isPeak = (currentHour >= 11 && currentHour < 16) || (currentHour >= 18 && currentHour < 21);
@@ -86,11 +141,11 @@ export const DashboardPage: React.FC = () => {
           />
 
           <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.02em", mb: 0.75 }}>
-            Household Energy Dashboard
+            Energy & Tariff Dashboard
           </Typography>
 
           <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6, mb: 2.5 }}>
-            Real-time household circuits, Meralco unbundled tariff projection, DOE PELP database matching, and intelligent appliance scheduling.
+            Real-time household & business telemetry, Meralco unbundled tariff projections, DOE PELP certified inventory, and sub-metering cost split.
           </Typography>
 
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
@@ -151,20 +206,20 @@ export const DashboardPage: React.FC = () => {
       <Grid container spacing={2.5}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
-            title="Projected Monthly Bill"
-            value={`₱${estimatedMonthlyBill.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            subtitle="Rate: ₱14.82/kWh"
+            title="Consolidated Monthly Bill"
+            value={`₱${spaceAnalytics.consolidatedTotalBill.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            subtitle={spaces.length > 1 ? `Combined across ${spaces.length} spaces` : "Household projected bill"}
             icon={<BoltIcon sx={{ color: "#ffd54f" }} />}
-            trend={{ value: "-₱240.50", direction: "down", label: "vs prior" }}
+            trend={{ value: `${spaces.length} Spaces`, direction: "neutral" }}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
             title="Monthly Energy Volume"
             value={`${totalMonthlyKwh.toFixed(1)} kWh`}
-            subtitle="Household total load"
+            subtitle="Total registered load"
             icon={<TrendingUpIcon sx={{ color: "primary.light" }} />}
-            trend={{ value: "Tier 3", direction: "neutral" }}
+            trend={{ value: totalMonthlyKwh <= 100 ? "Lifeline" : "Standard", direction: "neutral" }}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -179,14 +234,110 @@ export const DashboardPage: React.FC = () => {
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
             title="Tariff Window"
-            value={isPeak ? "Peak" : "Off-Peak"}
+            value={isPeak ? "Peak Window" : "Off-Peak"}
             subtitle={isPeak ? "11 AM – 4 PM & 6 PM – 9 PM" : "Optimal Low-Cost"}
             icon={isPeak ? <FlameIcon sx={{ color: "warning.main" }} /> : <ClockIcon sx={{ color: "success.main" }} />}
           />
         </Grid>
       </Grid>
 
-      {/* 3. Main Grid: Live Power Board & Energy Distribution Donut */}
+      {/* 3. Sub-Metering & Space Cost Allocation (When Multiple Spaces Exist) */}
+      {spaces.length > 1 && (
+        <Card sx={{ p: 3, borderRadius: 3.5, border: "1px solid", borderColor: "rgba(108, 122, 224, 0.25)" }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              <Box sx={{ p: 1, borderRadius: 2, bgcolor: "primary.main", color: "#ffffff", display: "flex" }}>
+                <WalletIcon fontSize="small" />
+              </Box>
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                  Space Sub-Billing & Expense Split
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  Cost allocation between residential living and commercial / business operations
+                </Typography>
+              </Box>
+            </Box>
+
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Chip
+                icon={<HomeIcon sx={{ fontSize: "14px !important" }} />}
+                label={`Residential: ₱${spaceAnalytics.resTotalBill.toFixed(2)} (${spaceAnalytics.resPercent.toFixed(0)}%)`}
+                color="primary"
+                size="small"
+                sx={{ fontWeight: 700 }}
+              />
+              {spaceAnalytics.comTotalBill > 0 && (
+                <Chip
+                  icon={<StoreIcon sx={{ fontSize: "14px !important" }} />}
+                  label={`Commercial: ₱${spaceAnalytics.comTotalBill.toFixed(2)} (${spaceAnalytics.comPercent.toFixed(0)}%)`}
+                  color="secondary"
+                  size="small"
+                  sx={{ fontWeight: 700 }}
+                />
+              )}
+            </Box>
+          </Box>
+
+          <LinearProgress
+            variant="determinate"
+            value={spaceAnalytics.resPercent}
+            sx={{
+              height: 10,
+              borderRadius: 5,
+              bgcolor: "secondary.main",
+              "& .MuiLinearProgress-bar": {
+                bgcolor: "primary.main",
+              },
+              mb: 2.5,
+            }}
+          />
+
+          <Grid container spacing={2}>
+            {spaceAnalytics.breakdownBySpace.map((item) => (
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={item.space.id}>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: 2.5,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      {item.space.tariff_type === "commercial" ? (
+                        <StoreIcon fontSize="small" sx={{ color: "secondary.main" }} />
+                      ) : (
+                        <HomeIcon fontSize="small" sx={{ color: "primary.main" }} />
+                      )}
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                        {item.space.name}
+                      </Typography>
+                    </Box>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                      {item.devicesCount} devices • {item.kwh} kWh
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ textAlign: "right" }}>
+                    <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: item.space.tariff_type === "commercial" ? "secondary.main" : "primary.main" }}>
+                      ₱{item.bill.toFixed(2)}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+                      {item.space.tariff_type === "commercial" ? "General Power" : "230V Stepped"}
+                    </Typography>
+                  </Box>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+        </Card>
+      )}
+
+      {/* 4. Main Grid: Live Power Board & Energy Distribution Donut */}
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, lg: 8 }}>
           <LivePowerBoard onOpenAddModal={() => setIsAddModalOpen(true)} />
@@ -196,18 +347,18 @@ export const DashboardPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* 4. Quick Module Launchpad */}
+      {/* 5. Quick Module Launchpad */}
       <Grid container spacing={2.5}>
         {[
           {
             title: "Bill Calculator",
-            desc: "ERC unbundled rate formulas",
+            desc: "Unbundled residential & commercial rate formulas",
             icon: <CalculatorIcon sx={{ color: "#ffd54f" }} />,
             link: "/calculator",
           },
           {
             title: "Appliance Hub",
-            desc: "DOE PELP database lookup",
+            desc: "Multi-space inventory & DOE PELP matching",
             icon: <BoltIcon sx={{ color: "primary.light" }} />,
             link: "/appliances",
           },
@@ -269,10 +420,12 @@ export const DashboardPage: React.FC = () => {
       <ApplianceModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+        defaultListId={spaces[0]?.id || null}
       />
       <PelpCatalogModal
         isOpen={isPelpModalOpen}
         onClose={() => setIsPelpModalOpen(false)}
+        defaultListId={spaces[0]?.id || null}
       />
       <AiVisionScannerModal
         isOpen={isAiScannerOpen}
@@ -283,3 +436,4 @@ export const DashboardPage: React.FC = () => {
 };
 
 export default DashboardPage;
+

@@ -1,6 +1,17 @@
+export interface ApplianceList {
+  id: string;
+  user_id: string;
+  name: string;
+  tariff_type: 'residential' | 'commercial';
+  is_default: boolean;
+  created_at?: string;
+}
+
 export interface UserAppliance {
   id: string;
   user_id: string;
+  list_id?: string | null;
+  tariff_type?: 'residential' | 'commercial';
   name: string;
   category: string;
   brand?: string;
@@ -66,6 +77,7 @@ export interface MeralcoRateTier {
 
 export interface BillBreakdown {
   kwh: number;
+  tariffType?: 'residential' | 'commercial';
   generationRate: number;
   otherCharges: number;
   isSeniorCitizen?: boolean;

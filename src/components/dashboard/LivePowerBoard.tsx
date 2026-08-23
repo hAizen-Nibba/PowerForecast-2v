@@ -8,6 +8,8 @@ import Grid from "@mui/material/Grid";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import Tooltip from "@mui/material/Tooltip";
+import LinearProgress from "@mui/material/LinearProgress";
+import Paper from "@mui/material/Paper";
 import {
   PowerSettingsNew as PowerIcon,
   Bolt as BoltIcon,
@@ -19,10 +21,14 @@ import {
   Add as PlusIcon,
   AccessTime as ClockIcon,
   Speed as SpeedIcon,
+  Warning as WarningIcon,
+  Home as HomeIcon,
+  Store as StoreIcon,
 } from "@mui/icons-material";
-import { UserAppliance } from "../../types";
+import { UserAppliance, ApplianceList } from "../../types";
 import { useUpdate, useList } from "@refinedev/core";
 import { devLog } from "../../lib/devLogger";
+import { calculateSimultaneousDemand } from "../../lib/meralcoCalculator";
 
 interface LivePowerBoardProps {
   onOpenAddModal: () => void;
@@ -33,14 +39,21 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
     resource: "user_appliances",
   }) as any;
 
+  const spacesRes = useList<ApplianceList>({
+    resource: "appliance_lists",
+  }) as any;
+
   const { mutate: updateAppliance } = useUpdate();
   const appliances: UserAppliance[] = appliancesRes?.data?.data || appliancesRes?.result?.data || [];
+  const spaces: ApplianceList[] = spacesRes?.data?.data || spacesRes?.result?.data || [];
 
   const [now, setNow] = useState<number>(Date.now());
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const demand = calculateSimultaneousDemand(appliances, 9.2);
 
   const getCategoryIcon = (category: string) => {
     switch (category?.toLowerCase()) {
@@ -99,149 +112,209 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
     const diffSeconds = Math.max(0, (now - start) / 1000);
     const totalWatts = app.watts * (app.quantity || 1);
     const accumulatedKwh = (totalWatts / 1000) * (diffSeconds / 3600);
-    return accumulatedKwh * 14.8261;
+    const effectiveRate = app.tariff_type === "commercial" ? 15.2 : 14.8261;
+    return accumulatedKwh * effectiveRate;
   };
 
   return (
-    <Card sx={{ p: 3, borderRadius: 3, height: "100%" }}>
-      {/* Header */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2.5, flexWrap: "wrap", gap: 1 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box
-            sx={{
-              width: 36,
-              height: 36,
-              borderRadius: 2,
-              bgcolor: "primary.main",
-              color: "#ffffff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+    <Card sx={{ p: 3, borderRadius: 3, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+      <Box>
+        {/* Header */}
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2, flexWrap: "wrap", gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: 2,
+                bgcolor: "primary.main",
+                color: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <BoltIcon sx={{ color: "#ffd54f" }} />
+            </Box>
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                Live Circuit Power Board
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                Simultaneous demand gauge and individual circuit breaker switches
+              </Typography>
+            </Box>
+          </Box>
+
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={onOpenAddModal}
+            startIcon={<PlusIcon />}
           >
-            <BoltIcon sx={{ color: "#ffd54f" }} />
-          </Box>
-          <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-              Live Circuit Power Board
-            </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Toggle circuit breakers to inspect live wattage and costs
-            </Typography>
-          </Box>
-        </Box>
-
-        <Button
-          variant="outlined"
-          size="small"
-          onClick={onOpenAddModal}
-          startIcon={<PlusIcon />}
-        >
-          Add Appliance
-        </Button>
-      </Box>
-
-      <Divider sx={{ mb: 2 }} />
-
-      {/* Grid of circuit switches */}
-      {appliances.length === 0 ? (
-        <Box sx={{ py: 6, textAlign: "center" }}>
-          <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
-            No appliances configured in your household yet.
-          </Typography>
-          <Button variant="contained" size="small" onClick={onOpenAddModal} startIcon={<PlusIcon />}>
-            Add First Appliance
+            Add Appliance
           </Button>
         </Box>
-      ) : (
-        <Grid container spacing={2}>
-          {appliances.map((app: UserAppliance) => {
-            const isOn = app.is_currently_on;
-            const totalWatts = app.watts * (app.quantity || 1);
-            const hourlyRate = ((totalWatts / 1000) * 14.8261).toFixed(2);
-            const liveSpent = getAccumulatedPesos(app);
 
-            return (
-              <Grid size={{ xs: 12, sm: 6 }} key={app.id}>
-                <Card
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    borderRadius: 2.5,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    borderColor: isOn ? "success.main" : "divider",
-                    bgcolor: isOn
-                      ? (theme) => (theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.1)" : "rgba(16, 185, 129, 0.05)")
-                      : "transparent",
-                    transition: "all 0.15s ease-in-out",
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
-                    <Box
-                      sx={{
-                        p: 1,
-                        borderRadius: 2,
-                        bgcolor: "action.hover",
-                        display: "flex",
-                      }}
-                    >
-                      {getCategoryIcon(app.category)}
-                    </Box>
+        {/* Real-time Simultaneous Demand Gauge */}
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 2,
+            mb: 2.5,
+            borderRadius: 2.5,
+            bgcolor: demand.isOverloaded
+              ? "rgba(239, 68, 68, 0.1)"
+              : demand.loadPercentage > 75
+              ? "rgba(245, 158, 11, 0.1)"
+              : "action.hover",
+            borderColor: demand.isOverloaded ? "error.main" : "divider",
+          }}
+        >
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <SpeedIcon sx={{ fontSize: 18, color: demand.isOverloaded ? "error.main" : "primary.main" }} />
+              <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Simultaneous Peak Load
+              </Typography>
+            </Box>
+            <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
+              {demand.simultaneousKw} kW / 9.2 kW ({demand.loadPercentage}%)
+            </Typography>
+          </Box>
 
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
-                        {app.name}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                        {totalWatts}W • {app.room_location || "General"}
-                      </Typography>
+          <LinearProgress
+            variant="determinate"
+            value={Math.min(100, demand.loadPercentage)}
+            color={demand.isOverloaded ? "error" : demand.loadPercentage > 75 ? "warning" : "primary"}
+            sx={{ height: 8, borderRadius: 4, mb: 1 }}
+          />
 
-                      {isOn && (
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5 }}>
-                          <ClockIcon sx={{ fontSize: 12, color: "success.main" }} />
-                          <Typography variant="caption" sx={{ color: "success.main", fontWeight: 700, fontFamily: "monospace", fontSize: "0.6875rem" }}>
-                            {getRunningDuration(app.last_turned_on_at)} (₱{liveSpent.toFixed(3)})
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  </Box>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+              {demand.activeCircuitsCount} circuits active • 40A Main Breaker Rating
+            </Typography>
+            {demand.isOverloaded ? (
+              <Chip
+                icon={<WarningIcon sx={{ fontSize: "14px !important" }} />}
+                label="Breaker Overload Warning"
+                size="small"
+                color="error"
+                sx={{ height: 20, fontSize: "0.65rem", fontWeight: 800 }}
+              />
+            ) : (
+              <Typography variant="caption" sx={{ color: "success.main", fontWeight: 700, fontFamily: "monospace" }}>
+                ₱{demand.hourlyRunningCost.toFixed(2)}/hr combined draw
+              </Typography>
+            )}
+          </Box>
+        </Paper>
 
-                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
-                    <Chip
-                      label={`₱${hourlyRate}/hr`}
-                      size="small"
-                      sx={{ fontWeight: 700, fontFamily: "monospace", height: 20, fontSize: "0.6875rem" }}
-                    />
+        <Divider sx={{ mb: 2 }} />
 
-                    <Tooltip title={isOn ? "Click to Switch OFF" : "Click to Switch ON"}>
-                      <IconButton
-                        size="small"
-                        onClick={() => togglePower(app)}
+        {/* Grid of circuit switches */}
+        {appliances.length === 0 ? (
+          <Box sx={{ py: 6, textAlign: "center" }}>
+            <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
+              No appliances configured in your household yet.
+            </Typography>
+            <Button variant="contained" size="small" onClick={onOpenAddModal} startIcon={<PlusIcon />}>
+              Add First Appliance
+            </Button>
+          </Box>
+        ) : (
+          <Grid container spacing={2}>
+            {appliances.map((app: UserAppliance) => {
+              const isOn = app.is_currently_on;
+              const totalWatts = app.watts * (app.quantity || 1);
+              const appSpace = spaces.find((s) => s.id === app.list_id);
+              const effectiveRate = app.tariff_type === "commercial" ? 15.2 : 14.8261;
+              const hourlyRate = ((totalWatts / 1000) * effectiveRate).toFixed(2);
+              const liveSpent = getAccumulatedPesos(app);
+
+              return (
+                <Grid size={{ xs: 12, sm: 6 }} key={app.id}>
+                  <Card
+                    variant="outlined"
+                    sx={{
+                      p: 2,
+                      borderRadius: 2.5,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      borderColor: isOn ? "success.main" : "divider",
+                      bgcolor: isOn
+                        ? (theme) => (theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.1)" : "rgba(16, 185, 129, 0.05)")
+                        : "transparent",
+                      transition: "all 0.15s ease-in-out",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
+                      <Box
                         sx={{
-                          bgcolor: isOn ? "success.main" : "action.hover",
-                          color: isOn ? "#ffffff" : "text.secondary",
-                          border: "1px solid",
-                          borderColor: isOn ? "success.dark" : "divider",
-                          "&:hover": {
-                            bgcolor: isOn ? "success.dark" : "action.selected",
-                          },
+                          p: 1,
+                          borderRadius: 2,
+                          bgcolor: "action.hover",
+                          display: "flex",
                         }}
                       >
-                        <PowerIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </Card>
-              </Grid>
-            );
-          })}
-        </Grid>
-      )}
+                        {getCategoryIcon(app.category)}
+                      </Box>
+
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700 }}>
+                          {app.name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                          {totalWatts}W {appSpace ? `• ${appSpace.name}` : ""}
+                        </Typography>
+
+                        {isOn && (
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5 }}>
+                            <ClockIcon sx={{ fontSize: 12, color: "success.main" }} />
+                            <Typography variant="caption" sx={{ color: "success.main", fontWeight: 700, fontFamily: "monospace", fontSize: "0.6875rem" }}>
+                              {getRunningDuration(app.last_turned_on_at)} (₱{liveSpent.toFixed(3)})
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
+                      <Chip
+                        label={`₱${hourlyRate}/hr`}
+                        size="small"
+                        sx={{ fontWeight: 700, fontFamily: "monospace", height: 20, fontSize: "0.6875rem" }}
+                      />
+
+                      <Tooltip title={isOn ? "Click to Switch OFF" : "Click to Switch ON"}>
+                        <IconButton
+                          size="small"
+                          onClick={() => togglePower(app)}
+                          sx={{
+                            bgcolor: isOn ? "success.main" : "action.hover",
+                            color: isOn ? "#ffffff" : "text.secondary",
+                            border: "1px solid",
+                            borderColor: isOn ? "success.dark" : "divider",
+                            "&:hover": {
+                              bgcolor: isOn ? "success.dark" : "action.selected",
+                            },
+                          }}
+                        >
+                          <PowerIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
+        )}
+      </Box>
     </Card>
   );
 };
 
 export default LivePowerBoard;
+

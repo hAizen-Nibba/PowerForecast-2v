@@ -1,12 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { UserAppliance } from "../../types";
-import { PieChart as PieIcon, Bolt as BoltIcon } from "@mui/icons-material";
+import { UserAppliance, ApplianceList } from "../../types";
+import { PieChart as PieIcon, Bolt as BoltIcon, Home as HomeIcon, Store as StoreIcon } from "@mui/icons-material";
+import { useList } from "@refinedev/core";
 
 interface ConsumptionDonutProps {
   appliances: UserAppliance[];
@@ -22,20 +25,43 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Other": "#94a3b8",
 };
 
+const SPACE_COLORS = ["#6366f1", "#f43f5e", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4"];
+
 export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }) => {
+  const [viewBy, setViewBy] = useState<"category" | "space">("category");
+
+  const spacesRes = useList<ApplianceList>({
+    resource: "appliance_lists",
+  }) as any;
+
+  const spaces: ApplianceList[] = spacesRes?.data?.data || spacesRes?.result?.data || [];
+
   const categoryTotals: Record<string, number> = {};
+  const spaceTotals: Record<string, number> = {};
+
   appliances.forEach((app) => {
     const cat = app.category || "Other";
     const kwh = Number(app.monthly_kwh) || ((app.watts * app.hours_per_day * app.days_per_month * (app.quantity || 1)) / 1000);
     categoryTotals[cat] = (categoryTotals[cat] || 0) + kwh;
+
+    const spaceObj = spaces.find((s) => s.id === app.list_id) || spaces[0];
+    const spaceName = spaceObj ? `${spaceObj.name} (${spaceObj.tariff_type === "commercial" ? "Commercial" : "Residential"})` : "Main Residence";
+    spaceTotals[spaceName] = (spaceTotals[spaceName] || 0) + kwh;
   });
 
-  const data = Object.keys(categoryTotals).map((cat) => ({
+  const categoryData = Object.keys(categoryTotals).map((cat) => ({
     name: cat,
     value: Math.round(categoryTotals[cat] * 10) / 10,
     color: CATEGORY_COLORS[cat] || "#6366f1",
   })).sort((a, b) => b.value - a.value);
 
+  const spaceData = Object.keys(spaceTotals).map((sp, idx) => ({
+    name: sp,
+    value: Math.round(spaceTotals[sp] * 10) / 10,
+    color: SPACE_COLORS[idx % SPACE_COLORS.length],
+  })).sort((a, b) => b.value - a.value);
+
+  const data = viewBy === "space" && spaces.length > 1 ? spaceData : categoryData;
   const totalKwh = data.reduce((acc, curr) => acc + curr.value, 0);
 
   return (
@@ -48,7 +74,7 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
               Energy Distribution
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Monthly household load by category
+              Monthly load by {viewBy === "space" ? "space / location" : "appliance category"}
             </Typography>
           </Box>
           <Chip
@@ -58,6 +84,25 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
             sx={{ fontWeight: 700, fontFamily: "monospace" }}
           />
         </Box>
+
+        {spaces.length > 1 && (
+          <Box sx={{ display: "flex", justifyContent: "center", my: 1 }}>
+            <ToggleButtonGroup
+              size="small"
+              value={viewBy}
+              exclusive
+              onChange={(_, next) => next && setViewBy(next)}
+              sx={{ height: 28 }}
+            >
+              <ToggleButton value="category" sx={{ px: 1.5, fontSize: "0.6875rem", fontWeight: 700, textTransform: "none" }}>
+                By Category
+              </ToggleButton>
+              <ToggleButton value="space" sx={{ px: 1.5, fontSize: "0.6875rem", fontWeight: 700, textTransform: "none" }}>
+                By Space ({spaces.length})
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+        )}
 
         <Divider sx={{ my: 1.5 }} />
 

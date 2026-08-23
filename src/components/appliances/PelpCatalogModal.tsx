@@ -22,23 +22,45 @@ import {
   Download as ImportIcon,
   Star as StarIcon,
   CheckCircle as CheckCircleIcon,
+  Home as HomeIcon,
+  Store as StoreIcon,
 } from "@mui/icons-material";
 import { PELP_CATEGORIES, searchPelpDatabase } from "../../lib/pelpService";
-import { PelpItem } from "../../types";
-import { useCreate } from "@refinedev/core";
+import { PelpItem, ApplianceList } from "../../types";
+import { useCreate, useList } from "@refinedev/core";
 import { getDefaultStartHour } from "../../lib/loadCurveService";
 
 interface PelpCatalogModalProps {
   isOpen: boolean;
   onClose: () => void;
+  defaultListId?: string | null;
 }
 
-export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({ isOpen, onClose }) => {
+export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
+  isOpen,
+  onClose,
+  defaultListId,
+}) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("air-conditioners");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [items, setItems] = useState<PelpItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [importedControlNo, setImportedControlNo] = useState<string | null>(null);
+  const [selectedListId, setSelectedListId] = useState<string>("");
+
+  const listsRes = useList<ApplianceList>({
+    resource: "appliance_lists",
+  }) as any;
+
+  const spaces: ApplianceList[] = listsRes?.data?.data || listsRes?.result?.data || [];
+
+  useEffect(() => {
+    if (defaultListId) {
+      setSelectedListId(defaultListId);
+    } else if (spaces.length > 0 && !selectedListId) {
+      setSelectedListId(spaces[0].id);
+    }
+  }, [defaultListId, spaces]);
 
   const { mutate: createAppliance } = useCreate();
 
@@ -67,6 +89,9 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({ isOpen, onCl
     let room = "Living Room";
     if (item.category.includes("Refrigerat") || item.category.includes("Kitchen")) room = "Kitchen";
 
+    const targetListId = selectedListId || (spaces[0]?.id ?? null);
+    const targetSpace = spaces.find((s) => s.id === targetListId);
+
     createAppliance(
       {
         resource: "user_appliances",
@@ -83,6 +108,8 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({ isOpen, onCl
           room_location: room,
           energy_rating: `${item.star_rating || 5}-Star (PELP)`,
           monthly_kwh: monthlyKwh,
+          list_id: targetListId,
+          tariff_type: targetSpace?.tariff_type || "residential",
         },
       },
       {
@@ -129,8 +156,45 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({ isOpen, onCl
       <Divider />
 
       <DialogContent sx={{ p: 3 }}>
-        {/* Search & Category Filter */}
+        {/* Space destination & Search & Category Filter */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
+          {spaces.length > 0 && (
+            <Grid size={12}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.5, bgcolor: "action.hover", borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>
+                  IMPORT DESTINATION:
+                </Typography>
+                <TextField
+                  select
+                  size="small"
+                  value={selectedListId}
+                  onChange={(e) => setSelectedListId(e.target.value)}
+                  sx={{ minWidth: 260 }}
+                >
+                  {spaces.map((s) => (
+                    <MenuItem key={s.id} value={s.id}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        {s.tariff_type === "commercial" ? (
+                          <StoreIcon fontSize="small" sx={{ color: "secondary.main" }} />
+                        ) : (
+                          <HomeIcon fontSize="small" sx={{ color: "primary.main" }} />
+                        )}
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                          {s.name}
+                        </Typography>
+                        <Chip
+                          label={s.tariff_type === "commercial" ? "Commercial" : "Residential"}
+                          size="small"
+                          sx={{ fontSize: "0.6875rem", height: 18 }}
+                        />
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Box>
+            </Grid>
+          )}
+
           <Grid size={{ xs: 12, sm: 7 }}>
             <TextField
               fullWidth

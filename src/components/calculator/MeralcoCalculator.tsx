@@ -22,8 +22,10 @@ import {
   ExpandLess as ExpandLessIcon,
   AutoAwesome as SparklesIcon,
   Whatshot as FlameIcon,
+  Home as HomeIcon,
+  Store as StoreIcon,
 } from "@mui/icons-material";
-import { calculateMeralcoBill, DEFAULT_MERALCO_RATES } from "../../lib/meralcoCalculator";
+import { calculateMeralcoBill, DEFAULT_MERALCO_RATES, DEFAULT_COMMERCIAL_RATES } from "../../lib/meralcoCalculator";
 import { devLog } from "../../lib/devLogger";
 import { useColorMode } from "../../theme/AppTheme";
 
@@ -32,6 +34,7 @@ export const MeralcoCalculator: React.FC = () => {
   const isDark = mode === "dark";
 
   const [activeTab, setActiveTab] = useState<number>(0);
+  const [tariffType, setTariffType] = useState<"residential" | "commercial">("residential");
   const [kwh, setKwh] = useState<number>(320);
   const [genRate, setGenRate] = useState<number>(DEFAULT_MERALCO_RATES.defaultGenerationRate);
   const [otherCharges, setOtherCharges] = useState<number>(0);
@@ -43,14 +46,15 @@ export const MeralcoCalculator: React.FC = () => {
   const [simHoursReduced, setSimHoursReduced] = useState<number>(2);
 
   const bill = useMemo(() => {
-    return calculateMeralcoBill(kwh, genRate, otherCharges, isSenior);
-  }, [kwh, genRate, otherCharges, isSenior]);
+    return calculateMeralcoBill(kwh, genRate, otherCharges, isSenior, tariffType);
+  }, [kwh, genRate, otherCharges, isSenior, tariffType]);
 
   useEffect(() => {
     devLog.telemetry(
       "Calculator",
-      `Unbundled bill calculated for ${kwh} kWh: ₱${bill.totalBill.toLocaleString(undefined, { minimumFractionDigits: 2 })} (Effective: ₱${bill.effectiveRatePerKwh.toFixed(4)}/kWh)`,
+      `Unbundled ${tariffType} bill calculated for ${kwh} kWh: ₱${bill.totalBill.toLocaleString(undefined, { minimumFractionDigits: 2 })} (Effective: ₱${bill.effectiveRatePerKwh.toFixed(4)}/kWh)`,
       {
+        tariffType,
         volumeKwh: kwh,
         effectiveRate: bill.effectiveRatePerKwh,
         totalBillPHP: bill.totalBill,
@@ -61,7 +65,7 @@ export const MeralcoCalculator: React.FC = () => {
         taxesTotal: bill.totalTaxesAndSubsidies,
       }
     );
-  }, [kwh, genRate, otherCharges, isSenior, bill]);
+  }, [kwh, genRate, otherCharges, isSenior, tariffType, bill]);
 
   const simMonthlyKwhSaved = (simWatts * simHoursReduced * 30) / 1000;
   const simMonthlyPesosSaved = simMonthlyKwhSaved * (bill.effectiveRatePerKwh || 14.82);
@@ -175,6 +179,66 @@ export const MeralcoCalculator: React.FC = () => {
 
                 <Divider />
 
+                {/* Tariff Classification Selection */}
+                <Box>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 1 }}>
+                    ACCOUNT TARIFF CLASSIFICATION
+                  </Typography>
+                  <Grid container spacing={1.5}>
+                    <Grid size={6}>
+                      <Paper
+                        variant="outlined"
+                        onClick={() => setTariffType("residential")}
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 2.5,
+                          cursor: "pointer",
+                          textAlign: "center",
+                          border: "2px solid",
+                          borderColor: tariffType === "residential" ? "primary.main" : "divider",
+                          bgcolor: tariffType === "residential" ? "rgba(99, 102, 241, 0.08)" : "transparent",
+                          transition: "all 0.15s ease",
+                          "&:hover": { borderColor: "primary.main" },
+                        }}
+                      >
+                        <HomeIcon sx={{ color: tariffType === "residential" ? "primary.main" : "text.secondary", mb: 0.5 }} />
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: tariffType === "residential" ? "primary.main" : "text.primary" }}>
+                          Residential
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem" }}>
+                          230V Stepped Tiers
+                        </Typography>
+                      </Paper>
+                    </Grid>
+
+                    <Grid size={6}>
+                      <Paper
+                        variant="outlined"
+                        onClick={() => setTariffType("commercial")}
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 2.5,
+                          cursor: "pointer",
+                          textAlign: "center",
+                          border: "2px solid",
+                          borderColor: tariffType === "commercial" ? "secondary.main" : "divider",
+                          bgcolor: tariffType === "commercial" ? "rgba(244, 63, 94, 0.08)" : "transparent",
+                          transition: "all 0.15s ease",
+                          "&:hover": { borderColor: "secondary.main" },
+                        }}
+                      >
+                        <StoreIcon sx={{ color: tariffType === "commercial" ? "secondary.main" : "text.secondary", mb: 0.5 }} />
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: tariffType === "commercial" ? "secondary.main" : "text.primary" }}>
+                          Commercial
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem" }}>
+                          General Power Flat
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                  </Grid>
+                </Box>
+
                 {/* Base Generation Charge */}
                 <Box>
                   <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 1 }}>
@@ -285,31 +349,33 @@ export const MeralcoCalculator: React.FC = () => {
                   </Grid>
                 </Box>
 
-                {/* Senior Citizen Discount */}
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 1.5,
-                    borderRadius: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Box>
-                    <Typography variant="caption" sx={{ fontWeight: 700, display: "block" }}>
-                      Senior Citizen 5% Discount
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
-                      Applies to residential consumption ≤ 100 kWh
-                    </Typography>
-                  </Box>
-                  <Checkbox
-                    checked={isSenior}
-                    onChange={(e) => setIsSenior(e.target.checked)}
-                    color="primary"
-                  />
-                </Paper>
+                {/* Senior Citizen Discount (Residential Only) */}
+                {tariffType === "residential" && (
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="caption" sx={{ fontWeight: 700, display: "block" }}>
+                        Senior Citizen 5% Discount
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+                        Applies to residential consumption ≤ 100 kWh
+                      </Typography>
+                    </Box>
+                    <Checkbox
+                      checked={isSenior}
+                      onChange={(e) => setIsSenior(e.target.checked)}
+                      color="primary"
+                    />
+                  </Paper>
+                )}
               </Card>
             ) : (
               <Card
