@@ -131,6 +131,19 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
   const dayStr = dayOfWeekMap[selectedDate.getDay()];
   const dayEvents = events.filter((e) => e.day === dayStr || e.is_recurring);
 
+  const isSelectedToday = dateKey === formatDateToKey(new Date());
+  const hasActiveStopwatch = appliances.some((a) => a.is_currently_on && a.last_turned_on_at);
+  const [, setLiveTick] = useState(0);
+
+  // Live real-time 1-second ticker when viewing Today with active stopwatches
+  useEffect(() => {
+    if (!isOpen || !isSelectedToday || !hasActiveStopwatch) return;
+    const interval = setInterval(() => {
+      setLiveTick((t) => t + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isOpen, isSelectedToday, hasActiveStopwatch]);
+
   // Precompute stopwatch session runtime per appliance for this specific date
   const applianceStopwatchMap = useMemo(() => {
     const map: Record<string, { totalHours: number; sessionCount: number; isLive: boolean }> = {};
@@ -153,8 +166,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       });
 
       // 2. If viewing today and live stopwatch running
-      const isToday = dateKey === formatDateToKey(new Date());
-      const isLive = Boolean(isToday && app.is_currently_on && app.last_turned_on_at);
+      const isLive = Boolean(isSelectedToday && app.is_currently_on && app.last_turned_on_at);
       if (isLive && app.last_turned_on_at) {
         const start = new Date(app.last_turned_on_at);
         const now = new Date();
@@ -167,14 +179,14 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       }
 
       map[app.id] = {
-        totalHours: Number(totalHours.toFixed(2)),
+        totalHours: Number(totalHours.toFixed(3)),
         sessionCount,
         isLive,
       };
     });
 
     return map;
-  }, [appliances, logs, dateKey]);
+  }, [appliances, logs, dateKey, isSelectedToday]);
 
   // Initialize usage state when modal opens or selectedDate/initialUsageRecords change
   useEffect(() => {
@@ -230,28 +242,31 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
     });
   }, [appliances, selectedSpaceFilter, searchQuery]);
 
-  // Calculate live Day Totals based on current slider positions
+  // Calculate live Day Totals based on current slider positions, logs, and live stopwatches
   const dayTotals = useMemo(() => {
     let totalKwh = 0;
     let activeDevices = 0;
 
     appliances.forEach((app) => {
       const state = usageState[app.id];
-      const hours = state ? state.hours : 0;
-      if (hours > 0) {
+      const manualHours = state ? state.hours : 0;
+      const swHours = applianceStopwatchMap[app.id]?.totalHours || 0;
+      const effectiveHours = Math.max(manualHours, swHours);
+
+      if (effectiveHours > 0) {
         activeDevices += 1;
-        totalKwh += calculateKwh(app.watts, hours, app.quantity || 1);
+        totalKwh += calculateKwh(app.watts, effectiveHours, app.quantity || 1);
       }
     });
 
     const totalCost = calculateCost(totalKwh, DEFAULT_EFFECTIVE_RATE);
 
     return {
-      kwh: Number(totalKwh.toFixed(2)),
+      kwh: Number(totalKwh.toFixed(3)),
       cost: totalCost,
       activeDevices,
     };
-  }, [appliances, usageState]);
+  }, [appliances, usageState, applianceStopwatchMap]);
 
   // Update hours for a single appliance
   const handleHoursChange = (appId: string, hours: number) => {
@@ -414,8 +429,6 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
   const peakWatts = Math.max(...hourlyData.map((d) => d.watts), 0);
 
-  const isSelectedToday = dateKey === formatDateToKey(new Date());
-
   interface TimelineSessionBlock {
     id: string;
     type: "logged_session" | "live_stopwatch" | "manual_routine";
@@ -484,9 +497,29 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         }
       }
 
-      // 3. Fallback: If no session logs, but user logged manual hours
+      // 3. Additive Hybrid: If user logged extra manual hours in addition to session logs
       const manualHours = usageState[app.id]?.hours || 0;
-      if (sessionBlocks.length === 0 && manualHours > 0) {
+      const stopwatchHoursSum = sessionBlocks.reduce((acc, curr) => acc + curr.durationHours, 0);
+
+      if (manualHours > stopwatchHoursSum + 0.05) {
+        const extraManualHours = manualHours - stopwatchHoursSum;
+        const startH = app.start_hour !== undefined ? app.start_hour : 8;
+        const endH = Math.min(24, startH + extraManualHours);
+        const kwh = calculateKwh(app.watts, extraManualHours, app.quantity || 1);
+        const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
+
+        sessionBlocks.push({
+          id: `manual-extra-${app.id}`,
+          type: "manual_routine" as const,
+          startHour: startH,
+          endHour: endH,
+          durationHours: extraManualHours,
+          kwh,
+          cost,
+          startTimeStr: `${String(startH).padStart(2, "0")}:00 (Manual)`,
+          endTimeStr: `${String(Math.floor(endH)).padStart(2, "0")}:${String(Math.round((endH % 1) * 60)).padStart(2, "0")}`,
+        });
+      } else if (sessionBlocks.length === 0 && manualHours > 0) {
         const startH = app.start_hour !== undefined ? app.start_hour : 8;
         const endH = Math.min(24, startH + manualHours);
         const kwh = calculateKwh(app.watts, manualHours, app.quantity || 1);
@@ -500,7 +533,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
           durationHours: manualHours,
           kwh,
           cost,
-          startTimeStr: `${String(startH).padStart(2, "0")}:00`,
+          startTimeStr: `${String(startH).padStart(2, "0")}:00 (Manual)`,
           endTimeStr: `${String(Math.floor(endH)).padStart(2, "0")}:${String(Math.round((endH % 1) * 60)).padStart(2, "0")}`,
         });
       }
@@ -631,10 +664,30 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         {/* KPI Banner always visible */}
         <Grid container spacing={2}>
           <Grid size={{ xs: 4 }}>
-            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2.5, textAlign: "center", bgcolor: "rgba(15, 14, 58, 0.4)" }}>
-              <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700, display: "block" }}>
-                DAY BILL COST
-              </Typography>
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 1.5,
+                borderRadius: 2.5,
+                textAlign: "center",
+                bgcolor: isSelectedToday && hasActiveStopwatch ? "rgba(6, 78, 59, 0.3)" : "rgba(15, 14, 58, 0.4)",
+                borderColor: isSelectedToday && hasActiveStopwatch ? "rgba(52, 211, 153, 0.4)" : "divider",
+                transition: "all 0.3s ease",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5 }}>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>
+                  DAY BILL COST
+                </Typography>
+                {isSelectedToday && hasActiveStopwatch && (
+                  <Chip
+                    label="LIVE"
+                    size="small"
+                    color="success"
+                    sx={{ height: 14, fontSize: "0.5rem", fontWeight: 900, animation: "pulse 2s infinite" }}
+                  />
+                )}
+              </Box>
               <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f", my: 0.25 }}>
                 ₱{dayTotals.cost.toFixed(2)}
               </Typography>
@@ -644,12 +697,32 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
             </Paper>
           </Grid>
           <Grid size={{ xs: 4 }}>
-            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2.5, textAlign: "center", bgcolor: "rgba(15, 14, 58, 0.4)" }}>
-              <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700, display: "block" }}>
-                DAY CONSUMPTION
-              </Typography>
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 1.5,
+                borderRadius: 2.5,
+                textAlign: "center",
+                bgcolor: isSelectedToday && hasActiveStopwatch ? "rgba(6, 78, 59, 0.3)" : "rgba(15, 14, 58, 0.4)",
+                borderColor: isSelectedToday && hasActiveStopwatch ? "rgba(52, 211, 153, 0.4)" : "divider",
+                transition: "all 0.3s ease",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.5 }}>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>
+                  DAY CONSUMPTION
+                </Typography>
+                {isSelectedToday && hasActiveStopwatch && (
+                  <Chip
+                    label="LIVE"
+                    size="small"
+                    color="success"
+                    sx={{ height: 14, fontSize: "0.5rem", fontWeight: 900, animation: "pulse 2s infinite" }}
+                  />
+                )}
+              </Box>
               <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.light", my: 0.25 }}>
-                {dayTotals.kwh} kWh
+                {dayTotals.kwh < 0.01 ? dayTotals.kwh.toFixed(4) : dayTotals.kwh.toFixed(3)} kWh
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
                 {dayTotals.activeDevices} Devices Active
@@ -801,7 +874,11 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                             {applianceStopwatchMap[app.id]?.totalHours > 0 && (
                               <Chip
                                 icon={<TimerIcon sx={{ fontSize: "13px !important", color: "#34d399 !important" }} />}
-                                label={`⏱️ ${applianceStopwatchMap[app.id].totalHours >= 1 ? applianceStopwatchMap[app.id].totalHours.toFixed(1) + 'h' : Math.round(applianceStopwatchMap[app.id].totalHours * 60) + 'm'} (Stopwatch)`}
+                                label={
+                                  hours > applianceStopwatchMap[app.id].totalHours + 0.05
+                                    ? `⏱️ ${applianceStopwatchMap[app.id].totalHours.toFixed(1)}h (Stopwatch) + ${(hours - applianceStopwatchMap[app.id].totalHours).toFixed(1)}h (Manual)`
+                                    : `⏱️ ${applianceStopwatchMap[app.id].totalHours >= 1 ? applianceStopwatchMap[app.id].totalHours.toFixed(1) + 'h' : Math.round(applianceStopwatchMap[app.id].totalHours * 60) + 'm'} (Stopwatch)`
+                                }
                                 size="small"
                                 color="success"
                                 variant="outlined"

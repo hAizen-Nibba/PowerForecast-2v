@@ -27,6 +27,7 @@ import {
 import { MetricCard } from "../components/common/MetricCard";
 import { LivePowerBoard } from "../components/dashboard/LivePowerBoard";
 import { ConsumptionDonut } from "../components/dashboard/ConsumptionDonut";
+import { TodayActivityTimeline } from "../components/dashboard/TodayActivityTimeline";
 import { ApplianceModal } from "../components/appliances/ApplianceModal";
 import { PelpCatalogModal } from "../components/appliances/PelpCatalogModal";
 import { AiVisionScannerModal } from "../components/vision/AiVisionScannerModal";
@@ -367,7 +368,10 @@ export const DashboardPage: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* 5. Quick Module Launchpad */}
+      {/* 5. Today's 24-Hour Activity & Stopwatch Timeline */}
+      <TodayActivityTimeline appliances={appliances} />
+
+      {/* 6. Quick Module Launchpad */}
       <Grid container spacing={2.5}>
         {[
           {
