@@ -80,30 +80,7 @@ export const MeralcoCalculator: React.FC = () => {
   };
 
   return (
-    <Box sx={{ position: "relative", display: "flex", flexDirection: "column", gap: 3, overflow: "hidden" }}>
-      {/* Background Lightbulb Art (On.png for Light Mode, Off.png for Dark Mode) */}
-      <Box
-        sx={{
-          position: "absolute",
-          top: "40%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: { xs: 340, sm: 480, md: 560, lg: 640 },
-          height: { xs: 450, sm: 600, md: 720, lg: 820 },
-          backgroundImage: `url(${isDark ? "/Assets/Off.png" : "/Assets/On.png"})`,
-          backgroundSize: "contain",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "center center",
-          pointerEvents: "none",
-          zIndex: 0,
-          opacity: isDark ? 0.4 : 0.45,
-          filter: isDark
-            ? "drop-shadow(0 0 50px rgba(0, 0, 0, 0.9))"
-            : "drop-shadow(0 0 60px rgba(255, 213, 79, 0.4))",
-          transition: "background-image 0.4s ease, opacity 0.4s ease",
-        }}
-      />
-
+    <Box sx={{ position: "relative", display: "flex", flexDirection: "column", gap: 3 }}>
       {/* Top Banner Header */}
       <Box
         sx={{

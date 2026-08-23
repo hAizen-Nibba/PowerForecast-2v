@@ -152,154 +152,101 @@ export const SignupPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Main 2-Column Split: Bulb on Left (hanging from header), Bento Card on Right */}
+      {/* Background Hanging Bulb (Left) */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 0,
+          left: { md: "6%", lg: "12%", xl: "16%" },
+          display: { xs: "none", md: "block" },
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      >
+        {/* Ambient Radial Glow */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: "45%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: { md: 450, lg: 550 },
+            height: { md: 450, lg: 550 },
+            borderRadius: "50%",
+            background: isDark
+              ? "radial-gradient(circle, rgba(99, 102, 241, 0.28) 0%, rgba(8, 7, 32, 0) 70%)"
+              : "radial-gradient(circle, rgba(255, 213, 79, 0.4) 0%, rgba(244, 246, 251, 0) 70%)",
+            filter: "blur(50px)",
+            pointerEvents: "none",
+          }}
+        />
+
+        <Box
+          component="img"
+          src={isDark ? "/Assets/Off.png" : "/Assets/On.png"}
+          alt="PowerForecast Energy Bulb"
+          sx={{
+            height: { md: "calc(100vh - 100px)", lg: "calc(100vh - 110px)" },
+            maxHeight: { md: 640, lg: 750 },
+            width: "auto",
+            objectFit: "contain",
+            display: "block",
+            filter: isDark
+              ? "drop-shadow(0 25px 45px rgba(0, 0, 0, 0.95))"
+              : "drop-shadow(0 25px 60px rgba(255, 213, 79, 0.6))",
+          }}
+        />
+      </Box>
+
+      {/* Main Container: Bento Card positioned on the right */}
       <Container
         maxWidth="lg"
         sx={{
           flexGrow: 1,
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
-          py: { xs: 3, md: 0 },
-          px: { xs: 2, sm: 3 },
+          justifyContent: { xs: "center", md: "flex-end" },
+          py: { xs: 4, sm: 6 },
+          position: "relative",
+          zIndex: 1,
         }}
       >
-        <Box
+        <Card
           sx={{
             width: "100%",
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "1fr 1.15fr" },
-            gap: { xs: 3, md: 6 },
-            alignItems: "center",
+            maxWidth: 520,
+            p: { xs: 3, sm: 4.5 },
+            borderRadius: 3.5,
+            boxShadow: isDark
+              ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(99, 102, 241, 0.15)"
+              : "0 20px 60px rgba(99, 102, 241, 0.12)",
+            border: "1px solid",
+            borderColor: isDark ? "rgba(99, 102, 241, 0.25)" : "rgba(226, 232, 240, 0.8)",
+            bgcolor: isDark ? "rgba(13, 12, 45, 0.92)" : "rgba(255, 255, 255, 0.96)",
+            backdropFilter: "blur(16px)",
           }}
         >
-          {/* Left Column: Bulb Artwork Hanging from Header */}
-          <Box
-            sx={{
-              display: { xs: "none", md: "flex" },
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              position: "relative",
-              pt: 0,
-              pb: 3,
-            }}
-          >
-            {/* Hanging Cord from Header */}
-            <Box
-              sx={{
-                width: 4,
-                height: { md: 16, lg: 24 },
-                bgcolor: isDark ? "#475569" : "#94a3b8",
-                borderRadius: "0 0 2px 2px",
-                boxShadow: isDark ? "0 0 10px rgba(99, 102, 241, 0.4)" : "none",
-                zIndex: 2,
-              }}
-            />
-
-            {/* Ambient Radial Glow behind the bulb */}
-            <Box
-              sx={{
-                position: "absolute",
-                top: "45%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                width: { md: 440, lg: 520 },
-                height: { md: 440, lg: 520 },
-                borderRadius: "50%",
-                background: isDark
-                  ? "radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, rgba(8, 7, 32, 0) 70%)"
-                  : "radial-gradient(circle, rgba(255, 213, 79, 0.45) 0%, rgba(244, 246, 251, 0) 70%)",
-                filter: "blur(50px)",
-                zIndex: 0,
-                pointerEvents: "none",
-              }}
-            />
-
+          <Box sx={{ textAlign: "center", mb: 3 }}>
             <Box
               component="img"
-              src={isDark ? "/Assets/Off.png" : "/Assets/On.png"}
-              alt="PowerForecast Energy Bulb"
+              src="/Assets/LOGO.png"
+              alt="PowerForecast Logo"
               sx={{
-                width: "100%",
-                maxWidth: { md: 480, lg: 540 },
-                maxHeight: { md: 620, lg: 700 },
+                width: 52,
+                height: 52,
+                borderRadius: 3,
                 objectFit: "contain",
-                position: "relative",
-                zIndex: 1,
-                mt: -0.5,
-                filter: isDark
-                  ? "drop-shadow(0 20px 45px rgba(0, 0, 0, 0.9))"
-                  : "drop-shadow(0 20px 60px rgba(255, 213, 79, 0.6))",
-                transition: "all 0.3s ease",
+                filter: "drop-shadow(0 4px 16px rgba(99, 102, 241, 0.5))",
+                mb: 1.5,
               }}
             />
-
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 800,
-                textAlign: "center",
-                mt: 1.5,
-                letterSpacing: "-0.01em",
-                zIndex: 1,
-                color: isDark ? "#ffffff" : "#0f172a",
-              }}
-            >
-              Intelligent Meralco Energy Forecasting
+            <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.02em" }}>
+              Create Account
             </Typography>
-            <Typography
-              variant="body2"
-              sx={{
-                color: "text.secondary",
-                textAlign: "center",
-                mt: 0.5,
-                maxWidth: 380,
-                zIndex: 1,
-              }}
-            >
-              Track appliances, optimize peak hours, and simulate real-time unbundled tariffs.
+            <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+              Start tracking and optimizing your household energy profile
             </Typography>
           </Box>
-
-          {/* Right Column: Bento Card */}
-          <Box sx={{ display: "flex", justifyContent: "center", width: "100%", py: { xs: 2, md: 4 } }}>
-            <Card
-              sx={{
-                width: "100%",
-                maxWidth: 540,
-                p: { xs: 3, sm: 4 },
-                borderRadius: 3.5,
-                boxShadow: isDark
-                  ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(99, 102, 241, 0.15)"
-                  : "0 20px 60px rgba(99, 102, 241, 0.12)",
-                border: "1px solid",
-                borderColor: isDark ? "rgba(99, 102, 241, 0.25)" : "rgba(226, 232, 240, 0.8)",
-                bgcolor: isDark ? "rgba(13, 12, 45, 0.92)" : "rgba(255, 255, 255, 0.96)",
-                backdropFilter: "blur(16px)",
-              }}
-            >
-              <Box sx={{ textAlign: "center", mb: 3 }}>
-                <Box
-                  component="img"
-                  src="/Assets/LOGO.png"
-                  alt="PowerForecast Logo"
-                  sx={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: 3,
-                    objectFit: "contain",
-                    filter: "drop-shadow(0 4px 16px rgba(99, 102, 241, 0.5))",
-                    mb: 1.5,
-                  }}
-                />
-                <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.02em" }}>
-                  Create Account
-                </Typography>
-                <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
-                  Start tracking and optimizing your household energy profile
-                </Typography>
-              </Box>
 
           {errorMessage && (
             <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
@@ -507,10 +454,8 @@ export const SignupPage: React.FC = () => {
             </Typography>
           </Box>
         </Card>
-      </Box>
+      </Container>
     </Box>
-  </Container>
-</Box>
   );
 };
 
