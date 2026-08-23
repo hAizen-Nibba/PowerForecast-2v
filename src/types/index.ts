@@ -51,6 +51,20 @@ export interface ApplianceUsageLog {
   created_at?: string;
 }
 
+export interface DailyApplianceUsage {
+  id: string;
+  user_id?: string | null;
+  appliance_id: string;
+  usage_date: string; // YYYY-MM-DD
+  hours_used: number;
+  kwh_consumed: number;
+  estimated_cost: number;
+  source?: 'manual' | 'live_session' | 'schedule_autofill' | 'routine_default';
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface UserCalendarEvent {
   id: string;
   user_id: string;
