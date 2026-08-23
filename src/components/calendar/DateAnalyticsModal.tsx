@@ -187,13 +187,15 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
     return map;
   }, [appliances, logs, dateKey, isSelectedToday]);
 
-  // Initialize usage state when modal opens or selectedDate/initialUsageRecords change
+  // Initialize usage state when modal opens or dateKey changes
   useEffect(() => {
     if (!isOpen) return;
 
+    let isMounted = true;
+
+    // 1. Initial fast map from initialUsageRecords
     const initialMap: Record<string, { hours: number; notes: string }> = {};
 
-    // 1. First map from initialUsageRecords for this specific date
     initialUsageRecords.forEach((rec) => {
       if (rec.usage_date === dateKey) {
         initialMap[rec.appliance_id] = {
@@ -203,9 +205,9 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       }
     });
 
-    // 2. For any appliances without a record for this day: default to stopwatch total if any, otherwise 0
+    // For any appliances without a record for this day: default to stopwatch total if any, otherwise 0
     appliances.forEach((app) => {
-      if (!initialMap[app.id]) {
+      if (initialMap[app.id] === undefined) {
         const swHours = applianceStopwatchMap[app.id]?.totalHours || 0;
         initialMap[app.id] = {
           hours: swHours,
@@ -216,7 +218,30 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
     setUsageState(initialMap);
     setIsDirty(false);
-  }, [isOpen, dateKey, initialUsageRecords, appliances, applianceStopwatchMap]);
+
+    // 2. Also fetch directly from Supabase for this exact dateKey to ensure 100% complete records
+    supabaseClient
+      .from("daily_appliance_usage")
+      .select("*")
+      .eq("usage_date", dateKey)
+      .then(({ data, error }) => {
+        if (!isMounted || error || !data || data.length === 0) return;
+        setUsageState((prev) => {
+          const updated = { ...prev };
+          data.forEach((rec: DailyApplianceUsage) => {
+            updated[rec.appliance_id] = {
+              hours: Number(rec.hours_used) || 0,
+              notes: rec.notes || "",
+            };
+          });
+          return updated;
+        });
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, dateKey, appliances]);
 
   // Check if date has logged data
   const hasLoggedData = initialUsageRecords.some(

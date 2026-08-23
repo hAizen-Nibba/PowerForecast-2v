@@ -67,22 +67,27 @@ export const SmartCalendar: React.FC = () => {
 
   const eventsRes = useList<UserCalendarEvent>({
     resource: "user_calendar_events",
+    pagination: { mode: "off" },
   }) as any;
 
   const appliancesRes = useList<UserAppliance>({
     resource: "user_appliances",
+    pagination: { mode: "off" },
   }) as any;
 
   const spacesRes = useList<ApplianceList>({
     resource: "appliance_lists",
+    pagination: { mode: "off" },
   }) as any;
 
   const logsRes = useList<ApplianceUsageLog>({
     resource: "appliance_usage_logs",
+    pagination: { mode: "off" },
   }) as any;
 
   const dailyUsageRes = useList<DailyApplianceUsage>({
     resource: "daily_appliance_usage",
+    pagination: { mode: "off" },
   }) as any;
 
   const { mutate: updateAppliance } = useUpdate();
