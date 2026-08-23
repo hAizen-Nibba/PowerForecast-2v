@@ -60,6 +60,7 @@ import {
   hmsToDecimalHours,
   decimalHoursToHms,
   splitSessionAcrossDays,
+  accumulateLiveSessionDailyUsage,
 } from "../../lib/dailyUsageService";
 import { supabaseClient } from "../../lib/supabaseClient";
 import { useToast } from "../common/ToastProvider";
@@ -109,6 +110,15 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
   const { showSuccess, showInfo, showError } = useToast();
   const { mutate: createEvent, isLoading: isCreatingEvent } = useCreate();
   const { mutate: deleteEvent } = useDelete();
+  const { mutate: createLog } = useCreate();
+  const { mutate: deleteLog } = useDelete();
+
+  // Past Time Range Logger State
+  const [isPastSessionModalOpen, setIsPastSessionModalOpen] = useState(false);
+  const [selectedApplianceForPastSession, setSelectedApplianceForPastSession] = useState<UserAppliance | null>(null);
+  const [pastStartDateTime, setPastStartDateTime] = useState("");
+  const [pastEndDateTime, setPastEndDateTime] = useState("");
+  const [isSavingPastSession, setIsSavingPastSession] = useState(false);
 
   const dateKey = formatDateToKey(selectedDate);
 
@@ -348,7 +358,104 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       return next;
     });
     setIsDirty(true);
-    showInfo("Reset all appliance hours to 0.");
+    showInfo("Reset all appliance inputs to 0 hours for this day.");
+  };
+
+  // Action: Open Past Time Range Modal
+  const handleOpenPastSessionModal = (app: UserAppliance) => {
+    setSelectedApplianceForPastSession(app);
+    const startIso = `${dateKey}T09:00`;
+    const endIso = `${dateKey}T12:00`;
+    setPastStartDateTime(startIso);
+    setPastEndDateTime(endIso);
+    setIsPastSessionModalOpen(true);
+  };
+
+  // Compute multi-day slices for the past session being edited
+  const pastSessionSlices = useMemo(() => {
+    if (!pastStartDateTime || !pastEndDateTime) return [];
+    const start = new Date(pastStartDateTime);
+    const end = new Date(pastEndDateTime);
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) return [];
+    return splitSessionAcrossDays(start, end);
+  }, [pastStartDateTime, pastEndDateTime]);
+
+  // Action: Save Past Session
+  const handleSavePastSession = async () => {
+    if (!selectedApplianceForPastSession || pastSessionSlices.length === 0) return;
+    const app = selectedApplianceForPastSession;
+    const start = new Date(pastStartDateTime);
+    const end = new Date(pastEndDateTime);
+    const totalMinutes = Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000));
+    const totalKwh = (app.watts * (app.quantity || 1) * (totalMinutes / 60)) / 1000;
+    const totalCost = totalKwh * DEFAULT_EFFECTIVE_RATE;
+
+    setIsSavingPastSession(true);
+    try {
+      // 1. Create log record
+      await new Promise<void>((resolve, reject) => {
+        createLog(
+          {
+            resource: "appliance_usage_logs",
+            values: {
+              appliance_id: app.id,
+              user_id: app.user_id,
+              started_at: start.toISOString(),
+              ended_at: end.toISOString(),
+              duration_minutes: totalMinutes,
+              kwh_consumed: totalKwh,
+              estimated_cost: totalCost,
+              source: "past_time_range",
+            },
+          },
+          {
+            onSuccess: () => resolve(),
+            onError: (err: any) => reject(err),
+          }
+        );
+      });
+
+      // 2. Distribute into daily_appliance_usage across all spanned dates
+      await accumulateLiveSessionDailyUsage({
+        appliance_id: app.id,
+        durationMinutes: totalMinutes,
+        watts: app.watts,
+        quantity: app.quantity || 1,
+        effectiveRate: DEFAULT_EFFECTIVE_RATE,
+        user_id: app.user_id || null,
+        startTime: start,
+        endTime: end,
+      });
+
+      showSuccess(
+        `Logged past session for ${app.name} (${(totalMinutes / 60).toFixed(1)} hrs across ${pastSessionSlices.length} day(s))!`,
+        "Past Session Logged"
+      );
+      setIsPastSessionModalOpen(false);
+      setSelectedApplianceForPastSession(null);
+      if (onUsageSaved) {
+        onUsageSaved();
+      }
+    } catch (err: any) {
+      showError(`Failed to save past session: ${err?.message}`);
+    } finally {
+      setIsSavingPastSession(false);
+    }
+  };
+
+  const handleDeleteSessionLog = async (logId: string) => {
+    deleteLog(
+      {
+        resource: "appliance_usage_logs",
+        id: logId,
+      },
+      {
+        onSuccess: () => {
+          showInfo("Session log removed.");
+          if (onUsageSaved) onUsageSaved();
+        },
+      }
+    );
   };
 
   // Save all usage rows to Supabase
@@ -576,6 +683,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
   };
 
   return (
+    <>
     <Dialog open={isOpen} onClose={onClose} fullWidth maxWidth="md">
       {/* Header */}
       <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 2 }}>
@@ -910,9 +1018,69 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                         </Box>
                       </Box>
 
-                      {/* HH:MM:SS Duration Input */}
+                      {/* Recorded Individual Session Slices on this Date */}
+                      {(() => {
+                        const appLogsToday: { log: ApplianceUsageLog; slice: any }[] = [];
+                        (logs || []).forEach((log) => {
+                          if (log.appliance_id !== app.id) return;
+                          const start = new Date(log.started_at);
+                          const end = log.ended_at ? new Date(log.ended_at) : new Date(start.getTime() + (log.duration_minutes || 60) * 60000);
+                          const slices = splitSessionAcrossDays(start, end);
+                          const match = slices.find((s) => s.dateKey === dateKey);
+                          if (match) {
+                            appLogsToday.push({ log, slice: match });
+                          }
+                        });
+
+                        if (appLogsToday.length === 0 && !applianceStopwatchMap[app.id]?.isLive) return null;
+
+                        return (
+                          <Box sx={{ my: 1, p: 1.25, borderRadius: 2, bgcolor: "rgba(0, 0, 0, 0.2)", border: "1px solid rgba(255, 255, 255, 0.05)" }}>
+                            <Typography variant="caption" sx={{ fontSize: "0.6875rem", fontWeight: 700, color: "text.secondary", mb: 0.5, display: "block" }}>
+                              Logged Sessions on this Date:
+                            </Typography>
+                            <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap", alignItems: "center" }}>
+                              {appLogsToday.map(({ log, slice }) => {
+                                const startStr = slice.startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                                const endStr = slice.endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                                const sliceKwh = calculateKwh(app.watts, slice.hours, app.quantity || 1);
+                                const sliceCost = calculateCost(sliceKwh, DEFAULT_EFFECTIVE_RATE);
+
+                                return (
+                                  <Chip
+                                    key={`${log.id}-${slice.dateKey}`}
+                                    size="small"
+                                    icon={<TimerIcon sx={{ fontSize: "13px !important", color: "#60a5fa !important" }} />}
+                                    label={`${startStr} – ${endStr} (${slice.hours.toFixed(1)}h • ₱${sliceCost.toFixed(2)})`}
+                                    onDelete={() => handleDeleteSessionLog(log.id)}
+                                    deleteIcon={<TrashIcon sx={{ fontSize: "14px !important" }} />}
+                                    sx={{
+                                      height: 24,
+                                      fontSize: "0.6875rem",
+                                      fontWeight: 700,
+                                      bgcolor: "rgba(99, 102, 241, 0.15)",
+                                      borderColor: "rgba(99, 102, 241, 0.3)",
+                                      border: "1px solid",
+                                    }}
+                                  />
+                                );
+                              })}
+                              {applianceStopwatchMap[app.id]?.isLive && (
+                                <Chip
+                                  size="small"
+                                  label="🟢 Live Stopwatch Active"
+                                  color="success"
+                                  sx={{ height: 24, fontSize: "0.6875rem", fontWeight: 800 }}
+                                />
+                              )}
+                            </Box>
+                          </Box>
+                        );
+                      })()}
+
+                      {/* HH:MM:SS Duration Input & Action Toolbar */}
                       <Grid container spacing={2} sx={{ alignItems: "center" }}>
-                        <Grid size={{ xs: 12, sm: 7 }}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                             {(() => {
                               const hms = decimalHoursToHms(hours);
@@ -927,7 +1095,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                       handleHoursChange(app.id, hmsToDecimalHours(h, hms.minutes, hms.seconds));
                                     }}
                                     slotProps={{ input: { endAdornment: <InputAdornment position="end">h</InputAdornment> } }}
-                                    sx={{ width: 80, "& input": { textAlign: "center", fontWeight: 800, fontFamily: "monospace", py: 0.75, fontSize: "0.875rem" } }}
+                                    sx={{ width: 75, "& input": { textAlign: "center", fontWeight: 800, fontFamily: "monospace", py: 0.75, fontSize: "0.875rem" } }}
                                   />
                                   <Typography variant="body2" sx={{ fontWeight: 900, color: "text.secondary" }}>:</Typography>
                                   <TextField
@@ -939,7 +1107,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                       handleHoursChange(app.id, hmsToDecimalHours(hms.hours, m, hms.seconds));
                                     }}
                                     slotProps={{ input: { endAdornment: <InputAdornment position="end">m</InputAdornment> } }}
-                                    sx={{ width: 80, "& input": { textAlign: "center", fontWeight: 800, fontFamily: "monospace", py: 0.75, fontSize: "0.875rem" } }}
+                                    sx={{ width: 75, "& input": { textAlign: "center", fontWeight: 800, fontFamily: "monospace", py: 0.75, fontSize: "0.875rem" } }}
                                   />
                                   <Typography variant="body2" sx={{ fontWeight: 900, color: "text.secondary" }}>:</Typography>
                                   <TextField
@@ -951,7 +1119,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                       handleHoursChange(app.id, hmsToDecimalHours(hms.hours, hms.minutes, s));
                                     }}
                                     slotProps={{ input: { endAdornment: <InputAdornment position="end">s</InputAdornment> } }}
-                                    sx={{ width: 80, "& input": { textAlign: "center", fontWeight: 800, fontFamily: "monospace", py: 0.75, fontSize: "0.875rem" } }}
+                                    sx={{ width: 75, "& input": { textAlign: "center", fontWeight: 800, fontFamily: "monospace", py: 0.75, fontSize: "0.875rem" } }}
                                   />
                                 </>
                               );
@@ -959,8 +1127,18 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                           </Box>
                         </Grid>
 
-                        <Grid size={{ xs: 12, sm: 5 }}>
-                          <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end", flexWrap: "wrap", alignItems: "center" }}>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              color="primary"
+                              startIcon={<PlusIcon sx={{ fontSize: "14px" }} />}
+                              onClick={() => handleOpenPastSessionModal(app)}
+                              sx={{ borderRadius: 1.5, fontWeight: 800, fontSize: "0.6875rem", py: 0.35, height: 26, mr: 0.5 }}
+                            >
+                              Log Past Range
+                            </Button>
                             {[
                               { label: "0h", value: 0 },
                               { label: "30m", value: 0.5 },
@@ -975,12 +1153,13 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                 variant={hours === preset.value ? "contained" : "outlined"}
                                 onClick={() => handleHoursChange(app.id, preset.value)}
                                 sx={{
-                                  minWidth: 36,
-                                  px: 0.75,
-                                  py: 0.25,
+                                  minWidth: 32,
+                                  px: 0.5,
+                                  py: 0.2,
                                   fontSize: "0.6875rem",
                                   fontWeight: 700,
                                   borderRadius: 1.5,
+                                  height: 26,
                                 }}
                               >
                                 {preset.label}
@@ -1371,6 +1550,137 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         )}
       </DialogActions>
     </Dialog>
+
+    {/* Log Past Time Range Dialog */}
+    {selectedApplianceForPastSession && (
+      <Dialog
+        open={isPastSessionModalOpen}
+        onClose={() => setIsPastSessionModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{ paper: { sx: { borderRadius: 3, p: 1 } } }}
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.5, fontWeight: 800 }}>
+          <TimerIcon sx={{ color: "primary.main", fontSize: 28 }} />
+          Log Past Time Range
+        </DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
+            Record an exact runtime window for <strong>{selectedApplianceForPastSession.name}</strong> ({selectedApplianceForPastSession.watts}W). Overnight sessions will automatically be split at 12:00 AM midnight across spanned dates!
+          </Typography>
+
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Start Date & Time"
+                type="datetime-local"
+                size="small"
+                fullWidth
+                value={pastStartDateTime}
+                onChange={(e) => setPastStartDateTime(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="End Date & Time"
+                type="datetime-local"
+                size="small"
+                fullWidth
+                value={pastEndDateTime}
+                onChange={(e) => setPastEndDateTime(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            </Grid>
+          </Grid>
+
+          {/* Dynamic Multi-Day Splitting Preview */}
+          {pastSessionSlices.length > 0 ? (
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2.5, bgcolor: "rgba(0,0,0,0.2)" }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: "text.primary", mb: 1, display: "block" }}>
+                🗓️ Smart Midnight Calendar Distribution ({pastSessionSlices.length} Day{pastSessionSlices.length > 1 ? "s" : ""} Spanned):
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+                {pastSessionSlices.map((slice) => {
+                  const sliceKwh = calculateKwh(selectedApplianceForPastSession.watts, slice.hours, selectedApplianceForPastSession.quantity || 1);
+                  const sliceCost = calculateCost(sliceKwh, DEFAULT_EFFECTIVE_RATE);
+                  const startStr = slice.startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                  const endStr = slice.endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+                  return (
+                    <Box
+                      key={slice.dateKey}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        px: 1.5,
+                        py: 0.75,
+                        borderRadius: 1.5,
+                        bgcolor: "rgba(255, 255, 255, 0.04)",
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      <Box>
+                        <Typography variant="caption" sx={{ fontWeight: 800, display: "block" }}>
+                          📅 {slice.dateKey}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+                          {startStr} – {endStr}
+                        </Typography>
+                      </Box>
+                      <Typography variant="caption" sx={{ color: "#ffd54f", fontWeight: 800, fontFamily: "monospace" }}>
+                        {slice.hours.toFixed(2)} hrs • {sliceKwh.toFixed(3)} kWh • ₱{sliceCost.toFixed(2)}
+                      </Typography>
+                    </Box>
+                  );
+                })}
+              </Box>
+
+              <Divider sx={{ my: 1.5, borderColor: "rgba(255,255,255,0.1)" }} />
+
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="caption" sx={{ fontWeight: 800 }}>
+                  Total Runtime & Incurred Cost:
+                </Typography>
+                {(() => {
+                  const totalH = pastSessionSlices.reduce((acc, s) => acc + s.hours, 0);
+                  const totalK = calculateKwh(selectedApplianceForPastSession.watts, totalH, selectedApplianceForPastSession.quantity || 1);
+                  const totalC = calculateCost(totalK, DEFAULT_EFFECTIVE_RATE);
+                  return (
+                    <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "#34d399" }}>
+                      {totalH.toFixed(2)} hrs ({totalK.toFixed(3)} kWh • ₱{totalC.toFixed(2)})
+                    </Typography>
+                  );
+                })()}
+              </Box>
+            </Paper>
+          ) : (
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(239, 68, 68, 0.1)", borderColor: "rgba(239, 68, 68, 0.3)" }}>
+              <Typography variant="caption" sx={{ color: "error.main", fontWeight: 700 }}>
+                Please select an End Time that is after the Start Time.
+              </Typography>
+            </Paper>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setIsPastSessionModalOpen(false)} color="inherit" sx={{ fontWeight: 700 }}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSavePastSession}
+            disabled={isSavingPastSession || pastSessionSlices.length === 0}
+            startIcon={isSavingPastSession ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+            sx={{ fontWeight: 800, borderRadius: 2 }}
+          >
+            {isSavingPastSession ? "Recording..." : "Save Past Session"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    )}
+    </>
   );
 };
 
