@@ -244,9 +244,13 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
   }, [isOpen, dateKey, appliances]);
 
   // Check if date has logged data
-  const hasLoggedData = initialUsageRecords.some(
-    (rec) => rec.usage_date === dateKey && Number(rec.hours_used) > 0
-  );
+  const hasLoggedData = useMemo(() => {
+    const hasLocalHours = Object.values(usageState).some((u) => u.hours > 0);
+    const hasRecordHours = initialUsageRecords.some(
+      (rec) => rec.usage_date === dateKey && Number(rec.hours_used) > 0
+    );
+    return hasLocalHours || hasRecordHours;
+  }, [usageState, initialUsageRecords, dateKey]);
 
   // Filter appliances by Space / Search
   const filteredAppliances = useMemo(() => {

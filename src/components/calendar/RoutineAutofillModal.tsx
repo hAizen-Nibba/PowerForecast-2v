@@ -74,6 +74,14 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
   const [customStartDate, setCustomStartDate] = useState<string>(firstOfMonthStr);
   const [customEndDate, setCustomEndDate] = useState<string>(isCurrentMonth ? todayStr : lastOfMonthStr);
 
+  // Sync custom date state whenever modal opens or currentSelectedDate changes
+  React.useEffect(() => {
+    if (isOpen) {
+      setCustomStartDate(firstOfMonthStr);
+      setCustomEndDate(isCurrentMonth ? todayStr : lastOfMonthStr);
+    }
+  }, [isOpen, firstOfMonthStr, isCurrentMonth, todayStr, lastOfMonthStr]);
+
   const { showSuccess, showError } = useToast();
 
   // Filter appliances by space if specified
@@ -84,11 +92,10 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
 
   // Compute active date boundaries based on selected rangeType
   const { startDate, endDate, dateCount, rangeLabel } = useMemo(() => {
+    const monthName = currentSelectedDate.toLocaleDateString("en-US", { month: "short" });
     let start = new Date(year, month, 1);
     let end = new Date(year, month, currentDayNum);
-    let label = `Aug 1 – Today (${currentDayNum} days)`;
-
-    const monthName = currentSelectedDate.toLocaleDateString("en-US", { month: "short" });
+    let label = `${monthName} 1 – Today (${currentDayNum} days)`;
 
     if (rangeType === "month_to_today") {
       start = new Date(year, month, 1);
