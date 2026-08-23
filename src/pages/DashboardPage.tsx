@@ -106,9 +106,6 @@ export const DashboardPage: React.FC = () => {
     };
   }, [appliances, spaces]);
 
-  const currentHour = new Date().getHours();
-  const isPeak = (currentHour >= 11 && currentHour < 16) || (currentHour >= 18 && currentHour < 21);
-
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {/* 1. Hero Welcome Header Card */}
@@ -248,10 +245,11 @@ export const DashboardPage: React.FC = () => {
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
-            title="Tariff Window"
-            value={isPeak ? "Peak Window" : "Off-Peak"}
-            subtitle={isPeak ? "11 AM – 4 PM & 6 PM – 9 PM" : "Optimal Low-Cost"}
-            icon={isPeak ? <FlameIcon sx={{ color: "warning.main" }} /> : <ClockIcon sx={{ color: "success.main" }} />}
+            title="Daily Avg Energy"
+            value={`${(totalMonthlyKwh / 30).toFixed(1)} kWh`}
+            subtitle="Projected daily run"
+            icon={<ClockIcon sx={{ color: "success.main" }} />}
+            trend={{ value: "30-day baseline", direction: "neutral" }}
           />
         </Grid>
       </Grid>
@@ -379,7 +377,7 @@ export const DashboardPage: React.FC = () => {
           },
           {
             title: "Smart Scheduler",
-            desc: "Off-peak load optimization",
+            desc: "Runtime planner & circuit queue",
             icon: <CalendarIcon sx={{ color: "success.light" }} />,
             link: "/calendar",
           },

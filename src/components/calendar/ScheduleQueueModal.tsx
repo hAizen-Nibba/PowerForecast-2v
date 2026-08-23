@@ -176,10 +176,9 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
                   {Array.from({ length: 24 }).map((_, h) => {
                     const period = h >= 12 ? "PM" : "AM";
                     const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
-                    const isPeak = (h >= 11 && h < 16) || (h >= 18 && h < 21);
                     return (
                       <MenuItem key={h} value={h}>
-                        {displayH}:00 {period} {isPeak ? "⚡ (Peak)" : ""}
+                        {displayH}:00 {period}
                       </MenuItem>
                     );
                   })}
@@ -289,12 +288,6 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
                   </Box>
 
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Chip
-                      label={isPeak ? "Peak Window" : "Off-Peak"}
-                      color={isPeak ? "warning" : "success"}
-                      size="small"
-                      sx={{ fontWeight: 700, fontSize: "0.7rem" }}
-                    />
                     <IconButton
                       size="small"
                       color="error"

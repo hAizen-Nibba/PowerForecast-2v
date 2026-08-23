@@ -90,9 +90,6 @@ export const Header: React.FC<HeaderProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  const currentHour = new Date().getHours();
-  const isPeak = (currentHour >= 11 && currentHour < 16) || (currentHour >= 18 && currentHour < 21);
-
   return (
     <AppBar
       position="sticky"
@@ -150,25 +147,6 @@ export const Header: React.FC<HeaderProps> = ({
                 theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(99, 102, 241, 0.08)",
               border: "1px solid",
               borderColor: "divider",
-            }}
-          />
-
-          {/* Peak / Off-Peak status */}
-          <Chip
-            icon={
-              isPeak ? (
-                <FlameIcon sx={{ color: "#f59e0b !important", fontSize: "16px !important" }} />
-              ) : (
-                <ClockIcon sx={{ color: "#10b981 !important", fontSize: "16px !important" }} />
-              )
-            }
-            label={isPeak ? "PEAK (₱16.83/kWh)" : "OFF-PEAK (₱12.45/kWh)"}
-            size="small"
-            color={isPeak ? "warning" : "success"}
-            sx={{
-              display: { xs: "none", lg: "inline-flex" },
-              fontWeight: 700,
-              fontSize: "0.6875rem",
             }}
           />
         </Box>

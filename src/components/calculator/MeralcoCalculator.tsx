@@ -260,7 +260,7 @@ export const MeralcoCalculator: React.FC = () => {
                     {[
                       { label: "Current (₱9.25)", val: 9.2504 },
                       { label: "Low (₱8.91)", val: 8.91 },
-                      { label: "Peak (₱9.85)", val: 9.85 },
+                      { label: "High (₱9.85)", val: 9.85 },
                     ].map((btn) => (
                       <Chip
                         key={btn.label}

@@ -201,12 +201,6 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
                         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "text.primary" }}>
                           {app?.name || "Archived Appliance"}
                         </Typography>
-                        <Chip
-                          label={log.is_peak_window ? "⚡ Peak" : "Off-Peak"}
-                          color={log.is_peak_window ? "warning" : "success"}
-                          size="small"
-                          sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }}
-                        />
                       </Box>
                       <Typography variant="caption" sx={{ color: "text.secondary" }}>
                         {dateStr} • {timeStr} • <strong>{durText}</strong>

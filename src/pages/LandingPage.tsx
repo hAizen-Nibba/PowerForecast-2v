@@ -463,7 +463,7 @@ export const LandingPage: React.FC = () => {
               {
                 icon: <ClockIcon sx={{ fontSize: 28, color: "success.main" }} />,
                 title: "Smart Calendar Scheduler",
-                desc: "Plan energy-heavy tasks like laundry and ironing during off-peak tariff hours to reduce peak demand charges.",
+                desc: "Schedule appliance runtimes, track live active sessions, and review audited energy receipts.",
               },
               {
                 icon: <BarChartIcon sx={{ fontSize: 28, color: "info.main" }} />,
@@ -473,7 +473,7 @@ export const LandingPage: React.FC = () => {
               {
                 icon: <CpuIcon sx={{ fontSize: 28, color: "warning.main" }} />,
                 title: "Live Circuit Power Board",
-                desc: "Toggle active appliances and watch real-time wattage loads update dynamically with 1-second live telemetry.",
+                desc: "Monitor simultaneous circuit load against your main circuit breaker capacity to prevent overloads.",
               },
             ].map((f, idx) => (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
@@ -536,10 +536,10 @@ export const LandingPage: React.FC = () => {
                 popular: true,
               },
               {
-                title: "High Usage / TOU",
-                kwh: "301+ kWh / TOU",
-                price: "₱15.50 - ₱17.90",
-                desc: "Larger households and solar net-metering setups with time-of-use peak and off-peak rate tracking.",
+                title: "Commercial/Multi-Space",
+                kwh: "Small Business",
+                price: "₱13.50 - ₱15.20",
+                desc: "Sari-sari stores, workshops, and business spaces with flat commercial distribution and fixed customer charges.",
                 popular: false,
               },
             ].map((tier, idx) => (

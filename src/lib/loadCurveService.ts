@@ -244,36 +244,21 @@ export function computeHourlyLoadCurve(options: ComputeLoadCurveOptions): Hourly
       }
     });
 
-    const isPeak = isPeakHour(h);
-    // Dynamic Time-of-Use rate: Peak hours demand surcharge vs Off-Peak base rate
-    const effectiveRate = isPeak ? 16.8261 : 12.4500;
+    const effectiveRate = 14.8261;
     const costPerHour = (totalPointWatts / 1000) * effectiveRate;
     const costPerMinute = costPerHour / 60;
-    const rateLabel = isPeak ? "₱16.83/kWh Peak" : "₱12.45/kWh Off-Peak";
+    const rateLabel = "₱14.83/kWh Standard";
 
     const timeLabel = stepMins < 60 ? formatHourMinute12(h, m) : formatHour12(h);
     const detailedHour = formatHourMinute12(h, m);
 
-    // Clean, data-driven separation without buggy gradient overlays
+    // Clean, data-driven separation
     const roundedWatts = Math.round(totalPointWatts);
     const actualWatts = isFuture ? null : roundedWatts;
     const projectedWatts = roundedWatts;
 
-    // Peak windows: (11:00 AM - 4:00 PM) & (6:00 PM - 9:00 PM)
-    const isPeakTransition = (h === 11 && m === 0) || (h === 16 && m === 0) || (h === 18 && m === 0) || (h === 21 && m === 0);
     const isNowTransition = totalMinutes === currentLiveMinute;
-
-    const liveOffPeakWatts = !isFuture
-      ? (!isPeak || isPeakTransition ? roundedWatts : null)
-      : null;
-
-    const livePeakWatts = !isFuture
-      ? (isPeak || isPeakTransition ? roundedWatts : null)
-      : null;
-
-    const futureWatts = (isFuture || isNowTransition)
-      ? roundedWatts
-      : null;
+    const futureWatts = (isFuture || isNowTransition) ? roundedWatts : null;
 
     return {
       timeLabel,
@@ -284,15 +269,15 @@ export function computeHourlyLoadCurve(options: ComputeLoadCurveOptions): Hourly
       watts: roundedWatts,
       actualWatts,
       projectedWatts,
-      liveOffPeakWatts,
-      livePeakWatts,
+      liveOffPeakWatts: actualWatts,
+      livePeakWatts: null,
       futureWatts,
       costPerHour: Math.round(costPerHour * 100) / 100,
       costPerMinute: Math.round(costPerMinute * 1000) / 1000,
       accumulatedCost: Math.round(accumulatedPesosAtPoint * 10000) / 10000,
       effectiveRate,
       rateLabel,
-      isPeak,
+      isPeak: false,
       isFuture,
       statusText: isFuture ? "Future / Unrecorded" : "Live Recorded Data",
       activeDevices,

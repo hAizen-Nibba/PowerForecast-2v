@@ -177,8 +177,8 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
                 </Typography>
               </Box>
               <Chip
-                label={receiptLog.is_peak_window ? "Peak Window" : "Off-Peak Window"}
-                color={receiptLog.is_peak_window ? "warning" : "success"}
+                label="Metered Session"
+                color="primary"
                 size="small"
                 sx={{ fontWeight: 800, fontSize: "0.7rem" }}
               />

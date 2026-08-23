@@ -180,7 +180,7 @@ export const AnalyticsView: React.FC = () => {
           <MetricCard
             title="Optimization Potential"
             value="₱380.00"
-            subtitle="Via off-peak shifting"
+            subtitle="Via runtime scheduling"
             icon={<LightbulbIcon sx={{ color: "warning.main" }} />}
           />
         </Grid>
@@ -333,7 +333,7 @@ export const AnalyticsView: React.FC = () => {
                     return (
                       <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: "#0f0e3a", border: "1px solid rgba(99, 102, 241, 0.4)", color: "#ffffff" }}>
                         <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                          {d.time} ({d.isPeak ? "Peak Window" : "Off-Peak"})
+                          {d.time}
                         </Typography>
                         <Typography variant="caption" sx={{ display: "block", color: "#ffd54f", fontWeight: 800, fontFamily: "monospace" }}>
                           {d.watts} Watts

@@ -125,9 +125,6 @@ export const SmartCalendar: React.FC = () => {
   }, 0);
   const totalDailyCost = totalDailyKwh * 14.8261;
 
-  const currentHour = new Date().getHours();
-  const isPeakHour = (currentHour >= 11 && currentHour < 16) || (currentHour >= 18 && currentHour < 21);
-
   // Handle Stop Live Session
   const handleStopLiveSession = async (applianceId: string) => {
     const app = appliances.find((a) => a.id === applianceId);
@@ -148,7 +145,6 @@ export const SmartCalendar: React.FC = () => {
         ended_at: new Date().toISOString(),
         duration_minutes: durationMins,
         kwh_consumed: kwh,
-        is_peak_window: isPeakHour,
         estimated_cost: cost,
         source: "calendar_live_stop",
       },
@@ -329,10 +325,10 @@ export const SmartCalendar: React.FC = () => {
         <Grid size={{ xs: 6, sm: 3 }}>
           <Paper sx={{ p: 2, borderRadius: 3, bgcolor: "rgba(15, 14, 58, 0.6)", border: "1px solid rgba(108, 122, 224, 0.25)" }}>
             <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 0.75 }}>
-              ⚡ Peak Window Load
+              🔌 Circuits Registered
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 900, color: isPeakHour ? "#fbbf24" : "#34d399", mt: 0.5 }}>
-              {isPeakHour ? "High (Peak Active)" : "Optimal (Off-Peak)"}
+            <Typography variant="h6" sx={{ fontWeight: 900, color: "#818cf8", mt: 0.5 }}>
+              {appliances.length} Devices
             </Typography>
           </Paper>
         </Grid>
@@ -398,13 +394,13 @@ export const SmartCalendar: React.FC = () => {
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
               <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "success.main" }} />
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                Optimal Off-Peak
+                Standard Load Day
               </Typography>
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
               <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "warning.main" }} />
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                High Load Day
+                Heavy Load Day
               </Typography>
             </Box>
           </Box>

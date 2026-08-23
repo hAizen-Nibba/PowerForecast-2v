@@ -175,7 +175,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <SpeedIcon sx={{ fontSize: 18, color: demand.isOverloaded ? "error.main" : "primary.main" }} />
               <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                Simultaneous Peak Load
+                Simultaneous Circuit Load
               </Typography>
             </Box>
             <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace" }}>

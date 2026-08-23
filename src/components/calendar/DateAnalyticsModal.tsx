@@ -102,8 +102,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       }
     });
 
-    const isPeak = (hour >= 11 && hour < 16) || (hour >= 18 && hour < 21);
-    const hourlyCost = (totalWatts / 1000) * (isPeak ? 16.83 : 12.45);
+    const hourlyCost = (totalWatts / 1000) * 14.8261;
 
     const period = hour >= 12 ? "PM" : "AM";
     const h12 = hour % 12 === 0 ? 12 : hour % 12;
@@ -112,7 +111,6 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       hour: `${h12} ${period}`,
       watts: totalWatts,
       cost: hourlyCost,
-      isPeak,
     };
   });
 
@@ -212,13 +210,13 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
           <Grid size={4}>
             <Paper variant="outlined" sx={{ p: 2, borderRadius: 2.5, textAlign: "center" }}>
               <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700, display: "block" }}>
-                PEAK DEMAND
+                MAX HOURLY LOAD
               </Typography>
               <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "warning.main", my: 0.5 }}>
                 {peakWatts} W
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                Maximum Hourly Spike
+                Maximum Concurrent Draw
               </Typography>
             </Paper>
           </Grid>
@@ -230,12 +228,6 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
             <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
               24-Hour Load Profile (Watts)
             </Typography>
-            <Chip
-              label="Peak: 11 AM – 4 PM & 6 PM – 9 PM"
-              size="small"
-              color="warning"
-              sx={{ fontWeight: 700, fontSize: "0.6875rem" }}
-            />
           </Box>
 
           <Box sx={{ height: 220, width: "100%" }}>
@@ -257,7 +249,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                       return (
                         <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: "#0f0e3a", border: "1px solid rgba(99, 102, 241, 0.4)", color: "#ffffff" }}>
                           <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                            {d.hour} ({d.isPeak ? "Peak Window" : "Off-Peak"})
+                            {d.hour}
                           </Typography>
                           <Typography variant="caption" sx={{ display: "block", color: "#ffd54f", fontWeight: 800, fontFamily: "monospace" }}>
                             {d.watts} Watts (₱{d.cost.toFixed(2)}/hr)
