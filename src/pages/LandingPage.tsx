@@ -19,6 +19,9 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import LinearProgress from "@mui/material/LinearProgress";
 import {
   Calculate as CalculateIcon,
   Layers as LayersIcon,
@@ -36,6 +39,15 @@ import {
   Lightbulb as BulbIcon,
   Brightness4 as MoonIcon,
   Brightness7 as SunIcon,
+  CheckCircle as CheckCircleIcon,
+  Timeline as TimelineIcon,
+  ElectricBolt as ElectricBoltIcon,
+  AutoFixHigh as AutoFixHighIcon,
+  DocumentScanner as DocumentScannerIcon,
+  MenuBook as DocsIcon,
+  Speed as SpeedIcon,
+  Computer as ComputerIcon,
+  Shower as ShowerIcon,
 } from "@mui/icons-material";
 import { useColorMode } from "../theme/AppTheme";
 import { APP_VERSION } from "../lib/supabaseClient";
@@ -46,27 +58,37 @@ export const LandingPage: React.FC = () => {
   const isDark = mode === "dark";
 
   // Quick estimator state
-  const [selectedWatts, setSelectedWatts] = useState<number>(1000);
+  const [selectedWatts, setSelectedWatts] = useState<number>(1050);
   const [estimatorHours, setEstimatorHours] = useState<number>(8);
   const [estimatorRate, setEstimatorRate] = useState<number>(14.8261);
 
+  // Interactive showcase active tab
+  const [activeTab, setActiveTab] = useState<number>(0);
+
   const applianceOptions = [
-    { label: "Inverter Split AC (1.5 HP)", value: 1050, icon: <AcIcon fontSize="small" /> },
-    { label: "Window Non-Inverter AC (1.0 HP)", value: 950, icon: <AcIcon fontSize="small" /> },
-    { label: "Two-Door Inverter Refrigerator", value: 140, icon: <FridgeIcon fontSize="small" /> },
-    { label: "55-inch 4K Smart TV", value: 120, icon: <TvIcon fontSize="small" /> },
-    { label: "Electric Stand Fan (16-inch)", value: 65, icon: <BulbIcon fontSize="small" /> },
-    { label: "Induction Cooker", value: 1800, icon: <CalculateIcon fontSize="small" /> },
+    { label: "Inverter Split AC (1.5 HP)", value: 1050, icon: <AcIcon fontSize="small" />, desc: "Dual Inverter, CSPF 5.8" },
+    { label: "Window Non-Inverter AC (1.0 HP)", value: 950, icon: <AcIcon fontSize="small" />, desc: "Fixed Speed, Standard EER" },
+    { label: "Two-Door Inverter Refrigerator", value: 120, icon: <FridgeIcon fontSize="small" />, desc: "Linear Compressor (24/7)" },
+    { label: "55-inch 4K Smart OLED TV", value: 110, icon: <TvIcon fontSize="small" />, desc: "HDR Gaming & Streaming" },
+    { label: "Induction Cooker", value: 1800, icon: <CalculateIcon fontSize="small" />, desc: "Rapid High-Power Boil" },
+    { label: "Workstation & Gaming PC", value: 550, icon: <ComputerIcon fontSize="small" />, desc: "GPU Rendering Load" },
+    { label: "Electric Stand Fan (16-inch)", value: 60, icon: <BulbIcon fontSize="small" />, desc: "Standard Speed 3" },
+    { label: "Instant Multipoint Water Heater", value: 3500, icon: <ShowerIcon fontSize="small" />, desc: "High Draw Heating" },
   ];
 
   const estimatorCalc = useMemo(() => {
     const dailyKwh = (selectedWatts * estimatorHours) / 1000;
     const monthlyKwh = dailyKwh * 30;
     const monthlyCost = monthlyKwh * estimatorRate;
+    const hourlyCost = (selectedWatts / 1000) * estimatorRate;
+    const annualCost = monthlyCost * 12;
+
     return {
       dailyKwh: dailyKwh.toFixed(2),
       monthlyKwh: monthlyKwh.toFixed(1),
+      hourlyCost: hourlyCost.toFixed(2),
       monthlyCost: monthlyCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      annualCost: annualCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
     };
   }, [selectedWatts, estimatorHours, estimatorRate]);
 
@@ -80,39 +102,104 @@ export const LandingPage: React.FC = () => {
         sx={{
           backdropFilter: "blur(20px)",
           bgcolor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(10, 10, 36, 0.8)" : "rgba(255, 255, 255, 0.85)",
+            theme.palette.mode === "dark" ? "rgba(10, 10, 36, 0.82)" : "rgba(255, 255, 255, 0.88)",
           borderBottom: "1px solid",
           borderColor: "divider",
+          zIndex: 1100,
         }}
       >
         <Container maxWidth="lg">
           <Toolbar sx={{ justifyContent: "space-between", px: { xs: 0, sm: 2 }, minHeight: { xs: 58, sm: 64 } }}>
-            {/* Logo */}
-            <Box component={Link} to="/" sx={{ display: "flex", alignItems: "center", gap: 1.5, textDecoration: "none", color: "inherit" }}>
-              <Box component="img" src="/Assets/LOGO.png" alt="PowerForecast Logo" sx={{ width: 34, height: 34, objectFit: "contain" }} />
+            {/* Logo & Brand */}
+            <Box
+              component={Link}
+              to="/"
+              sx={{ display: "flex", alignItems: "center", gap: 1.5, textDecoration: "none", color: "inherit" }}
+            >
+              <Box
+                component="img"
+                src="/Assets/LOGO.png"
+                alt="PowerForecast Logo"
+                sx={{ width: 34, height: 34, objectFit: "contain" }}
+              />
               <Typography variant="h6" sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}>
                 Power<Box component="span" sx={{ color: "primary.main" }}>Forecast</Box>
               </Typography>
-              <Chip label={APP_VERSION} size="small" sx={{ height: 20, fontSize: "0.625rem", fontWeight: 800, bgcolor: "rgba(99, 102, 241, 0.15)" }} />
+              <Chip
+                label={APP_VERSION}
+                size="small"
+                sx={{
+                  height: 22,
+                  fontSize: "0.6875rem",
+                  fontWeight: 800,
+                  bgcolor: "rgba(99, 102, 241, 0.15)",
+                  color: "primary.main",
+                  border: "1px solid rgba(99, 102, 241, 0.3)",
+                }}
+              />
             </Box>
 
             {/* Desktop Navigation Links */}
             <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 3.5 }}>
-              <Typography component="a" href="#estimator" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}>
+              <Typography
+                component="a"
+                href="#estimator"
+                variant="body2"
+                sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}
+              >
                 Estimator
               </Typography>
-              <Typography component="a" href="#features" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}>
-                Features
+              <Typography
+                component="a"
+                href="#showcase"
+                variant="body2"
+                sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}
+              >
+                Platform Showcase
               </Typography>
-              <Typography component="a" href="#tariffs" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}>
+              <Typography
+                component="a"
+                href="#features"
+                variant="body2"
+                sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}
+              >
+                Core Modules
+              </Typography>
+              <Typography
+                component="a"
+                href="#tariffs"
+                variant="body2"
+                sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}
+              >
                 Tariff Tiers
               </Typography>
-              <Typography component="a" href="#faq" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}>
+              <Typography
+                component={Link}
+                to="/docs"
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  textDecoration: "none",
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                  "&:hover": { color: "primary.main" },
+                }}
+              >
+                <DocsIcon sx={{ fontSize: 16 }} /> API Docs
+              </Typography>
+              <Typography
+                component="a"
+                href="#faq"
+                variant="body2"
+                sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}
+              >
                 FAQ
               </Typography>
             </Box>
 
-            {/* Right Actions */}
+            {/* Right Action Group */}
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
               <Tooltip title={`Switch to ${isDark ? "Light" : "Dark"} mode`}>
                 <IconButton onClick={toggleColorMode} size="small" sx={{ border: "1px solid", borderColor: "divider" }}>
@@ -154,15 +241,15 @@ export const LandingPage: React.FC = () => {
           overflow: "hidden",
           background: (theme) =>
             theme.palette.mode === "dark"
-              ? "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.25), transparent)"
-              : "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.12), transparent)",
+              ? "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.28), transparent)"
+              : "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.14), transparent)",
         }}
       >
         <Container maxWidth="lg">
-          <Box sx={{ textAlign: "center", maxWidth: 860, mx: "auto", mb: { xs: 5, md: 7 } }}>
+          <Box sx={{ textAlign: "center", maxWidth: 920, mx: "auto", mb: { xs: 5, md: 7 } }}>
             <Chip
               icon={<SparklesIcon sx={{ color: "#ffd54f !important", fontSize: "16px !important" }} />}
-              label="Next-Gen Meralco Energy Intelligence Platform"
+              label="Next-Gen Meralco Energy Intelligence & Appliance Tracking OS"
               sx={{
                 mb: 2.5,
                 fontWeight: 700,
@@ -178,13 +265,13 @@ export const LandingPage: React.FC = () => {
               variant="h1"
               sx={{
                 fontWeight: 900,
-                fontSize: { xs: "2.25rem", sm: "3.25rem", md: "4rem" },
+                fontSize: { xs: "2.25rem", sm: "3.25rem", md: "4.15rem" },
                 letterSpacing: "-0.03em",
                 lineHeight: 1.15,
                 mb: 2.5,
               }}
             >
-              Take Total Control of Your{" "}
+              Master Your Electricity &{" "}
               <Box
                 component="span"
                 sx={{
@@ -193,43 +280,90 @@ export const LandingPage: React.FC = () => {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                Electricity & Meralco Bills
+                Meralco Power Bills
               </Box>
             </Typography>
 
             <Typography
               variant="body1"
               sx={{
-                fontSize: { xs: "1rem", sm: "1.15rem" },
+                fontSize: { xs: "1rem", sm: "1.18rem" },
                 color: "text.secondary",
-                lineHeight: 1.6,
+                lineHeight: 1.65,
+                maxWidth: 820,
+                mx: "auto",
                 mb: 4,
               }}
             >
-              Real-time household appliance circuit tracking, unbundled tariff calculation formulas, DOE PELP energy efficiency rating lookup, and AI OCR camera bill auditing.
+              High-precision appliance telemetry with <strong>24-hour visual activity tracking</strong>, 
+              <strong> smart auto-midnight session splitting</strong>, <strong>routine defaults batch autofill</strong>, 
+              official <strong>ERC unbundled tariff formulas</strong>, and <strong>DOE PELP energy efficiency star ratings</strong>.
             </Typography>
 
-            <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 2 }}>
+            <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 2, mb: 4 }}>
               <Button
                 component={Link}
                 to="/signup"
                 variant="contained"
                 size="large"
                 endIcon={<ArrowForwardIcon />}
-                sx={{ px: 3.5, py: 1.25, fontSize: "1rem", borderRadius: 2.5, fontWeight: 800 }}
+                sx={{ px: 4, py: 1.4, fontSize: "1.025rem", borderRadius: 2.5, fontWeight: 800 }}
               >
                 Get Started Free
               </Button>
               <Button
                 component={Link}
-                to="/login"
+                to="/calculator"
                 variant="outlined"
                 size="large"
-                sx={{ px: 3.5, py: 1.25, fontSize: "1rem", borderRadius: 2.5, fontWeight: 800 }}
+                startIcon={<CalculateIcon />}
+                sx={{ px: 3.5, py: 1.4, fontSize: "1.025rem", borderRadius: 2.5, fontWeight: 800 }}
               >
-                Sign In
+                Unbundled Calculator
+              </Button>
+              <Button
+                component="a"
+                href="#showcase"
+                variant="text"
+                size="large"
+                startIcon={<SpeedIcon />}
+                sx={{ px: 2.5, py: 1.4, fontSize: "1.025rem", borderRadius: 2.5, fontWeight: 700 }}
+              >
+                Interactive Tour
               </Button>
             </Box>
+
+            {/* Quick trust metrics row */}
+            <Grid container spacing={2} sx={{ justifyContent: "center", pt: 2 }}>
+              {[
+                { label: "100+ DOE PELP Catalog Models", icon: <LayersIcon fontSize="small" sx={{ color: "primary.main" }} /> },
+                { label: "ERC Unbundled Centavo Precision", icon: <CheckCircleIcon fontSize="small" sx={{ color: "#ffd54f" }} /> },
+                { label: "24-Hour Visual Activity Timeline", icon: <TimelineIcon fontSize="small" sx={{ color: "success.main" }} /> },
+                { label: "Smart Overnight Split Engine", icon: <ClockIcon fontSize="small" sx={{ color: "secondary.main" }} /> },
+              ].map((metric, i) => (
+                <Grid size={{ xs: 12, sm: 6, md: 3 }} key={i}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 1,
+                      px: 1.5,
+                      py: 1,
+                      borderRadius: 2,
+                      bgcolor: "action.hover",
+                      border: "1px solid",
+                      borderColor: "divider",
+                    }}
+                  >
+                    {metric.icon}
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: "text.primary" }}>
+                      {metric.label}
+                    </Typography>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
           </Box>
 
           {/* Interactive Live Estimator Card */}
@@ -240,44 +374,57 @@ export const LandingPage: React.FC = () => {
               borderRadius: 4,
               border: "1px solid",
               borderColor: "divider",
-              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.25)",
+              boxShadow: (theme) =>
+                theme.palette.mode === "dark"
+                  ? "0 20px 60px rgba(0, 0, 0, 0.45)"
+                  : "0 20px 60px rgba(99, 102, 241, 0.12)",
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3, flexWrap: "wrap", gap: 1.5 }}>
               <Box>
-                <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                  ⚡ Quick Appliance Bill Estimator
-                </Typography>
-                <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                  Adjust wattage and daily run-time to see live Meralco billing breakdown.
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <ElectricBoltIcon sx={{ color: "#ffd54f" }} />
+                  <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                    Real-Time Appliance Bill & Running Cost Estimator
+                  </Typography>
+                </Box>
+                <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
+                  Adjust appliance wattage, daily runtime, and effective Meralco tariff rate to see live cost projections.
                 </Typography>
               </Box>
               <Chip
-                label="Live Dynamic Calculation"
+                icon={<SparklesIcon sx={{ fontSize: "14px !important", color: "inherit" }} />}
+                label="Dynamic Telemetry Engine"
                 color="secondary"
                 size="small"
-                sx={{ fontWeight: 700 }}
+                sx={{ fontWeight: 800 }}
               />
             </Box>
 
-            <Grid container spacing={{ xs: 2.5, sm: 3 }}>
-              {/* Controls */}
+            <Grid container spacing={{ xs: 2.5, sm: 3.5 }}>
+              {/* Controls Column */}
               <Grid size={{ xs: 12, md: 7 }}>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                   <TextField
                     select
                     fullWidth
-                    label="Select Appliance Preset"
+                    label="Select Standard Appliance Preset"
                     value={selectedWatts}
                     onChange={(e) => setSelectedWatts(Number(e.target.value))}
                     size="small"
+                    helperText="Pick a common household load or customize wattage below"
                   >
                     {applianceOptions.map((opt) => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                          {opt.icon}
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {opt.label} ({opt.value} Watts)
+                      <MenuItem key={opt.value + opt.label} value={opt.value}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, width: "100%", justifyContent: "space-between" }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
+                            {opt.icon}
+                            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                              {opt.label}
+                            </Typography>
+                          </Box>
+                          <Typography variant="caption" sx={{ fontFamily: "monospace", color: "text.secondary" }}>
+                            {opt.value}W • {opt.desc}
                           </Typography>
                         </Box>
                       </MenuItem>
@@ -286,45 +433,57 @@ export const LandingPage: React.FC = () => {
 
                   <Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
-                        DAILY DUTY CYCLE (HOURS / DAY)
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", letterSpacing: "0.05em" }}>
+                        DAILY RUNTIME (DUTY CYCLE)
                       </Typography>
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.main" }}>
-                        {estimatorHours} hours/day
+                      <Typography variant="caption" sx={{ fontWeight: 900, color: "primary.main" }}>
+                        {estimatorHours} hours / day
                       </Typography>
                     </Box>
                     <Slider
                       value={estimatorHours}
-                      min={1}
+                      min={0.5}
                       max={24}
                       step={0.5}
                       onChange={(_, val) => setEstimatorHours(val as number)}
                       valueLabelDisplay="auto"
+                      valueLabelFormat={(x) => `${x}h`}
                     />
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>30 min (Quick Use)</Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>8 hrs (Typical)</Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>24 hrs (Continuous)</Typography>
+                    </Box>
                   </Box>
 
                   <Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
-                        EFFECTIVE TARIFF RATE (₱ / kWh)
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", letterSpacing: "0.05em" }}>
+                        EFFECTIVE MERALCO TARIFF RATE (₱ / kWh)
                       </Typography>
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: "#eab308" }}>
-                        ₱{estimatorRate.toFixed(2)}/kWh
+                      <Typography variant="caption" sx={{ fontWeight: 900, color: "#eab308" }}>
+                        ₱{estimatorRate.toFixed(4)} / kWh
                       </Typography>
                     </Box>
                     <Slider
                       value={estimatorRate}
                       min={8.0}
                       max={20.0}
-                      step={0.1}
+                      step={0.05}
                       onChange={(_, val) => setEstimatorRate(val as number)}
                       valueLabelDisplay="auto"
+                      valueLabelFormat={(x) => `₱${x.toFixed(2)}`}
                     />
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>₱8.50 (Lifeline)</Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>₱14.82 (Standard 200kWh+)</Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>₱20.00 (High Peak)</Typography>
+                    </Box>
                   </Box>
                 </Box>
               </Grid>
 
-              {/* Real-time Calculation Result Card */}
+              {/* Dynamic Projection Result Card */}
               <Grid size={{ xs: 12, md: 5 }}>
                 <Paper
                   sx={{
@@ -341,9 +500,12 @@ export const LandingPage: React.FC = () => {
                   }}
                 >
                   <Box>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.light", textTransform: "uppercase" }}>
-                      Projected Appliance Cost
-                    </Typography>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.light", textTransform: "uppercase" }}>
+                        Projected Monthly Spend
+                      </Typography>
+                      <Chip label="Unbundled Est." size="small" sx={{ height: 18, fontSize: "0.625rem", fontWeight: 700 }} />
+                    </Box>
                     <Typography
                       variant="h3"
                       sx={{
@@ -351,48 +513,65 @@ export const LandingPage: React.FC = () => {
                         fontFamily: "monospace",
                         color: "#ffd54f",
                         my: 1,
-                        fontSize: { xs: "2rem", sm: "2.5rem" },
+                        fontSize: { xs: "2.1rem", sm: "2.6rem" },
                       }}
                     >
                       ₱{estimatorCalc.monthlyCost}
                       <Typography component="span" variant="body2" sx={{ color: "text.secondary", ml: 1 }}>
-                        / month
+                        / mo
                       </Typography>
                     </Typography>
                   </Box>
 
                   <Divider sx={{ my: 1.5 }} />
 
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1.1 }}>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <Typography variant="caption" sx={{ color: "text.secondary" }}>Daily Load:</Typography>
-                      <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: "monospace" }}>
-                        {estimatorCalc.dailyKwh} kWh/day
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>Continuous Hourly Cost:</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "success.light", fontFamily: "monospace" }}>
+                        ₱{estimatorCalc.hourlyCost} / hour
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>Daily Energy Load:</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
+                        {estimatorCalc.dailyKwh} kWh / day
                       </Typography>
                     </Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                       <Typography variant="caption" sx={{ color: "text.secondary" }}>Monthly Consumption:</Typography>
-                      <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: "monospace" }}>
-                        {estimatorCalc.monthlyKwh} kWh/mo
+                      <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
+                        {estimatorCalc.monthlyKwh} kWh / mo
                       </Typography>
                     </Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <Typography variant="caption" sx={{ color: "text.secondary" }}>Continuous Running Rate:</Typography>
-                      <Typography variant="caption" sx={{ fontWeight: 700, color: "success.light", fontFamily: "monospace" }}>
-                        ₱{((selectedWatts / 1000) * estimatorRate).toFixed(2)}/hr
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>Annual Spend (12-Mo):</Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace", color: "#eab308" }}>
+                        ₱{estimatorCalc.annualCost} / yr
                       </Typography>
                     </Box>
                   </Box>
 
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    size="small"
-                    onClick={() => navigate("/calculator")}
-                    sx={{ mt: 2, fontWeight: 700 }}
-                  >
-                    Open Full Unbundled Calculator
-                  </Button>
+                  <Box sx={{ mt: 2.5, display: "flex", flexDirection: "column", gap: 1 }}>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      size="small"
+                      onClick={() => navigate("/calculator")}
+                      sx={{ fontWeight: 800, py: 1 }}
+                    >
+                      Open Full Unbundled Bill Calculator
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      size="small"
+                      onClick={() => navigate("/appliances")}
+                      sx={{ fontWeight: 700 }}
+                    >
+                      Compare with DOE PELP Catalog
+                    </Button>
+                  </Box>
                 </Paper>
               </Grid>
             </Grid>
@@ -400,73 +579,602 @@ export const LandingPage: React.FC = () => {
         </Container>
       </Box>
 
-      {/* 3. Logo Collection / Trusted Partners */}
+      {/* 3. Philippine Utility & Regulatory Standards */}
       <Box sx={{ py: 5, borderY: "1px solid", borderColor: "divider", bgcolor: "action.hover" }}>
         <Container maxWidth="lg">
-          <Typography variant="caption" sx={{ display: "block", textAlign: "center", fontWeight: 700, color: "text.secondary", letterSpacing: "0.08em", mb: 3 }}>
-            COMPATIBLE WITH PHILIPPINE ENERGY STANDARDS & UTILITY GRIDS
+          <Typography
+            variant="caption"
+            sx={{
+              display: "block",
+              textAlign: "center",
+              fontWeight: 800,
+              color: "text.secondary",
+              letterSpacing: "0.08em",
+              mb: 3,
+            }}
+          >
+            OFFICIALLY ALIGNED WITH PHILIPPINE ENERGY STANDARDS & MERALCO UTILITY PROTOCOLS
           </Typography>
           <Grid container spacing={2} sx={{ justifyContent: "center", alignItems: "center" }}>
-            {["DOE PELP Certified", "Meralco Unbundled Rates", "ERC Compliant", "Solar Net-Metering Ready"].map((label) => (
-              <Grid size={{ xs: 6, sm: 3 }} key={label} sx={{ textAlign: "center" }}>
-                <Chip
-                  icon={<ShieldIcon sx={{ color: "primary.main" }} />}
-                  label={label}
-                  variant="outlined"
-                  sx={{ fontWeight: 700, fontSize: "0.8125rem", py: 1.5, width: "100%", maxWidth: 220 }}
-                />
+            {[
+              { label: "DOE PELP Star Ratings", sub: "Philippine Energy Labeling" },
+              { label: "ERC Unbundled Framework", sub: "Itemized Centavo Formulas" },
+              { label: "RA 11285 Compliance", sub: "Energy Efficiency Act" },
+              { label: "Meralco Tariff Schedule", sub: "Residential & Commercial" },
+            ].map((item, i) => (
+              <Grid size={{ xs: 6, sm: 3 }} key={i} sx={{ textAlign: "center" }}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 2.5,
+                    border: "1px solid",
+                    borderColor: "divider",
+                    bgcolor: "background.paper",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 0.5,
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
+                    <ShieldIcon sx={{ color: "primary.main", fontSize: 18 }} />
+                    <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                      {item.label}
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+                    {item.sub}
+                  </Typography>
+                </Box>
               </Grid>
             ))}
           </Grid>
         </Container>
       </Box>
 
-      {/* 4. Core Features Grid */}
-      <Box id="features" sx={{ py: { xs: 8, md: 10 } }}>
+      {/* 4. Interactive Platform Showcase (Tabbed Walkthrough) */}
+      <Box id="showcase" sx={{ py: { xs: 8, md: 11 } }}>
         <Container maxWidth="lg">
-          <Box sx={{ textAlign: "center", maxWidth: 700, mx: "auto", mb: { xs: 5, md: 7 } }}>
-            <Typography variant="h3" sx={{ fontWeight: 800, mb: 1.5, letterSpacing: "-0.02em" }}>
-              Engineered for Precision & Energy Savings
+          <Box sx={{ textAlign: "center", maxWidth: 780, mx: "auto", mb: { xs: 4, md: 6 } }}>
+            <Chip
+              label="Interactive Platform Capabilities"
+              color="primary"
+              size="small"
+              sx={{ mb: 1.5, fontWeight: 800 }}
+            />
+            <Typography variant="h3" sx={{ fontWeight: 900, mb: 1.5, letterSpacing: "-0.02em" }}>
+              Explore the PowerForecast Operating System
             </Typography>
             <Typography variant="body1" sx={{ color: "text.secondary" }}>
-              Explore the advanced suite of tools designed to forecast, monitor, and optimize your monthly power bill.
+              Click through the core engines built to eliminate bill shocks and optimize your household power consumption.
+            </Typography>
+          </Box>
+
+          <Paper
+            sx={{
+              borderRadius: 4,
+              border: "1px solid",
+              borderColor: "divider",
+              overflow: "hidden",
+              boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
+            }}
+          >
+            <Tabs
+              value={activeTab}
+              onChange={(_, v) => setActiveTab(v)}
+              variant="scrollable"
+              scrollButtons="auto"
+              sx={{
+                borderBottom: "1px solid",
+                borderColor: "divider",
+                bgcolor: "action.hover",
+                px: 2,
+                "& .MuiTab-root": { fontWeight: 700, textTransform: "none", py: 2 },
+              }}
+            >
+              <Tab icon={<TimelineIcon />} iconPosition="start" label="24-Hour Activity & Cost Ticker" />
+              <Tab icon={<ClockIcon />} iconPosition="start" label="Smart Calendar & Midnight Splitting" />
+              <Tab icon={<AutoFixHighIcon />} iconPosition="start" label="Routine Defaults Batch Autofill" />
+              <Tab icon={<CalculateIcon />} iconPosition="start" label="Unbundled ERC Calculator" />
+              <Tab icon={<LayersIcon />} iconPosition="start" label="DOE PELP Energy Catalog" />
+              <Tab icon={<DocumentScannerIcon />} iconPosition="start" label="AI Vision OCR Scanner" />
+            </Tabs>
+
+            <Box sx={{ p: { xs: 3, sm: 5 } }}>
+              {/* Tab 0: 24h Activity Timeline */}
+              {activeTab === 0 && (
+                <Grid container spacing={4} sx={{ alignItems: "center" }}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Chip label="Real-Time Telemetry" color="success" size="small" sx={{ mb: 1.5, fontWeight: 800 }} />
+                    <Typography variant="h4" sx={{ fontWeight: 900, mb: 2 }}>
+                      24-Hour Activity Timeline & Dynamic Cost Ticker
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: "text.secondary", lineHeight: 1.7, mb: 3 }}>
+                      Monitor your household's active power footprint in real-time. The dashboard renders an hourly 24-hour visual activity track, computes instant running cost per hour (₱/hr), and tracks simultaneous circuit breaker capacity.
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mb: 3 }}>
+                      {[
+                        "Live ₱/hr running rate ticker synchronized to active circuits",
+                        "24-hour visual energy load distribution bars across morning, afternoon, and night",
+                        "Active breaker load percentage with overload alert warnings",
+                      ].map((item, idx) => (
+                        <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <CheckCircleIcon sx={{ color: "success.main", fontSize: 18 }} />
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {item}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                    <Button
+                      component={Link}
+                      to="/dashboard"
+                      variant="contained"
+                      endIcon={<ArrowForwardIcon />}
+                      sx={{ fontWeight: 800 }}
+                    >
+                      View Live Dashboard
+                    </Button>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    {/* Simulated 24h Timeline Widget Mock */}
+                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                          ⚡ Today's Live Power Ticker
+                        </Typography>
+                        <Chip label="LIVE MONITOR" color="error" size="small" sx={{ fontWeight: 800, height: 20 }} />
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", bgcolor: "action.hover", p: 2, borderRadius: 2, mb: 2.5 }}>
+                        <Box>
+                          <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>ACTIVE RUNNING RATE</Typography>
+                          <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "success.light" }}>
+                            ₱15.57 / hr
+                          </Typography>
+                        </Box>
+                        <Box sx={{ textAlign: "right" }}>
+                          <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>SIMULTANEOUS LOAD</Typography>
+                          <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f" }}>
+                            1,050 W (4.77A)
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 1 }}>
+                        24-HOUR TELEMETRY TIMELINE (00:00 - 23:59)
+                      </Typography>
+                      {/* Timeline Bar visualization */}
+                      <Box sx={{ display: "flex", gap: 0.5, height: 40, alignItems: "flex-end", mb: 1 }}>
+                        {[15, 10, 10, 10, 20, 35, 60, 45, 30, 25, 30, 40, 50, 45, 35, 55, 75, 90, 85, 80, 70, 50, 30, 20].map((h, i) => (
+                          <Box
+                            key={i}
+                            sx={{
+                              flex: 1,
+                              height: `${h}%`,
+                              bgcolor: h > 60 ? "primary.main" : "action.selected",
+                              borderRadius: 0.5,
+                              transition: "all 0.3s ease",
+                            }}
+                          />
+                        ))}
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                        <Typography variant="caption" sx={{ color: "text.secondary" }}>00:00</Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary" }}>12:00 PM</Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary" }}>23:59</Typography>
+                      </Box>
+                    </Card>
+                  </Grid>
+                </Grid>
+              )}
+
+              {/* Tab 1: Smart Calendar & Midnight Splitting */}
+              {activeTab === 1 && (
+                <Grid container spacing={4} sx={{ alignItems: "center" }}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Chip label="Overnight Session Engine" color="secondary" size="small" sx={{ mb: 1.5, fontWeight: 800 }} />
+                    <Typography variant="h4" sx={{ fontWeight: 900, mb: 2 }}>
+                      Smart Calendar with Auto-Midnight Multi-Day Splitting
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: "text.secondary", lineHeight: 1.7, mb: 3 }}>
+                      Running an air conditioner from 10:00 PM to 2:00 AM? PowerForecast automatically splits overnight sessions at the 23:59:59 boundary, attributing exactly 2 hours to Day 1 and 2 hours to Day 2 with flawless calendar parity.
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mb: 3 }}>
+                      {[
+                        "Smart midnight crossing detector automatically creates balanced multi-day usage logs",
+                        "Live interactive stopwatch modal with built-in 24-hour visual day track",
+                        "Detailed date analytics modal showing exact kWh, cost, and session breakdown per day",
+                      ].map((item, idx) => (
+                        <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <CheckCircleIcon sx={{ color: "secondary.main", fontSize: 18 }} />
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {item}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                    <Button
+                      component={Link}
+                      to="/calendar"
+                      variant="contained"
+                      endIcon={<ArrowForwardIcon />}
+                      sx={{ fontWeight: 800 }}
+                    >
+                      Open Smart Calendar
+                    </Button>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2 }}>
+                        🌙 Auto-Midnight Crossing Split Visualizer
+                      </Typography>
+                      <Box sx={{ p: 2, bgcolor: "action.hover", borderRadius: 2, mb: 2 }}>
+                        <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>LOGGED SESSION</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: "primary.light" }}>
+                          Master Bedroom AC: 10:00 PM → 02:00 AM (4.0 hrs Total)
+                        </Typography>
+                      </Box>
+                      <Grid container spacing={1.5}>
+                        <Grid size={{ xs: 6 }}>
+                          <Paper sx={{ p: 2, border: "1px solid", borderColor: "primary.main", borderRadius: 2 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.main" }}>DAY 1 LOG (Aug 23)</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace" }}>2.0 hrs</Typography>
+                            <Typography variant="caption" sx={{ color: "text.secondary" }}>22:00 - 23:59 (2.10 kWh)</Typography>
+                          </Paper>
+                        </Grid>
+                        <Grid size={{ xs: 6 }}>
+                          <Paper sx={{ p: 2, border: "1px solid", borderColor: "secondary.main", borderRadius: 2 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 800, color: "secondary.main" }}>DAY 2 LOG (Aug 24)</Typography>
+                            <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace" }}>2.0 hrs</Typography>
+                            <Typography variant="caption" sx={{ color: "text.secondary" }}>00:00 - 02:00 (2.10 kWh)</Typography>
+                          </Paper>
+                        </Grid>
+                      </Grid>
+                    </Card>
+                  </Grid>
+                </Grid>
+              )}
+
+              {/* Tab 2: Routine Defaults Batch Autofill */}
+              {activeTab === 2 && (
+                <Grid container spacing={4} sx={{ alignItems: "center" }}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Chip label="1-Click Batch Automation" color="primary" size="small" sx={{ mb: 1.5, fontWeight: 800 }} />
+                    <Typography variant="h4" sx={{ fontWeight: 900, mb: 2 }}>
+                      Multi-Range Routine Defaults Autofill Engine
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: "text.secondary", lineHeight: 1.7, mb: 3 }}>
+                      Don't waste time logging the same appliances every single day. Configure routine default hours per appliance and populate your entire month in 1 single click with full custom range flexibility.
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mb: 3 }}>
+                      {[
+                        "1st to Today: Instant catch-up for the current month",
+                        "Full Month: Project and log an entire 30-day billing cycle in advance",
+                        "Custom Range: Flexible date picker for specific billing windows",
+                      ].map((item, idx) => (
+                        <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <CheckCircleIcon sx={{ color: "primary.main", fontSize: 18 }} />
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {item}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                    <Button
+                      component={Link}
+                      to="/calendar"
+                      variant="contained"
+                      endIcon={<ArrowForwardIcon />}
+                      sx={{ fontWeight: 800 }}
+                    >
+                      Try Routine Autofill
+                    </Button>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2 }}>
+                        ⚡ 3 Selectable Autofill Range Modes
+                      </Typography>
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                        <Paper sx={{ p: 2, border: "1px solid", borderColor: "primary.main", bgcolor: "rgba(99,102,241,0.08)", borderRadius: 2 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>Mode 1: 1st of Month to Today</Typography>
+                          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                            Fills Days 1 to Current Date based on your refrigerator (24h), AC (8h), and lights (5h).
+                          </Typography>
+                        </Paper>
+                        <Paper sx={{ p: 2, border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>Mode 2: Full Month (1st to Month-End)</Typography>
+                          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                            Populates all 30/31 days to immediately compute full month projected electricity cost.
+                          </Typography>
+                        </Paper>
+                        <Paper sx={{ p: 2, border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>Mode 3: Custom Date Range</Typography>
+                          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                            Match exact Meralco billing cutoff dates (e.g. 15th to 14th of next month).
+                          </Typography>
+                        </Paper>
+                      </Box>
+                    </Card>
+                  </Grid>
+                </Grid>
+              )}
+
+              {/* Tab 3: Unbundled ERC Calculator */}
+              {activeTab === 3 && (
+                <Grid container spacing={4} sx={{ alignItems: "center" }}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Chip label="ERC Centavo Accuracy" color="warning" size="small" sx={{ mb: 1.5, fontWeight: 800 }} />
+                    <Typography variant="h4" sx={{ fontWeight: 900, mb: 2 }}>
+                      Official ERC Unbundled Tariff Calculator
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: "text.secondary", lineHeight: 1.7, mb: 3 }}>
+                      PowerForecast breaks down electricity charges into their exact legal components according to official Energy Regulatory Commission (ERC) guidelines.
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mb: 3 }}>
+                      {[
+                        "Generation Charges (IPP & WESM energy market rates)",
+                        "Transmission Wheeling & Ancillary Grid Services (NGCP)",
+                        "Distribution Wheeling, Metering & Supply Charges (Meralco)",
+                        "Universal Charges, FIT-All, Lifeline Subsidies, and 12% VAT",
+                      ].map((item, idx) => (
+                        <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <CheckCircleIcon sx={{ color: "#eab308", fontSize: 18 }} />
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {item}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                    <Button
+                      component={Link}
+                      to="/calculator"
+                      variant="contained"
+                      endIcon={<ArrowForwardIcon />}
+                      sx={{ fontWeight: 800 }}
+                    >
+                      Calculate Your Bill
+                    </Button>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2 }}>
+                        📊 Unbundled Cost Component Breakdown (200 kWh)
+                      </Typography>
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                        {[
+                          { name: "Generation Charge", pct: 54, val: "₱1,580.40", color: "#6366f1" },
+                          { name: "Distribution Charge (Meralco)", pct: 18, val: "₱526.80", color: "#a855f7" },
+                          { name: "Government Taxes (12% VAT)", pct: 12, val: "₱351.20", color: "#ec4899" },
+                          { name: "Transmission (NGCP)", pct: 9, val: "₱263.40", color: "#eab308" },
+                          { name: "System Loss & Universal", pct: 7, val: "₱204.86", color: "#22c55e" },
+                        ].map((c, i) => (
+                          <Box key={i}>
+                            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                              <Typography variant="caption" sx={{ fontWeight: 700 }}>{c.name} ({c.pct}%)</Typography>
+                              <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace" }}>{c.val}</Typography>
+                            </Box>
+                            <LinearProgress
+                              variant="determinate"
+                              value={c.pct}
+                              sx={{
+                                height: 8,
+                                borderRadius: 4,
+                                bgcolor: "action.selected",
+                                "& .MuiLinearProgress-bar": { bgcolor: c.color },
+                              }}
+                            />
+                          </Box>
+                        ))}
+                      </Box>
+                    </Card>
+                  </Grid>
+                </Grid>
+              )}
+
+              {/* Tab 4: DOE PELP Catalog */}
+              {activeTab === 4 && (
+                <Grid container spacing={4} sx={{ alignItems: "center" }}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Chip label="DOE Energy Star Database" color="info" size="small" sx={{ mb: 1.5, fontWeight: 800 }} />
+                    <Typography variant="h4" sx={{ fontWeight: 900, mb: 2 }}>
+                      DOE PELP Verified Rating Catalog
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: "text.secondary", lineHeight: 1.7, mb: 3 }}>
+                      Access verified Philippine Energy Labeling Program ratings directly. Compare CSPF (Cooling Seasonal Performance Factor) and EER ratings for top air conditioning and refrigeration brands in the Philippines.
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mb: 3 }}>
+                      {[
+                        "Over 100+ verified inverter and non-inverter appliance models",
+                        "Energy Star rating lookup (1-Star to 5-Star efficiency)",
+                        "Autofill appliance specifications into your personal inventory with 1 click",
+                      ].map((item, idx) => (
+                        <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <CheckCircleIcon sx={{ color: "info.main", fontSize: 18 }} />
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {item}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                    <Button
+                      component={Link}
+                      to="/appliances"
+                      variant="contained"
+                      endIcon={<ArrowForwardIcon />}
+                      sx={{ fontWeight: 800 }}
+                    >
+                      Browse PELP Catalog
+                    </Button>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2 }}>
+                        ⭐ Verified Inverter Efficiency Ratings
+                      </Typography>
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                        {[
+                          { brand: "Panasonic Premium Inverter 1.5HP", cspf: "CSPF 6.10", stars: "★★★★★ (5-Star)", watts: "920W Avg" },
+                          { brand: "Carrier Aura Inverter 1.0HP", cspf: "CSPF 5.85", stars: "★★★★★ (5-Star)", watts: "780W Avg" },
+                          { brand: "Daikin D-Smart King 1.5HP", cspf: "CSPF 5.92", stars: "★★★★★ (5-Star)", watts: "980W Avg" },
+                          { brand: "Standard Window Non-Inverter", cspf: "EER 9.80", stars: "★★☆☆☆ (2-Star)", watts: "1,150W Peak" },
+                        ].map((m, i) => (
+                          <Paper key={i} sx={{ p: 1.5, border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+                            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{m.brand}</Typography>
+                              <Typography variant="caption" sx={{ color: "#ffd54f", fontWeight: 800 }}>{m.stars}</Typography>
+                            </Box>
+                            <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.5 }}>
+                              <Typography variant="caption" sx={{ color: "text.secondary" }}>Rating: {m.cspf}</Typography>
+                              <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: "monospace" }}>{m.watts}</Typography>
+                            </Box>
+                          </Paper>
+                        ))}
+                      </Box>
+                    </Card>
+                  </Grid>
+                </Grid>
+              )}
+
+              {/* Tab 5: AI Vision Scanner */}
+              {activeTab === 5 && (
+                <Grid container spacing={4} sx={{ alignItems: "center" }}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Chip label="Optical AI Recognition" color="secondary" size="small" sx={{ mb: 1.5, fontWeight: 800 }} />
+                    <Typography variant="h4" sx={{ fontWeight: 900, mb: 2 }}>
+                      AI Vision OCR Appliance & Bill Scanner
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: "text.secondary", lineHeight: 1.7, mb: 3 }}>
+                      Point your phone or webcam at any appliance manufacturer plate or Meralco electricity paper bill. The optical AI parser extracts wattage, voltage, amps, and monthly billing totals automatically.
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mb: 3 }}>
+                      {[
+                        "Optical Character Recognition (OCR) with confidence score validation",
+                        "Automatic extraction of Rated Power (Watts), Voltage (V), and Amperage (A)",
+                        "Direct sync to your appliance inventory or past electricity receipts",
+                      ].map((item, idx) => (
+                        <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <CheckCircleIcon sx={{ color: "secondary.main", fontSize: 18 }} />
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            {item}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                    <Button
+                      component={Link}
+                      to="/appliances"
+                      variant="contained"
+                      endIcon={<ArrowForwardIcon />}
+                      sx={{ fontWeight: 800 }}
+                    >
+                      Scan an Appliance
+                    </Button>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2 }}>
+                        📸 AI OCR Plate Extraction Preview
+                      </Typography>
+                      <Paper sx={{ p: 2, bgcolor: "action.hover", border: "1px dashed", borderColor: "primary.main", borderRadius: 2, mb: 2 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.light" }}>NAMEPLATE OCR DETECTED</Typography>
+                          <Chip label="98.4% Confidence" color="success" size="small" sx={{ height: 18, fontSize: "0.625rem", fontWeight: 700 }} />
+                        </Box>
+                        <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                          Model: CS/CU-XPU12XKQ • 230V ~ 60Hz
+                        </Typography>
+                      </Paper>
+                      <Grid container spacing={1.5}>
+                        <Grid size={{ xs: 4 }}>
+                          <Paper sx={{ p: 1.5, textAlign: "center", borderRadius: 2 }}>
+                            <Typography variant="caption" sx={{ color: "text.secondary" }}>Power</Typography>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "#ffd54f" }}>1,050 W</Typography>
+                          </Paper>
+                        </Grid>
+                        <Grid size={{ xs: 4 }}>
+                          <Paper sx={{ p: 1.5, textAlign: "center", borderRadius: 2 }}>
+                            <Typography variant="caption" sx={{ color: "text.secondary" }}>Current</Typography>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "primary.light" }}>4.75 A</Typography>
+                          </Paper>
+                        </Grid>
+                        <Grid size={{ xs: 4 }}>
+                          <Paper sx={{ p: 1.5, textAlign: "center", borderRadius: 2 }}>
+                            <Typography variant="caption" sx={{ color: "text.secondary" }}>Type</Typography>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "success.light" }}>Inverter</Typography>
+                          </Paper>
+                        </Grid>
+                      </Grid>
+                    </Card>
+                  </Grid>
+                </Grid>
+              )}
+            </Box>
+          </Paper>
+        </Container>
+      </Box>
+
+      {/* 5. Core Platform Modules Grid */}
+      <Box id="features" sx={{ py: { xs: 8, md: 11 }, bgcolor: "action.hover" }}>
+        <Container maxWidth="lg">
+          <Box sx={{ textAlign: "center", maxWidth: 750, mx: "auto", mb: { xs: 5, md: 7 } }}>
+            <Typography variant="h3" sx={{ fontWeight: 900, mb: 1.5, letterSpacing: "-0.02em" }}>
+              Engineered for Complete Energy Control
+            </Typography>
+            <Typography variant="body1" sx={{ color: "text.secondary" }}>
+              Explore the full suite of specialized tools built to track, forecast, audit, and optimize your monthly electric bills.
             </Typography>
           </Box>
 
           <Grid container spacing={{ xs: 2.5, sm: 3 }}>
             {[
               {
-                icon: <CalculateIcon sx={{ fontSize: 28, color: "#ffd54f" }} />,
-                title: "Unbundled Tariff Calculator",
-                desc: "Accurately compute Generation, Transmission, Distribution, System Loss, Lifeline Subsidy, and VAT charges down to the exact centavo.",
+                icon: <TimelineIcon sx={{ fontSize: 28, color: "#ffd54f" }} />,
+                title: "24-Hour Live Activity Timeline",
+                desc: "Live hourly load telemetry bar chart, dynamic ₱/hr running rate ticker, and instantaneous circuit load monitoring on the dashboard.",
               },
               {
-                icon: <LayersIcon sx={{ fontSize: 28, color: "primary.light" }} />,
-                title: "DOE PELP Energy Star Database",
-                desc: "Compare verified Energy Efficiency Ratios (EER) for over 100+ inverter air conditioners, refrigerators, and appliances.",
+                icon: <ClockIcon sx={{ fontSize: 28, color: "secondary.main" }} />,
+                title: "Smart Calendar & Midnight Splitting",
+                desc: "Overnight appliance runs are automatically split at 23:59:59 into two accurate day logs, keeping calendar metrics 100% truthful.",
               },
               {
-                icon: <CameraIcon sx={{ fontSize: 28, color: "secondary.main" }} />,
+                icon: <AutoFixHighIcon sx={{ fontSize: 28, color: "primary.light" }} />,
+                title: "Multi-Range Routine Autofill",
+                desc: "Batch populate usage records from 1st to Today, Full Month, or Custom Date Range in 1 click using your appliances' default routine hours.",
+              },
+              {
+                icon: <CalculateIcon sx={{ fontSize: 28, color: "warning.main" }} />,
+                title: "ERC Unbundled Tariff Calculator",
+                desc: "Centavo-accurate unbundled billing covering Generation, Transmission, Distribution, System Loss, Subsidies, FIT-All, and 12% VAT.",
+              },
+              {
+                icon: <LayersIcon sx={{ fontSize: 28, color: "info.main" }} />,
+                title: "DOE PELP Energy Catalog",
+                desc: "Compare verified Energy Efficiency Ratios (EER) and CSPF star ratings for over 100+ inverter air conditioners and refrigerators.",
+              },
+              {
+                icon: <CameraIcon sx={{ fontSize: 28, color: "success.main" }} />,
                 title: "AI Vision OCR Scanner",
-                desc: "Upload physical appliance rating plates or Meralco electricity bills for instant OCR parsing and telemetry autofill.",
+                desc: "Capture physical appliance nameplates or Meralco electricity paper bills with optical AI recognition and confidence verification.",
               },
               {
-                icon: <ClockIcon sx={{ fontSize: 28, color: "success.main" }} />,
-                title: "Smart Calendar Scheduler",
-                desc: "Schedule appliance runtimes, track live active sessions, and review audited energy receipts.",
+                icon: <CpuIcon sx={{ fontSize: 28, color: "error.main" }} />,
+                title: "Live Circuit Breaker Guard",
+                desc: "Simulate concurrent circuit loads against your main breaker rating (30A, 40A, 60A) to prevent overload tripping and fire hazards.",
               },
               {
-                icon: <BarChartIcon sx={{ fontSize: 28, color: "info.main" }} />,
-                title: "Forecast & Anomaly Detection",
-                desc: "Predict end-of-month electric bills and receive smart warnings before stepping into higher Meralco consumption tiers.",
-              },
-              {
-                icon: <CpuIcon sx={{ fontSize: 28, color: "warning.main" }} />,
-                title: "Live Circuit Power Board",
-                desc: "Monitor simultaneous circuit load against your main circuit breaker capacity to prevent overloads.",
+                icon: <BarChartIcon sx={{ fontSize: 28, color: "#a855f7" }} />,
+                title: "Forecast & Tier Anomaly Warnings",
+                desc: "Predict end-of-month electric bills based on current trajectory and receive smart warnings before stepping into higher Meralco tariff tiers.",
               },
             ].map((f, idx) => (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
                 <Card
                   sx={{
                     height: "100%",
@@ -474,10 +1182,13 @@ export const LandingPage: React.FC = () => {
                     display: "flex",
                     flexDirection: "column",
                     borderRadius: 3.5,
+                    border: "1px solid",
+                    borderColor: "divider",
                     transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                     "&:hover": {
-                      transform: "translateY(-3px)",
-                      boxShadow: "0 8px 24px rgba(99, 102, 241, 0.15)",
+                      transform: "translateY(-4px)",
+                      borderColor: "primary.main",
+                      boxShadow: "0 10px 30px rgba(99, 102, 241, 0.15)",
                     },
                   }}
                 >
@@ -497,10 +1208,10 @@ export const LandingPage: React.FC = () => {
                   >
                     {f.icon}
                   </Box>
-                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1 }}>
                     {f.title}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6 }}>
+                  <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6, fontSize: "0.875rem" }}>
                     {f.desc}
                   </Typography>
                 </Card>
@@ -510,15 +1221,16 @@ export const LandingPage: React.FC = () => {
         </Container>
       </Box>
 
-      {/* 5. Tariff Tiers Comparison */}
-      <Box id="tariffs" sx={{ py: { xs: 8, md: 10 }, bgcolor: "action.hover" }}>
+      {/* 6. Tariff Tiers Comparison */}
+      <Box id="tariffs" sx={{ py: { xs: 8, md: 11 } }}>
         <Container maxWidth="lg">
-          <Box sx={{ textAlign: "center", maxWidth: 700, mx: "auto", mb: { xs: 5, md: 6 } }}>
-            <Typography variant="h3" sx={{ fontWeight: 800, mb: 1.5, letterSpacing: "-0.02em" }}>
-              Meralco Residential Tariff Tiers
+          <Box sx={{ textAlign: "center", maxWidth: 720, mx: "auto", mb: { xs: 5, md: 7 } }}>
+            <Chip label="Official Rate Brackets" color="secondary" size="small" sx={{ mb: 1.5, fontWeight: 800 }} />
+            <Typography variant="h3" sx={{ fontWeight: 900, mb: 1.5, letterSpacing: "-0.02em" }}>
+              Meralco Residential Tariff Brackets
             </Typography>
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Transparent baseline tariff brackets supported in PowerForecast.
+            <Typography variant="body1" sx={{ color: "text.secondary" }}>
+              PowerForecast models the unbundled rate structures across all residential and small commercial brackets.
             </Typography>
           </Box>
 
@@ -528,25 +1240,36 @@ export const LandingPage: React.FC = () => {
                 title: "Lifeline Subsidy Tier",
                 kwh: "0 - 100 kWh",
                 price: "₱8.50 - ₱10.20",
-                desc: "For low-income households with 20% - 100% discount on generation and distribution charges.",
+                desc: "Eligible for qualified low-income households with 20% to 100% subsidies on generation and distribution charges.",
                 popular: false,
+                badge: "Subsidized",
               },
               {
-                title: "Regular Residential",
+                title: "Standard Residential",
                 kwh: "101 - 300 kWh",
                 price: "₱12.45 - ₱14.82",
-                desc: "Standard household rate with standard unbundled generation, transmission, and universal charges.",
+                desc: "Standard household rate with full unbundled generation, transmission, system loss, universal, and 12% VAT charges.",
                 popular: true,
+                badge: "Most Common",
               },
               {
-                title: "Commercial/Multi-Space",
-                kwh: "Small Business",
-                price: "₱13.50 - ₱15.20",
-                desc: "Sari-sari stores, workshops, and business spaces with flat commercial distribution and fixed customer charges.",
+                title: "Heavy Residential",
+                kwh: "301+ kWh",
+                price: "₱14.80 - ₱16.50",
+                desc: "Higher consumption households with multi-split air conditioners, continuous appliances, and marginal bracket rates.",
                 popular: false,
+                badge: "High Load",
+              },
+              {
+                title: "Small Commercial / Mixed",
+                kwh: "Multi-Space",
+                price: "₱13.80 - ₱15.50",
+                desc: "Sari-sari stores, workshops, and rental spaces with flat commercial distribution and fixed customer meter charges.",
+                popular: false,
+                badge: "Business",
               },
             ].map((tier, idx) => (
-              <Grid size={{ xs: 12, md: 4 }} key={idx}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
                 <Card
                   sx={{
                     p: 3.5,
@@ -556,36 +1279,37 @@ export const LandingPage: React.FC = () => {
                     justifyContent: "space-between",
                     borderRadius: 3.5,
                     position: "relative",
+                    border: "1px solid",
+                    borderColor: tier.popular ? "primary.main" : "divider",
+                    boxShadow: tier.popular ? "0 10px 30px rgba(99, 102, 241, 0.2)" : "none",
                     transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                    ...(tier.popular && {
-                      borderColor: "primary.main",
-                      boxShadow: "0 8px 30px rgba(99, 102, 241, 0.2)",
-                    }),
                     "&:hover": {
-                      transform: "translateY(-3px)",
+                      transform: "translateY(-4px)",
                     },
                   }}
                 >
-                  {tier.popular && (
-                    <Chip
-                      label="Most Common"
-                      color="primary"
-                      size="small"
-                      sx={{ position: "absolute", top: 16, right: 16, fontWeight: 700 }}
-                    />
-                  )}
-
                   <Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                      <Chip
+                        label={tier.badge}
+                        color={tier.popular ? "primary" : "default"}
+                        size="small"
+                        sx={{ fontWeight: 800 }}
+                      />
+                      <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>
+                        {tier.kwh}
+                      </Typography>
+                    </Box>
+
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, mt: 1.5 }}>
                       {tier.title}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
-                      Bracket: {tier.kwh}
+
+                    <Typography variant="h4" sx={{ fontWeight: 900, fontFamily: "monospace", my: 1.5, color: "#ffd54f" }}>
+                      {tier.price} <Typography component="span" variant="caption" sx={{ color: "text.secondary" }}>/kWh</Typography>
                     </Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 900, fontFamily: "monospace", my: 2 }}>
-                      {tier.price} <Typography component="span" variant="caption">/kWh</Typography>
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "text.secondary", mb: 3 }}>
+
+                    <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.85rem", lineHeight: 1.6, mb: 3 }}>
                       {tier.desc}
                     </Typography>
                   </Box>
@@ -595,9 +1319,10 @@ export const LandingPage: React.FC = () => {
                     to="/signup"
                     variant={tier.popular ? "contained" : "outlined"}
                     fullWidth
-                    sx={{ fontWeight: 700 }}
+                    size="small"
+                    sx={{ fontWeight: 800, py: 1 }}
                   >
-                    Start with this Tier
+                    Select Tier
                   </Button>
                 </Card>
               </Grid>
@@ -606,40 +1331,83 @@ export const LandingPage: React.FC = () => {
         </Container>
       </Box>
 
-      {/* 6. FAQ Section */}
-      <Box id="faq" sx={{ py: { xs: 8, md: 10 } }}>
+      {/* 7. Architecture & Developer Ecosystem */}
+      <Box sx={{ py: 6, borderY: "1px solid", borderColor: "divider", bgcolor: "action.hover" }}>
+        <Container maxWidth="lg">
+          <Grid container spacing={4} sx={{ alignItems: "center" }}>
+            <Grid size={{ xs: 12, md: 8 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+                <DocsIcon sx={{ color: "primary.main" }} />
+                <Typography variant="h5" sx={{ fontWeight: 900 }}>
+                  Developer Ecosystem & Built-in OpenAPI Docs
+                </Typography>
+              </Box>
+              <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7 }}>
+                Explore comprehensive API specifications, unbundled ERC calculation formulas, telemetry schemas, and database changelogs in our integrated interactive documentation portal.
+              </Typography>
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: { xs: "left", md: "right" } }}>
+              <Button
+                component={Link}
+                to="/docs"
+                variant="contained"
+                size="large"
+                startIcon={<DocsIcon />}
+                sx={{ fontWeight: 800, borderRadius: 2.5 }}
+              >
+                Open API Docs
+              </Button>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
+
+      {/* 8. FAQ Section */}
+      <Box id="faq" sx={{ py: { xs: 8, md: 11 } }}>
         <Container maxWidth="md">
-          <Typography variant="h3" sx={{ fontWeight: 800, textAlign: "center", mb: { xs: 4, md: 6 }, letterSpacing: "-0.02em" }}>
+          <Typography variant="h3" sx={{ fontWeight: 900, textAlign: "center", mb: { xs: 4, md: 6 }, letterSpacing: "-0.02em" }}>
             Frequently Asked Questions
           </Typography>
 
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
             {[
               {
-                q: "How accurate is the unbundled Meralco calculation formula?",
-                a: "PowerForecast implements the official Energy Regulatory Commission (ERC) unbundled billing framework, factoring in Generation Charges, Transmission, System Loss, Distribution, Subsidies, and Government Taxes (12% VAT, Universal Charges, FIT-All).",
+                q: "How does the 24-Hour Activity Timeline calculate live running costs?",
+                a: "The dashboard aggregates the wattage of all active circuits in real-time, multiplies the cumulative load by your effective Meralco tariff rate (₱/kWh), and computes continuous ₱/hr running costs and active circuit breaker amperage loads.",
+              },
+              {
+                q: "How does the smart auto-midnight multi-day splitting engine work?",
+                a: "When you log an overnight session (e.g. 10:00 PM to 2:00 AM), PowerForecast automatically detects the 23:59:59 crossing and splits the session into 2 distinct records: 2 hours attributed to Day 1, and 2 hours attributed to Day 2. This guarantees 100% calendar accuracy.",
+              },
+              {
+                q: "What is the multi-range Routine Defaults autofill feature?",
+                a: "Routine Defaults allows you to set standard daily hours for each appliance (e.g., Refrigerator 24h, AC 8h, Fan 10h). You can then batch autofill records for '1st to Today', 'Full Month', or any 'Custom Range' in a single click with full edit and delete support.",
+              },
+              {
+                q: "How accurate is the ERC unbundled Meralco calculation formula?",
+                a: "PowerForecast implements the official Energy Regulatory Commission (ERC) unbundled billing framework, factoring in Generation Charges, Transmission Wheeling, System Loss, Distribution Charges, Lifeline Subsidies, FIT-All, Universal Charges, and 12% VAT down to the exact centavo.",
               },
               {
                 q: "What is the DOE PELP Database integration?",
-                a: "PELP stands for Philippine Energy Labeling Program. PowerForecast contains verified ratings (CSPF, EER, star ratings) from the Department of Energy to help you calculate real-world consumption for inverter and non-inverter models.",
+                a: "PELP stands for the Philippine Energy Labeling Program mandated by the Department of Energy. PowerForecast incorporates verified CSPF and EER ratings for top air conditioners and refrigerators so you can accurately model inverter efficiency and real-world power consumption.",
               },
               {
-                q: "Does PowerForecast save my data securely?",
-                a: "Yes. All appliance inventories and schedule events are synced securely with Supabase Cloud DB with automatic fallback to browser storage.",
+                q: "Can I scan physical appliance nameplates or Meralco paper bills?",
+                a: "Yes. The built-in AI Vision OCR scanner allows you to snap a photo or upload an image of any appliance nameplate or utility paper bill. The optical engine extracts rated wattage, voltage, amps, and billing totals automatically.",
               },
               {
-                q: "How do I get started with PowerForecast?",
-                a: "Simply click 'Get Started Free' or 'Create Free Account' to register your household with Supabase authentication and begin tracking immediately.",
+                q: "Is my household energy data stored securely?",
+                a: "Yes. All appliance inventories and schedule records are stored securely in Supabase Cloud DB with automatic fallback to offline browser storage.",
               },
             ].map((faq, idx) => (
-              <Accordion key={idx}>
+              <Accordion key={idx} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, "&:before": { display: "none" } }}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
                     {faq.q}
                   </Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                  <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6 }}>
+                  <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7 }}>
                     {faq.a}
                   </Typography>
                 </AccordionDetails>
@@ -649,20 +1417,143 @@ export const LandingPage: React.FC = () => {
         </Container>
       </Box>
 
-      {/* 7. Footer */}
-      <Box sx={{ py: 6, borderTop: "1px solid", borderColor: "divider", bgcolor: "action.hover" }}>
-        <Container maxWidth="lg">
-          <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-              <Box component="img" src="/Assets/LOGO.png" alt="PowerForecast Logo" sx={{ width: 28, height: 28, objectFit: "contain" }} />
-              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                PowerForecast Refine & MUI
-              </Typography>
-              <Chip label={APP_VERSION} size="small" sx={{ fontFamily: "monospace", fontWeight: 700 }} />
+      {/* 9. Final Call to Action Banner */}
+      <Box sx={{ py: { xs: 8, md: 10 }, bgcolor: "primary.main", color: "primary.contrastText" }}>
+        <Container maxWidth="md">
+          <Box sx={{ textAlign: "center" }}>
+            <Typography variant="h3" sx={{ fontWeight: 900, mb: 2, letterSpacing: "-0.02em" }}>
+              Take Total Control of Your Power Bill Today
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9, maxWidth: 650, mx: "auto", mb: 4, lineHeight: 1.6 }}>
+              Join households across the Philippines tracking their circuits, stopping peak overloads, and computing unbundled Meralco bills with centavo precision.
+            </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 2 }}>
+              <Button
+                component={Link}
+                to="/signup"
+                variant="contained"
+                size="large"
+                sx={{
+                  bgcolor: "#ffffff",
+                  color: "#1e1b4b",
+                  fontWeight: 900,
+                  px: 4,
+                  py: 1.4,
+                  borderRadius: 2.5,
+                  "&:hover": { bgcolor: "#f1f5f9" },
+                }}
+              >
+                Create Free Account
+              </Button>
+              <Button
+                component={Link}
+                to="/calculator"
+                variant="outlined"
+                size="large"
+                sx={{
+                  borderColor: "rgba(255,255,255,0.7)",
+                  color: "#ffffff",
+                  fontWeight: 800,
+                  px: 3.5,
+                  py: 1.4,
+                  borderRadius: 2.5,
+                  "&:hover": { borderColor: "#ffffff", bgcolor: "rgba(255,255,255,0.1)" },
+                }}
+              >
+                Try Unbundled Calculator
+              </Button>
             </Box>
+          </Box>
+        </Container>
+      </Box>
 
+      {/* 10. Footer */}
+      <Box sx={{ py: 6, borderTop: "1px solid", borderColor: "divider", bgcolor: "background.default" }}>
+        <Container maxWidth="lg">
+          <Grid container spacing={4} sx={{ mb: 4 }}>
+            {/* Col 1: Brand */}
+            <Grid size={{ xs: 12, md: 4 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+                <Box component="img" src="/Assets/LOGO.png" alt="PowerForecast Logo" sx={{ width: 32, height: 32, objectFit: "contain" }} />
+                <Typography variant="h6" sx={{ fontWeight: 900 }}>
+                  Power<Box component="span" sx={{ color: "primary.main" }}>Forecast</Box>
+                </Typography>
+                <Chip label={APP_VERSION} size="small" sx={{ fontFamily: "monospace", fontWeight: 800 }} />
+              </Box>
+              <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6, mb: 2 }}>
+                Next-generation Meralco energy intelligence, real-time circuit power telemetry, and ERC unbundled bill forecasting platform for Philippine households.
+              </Typography>
+            </Grid>
+
+            {/* Col 2: Navigation */}
+            <Grid size={{ xs: 6, sm: 4, md: 2.5 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2 }}>
+                Platform Views
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <Typography component={Link} to="/dashboard" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", "&:hover": { color: "primary.main" } }}>
+                  Live Dashboard
+                </Typography>
+                <Typography component={Link} to="/calendar" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", "&:hover": { color: "primary.main" } }}>
+                  Smart Calendar
+                </Typography>
+                <Typography component={Link} to="/appliances" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", "&:hover": { color: "primary.main" } }}>
+                  Appliances Hub
+                </Typography>
+                <Typography component={Link} to="/calculator" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", "&:hover": { color: "primary.main" } }}>
+                  Unbundled Calculator
+                </Typography>
+                <Typography component={Link} to="/forecasting" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", "&:hover": { color: "primary.main" } }}>
+                  Forecast & Anomaly
+                </Typography>
+              </Box>
+            </Grid>
+
+            {/* Col 3: Resources & Docs */}
+            <Grid size={{ xs: 6, sm: 4, md: 2.5 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2 }}>
+                Documentation
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <Typography component={Link} to="/docs" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", "&:hover": { color: "primary.main" } }}>
+                  OpenAPI Specs
+                </Typography>
+                <Typography component={Link} to="/docs" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", "&:hover": { color: "primary.main" } }}>
+                  ERC Tariff Formulas
+                </Typography>
+                <Typography component={Link} to="/docs" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", "&:hover": { color: "primary.main" } }}>
+                  System Audit Logs
+                </Typography>
+              </Box>
+            </Grid>
+
+            {/* Col 4: Account */}
+            <Grid size={{ xs: 6, sm: 4, md: 3 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2 }}>
+                Account Access
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <Typography component={Link} to="/login" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", "&:hover": { color: "primary.main" } }}>
+                  Sign In
+                </Typography>
+                <Typography component={Link} to="/signup" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", "&:hover": { color: "primary.main" } }}>
+                  Create Free Account
+                </Typography>
+                <Typography component={Link} to="/forgot-password" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", "&:hover": { color: "primary.main" } }}>
+                  Forgot Password
+                </Typography>
+              </Box>
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 3 }} />
+
+          <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              © {new Date().getFullYear()} PowerForecast. Designed with Material UI Templates.
+              © {new Date().getFullYear()} PowerForecast • Built with Refine, React 19, Material UI 9, and Supabase.
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontFamily: "monospace" }}>
+              Version {APP_VERSION}
             </Typography>
           </Box>
         </Container>
