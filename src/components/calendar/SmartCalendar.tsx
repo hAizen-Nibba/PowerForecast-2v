@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Box from "@mui/material/Box";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
@@ -27,8 +29,11 @@ import {
   CheckCircle as CheckCircleIcon,
   AutoAwesome as SparklesIcon,
   Insights as InsightsIcon,
+  Home as HomeIcon,
+  Store as StoreIcon,
+  Public as PublicIcon,
 } from "@mui/icons-material";
-import { UserCalendarEvent, UserAppliance, ApplianceUsageLog, DailyApplianceUsage } from "../../types";
+import { UserCalendarEvent, UserAppliance, ApplianceUsageLog, DailyApplianceUsage, ApplianceList } from "../../types";
 import { useList, useUpdate, useCreate, useDelete } from "@refinedev/core";
 import { DateAnalyticsModal } from "./DateAnalyticsModal";
 import { LiveSessionModal } from "./LiveSessionModal";
@@ -43,9 +48,10 @@ import {
 } from "../../lib/dailyUsageService";
 
 export const SmartCalendar: React.FC = () => {
-  const [currentDate, setCurrentDate] = useState<Date>(new Date(2026, 7, 19));
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDateForModal, setSelectedDateForModal] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<"month" | "week">("month");
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string>("all");
 
   // Modals state
   const [selectedApplianceForLive, setSelectedApplianceForLive] = useState<UserAppliance | null>(null);
@@ -73,6 +79,10 @@ export const SmartCalendar: React.FC = () => {
     resource: "user_appliances",
   }) as any;
 
+  const spacesRes = useList<ApplianceList>({
+    resource: "appliance_lists",
+  }) as any;
+
   const logsRes = useList<ApplianceUsageLog>({
     resource: "appliance_usage_logs",
   }) as any;
@@ -88,9 +98,16 @@ export const SmartCalendar: React.FC = () => {
   const { mutate: deleteLog } = useDelete();
 
   const events: UserCalendarEvent[] = eventsRes?.data?.data || eventsRes?.result?.data || [];
-  const appliances: UserAppliance[] = appliancesRes?.data?.data || appliancesRes?.result?.data || [];
+  const allAppliances: UserAppliance[] = appliancesRes?.data?.data || appliancesRes?.result?.data || [];
   const logs: ApplianceUsageLog[] = logsRes?.data?.data || logsRes?.result?.data || [];
   const dailyUsageList: DailyApplianceUsage[] = dailyUsageRes?.data?.data || dailyUsageRes?.result?.data || [];
+  const spaces: ApplianceList[] = spacesRes?.data?.data || spacesRes?.result?.data || [];
+
+  // Filter appliances by selected space
+  const appliances = useMemo(() => {
+    if (selectedSpaceId === "all") return allAppliances;
+    return allAppliances.filter((a) => a.list_id === selectedSpaceId);
+  }, [allAppliances, selectedSpaceId]);
 
   // Group daily usage by dateKey
   const dailyUsageMap = useMemo(() => {
@@ -136,7 +153,7 @@ export const SmartCalendar: React.FC = () => {
   };
 
   const handleToday = () => {
-    setCurrentDate(new Date(2026, 7, 19));
+    setCurrentDate(new Date());
   };
 
   // Active running appliances
@@ -226,7 +243,7 @@ export const SmartCalendar: React.FC = () => {
       user_id: app.user_id || null,
     });
 
-    // 3. Turn off appliance
+    // 3. Stop stopwatch
     updateAppliance({
       resource: "user_appliances",
       id: app.id,
@@ -236,7 +253,7 @@ export const SmartCalendar: React.FC = () => {
       },
     });
 
-    showSuccess(`Powered OFF ${app.name}. Receipt recorded (₱${cost.toFixed(2)})!`, "Session Ended");
+    showSuccess(`Stopwatch stopped for ${app.name}. Log saved (₱${cost.toFixed(2)})!`, "⏹️ Stopwatch Stopped");
   };
 
   const handleOpenLiveModal = (app: UserAppliance) => {
@@ -361,6 +378,55 @@ export const SmartCalendar: React.FC = () => {
         </Box>
       </Box>
 
+      {/* 1.5. Space Switcher Tabs */}
+      {spaces.length > 1 && (
+        <Card sx={{ borderRadius: 3, overflow: "hidden" }}>
+          <Tabs
+            value={selectedSpaceId}
+            onChange={(_, v) => setSelectedSpaceId(v)}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{
+              minHeight: 44,
+              bgcolor: "rgba(15, 14, 58, 0.4)",
+              "& .MuiTab-root": {
+                fontWeight: 700,
+                fontSize: "0.8125rem",
+                minHeight: 44,
+                textTransform: "none",
+                letterSpacing: "0.01em",
+              },
+              "& .Mui-selected": {
+                color: "primary.main",
+              },
+            }}
+          >
+            <Tab
+              value="all"
+              icon={<PublicIcon sx={{ fontSize: 18 }} />}
+              iconPosition="start"
+              label={`All Spaces (${allAppliances.length})`}
+            />
+            {spaces.map((space) => {
+              const count = allAppliances.filter((a) => a.list_id === space.id).length;
+              return (
+                <Tab
+                  key={space.id}
+                  value={space.id}
+                  icon={
+                    space.tariff_type === "commercial"
+                      ? <StoreIcon sx={{ fontSize: 18 }} />
+                      : <HomeIcon sx={{ fontSize: 18 }} />
+                  }
+                  iconPosition="start"
+                  label={`${space.name} (${count})`}
+                />
+              );
+            })}
+          </Tabs>
+        </Card>
+      )}
+
       {/* 2. MONTH SUMMARY & PROJECTED CONSUMPTION DIAGNOSTIC BANNER */}
       <Grid container spacing={2}>
         <Grid size={{ xs: 6, sm: 3 }}>
@@ -408,10 +474,10 @@ export const SmartCalendar: React.FC = () => {
         <Grid size={{ xs: 6, sm: 3 }}>
           <Paper sx={{ p: 2, borderRadius: 3, bgcolor: "rgba(15, 14, 58, 0.6)", border: "1px solid rgba(108, 122, 224, 0.25)" }}>
             <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 0.75 }}>
-              🔥 Live Running Power
+              ⏱️ Live Stopwatch Power
             </Typography>
             <Typography variant="h6" sx={{ fontWeight: 900, color: activeWattage > 2000 ? "#f87171" : "#34d399", mt: 0.5 }}>
-              {activeWattage} W ({activeAppliances.length} ON)
+              {activeWattage} W ({activeAppliances.length} ⏱️ Running)
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
               {appliances.length} Registered Circuits
@@ -420,16 +486,16 @@ export const SmartCalendar: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* 3. Live Active Appliances Quick Bar (if any running) */}
+      {/* 3. Active Stopwatch Sessions Quick Bar (if any running) */}
       {activeAppliances.length > 0 && (
         <Card sx={{ p: 2.5, borderRadius: 3, bgcolor: "rgba(6, 78, 59, 0.2)", border: "1px solid rgba(52, 211, 153, 0.4)" }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#34d399", display: "flex", alignItems: "center", gap: 1 }}>
               <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#34d399", animation: "pulse 1.5s infinite" }} />
-              Live Running Appliance Sessions ({activeAppliances.length})
+              ⏱️ Active Stopwatch Sessions ({activeAppliances.length})
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Click an appliance to open stopwatch receipt modal
+              Click to view live stopwatch & meter
             </Typography>
           </Box>
 
@@ -523,7 +589,8 @@ export const SmartCalendar: React.FC = () => {
           {/* Actual day cells */}
           {Array.from({ length: daysInMonth }).map((_, idx) => {
             const dayNum = idx + 1;
-            const isCurrentToday = dayNum === 19 && month === 7 && year === 2026;
+            const realToday = new Date();
+            const isCurrentToday = dayNum === realToday.getDate() && month === realToday.getMonth() && year === realToday.getFullYear();
             const dayDate = new Date(year, month, dayNum);
             const dateKey = formatDateToKey(dayDate);
             const metrics = computeDayMetrics(
@@ -549,25 +616,62 @@ export const SmartCalendar: React.FC = () => {
                     flexDirection: "column",
                     justifyContent: "space-between",
                     position: "relative",
+                    overflow: "hidden",
                     transition: "all 0.15s ease-in-out",
                     bgcolor: isCurrentToday
                       ? (theme) => (theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.18)" : "rgba(99, 102, 241, 0.08)")
                       : metrics.isLogged
                       ? "rgba(16, 185, 129, 0.05)"
                       : "transparent",
+                    border: isCurrentToday ? "2px solid" : "1px solid",
                     borderColor: isCurrentToday
                       ? "primary.main"
                       : metrics.isLogged
                       ? "rgba(52, 211, 153, 0.4)"
                       : "divider",
+                    boxShadow: isCurrentToday
+                      ? "0 0 16px rgba(99, 102, 241, 0.35), 0 0 4px rgba(99, 102, 241, 0.2)"
+                      : "none",
                     "&:hover": {
                       borderColor: "primary.light",
                       transform: "translateY(-2px)",
-                      boxShadow: "0 4px 12px rgba(99, 102, 241, 0.2)",
+                      boxShadow: isCurrentToday
+                        ? "0 0 20px rgba(99, 102, 241, 0.45), 0 4px 12px rgba(99, 102, 241, 0.2)"
+                        : "0 4px 12px rgba(99, 102, 241, 0.2)",
                     },
                   }}
                 >
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  {/* TODAY badge */}
+                  {isCurrentToday && (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        display: "flex",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          bgcolor: "primary.main",
+                          color: "#fff",
+                          fontSize: "0.5625rem",
+                          fontWeight: 900,
+                          px: 1,
+                          py: 0.15,
+                          borderRadius: "0 0 6px 6px",
+                          letterSpacing: "0.08em",
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        TODAY
+                      </Box>
+                    </Box>
+                  )}
+
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: isCurrentToday ? 1 : 0 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                       <Typography
                         variant="body2"
@@ -627,6 +731,8 @@ export const SmartCalendar: React.FC = () => {
           appliances={appliances}
           events={events}
           initialUsageRecords={dailyUsageList}
+          spaces={spaces}
+          selectedSpaceId={selectedSpaceId}
           onUsageSaved={() => {
             if (dailyUsageRes?.refetch) {
               dailyUsageRes.refetch();
@@ -635,7 +741,7 @@ export const SmartCalendar: React.FC = () => {
         />
       )}
 
-      {/* Live Session & Historical Receipt Modal */}
+      {/* Live Stopwatch & Historical Receipt Modal */}
       {isLiveModalOpen && (
         <LiveSessionModal
           isOpen={isLiveModalOpen}

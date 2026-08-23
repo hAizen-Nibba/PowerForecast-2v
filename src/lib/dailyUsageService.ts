@@ -37,6 +37,38 @@ export function calculateCost(kwh: number, effectiveRate: number = DEFAULT_EFFEC
 }
 
 /**
+ * Converts total seconds into { hours, minutes, seconds } components
+ */
+export function secondsToHms(totalSeconds: number): { hours: number; minutes: number; seconds: number } {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = Math.floor(totalSeconds % 60);
+  return { hours: h, minutes: m, seconds: s };
+}
+
+/**
+ * Converts HH:MM:SS components into decimal hours (e.g. 8h 30m 15s → 8.5042)
+ */
+export function hmsToDecimalHours(h: number, m: number, s: number): number {
+  return Number((h + m / 60 + s / 3600).toFixed(6));
+}
+
+/**
+ * Converts decimal hours into HH:MM:SS components (e.g. 8.5042 → { hours: 8, minutes: 30, seconds: 15 })
+ */
+export function decimalHoursToHms(decimal: number): { hours: number; minutes: number; seconds: number } {
+  const totalSeconds = Math.round(decimal * 3600);
+  return secondsToHms(totalSeconds);
+}
+
+/**
+ * Formats HH:MM:SS components into a padded display string (e.g. "08:00:32")
+ */
+export function formatHmsString(h: number, m: number, s: number): string {
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+/**
  * Upserts a single daily appliance usage record in Supabase
  */
 export async function upsertDailyUsageRecord(params: {

@@ -187,7 +187,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
     const newState = !app.is_currently_on;
     const nowIso = newState ? new Date().toISOString() : null;
 
-    devLog.telemetry("Telemetry", `Circuit switched ${newState ? "⚡ [ACTIVE ON]" : "⚪ [STANDBY OFF]"}: "${app.name}" (${app.watts}W @ 230V)`, {
+    devLog.telemetry("Telemetry", `Stopwatch ${newState ? "started ⏱️ [TIMING]" : "stopped ⏹️ [STOPPED]"}: "${app.name}" (${app.watts}W @ 230V)`, {
       applianceId: app.id,
       name: app.name,
       category: app.category,
@@ -206,7 +206,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
       },
     });
 
-    showInfo(`${app.name} turned ${newState ? "ON" : "OFF"}.`);
+    showInfo(`${app.name} stopwatch ${newState ? "started ⏱️" : "stopped ⏹️"}.`);
   };
 
   const getRunningDuration = (turnedOnAt?: string | null) => {

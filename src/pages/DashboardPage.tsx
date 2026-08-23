@@ -33,6 +33,7 @@ import { AiVisionScannerModal } from "../components/vision/AiVisionScannerModal"
 import { useList } from "@refinedev/core";
 import { UserAppliance, ApplianceList } from "../types";
 import { calculateMeralcoBill } from "../lib/meralcoCalculator";
+import { useNotifications } from "../hooks/useNotifications";
 
 export const DashboardPage: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -105,6 +106,12 @@ export const DashboardPage: React.FC = () => {
       comPercent: consolidatedTotalBill > 0 ? (comTotalBill / consolidatedTotalBill) * 100 : 0,
     };
   }, [appliances, spaces]);
+
+  // Activate smart energy notification monitors
+  useNotifications({
+    appliances,
+    projectedBill: spaceAnalytics.consolidatedTotalBill,
+  });
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>

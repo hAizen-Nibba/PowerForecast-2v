@@ -76,7 +76,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
     const newState = !app.is_currently_on;
     const nowIso = newState ? new Date().toISOString() : null;
 
-    devLog.telemetry("Telemetry", `Circuit switched ${newState ? "⚡ [ACTIVE ON]" : "⚪ [STANDBY OFF]"}: "${app.name}" (${app.watts}W @ 230V)`, {
+    devLog.telemetry("Telemetry", `Stopwatch ${newState ? "started ⏱️ [TIMING]" : "stopped ⏹️ [STOPPED]"}: "${app.name}" (${app.watts}W @ 230V)`, {
       applianceId: app.id,
       name: app.name,
       category: app.category,
@@ -138,10 +138,10 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
             </Box>
             <Box>
               <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                Live Circuit Power Board
+                ⏱️ Live Stopwatch Power Board
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                Simultaneous demand gauge and individual circuit breaker switches
+                Real-time demand gauge and individual appliance stopwatch timers
               </Typography>
             </Box>
           </Box>
@@ -287,7 +287,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
                         sx={{ fontWeight: 700, fontFamily: "monospace", height: 20, fontSize: "0.6875rem" }}
                       />
 
-                      <Tooltip title={isOn ? "Click to Switch OFF" : "Click to Switch ON"}>
+                      <Tooltip title={isOn ? "⏹️ Stop Stopwatch" : "⏱️ Start Stopwatch"}>
                         <IconButton
                           size="small"
                           onClick={() => togglePower(app)}

@@ -86,7 +86,7 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isLive ? "Live Running Session" : "Historical Energy Receipt"}
+      title={isLive ? "⚡ Live Energy Stopwatch" : "Historical Energy Receipt"}
       maxWidth="sm"
     >
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
@@ -115,7 +115,7 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
                   }}
                 />
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#34d399" }}>
-                  Active Live Session
+                  ⏱️ Stopwatch Running
                 </Typography>
               </Box>
               <Chip
@@ -151,7 +151,7 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
               disabled={isStopping}
               sx={{ borderRadius: 2.5, fontWeight: 800, py: 1.2, mt: 1 }}
             >
-              {isStopping ? "Stopping Session..." : "Turn OFF & Save Historical Receipt"}
+              {isStopping ? "Stopping Stopwatch..." : "⏹️ Stop Stopwatch & Save Log"}
             </Button>
           </Paper>
         )}

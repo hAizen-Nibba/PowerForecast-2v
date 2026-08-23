@@ -6,7 +6,7 @@ export const SUPABASE_URL =
 export const SUPABASE_ANON_KEY =
   import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_gfiWW-NqpccAsARI5pO4Kg_qzOTY6Az';
 
-export const APP_VERSION = import.meta.env.VITE_APP_VERSION || '2.4.0v';
+export const APP_VERSION = import.meta.env.VITE_APP_VERSION || '2.4.1v';
 
 export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {

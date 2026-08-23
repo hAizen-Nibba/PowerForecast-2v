@@ -10,6 +10,7 @@ import Avatar from "@mui/material/Avatar";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
+import Badge from "@mui/material/Badge";
 import {
   Menu as MenuIcon,
   LightMode as SunIcon,
@@ -21,9 +22,13 @@ import {
   Logout as LogoutIcon,
   CloudDone as CloudDoneIcon,
   CloudOff as CloudOffIcon,
+  NotificationsNone as NotificationsIcon,
+  NotificationsActive as NotificationsActiveIcon,
 } from "@mui/icons-material";
 import { useGetIdentity, useLogout } from "@refinedev/core";
 import { checkSupabaseConnection } from "../../lib/supabaseClient";
+import { NotificationPopover } from "./NotificationPopover";
+import { getNotificationPermission } from "../../lib/notificationService";
 
 interface HeaderProps {
   onOpenSidebar: () => void;
@@ -42,7 +47,9 @@ export const Header: React.FC<HeaderProps> = ({
   const { mutate: logout } = useLogout();
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
   const [dbStatus, setDbStatus] = useState<{ ok: boolean; latency?: number }>({ ok: true, latency: 45 });
+  const notifPermission = getNotificationPermission();
 
   // Check Supabase connection health on mount and every 30s
   useEffect(() => {
@@ -197,6 +204,40 @@ export const Header: React.FC<HeaderProps> = ({
             </IconButton>
           </Tooltip>
 
+          {/* Smart Energy Notifications Bell */}
+          <Tooltip title="Smart Energy Notifications">
+            <IconButton
+              onClick={(e) => setNotifAnchorEl(e.currentTarget)}
+              color="inherit"
+              size="small"
+              sx={{
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
+                border: "1px solid",
+                borderColor: "divider",
+                p: 0.75,
+              }}
+            >
+              <Badge
+                variant="dot"
+                color={notifPermission === "granted" ? "success" : notifPermission === "denied" ? "error" : "warning"}
+                sx={{
+                  "& .MuiBadge-badge": {
+                    width: 7,
+                    height: 7,
+                    minWidth: 7,
+                  },
+                }}
+              >
+                {notifPermission === "granted" ? (
+                  <NotificationsActiveIcon sx={{ color: "primary.main", fontSize: 18 }} />
+                ) : (
+                  <NotificationsIcon sx={{ color: "text.secondary", fontSize: 18 }} />
+                )}
+              </Badge>
+            </IconButton>
+          </Tooltip>
+
           {/* User Profile Pill & Menu */}
           <Box
             onClick={(e) => setAnchorEl(e.currentTarget)}
@@ -268,6 +309,12 @@ export const Header: React.FC<HeaderProps> = ({
               Sign Out
             </MenuItem>
           </Menu>
+
+          {/* Smart Notification Preferences Popover */}
+          <NotificationPopover
+            anchorEl={notifAnchorEl}
+            onClose={() => setNotifAnchorEl(null)}
+          />
         </Box>
       </Toolbar>
     </AppBar>

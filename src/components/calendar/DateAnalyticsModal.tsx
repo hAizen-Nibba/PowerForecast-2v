@@ -14,7 +14,7 @@ import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import Card from "@mui/material/Card";
 import Paper from "@mui/material/Paper";
-import Slider from "@mui/material/Slider";
+
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Tooltip from "@mui/material/Tooltip";
@@ -47,7 +47,7 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
 } from "recharts";
-import { UserAppliance, UserCalendarEvent, DailyApplianceUsage } from "../../types";
+import { UserAppliance, UserCalendarEvent, DailyApplianceUsage, ApplianceList } from "../../types";
 import { useCreate, useDelete } from "@refinedev/core";
 import {
   formatDateToKey,
@@ -55,6 +55,8 @@ import {
   calculateKwh,
   calculateCost,
   DEFAULT_EFFECTIVE_RATE,
+  hmsToDecimalHours,
+  decimalHoursToHms,
 } from "../../lib/dailyUsageService";
 import { supabaseClient } from "../../lib/supabaseClient";
 import { useToast } from "../common/ToastProvider";
@@ -66,6 +68,8 @@ interface DateAnalyticsModalProps {
   appliances: UserAppliance[];
   events: UserCalendarEvent[];
   initialUsageRecords?: DailyApplianceUsage[];
+  spaces?: ApplianceList[];
+  selectedSpaceId?: string;
   onUsageSaved?: () => void;
 }
 
@@ -76,6 +80,8 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
   appliances,
   events,
   initialUsageRecords = [],
+  spaces = [],
+  selectedSpaceId: parentSpaceId = "all",
   onUsageSaved,
 }) => {
   const [activeTab, setActiveTab] = useState<number>(0);
@@ -657,33 +663,72 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                         </Box>
                       </Box>
 
-                      {/* Slider + Stepper Controls */}
+                      {/* HH:MM:SS Duration Input */}
                       <Grid container spacing={2} sx={{ alignItems: "center" }}>
                         <Grid size={{ xs: 12, sm: 7 }}>
-                          <Box sx={{ px: 1 }}>
-                            <Slider
-                              value={hours}
-                              min={0}
-                              max={24}
-                              step={0.5}
-                              onChange={(_, val) => handleHoursChange(app.id, val as number)}
-                              valueLabelDisplay="auto"
-                              valueLabelFormat={(v) => `${v}h`}
-                              sx={{ py: 1 }}
-                            />
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                            {(() => {
+                              const hms = decimalHoursToHms(hours);
+                              return (
+                                <>
+                                  <TextField
+                                    type="number"
+                                    size="small"
+                                    value={hms.hours}
+                                    onChange={(e) => {
+                                      const h = Math.max(0, Math.min(24, parseInt(e.target.value) || 0));
+                                      handleHoursChange(app.id, hmsToDecimalHours(h, hms.minutes, hms.seconds));
+                                    }}
+                                    slotProps={{ input: { endAdornment: <InputAdornment position="end">h</InputAdornment> } }}
+                                    sx={{ width: 80, "& input": { textAlign: "center", fontWeight: 800, fontFamily: "monospace", py: 0.75, fontSize: "0.875rem" } }}
+                                  />
+                                  <Typography variant="body2" sx={{ fontWeight: 900, color: "text.secondary" }}>:</Typography>
+                                  <TextField
+                                    type="number"
+                                    size="small"
+                                    value={hms.minutes}
+                                    onChange={(e) => {
+                                      const m = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
+                                      handleHoursChange(app.id, hmsToDecimalHours(hms.hours, m, hms.seconds));
+                                    }}
+                                    slotProps={{ input: { endAdornment: <InputAdornment position="end">m</InputAdornment> } }}
+                                    sx={{ width: 80, "& input": { textAlign: "center", fontWeight: 800, fontFamily: "monospace", py: 0.75, fontSize: "0.875rem" } }}
+                                  />
+                                  <Typography variant="body2" sx={{ fontWeight: 900, color: "text.secondary" }}>:</Typography>
+                                  <TextField
+                                    type="number"
+                                    size="small"
+                                    value={hms.seconds}
+                                    onChange={(e) => {
+                                      const s = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
+                                      handleHoursChange(app.id, hmsToDecimalHours(hms.hours, hms.minutes, s));
+                                    }}
+                                    slotProps={{ input: { endAdornment: <InputAdornment position="end">s</InputAdornment> } }}
+                                    sx={{ width: 80, "& input": { textAlign: "center", fontWeight: 800, fontFamily: "monospace", py: 0.75, fontSize: "0.875rem" } }}
+                                  />
+                                </>
+                              );
+                            })()}
                           </Box>
                         </Grid>
 
                         <Grid size={{ xs: 12, sm: 5 }}>
                           <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end", flexWrap: "wrap" }}>
-                            {[0, 1, 4, 8, 12, 24].map((h) => (
+                            {[
+                              { label: "0h", value: 0 },
+                              { label: "30m", value: 0.5 },
+                              { label: "1h", value: 1 },
+                              { label: "4h", value: 4 },
+                              { label: "8h", value: 8 },
+                              { label: "24h", value: 24 },
+                            ].map((preset) => (
                               <Button
-                                key={h}
+                                key={preset.label}
                                 size="small"
-                                variant={hours === h ? "contained" : "outlined"}
-                                onClick={() => handleHoursChange(app.id, h)}
+                                variant={hours === preset.value ? "contained" : "outlined"}
+                                onClick={() => handleHoursChange(app.id, preset.value)}
                                 sx={{
-                                  minWidth: 32,
+                                  minWidth: 36,
                                   px: 0.75,
                                   py: 0.25,
                                   fontSize: "0.6875rem",
@@ -691,7 +736,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                   borderRadius: 1.5,
                                 }}
                               >
-                                {h}h
+                                {preset.label}
                               </Button>
                             ))}
                           </Box>
