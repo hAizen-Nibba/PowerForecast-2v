@@ -93,7 +93,7 @@ export const LandingPage: React.FC = () => {
   }, [selectedWatts, estimatorHours, estimatorRate]);
 
   // Active section tracking for header scrollspy
-  const [activeSection, setActiveSection] = useState<string>("showcase");
+  const [activeSection, setActiveSection] = useState<string>("estimator");
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -105,7 +105,7 @@ export const LandingPage: React.FC = () => {
   };
 
   useEffect(() => {
-    const sectionIds = ["showcase", "estimator", "features", "tariffs", "faq"];
+    const sectionIds = ["estimator", "showcase", "features", "tariffs", "faq"];
     const handleScroll = () => {
       const scrollPosition = window.scrollY + 140;
       let current = "";
@@ -129,8 +129,8 @@ export const LandingPage: React.FC = () => {
   }, []);
 
   const navLinks = [
-    { id: "showcase", label: "Platform Showcase" },
     { id: "estimator", label: "Estimator" },
+    { id: "showcase", label: "Platform Showcase" },
     { id: "features", label: "Core Modules" },
     { id: "tariffs", label: "Tariff Tiers" },
     { id: "faq", label: "FAQ" },
