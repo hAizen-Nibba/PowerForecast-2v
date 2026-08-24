@@ -390,7 +390,6 @@ export const SmartCalendar: React.FC = () => {
 
           {appliances.length > 0 && (
             <Button
-              data-tour="calendar-queue"
               variant="outlined"
               size="small"
               startIcon={<QueueIcon />}
@@ -516,7 +515,7 @@ export const SmartCalendar: React.FC = () => {
 
       {/* 3. Active Stopwatch Sessions Quick Bar (if any running) */}
       {activeAppliances.length > 0 && (
-        <Card data-tour="calendar-live-sessions" sx={{ p: 2.5, borderRadius: 3.5, bgcolor: "rgba(6, 78, 59, 0.2)", border: "1px solid rgba(52, 211, 153, 0.4)" }}>
+        <Card sx={{ p: 2.5, borderRadius: 3.5, bgcolor: "rgba(6, 78, 59, 0.2)", border: "1px solid rgba(52, 211, 153, 0.4)" }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5, flexWrap: "wrap", gap: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#34d399", display: "flex", alignItems: "center", gap: 1 }}>
               <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#34d399" }} />
@@ -562,7 +561,6 @@ export const SmartCalendar: React.FC = () => {
           {/* Actions & Visual Legend */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
             <Button
-              data-tour="calendar-routine-autofill"
               size="small"
               variant="outlined"
               color="primary"
@@ -598,7 +596,7 @@ export const SmartCalendar: React.FC = () => {
       </Card>
 
       {/* 5. Monthly Grid View */}
-      <Card data-tour="calendar-grid" sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: 3.5 }}>
+      <Card sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: 3.5 }}>
         {/* Day of week headers */}
         <Grid container columns={7} spacing={1} sx={{ mb: 1, textAlign: "center" }}>
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, idx) => (
@@ -647,7 +645,6 @@ export const SmartCalendar: React.FC = () => {
             return (
               <Grid size={1} key={`day-${dayNum}`}>
                 <Paper
-                  data-tour={isCurrentToday ? "calendar-day-click" : undefined}
                   variant="outlined"
                   onClick={() => setSelectedDateForModal(dayDate)}
                   sx={{

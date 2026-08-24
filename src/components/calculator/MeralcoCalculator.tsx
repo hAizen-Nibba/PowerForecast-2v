@@ -179,7 +179,7 @@ export const MeralcoCalculator: React.FC = () => {
                 <Divider />
 
                 {/* Tariff Classification Selection */}
-                <Box data-tour="calc-tariff-selector">
+                <Box>
                   <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 1 }}>
                     ACCOUNT TARIFF CLASSIFICATION
                   </Typography>
@@ -239,7 +239,7 @@ export const MeralcoCalculator: React.FC = () => {
                 </Box>
 
                 {/* Base Generation Charge */}
-                <Box data-tour="calc-subsidies">
+                <Box>
                   <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 1 }}>
                     BASE GENERATION CHARGE (₱ / kWh)
                   </Typography>
@@ -298,7 +298,7 @@ export const MeralcoCalculator: React.FC = () => {
                 </Box>
 
                 {/* Monthly kWh Slider */}
-                <Box data-tour="calc-kwh-slider">
+                <Box>
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
                     <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
                       MONTHLY CONSUMPTION
@@ -378,7 +378,6 @@ export const MeralcoCalculator: React.FC = () => {
               </Card>
             ) : (
               <Card
-                data-tour="calc-whatif"
                 sx={{
                   p: { xs: 2.5, sm: 3 },
                   borderRadius: 3.5,
@@ -521,7 +520,6 @@ export const MeralcoCalculator: React.FC = () => {
 
             {/* Cost Share Distribution Bar */}
             <Card
-              data-tour="calc-unbundled"
               sx={{
                 p: { xs: 2.5, sm: 3 },
                 borderRadius: 3.5,

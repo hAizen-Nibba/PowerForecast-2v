@@ -117,7 +117,6 @@ export const DashboardPage: React.FC = () => {
     <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3, md: 3.5 } }}>
       {/* 1. Hero Welcome Header Card */}
       <Card
-        data-tour="dashboard-hero"
         sx={{
           p: { xs: 2.5, sm: 3.5, md: 4 },
           display: "flex",
@@ -225,7 +224,7 @@ export const DashboardPage: React.FC = () => {
       </Card>
 
       {/* 2. Main KPI Stat Cards */}
-      <Grid container spacing={{ xs: 2, sm: 2.5 }} data-tour="dashboard-kpi-cards">
+      <Grid container spacing={{ xs: 2, sm: 2.5 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
             title="Consolidated Monthly Bill"
@@ -266,7 +265,7 @@ export const DashboardPage: React.FC = () => {
 
       {/* 3. Sub-Metering & Space Cost Allocation (When Multiple Spaces Exist) */}
       {spaces.length > 1 && (
-        <Card data-tour="dashboard-space-split" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5, border: "1px solid", borderColor: "rgba(108, 122, 224, 0.25)" }}>
+        <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5, border: "1px solid", borderColor: "rgba(108, 122, 224, 0.25)" }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1.5 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
               <Box sx={{ p: 1, borderRadius: 2, bgcolor: "primary.main", color: "#ffffff", display: "flex" }}>
@@ -368,10 +367,10 @@ export const DashboardPage: React.FC = () => {
 
       {/* 4. Main Grid: Live Power Board & Energy Distribution Donut */}
       <Grid container spacing={{ xs: 2.5, sm: 3 }}>
-        <Grid size={{ xs: 12, lg: 8 }} data-tour="dashboard-live-board">
+        <Grid size={{ xs: 12, lg: 8 }}>
           <LivePowerBoard onOpenAddModal={() => setIsAddModalOpen(true)} />
         </Grid>
-        <Grid size={{ xs: 12, lg: 4 }} data-tour="dashboard-donut">
+        <Grid size={{ xs: 12, lg: 4 }}>
           <ConsumptionDonut appliances={appliances} />
         </Grid>
       </Grid>
@@ -380,7 +379,7 @@ export const DashboardPage: React.FC = () => {
       <TodayActivityTimeline appliances={appliances} />
 
       {/* 6. Quick Module Launchpad */}
-      <Grid container spacing={{ xs: 2, sm: 2.5 }} data-tour="dashboard-quick-actions">
+      <Grid container spacing={{ xs: 2, sm: 2.5 }}>
         {[
           {
             title: "Bill Calculator",

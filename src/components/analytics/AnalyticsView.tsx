@@ -178,7 +178,7 @@ export const AnalyticsView: React.FC = () => {
             trend={{ value: "A+", direction: "up" }}
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }} data-tour="analytics-vampire-load">
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
             title="Optimization Potential"
             value="₱380.00"
@@ -192,7 +192,7 @@ export const AnalyticsView: React.FC = () => {
       <Grid container spacing={{ xs: 2.5, sm: 3 }}>
         {/* Left: Appliance Category Breakdown Bars */}
         <Grid size={{ xs: 12, md: 7 }}>
-          <Card data-tour="analytics-category-bars" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5, height: "100%", display: "flex", flexDirection: "column", gap: 2.5 }}>
+          <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5, height: "100%", display: "flex", flexDirection: "column", gap: 2.5 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                 <PieChartIcon sx={{ color: "primary.main" }} />
@@ -245,7 +245,7 @@ export const AnalyticsView: React.FC = () => {
 
         {/* Right: Unbundled Rate Component Proportions */}
         <Grid size={{ xs: 12, md: 5 }}>
-          <Card data-tour="analytics-insights" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5, height: "100%", display: "flex", flexDirection: "column", gap: 2 }}>
+          <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5, height: "100%", display: "flex", flexDirection: "column", gap: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
               <ReceiptIcon sx={{ color: "primary.main" }} />
               <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
@@ -293,7 +293,7 @@ export const AnalyticsView: React.FC = () => {
       </Grid>
 
       {/* 24-Hour Continuous Load Curve Card */}
-      <Card data-tour="analytics-load-curve" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5 }}>
+      <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5 }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2, mb: 2.5 }}>
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
@@ -304,7 +304,7 @@ export const AnalyticsView: React.FC = () => {
             </Typography>
           </Box>
 
-          <ButtonGroup data-tour="analytics-time-presets" size="small" variant="outlined">
+          <ButtonGroup size="small" variant="outlined">
             {[
               { label: "24 Hours", val: "24h" },
               { label: "Morning", val: "morning" },

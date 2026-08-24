@@ -159,7 +159,7 @@ export const authProvider: AuthProvider = {
       devLog.info("Auth", "User registered. Email confirmation required.");
       return {
         success: true,
-        redirectTo: "/signup", // Stay on signup page since 'false' is not supported in typings
+        redirectTo: `/verify-email?email=${encodeURIComponent(trimmedEmail)}`,
       };
     } catch (err: any) {
       devLog.error("Auth", "Unexpected registration error:", err);

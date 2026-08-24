@@ -22,15 +22,11 @@ import {
   CloudOff as CloudOffIcon,
   NotificationsNone as NotificationsIcon,
   NotificationsActive as NotificationsActiveIcon,
-  HelpOutlined as HelpIcon,
 } from "@mui/icons-material";
-import { useLocation } from "react-router-dom";
 import { useGetIdentity, useLogout } from "@refinedev/core";
 import { checkSupabaseConnection } from "../../lib/supabaseClient";
 import { NotificationPopover } from "./NotificationPopover";
 import { getNotificationPermission } from "../../lib/notificationService";
-import { useTour } from "../../hooks/useTour";
-import { ROUTE_TO_TOUR_PAGE } from "../tour/tourSteps";
 
 interface HeaderProps {
   onOpenSidebar: () => void;
@@ -45,10 +41,6 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleTheme,
   onOpenAiScanner,
 }) => {
-  const location = useLocation();
-  const { startTour, isActive: isTourActive } = useTour();
-  const currentTourPage = ROUTE_TO_TOUR_PAGE[location.pathname] || (location.pathname === "/" ? "dashboard" : null);
-
   const { data: identity } = useGetIdentity<any>();
   const { mutate: logout } = useLogout();
 
@@ -203,35 +195,6 @@ export const Header: React.FC<HeaderProps> = ({
             >
               AI Scanner
             </Button>
-          )}
-
-          {/* Guided Tour Replay Button */}
-          {currentTourPage && (
-            <Tooltip title="Page Tour & Tutorial [?]">
-              <IconButton
-                onClick={() => startTour(currentTourPage)}
-                color="inherit"
-                size="small"
-                disabled={isTourActive}
-                sx={{
-                  bgcolor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.15)" : "rgba(99, 102, 241, 0.08)",
-                  border: "1px solid",
-                  borderColor: "rgba(99, 102, 241, 0.35)",
-                  color: "primary.light",
-                  p: 0.75,
-                  borderRadius: 2,
-                  "&:hover": {
-                    bgcolor: "primary.main",
-                    color: "#ffffff",
-                    borderColor: "primary.main",
-                  },
-                  transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                }}
-              >
-                <HelpIcon sx={{ fontSize: 18 }} />
-              </IconButton>
-            </Tooltip>
           )}
 
           {/* Theme Mode Toggle Button */}

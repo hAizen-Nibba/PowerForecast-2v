@@ -368,7 +368,6 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
       {/* Bento Row 1: Space Switcher Bar & Add Space */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1.5 }}>
         <Tabs
-          data-tour="appliance-space-tabs"
           value={activeSpaceId}
           onChange={(_, val) => setActiveSpaceId(val)}
           variant="scrollable"
@@ -490,7 +489,6 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             sx={{ fontWeight: 800, fontFamily: "monospace" }}
           />
           <Button
-            data-tour="appliance-space-manage"
             variant="outlined"
             size="small"
             startIcon={<SettingsIcon />}
@@ -527,7 +525,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
       </Card>
 
       {/* Bento Row 3: 3-Method Ingestion Action Bento Panel */}
-      <Grid container spacing={2} data-tour="appliance-add-buttons">
+      <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 4 }}>
           <Paper
             variant="outlined"
@@ -683,7 +681,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
       </Grid>
 
       {/* Bento Row 4: Search & Filters */}
-      <Box data-tour="appliance-filters" sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, alignItems: "center", justifyContent: "space-between" }}>
+      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, alignItems: "center", justifyContent: "space-between" }}>
         <TextField
           size="small"
           placeholder="Search appliances in this space..."
@@ -737,7 +735,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             </Paper>
           </Grid>
         ) : (
-          filteredAppliances.map((app: UserAppliance, appIdx: number) => {
+          filteredAppliances.map((app: UserAppliance) => {
             const isOn = app.is_currently_on;
             const liveSpent = getAccumulatedPesos(app);
             const monthlyKwh = Number(app.monthly_kwh) || ((app.watts * app.hours_per_day * (app.quantity || 1) * 30) / 1000);
@@ -750,7 +748,6 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             return (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={app.id}>
                 <Card
-                  data-tour={appIdx === 0 ? "appliance-card" : undefined}
                   sx={{
                     p: { xs: 2.25, sm: 2.5 },
                     borderRadius: 3.5,
