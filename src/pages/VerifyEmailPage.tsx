@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
@@ -16,6 +16,22 @@ export const VerifyEmailPage: React.FC = () => {
   const isDark = mode === "dark";
   const [searchParams] = useSearchParams();
   const email = searchParams.get("email") || "your email address";
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Listen for auth state changes (e.g. from a different tab completing verification)
+    const { data: authListener } = supabaseClient.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "SIGNED_IN" || session) {
+          navigate("/verified");
+        }
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   const [isResending, setIsResending] = useState(false);
   const [resendStatus, setResendStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);

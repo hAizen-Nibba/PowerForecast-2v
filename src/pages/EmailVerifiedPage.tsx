@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
@@ -7,10 +7,17 @@ import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import { CheckCircleOutlined as CheckCircleIcon } from "@mui/icons-material";
 import { useColorMode } from "../theme/AppTheme";
+import { supabaseClient } from "../lib/supabaseClient";
 
 export const EmailVerifiedPage: React.FC = () => {
   const { mode } = useColorMode();
   const isDark = mode === "dark";
+  const navigate = useNavigate();
+
+  const handleManualLogin = async () => {
+    await supabaseClient.auth.signOut();
+    navigate("/login");
+  };
 
   return (
     <Box
@@ -64,21 +71,37 @@ export const EmailVerifiedPage: React.FC = () => {
             Thank you for verifying your email address. Your PowerForecast account is now active and ready to use.
           </Typography>
 
-          <Button
-            component={Link}
-            to="/login"
-            variant="contained"
-            size="large"
-            fullWidth
-            sx={{
-              py: 1.5,
-              borderRadius: 2.5,
-              fontWeight: 700,
-              fontSize: "1.1rem",
-            }}
-          >
-            Sign In Now
-          </Button>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Button
+              component={Link}
+              to="/dashboard"
+              variant="contained"
+              size="large"
+              fullWidth
+              sx={{
+                py: 1.5,
+                borderRadius: 2.5,
+                fontWeight: 700,
+                fontSize: "1.1rem",
+              }}
+            >
+              Proceed to Dashboard
+            </Button>
+            <Button
+              variant="outlined"
+              size="large"
+              fullWidth
+              onClick={handleManualLogin}
+              sx={{
+                py: 1.5,
+                borderRadius: 2.5,
+                fontWeight: 700,
+                fontSize: "1.1rem",
+              }}
+            >
+              Login Manually
+            </Button>
+          </Box>
         </Card>
       </Container>
     </Box>
