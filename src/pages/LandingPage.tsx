@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
@@ -92,6 +92,50 @@ export const LandingPage: React.FC = () => {
     };
   }, [selectedWatts, estimatorHours, estimatorRate]);
 
+  // Active section tracking for header scrollspy
+  const [activeSection, setActiveSection] = useState<string>("showcase");
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      const yOffset = -80; // Offset for sticky AppBar height
+      const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: "smooth" });
+    }
+  };
+
+  useEffect(() => {
+    const sectionIds = ["showcase", "estimator", "features", "tariffs", "faq"];
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 140;
+      let current = "";
+      for (const id of sectionIds) {
+        const el = document.getElementById(id);
+        if (el) {
+          const top = el.offsetTop;
+          if (scrollPosition >= top) {
+            current = id;
+          }
+        }
+      }
+      if (current) {
+        setActiveSection(current);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const navLinks = [
+    { id: "showcase", label: "Platform Showcase" },
+    { id: "estimator", label: "Estimator" },
+    { id: "features", label: "Core Modules" },
+    { id: "tariffs", label: "Tariff Tiers" },
+    { id: "faq", label: "FAQ" },
+  ];
+
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default", color: "text.primary" }}>
       {/* 1. Sticky Navigation Header */}
@@ -140,63 +184,46 @@ export const LandingPage: React.FC = () => {
             </Box>
 
             {/* Desktop Navigation Links */}
-            <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 3.5 }}>
-              <Typography
-                component="a"
-                href="#estimator"
-                variant="body2"
-                sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}
-              >
-                Estimator
-              </Typography>
-              <Typography
-                component="a"
-                href="#showcase"
-                variant="body2"
-                sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}
-              >
-                Platform Showcase
-              </Typography>
-              <Typography
-                component="a"
-                href="#features"
-                variant="body2"
-                sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}
-              >
-                Core Modules
-              </Typography>
-              <Typography
-                component="a"
-                href="#tariffs"
-                variant="body2"
-                sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}
-              >
-                Tariff Tiers
-              </Typography>
-              <Typography
-                component={Link}
-                to="/docs"
-                variant="body2"
-                sx={{
-                  color: "text.secondary",
-                  textDecoration: "none",
-                  fontWeight: 600,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 0.5,
-                  "&:hover": { color: "primary.main" },
-                }}
-              >
-                <DocsIcon sx={{ fontSize: 16 }} /> API Docs
-              </Typography>
-              <Typography
-                component="a"
-                href="#faq"
-                variant="body2"
-                sx={{ color: "text.secondary", textDecoration: "none", fontWeight: 600, "&:hover": { color: "primary.main" } }}
-              >
-                FAQ
-              </Typography>
+            <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 1 }}>
+              {navLinks.map((nav) => {
+                const isActive = activeSection === nav.id;
+                return (
+                  <Button
+                    key={nav.id}
+                    onClick={() => scrollToSection(nav.id)}
+                    variant="text"
+                    size="small"
+                    sx={{
+                      color: isActive ? "primary.main" : "text.secondary",
+                      fontWeight: isActive ? 800 : 600,
+                      fontSize: "0.875rem",
+                      textTransform: "none",
+                      px: 1.5,
+                      py: 0.6,
+                      borderRadius: 2,
+                      bgcolor: isActive
+                        ? (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "rgba(99, 102, 241, 0.15)"
+                              : "rgba(99, 102, 241, 0.08)"
+                        : "transparent",
+                      border: "1px solid",
+                      borderColor: isActive ? "rgba(99, 102, 241, 0.3)" : "transparent",
+                      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                      "&:hover": {
+                        color: "primary.main",
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(255, 255, 255, 0.05)"
+                            : "rgba(99, 102, 241, 0.04)",
+                        borderColor: "rgba(99, 102, 241, 0.2)",
+                      },
+                    }}
+                  >
+                    {nav.label}
+                  </Button>
+                );
+              })}
             </Box>
 
             {/* Right Action Group */}
@@ -322,8 +349,7 @@ export const LandingPage: React.FC = () => {
                 Unbundled Calculator
               </Button>
               <Button
-                component="a"
-                href="#showcase"
+                onClick={() => scrollToSection("showcase")}
                 variant="text"
                 size="large"
                 startIcon={<SpeedIcon />}
@@ -370,6 +396,7 @@ export const LandingPage: React.FC = () => {
           <Card
             id="estimator"
             sx={{
+              scrollMarginTop: { xs: "72px", sm: "84px" },
               p: { xs: 2.5, sm: 4 },
               borderRadius: 4,
               border: "1px solid",
@@ -633,7 +660,7 @@ export const LandingPage: React.FC = () => {
       </Box>
 
       {/* 4. Interactive Platform Showcase (Tabbed Walkthrough) */}
-      <Box id="showcase" sx={{ py: { xs: 8, md: 11 } }}>
+      <Box id="showcase" sx={{ py: { xs: 8, md: 11 }, scrollMarginTop: { xs: "72px", sm: "84px" } }}>
         <Container maxWidth="lg">
           <Box sx={{ textAlign: "center", maxWidth: 780, mx: "auto", mb: { xs: 4, md: 6 } }}>
             <Chip
@@ -1120,7 +1147,7 @@ export const LandingPage: React.FC = () => {
       </Box>
 
       {/* 5. Core Platform Modules Grid */}
-      <Box id="features" sx={{ py: { xs: 8, md: 11 }, bgcolor: "action.hover" }}>
+      <Box id="features" sx={{ py: { xs: 8, md: 11 }, bgcolor: "action.hover", scrollMarginTop: { xs: "72px", sm: "84px" } }}>
         <Container maxWidth="lg">
           <Box sx={{ textAlign: "center", maxWidth: 750, mx: "auto", mb: { xs: 5, md: 7 } }}>
             <Typography variant="h3" sx={{ fontWeight: 900, mb: 1.5, letterSpacing: "-0.02em" }}>
@@ -1222,7 +1249,7 @@ export const LandingPage: React.FC = () => {
       </Box>
 
       {/* 6. Tariff Tiers Comparison */}
-      <Box id="tariffs" sx={{ py: { xs: 8, md: 11 } }}>
+      <Box id="tariffs" sx={{ py: { xs: 8, md: 11 }, scrollMarginTop: { xs: "72px", sm: "84px" } }}>
         <Container maxWidth="lg">
           <Box sx={{ textAlign: "center", maxWidth: 720, mx: "auto", mb: { xs: 5, md: 7 } }}>
             <Chip label="Official Rate Brackets" color="secondary" size="small" sx={{ mb: 1.5, fontWeight: 800 }} />
@@ -1363,7 +1390,7 @@ export const LandingPage: React.FC = () => {
       </Box>
 
       {/* 8. FAQ Section */}
-      <Box id="faq" sx={{ py: { xs: 8, md: 11 } }}>
+      <Box id="faq" sx={{ py: { xs: 8, md: 11 }, scrollMarginTop: { xs: "72px", sm: "84px" } }}>
         <Container maxWidth="md">
           <Typography variant="h3" sx={{ fontWeight: 900, textAlign: "center", mb: { xs: 4, md: 6 }, letterSpacing: "-0.02em" }}>
             Frequently Asked Questions
