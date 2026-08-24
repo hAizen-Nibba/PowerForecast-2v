@@ -49,13 +49,22 @@ export const SignupPage: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showSecurityAnswer, setShowSecurityAnswer] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    setSuccessMessage(null);
 
     if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
       setErrorMessage("Please fill in all required fields.");
+      return;
+    }
+
+    // Basic email validation regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErrorMessage("Please enter a valid email address.");
       return;
     }
 
@@ -83,7 +92,18 @@ export const SignupPage: React.FC = () => {
         securityAnswer,
       },
       {
-        onSuccess: () => navigate("/dashboard"),
+        onSuccess: (data: any) => {
+          // If the authProvider redirects to signup, it means email confirmation is required.
+          if (!data?.redirectTo || data?.redirectTo === "/signup") {
+            setSuccessMessage("Registration successful! Please check your email to verify your account before logging in.");
+            // Reset form fields
+            setName("");
+            setEmail("");
+            setPassword("");
+            setConfirmPassword("");
+            setSecurityAnswer("");
+          }
+        },
         onError: (err: any) => setErrorMessage(err?.message || "Registration failed. Please try again."),
       }
     );
@@ -248,6 +268,12 @@ export const SignupPage: React.FC = () => {
           {errorMessage && (
             <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
               {errorMessage}
+            </Alert>
+          )}
+
+          {successMessage && (
+            <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>
+              {successMessage}
             </Alert>
           )}
 

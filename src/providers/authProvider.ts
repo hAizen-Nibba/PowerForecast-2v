@@ -133,7 +133,8 @@ export const authProvider: AuthProvider = {
         }
       }
 
-      if (data?.user) {
+      // If session is null, it means Email Confirmation is ON and they need to verify.
+      if (data?.user && data?.session) {
         const activeUser = {
           id: data.user.id,
           email: data.user.email || trimmedEmail,
@@ -143,12 +144,20 @@ export const authProvider: AuthProvider = {
           householdType: householdType || "Residential (Meralco 230V)",
         };
         localStorage.setItem("powerforecast_active_user", JSON.stringify(activeUser));
-        devLog.info("Auth", "User registered successfully", activeUser);
+        devLog.info("Auth", "User registered successfully and logged in", activeUser);
+
+        return {
+          success: true,
+          redirectTo: "/dashboard",
+        };
       }
 
+      // Email confirmation is required, so do NOT set active user in localStorage
+      // and do NOT redirect to dashboard automatically.
+      devLog.info("Auth", "User registered. Email confirmation required.");
       return {
         success: true,
-        redirectTo: "/dashboard",
+        redirectTo: "/signup", // Stay on signup page since 'false' is not supported in typings
       };
     } catch (err: any) {
       devLog.error("Auth", "Unexpected registration error:", err);
