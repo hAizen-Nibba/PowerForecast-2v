@@ -53,4 +53,10 @@ Because you want users to click a real verification link in their email before g
 5. Toggle **Confirm email** to the **ON** position.
 6. Click **Save**.
 
-*Once this is on, Supabase will block logins for new users until they click the verification link in their email.* The frontend code has been updated to support this flow, so that users see a "Please check your email" message upon registration.
+**Important: URL Redirect Configuration**
+For the verification email link to correctly redirect back to the app (to the `/#/verified` success page), you must also whitelist your production URL in Supabase.
+1. In the Supabase Dashboard under **Authentication**, click on **URL Configuration**.
+2. Under **Site URL**, make sure your base domain is set (e.g., `https://your-domain.com`).
+3. Under **Redirect URLs**, click **Add URL** and add your specific return paths. Using `*` as a wildcard (e.g. `https://your-domain.com/*`) is usually easiest for SPA apps using Hash Routing.
+
+*Once this is on, Supabase will block logins for new users until they click the verification link in their email.* The frontend code has been updated to support this flow, so that users see a "Please check your email" message upon registration, and are redirected to a nice "Email Verified!" success page after clicking the link.

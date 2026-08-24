@@ -105,6 +105,8 @@ export const authProvider: AuthProvider = {
             security_question: securityQuestion || "",
             security_answer: (securityAnswer || "").trim().toLowerCase(),
           },
+          // Tell Supabase where to send the user after they click the email link
+          emailRedirectTo: `${window.location.origin}/#/verified`,
         },
       });
 
