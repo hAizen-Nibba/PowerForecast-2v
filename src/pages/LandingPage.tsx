@@ -21,8 +21,15 @@ import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
+import Drawer from "@mui/material/Drawer";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
 import LinearProgress from "@mui/material/LinearProgress";
 import {
+  Menu as MenuIcon,
+  Close as CloseIcon,
   Calculate as CalculateIcon,
   Layers as LayersIcon,
   CameraAlt as CameraIcon,
@@ -92,6 +99,9 @@ export const LandingPage: React.FC = () => {
     };
   }, [selectedWatts, estimatorHours, estimatorRate]);
 
+  // Mobile drawer state
+  const [mobileOpen, setMobileOpen] = useState<boolean>(false);
+
   // Active section tracking for header scrollspy
   const [activeSection, setActiveSection] = useState<string>("estimator");
 
@@ -107,7 +117,17 @@ export const LandingPage: React.FC = () => {
   useEffect(() => {
     const sectionIds = ["estimator", "showcase", "features", "tariffs", "faq"];
     const handleScroll = () => {
-      const scrollPosition = window.scrollY + 140;
+      const scrollY = window.scrollY;
+      if (scrollY < 250) {
+        setActiveSection("estimator");
+        return;
+      }
+      if (window.innerHeight + scrollY >= document.body.scrollHeight - 150) {
+        setActiveSection("faq");
+        return;
+      }
+
+      const scrollPosition = scrollY + 140;
       let current = "";
       for (const id of sectionIds) {
         const el = document.getElementById(id);
@@ -154,33 +174,49 @@ export const LandingPage: React.FC = () => {
       >
         <Container maxWidth="lg">
           <Toolbar sx={{ justifyContent: "space-between", px: { xs: 0, sm: 2 }, minHeight: { xs: 58, sm: 64 } }}>
-            {/* Logo & Brand */}
-            <Box
-              component={Link}
-              to="/"
-              sx={{ display: "flex", alignItems: "center", gap: 1.5, textDecoration: "none", color: "inherit" }}
-            >
-              <Box
-                component="img"
-                src="/Assets/LOGO.png"
-                alt="PowerForecast Logo"
-                sx={{ width: 34, height: 34, objectFit: "contain" }}
-              />
-              <Typography variant="h6" sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}>
-                Power<Box component="span" sx={{ color: "primary.main" }}>Forecast</Box>
-              </Typography>
-              <Chip
-                label={APP_VERSION}
+            {/* Left: Mobile Menu & Logo */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <IconButton
+                onClick={() => setMobileOpen(true)}
                 size="small"
                 sx={{
-                  height: 22,
-                  fontSize: "0.6875rem",
-                  fontWeight: 800,
-                  bgcolor: "rgba(99, 102, 241, 0.15)",
-                  color: "primary.main",
-                  border: "1px solid rgba(99, 102, 241, 0.3)",
+                  display: { xs: "inline-flex", md: "none" },
+                  border: "1px solid",
+                  borderColor: "divider",
+                  p: 0.75,
                 }}
-              />
+                aria-label="Open navigation menu"
+              >
+                <MenuIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+
+              <Box
+                component={Link}
+                to="/"
+                sx={{ display: "flex", alignItems: "center", gap: 1.5, textDecoration: "none", color: "inherit" }}
+              >
+                <Box
+                  component="img"
+                  src="/Assets/LOGO.png"
+                  alt="PowerForecast Logo"
+                  sx={{ width: 34, height: 34, objectFit: "contain" }}
+                />
+                <Typography variant="h6" sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}>
+                  Power<Box component="span" sx={{ color: "primary.main" }}>Forecast</Box>
+                </Typography>
+                <Chip
+                  label={APP_VERSION}
+                  size="small"
+                  sx={{
+                    height: 22,
+                    fontSize: "0.6875rem",
+                    fontWeight: 800,
+                    bgcolor: "rgba(99, 102, 241, 0.15)",
+                    color: "primary.main",
+                    border: "1px solid rgba(99, 102, 241, 0.3)",
+                  }}
+                />
+              </Box>
             </Box>
 
             {/* Desktop Navigation Links */}
@@ -259,6 +295,95 @@ export const LandingPage: React.FC = () => {
         </Container>
       </AppBar>
 
+      {/* Mobile Navigation Drawer */}
+      <Drawer
+        anchor="left"
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        slotProps={{
+          paper: {
+            sx: {
+              width: 280,
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? "#0f172a" : "#ffffff"),
+              p: 2.5,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+            },
+          },
+        }}
+      >
+        <Box>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box component="img" src="/Assets/LOGO.png" alt="PowerForecast" sx={{ width: 28, height: 28 }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>
+                Power<Box component="span" sx={{ color: "primary.main" }}>Forecast</Box>
+              </Typography>
+            </Box>
+            <IconButton onClick={() => setMobileOpen(false)} size="small" aria-label="Close menu">
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
+
+          <Divider sx={{ mb: 2 }} />
+
+          <List sx={{ display: "flex", flexDirection: "column", gap: 0.5, p: 0 }}>
+            {navLinks.map((nav) => {
+              const isActive = activeSection === nav.id;
+              return (
+                <ListItem key={nav.id} disablePadding>
+                  <ListItemButton
+                    onClick={() => {
+                      setMobileOpen(false);
+                      setTimeout(() => scrollToSection(nav.id), 120);
+                    }}
+                    sx={{
+                      borderRadius: 2,
+                      bgcolor: isActive ? "action.selected" : "transparent",
+                      color: isActive ? "primary.main" : "text.primary",
+                      fontWeight: isActive ? 800 : 600,
+                    }}
+                  >
+                    <ListItemText
+                      primary={
+                        <Typography sx={{ fontWeight: isActive ? 800 : 600, fontSize: "0.9375rem" }}>
+                          {nav.label}
+                        </Typography>
+                      }
+                    />
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
+          </List>
+        </Box>
+
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25, pt: 2, borderTop: "1px solid", borderColor: "divider" }}>
+          <Button
+            component={Link}
+            to="/login"
+            variant="outlined"
+            fullWidth
+            onClick={() => setMobileOpen(false)}
+            sx={{ fontWeight: 700 }}
+          >
+            Sign In
+          </Button>
+          <Button
+            component={Link}
+            to="/signup"
+            variant="contained"
+            fullWidth
+            endIcon={<ArrowForwardIcon />}
+            onClick={() => setMobileOpen(false)}
+            sx={{ fontWeight: 800 }}
+          >
+            Get Started
+          </Button>
+        </Box>
+      </Drawer>
+
       {/* 2. Hero Section */}
       <Box
         sx={{
@@ -276,7 +401,7 @@ export const LandingPage: React.FC = () => {
           <Box sx={{ textAlign: "center", maxWidth: 920, mx: "auto", mb: { xs: 5, md: 7 } }}>
             <Chip
               icon={<SparklesIcon sx={{ color: "#ffd54f !important", fontSize: "16px !important" }} />}
-              label="Next-Gen Meralco Energy Intelligence & Appliance Tracking OS"
+              label="Next-Gen Meralco Energy Intelligence & Appliance Tracking Platform"
               sx={{
                 mb: 2.5,
                 fontWeight: 700,
@@ -620,13 +745,13 @@ export const LandingPage: React.FC = () => {
               mb: 3,
             }}
           >
-            OFFICIALLY ALIGNED WITH PHILIPPINE ENERGY STANDARDS & MERALCO UTILITY PROTOCOLS
+            BUILT AROUND PHILIPPINE DOE PELP STANDARDS & ERC UNBUNDLED TARIFF PROTOCOLS
           </Typography>
           <Grid container spacing={2} sx={{ justifyContent: "center", alignItems: "center" }}>
             {[
               { label: "DOE PELP Star Ratings", sub: "Philippine Energy Labeling" },
               { label: "ERC Unbundled Framework", sub: "Itemized Centavo Formulas" },
-              { label: "RA 11285 Compliance", sub: "Energy Efficiency Act" },
+              { label: "RA 11285 Framework", sub: "Appliance Efficiency & Labeling" },
               { label: "Meralco Tariff Schedule", sub: "Residential & Commercial" },
             ].map((item, i) => (
               <Grid size={{ xs: 6, sm: 3 }} key={i} sx={{ textAlign: "center" }}>
@@ -670,7 +795,7 @@ export const LandingPage: React.FC = () => {
               sx={{ mb: 1.5, fontWeight: 800 }}
             />
             <Typography variant="h3" sx={{ fontWeight: 900, mb: 1.5, letterSpacing: "-0.02em" }}>
-              Explore the PowerForecast Operating System
+              Explore the PowerForecast Platform & Energy Tools
             </Typography>
             <Typography variant="body1" sx={{ color: "text.secondary" }}>
               Click through the core engines built to eliminate bill shocks and optimize your household power consumption.
@@ -1073,16 +1198,16 @@ export const LandingPage: React.FC = () => {
                   <Grid size={{ xs: 12, md: 6 }}>
                     <Chip label="Optical AI Recognition" color="secondary" size="small" sx={{ mb: 1.5, fontWeight: 800 }} />
                     <Typography variant="h4" sx={{ fontWeight: 900, mb: 2 }}>
-                      AI Vision OCR Appliance & Bill Scanner
+                      AI Vision OCR Appliance & Label Scanner
                     </Typography>
                     <Typography variant="body1" sx={{ color: "text.secondary", lineHeight: 1.7, mb: 3 }}>
-                      Point your phone or webcam at any appliance manufacturer plate or Meralco electricity paper bill. The optical AI parser extracts wattage, voltage, amps, and monthly billing totals automatically.
+                      Point your phone or webcam at any appliance manufacturer rating plate, inverter badge, or DOE Energy Guide yellow label. The optical AI parser extracts wattage, voltage, amps, star rating, and monthly estimated kWh automatically into your inventory.
                     </Typography>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mb: 3 }}>
                       {[
                         "Optical Character Recognition (OCR) with confidence score validation",
                         "Automatic extraction of Rated Power (Watts), Voltage (V), and Amperage (A)",
-                        "Direct sync to your appliance inventory or past electricity receipts",
+                        "Direct 1-click sync to your active appliance spaces and inventory list",
                       ].map((item, idx) => (
                         <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                           <CheckCircleIcon sx={{ color: "secondary.main", fontSize: 18 }} />
@@ -1187,18 +1312,18 @@ export const LandingPage: React.FC = () => {
               },
               {
                 icon: <CameraIcon sx={{ fontSize: 28, color: "success.main" }} />,
-                title: "AI Vision OCR Scanner",
-                desc: "Capture physical appliance nameplates or Meralco electricity paper bills with optical AI recognition and confidence verification.",
+                title: "AI Vision OCR Label Scanner",
+                desc: "Capture physical appliance nameplates and DOE Energy Guide yellow labels with optical AI recognition, confidence verification, and auto-populated specs.",
               },
               {
                 icon: <CpuIcon sx={{ fontSize: 28, color: "error.main" }} />,
-                title: "Live Circuit Breaker Guard",
-                desc: "Simulate concurrent circuit loads against your main breaker rating (30A, 40A, 60A) to prevent overload tripping and fire hazards.",
+                title: "Live Circuit Breaker Load Monitor",
+                desc: "Track simultaneous active circuit amperage and wattage against standard household breaker ratings (30A, 40A, 60A) with instant overload warnings.",
               },
               {
                 icon: <BarChartIcon sx={{ fontSize: 28, color: "#a855f7" }} />,
-                title: "Forecast & Tier Anomaly Warnings",
-                desc: "Predict end-of-month electric bills based on current trajectory and receive smart warnings before stepping into higher Meralco tariff tiers.",
+                title: "3-Scenario What-If Forecasting",
+                desc: "Model your month-end bill across Baseline, Eco-Saver (15% reduction), and Summer Heat Surge (25% increase) scenarios with ERC bracket tracking.",
               },
             ].map((f, idx) => (
               <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
@@ -1419,8 +1544,8 @@ export const LandingPage: React.FC = () => {
                 a: "PELP stands for the Philippine Energy Labeling Program mandated by the Department of Energy. PowerForecast incorporates verified CSPF and EER ratings for top air conditioners and refrigerators so you can accurately model inverter efficiency and real-world power consumption.",
               },
               {
-                q: "Can I scan physical appliance nameplates or Meralco paper bills?",
-                a: "Yes. The built-in AI Vision OCR scanner allows you to snap a photo or upload an image of any appliance nameplate or utility paper bill. The optical engine extracts rated wattage, voltage, amps, and billing totals automatically.",
+                q: "How does the AI Vision OCR Scanner work?",
+                a: "The built-in AI Vision Scanner allows you to snap a photo or upload an image of any appliance manufacturer nameplate or DOE Energy Guide yellow label. The optical AI engine automatically extracts rated wattage, voltage, amperage, brand, and energy star rating directly into your inventory.",
               },
               {
                 q: "Is my household energy data stored securely?",
