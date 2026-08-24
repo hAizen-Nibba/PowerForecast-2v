@@ -119,7 +119,7 @@ export const ForecastingView: React.FC = () => {
 
       {/* 2. Space Selector Tabs (When spaces exist) */}
       {spaces.length > 0 && (
-        <Box>
+        <Box data-tour="forecast-space-tabs">
           <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", display: "block", mb: 1, letterSpacing: "0.05em" }}>
             FORECAST SCOPE / TARGET SPACE
           </Typography>
@@ -156,6 +156,7 @@ export const ForecastingView: React.FC = () => {
 
       {/* 3. Meralco Rate Fluctuation Slider */}
       <Card
+        data-tour="forecast-rate-slider"
         sx={{
           p: { xs: 2.5, sm: 3.5 },
           borderRadius: 3.5,
@@ -218,7 +219,7 @@ export const ForecastingView: React.FC = () => {
       </Card>
 
       {/* 4. Three Realistic Scenario Comparison Cards */}
-      <Grid container spacing={{ xs: 2.5, sm: 3 }}>
+      <Grid container spacing={{ xs: 2.5, sm: 3 }} data-tour="forecast-scenarios">
         {/* Scenario 1: Simulated Baseline */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Card
@@ -363,6 +364,7 @@ export const ForecastingView: React.FC = () => {
 
       {/* 5. Advisory Insights Box */}
       <Paper
+        data-tour="forecast-advisory"
         sx={{
           p: 3,
           borderRadius: 3.5,

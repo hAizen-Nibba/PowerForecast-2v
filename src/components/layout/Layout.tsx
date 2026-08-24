@@ -7,6 +7,7 @@ import { AiVisionScannerModal } from "../vision/AiVisionScannerModal";
 import { DevLogsFloatingWidget } from "../devlogs/DevLogsFloatingWidget";
 import { VersionBadge } from "../common/VersionBadge";
 import { useColorMode } from "../../theme/AppTheme";
+import { TourProvider } from "../tour/TourProvider";
 
 export const Layout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -14,8 +15,9 @@ export const Layout: React.FC = () => {
   const { mode, toggleColorMode } = useColorMode();
 
   return (
-    <Box
-      sx={{
+    <TourProvider>
+      <Box
+        sx={{
         display: "flex",
         minHeight: "100vh",
         bgcolor: "background.default",
@@ -80,6 +82,7 @@ export const Layout: React.FC = () => {
       {/* Persistent Version Display on Bottom-Right Corner */}
       <VersionBadge />
     </Box>
+  </TourProvider>
   );
 };
 
