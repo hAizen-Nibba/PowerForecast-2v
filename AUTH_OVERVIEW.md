@@ -27,7 +27,21 @@ The authentication system is built using three primary layers:
 - Refine automatically calls `check()` on protected routes to ensure the user is logged in. It does this by checking `supabaseClient.auth.getSession()`. If no valid session exists, the user is booted to `/login`.
 - `getIdentity()` retrieves the active user's details to display in the UI (like their avatar and name in the header).
 
-## 3. How to Enable Real Email Verification in Supabase
+## 3. Supabase Database Schema Setup
+
+If you do not have the original database structure from your friend, do not worry! The complete database schema (tables, row level security policies, triggers, and functions) is included right here in the codebase.
+
+You can set up a completely fresh Supabase project by running the provided SQL script:
+
+1. Open the file `powerforecast_supabase_setup.sql` located in the root of this project.
+2. Go to your new Supabase Project Dashboard.
+3. On the left sidebar, click on **SQL Editor**.
+4. Click **New Query**.
+5. Copy the entire contents of `powerforecast_supabase_setup.sql` and paste it into the SQL Editor.
+6. Click **Run**.
+7. Once finished, your database will have all the necessary tables (like `accounts`, `user_appliances`, etc.) perfectly configured and synced with authentication.
+
+## 4. How to Enable Real Email Verification in Supabase
 
 Because you want users to click a real verification link in their email before gaining access to the app, you MUST enable "Confirm Email" in your Supabase project settings. This setting cannot be altered via code.
 
