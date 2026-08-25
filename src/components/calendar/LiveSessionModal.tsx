@@ -139,7 +139,7 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
   };
 
   // Compute Multi-Day Allocation Slices preview
-  const previewSlices = useMemo(() => {
+  const previewSlices = React.useMemo(() => {
     if (!appliance?.last_turned_on_at) return [];
     const startTime = new Date(appliance.last_turned_on_at);
     const targetDurationMins = isDurationModified ? totalAdjustedSeconds / 60 : elapsedSeconds / 60;
