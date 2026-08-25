@@ -9,6 +9,7 @@ export interface ActiveDeviceLoad {
 }
 
 export interface HourlyLoadPoint {
+  time: string; // Alias to timeLabel for recharts compatibility
   timeLabel: string;
   hour: string;
   detailedHour: string;
@@ -75,6 +76,7 @@ export interface ComputeLoadCurveOptions {
   endHour?: number; // e.g. 0 to 24
   dayOfWeekKey?: string; // 'sun', 'mon', etc.
   currentMinuteLimit?: number; // Minutes from midnight of current time (default: current system minute)
+  effectiveRate?: number; // Dynamic rate per kWh in Pesos
 }
 
 export function computeHourlyLoadCurve(options: ComputeLoadCurveOptions): HourlyLoadPoint[] {
@@ -87,7 +89,10 @@ export function computeHourlyLoadCurve(options: ComputeLoadCurveOptions): Hourly
     endHour = 24,
     dayOfWeekKey,
     currentMinuteLimit,
+    effectiveRate: customRate,
   } = options;
+
+  const activeEffectiveRate = customRate && customRate > 0 ? customRate : 14.8261;
 
   // Real-time current minute cutoff
   const now = new Date();
@@ -170,7 +175,7 @@ export function computeHourlyLoadCurve(options: ComputeLoadCurveOptions): Hourly
 
         const elapsedRefMins = Math.min(totalMinutes, currentLiveMinute);
         const refKwh = (refWatts / 1000) * (elapsedRefMins / 60);
-        accumulatedPesosAtPoint += refKwh * 14.8261;
+        accumulatedPesosAtPoint += refKwh * activeEffectiveRate;
         return;
       }
 
@@ -194,7 +199,7 @@ export function computeHourlyLoadCurve(options: ComputeLoadCurveOptions): Hourly
           // Compute accumulated cost strictly up to current recorded minute
           const elapsedMins = Math.max(0, Math.min(totalMinutes, currentLiveMinute) - turnOnMinute);
           const accumulatedKwh = (deviceRatedWatts / 1000) * (elapsedMins / 60);
-          accumulatedPesosAtPoint += accumulatedKwh * 14.8261;
+          accumulatedPesosAtPoint += accumulatedKwh * activeEffectiveRate;
         }
         return;
       }
@@ -244,10 +249,10 @@ export function computeHourlyLoadCurve(options: ComputeLoadCurveOptions): Hourly
       }
     });
 
-    const effectiveRate = 14.8261;
+    const effectiveRate = activeEffectiveRate;
     const costPerHour = (totalPointWatts / 1000) * effectiveRate;
     const costPerMinute = costPerHour / 60;
-    const rateLabel = "₱14.83/kWh Standard";
+    const rateLabel = `₱${effectiveRate.toFixed(2)}/kWh`;
 
     const timeLabel = stepMins < 60 ? formatHourMinute12(h, m) : formatHour12(h);
     const detailedHour = formatHourMinute12(h, m);
@@ -261,6 +266,7 @@ export function computeHourlyLoadCurve(options: ComputeLoadCurveOptions): Hourly
     const futureWatts = (isFuture || isNowTransition) ? roundedWatts : null;
 
     return {
+      time: timeLabel,
       timeLabel,
       hour: timeLabel,
       detailedHour,
@@ -277,7 +283,7 @@ export function computeHourlyLoadCurve(options: ComputeLoadCurveOptions): Hourly
       accumulatedCost: Math.round(accumulatedPesosAtPoint * 10000) / 10000,
       effectiveRate,
       rateLabel,
-      isPeak: false,
+      isPeak: isPeakHour(h),
       isFuture,
       statusText: isFuture ? "Future / Unrecorded" : "Live Recorded Data",
       activeDevices,

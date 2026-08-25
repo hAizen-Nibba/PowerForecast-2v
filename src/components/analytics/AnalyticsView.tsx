@@ -1,11 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
 import LinearProgress from "@mui/material/LinearProgress";
+import TooltipMui from "@mui/material/Tooltip";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import Paper from "@mui/material/Paper";
 import {
   BarChart as AnalyticsIcon,
   TrendingUp as TrendingUpIcon,
@@ -15,6 +20,17 @@ import {
   Download as DownloadIcon,
   PieChart as PieChartIcon,
   ReceiptLong as ReceiptIcon,
+  PowerSettingsNew as StandbyIcon,
+  Home as HomeIcon,
+  Store as StoreIcon,
+  Category as CategoryIcon,
+  FormatListBulleted as ListIcon,
+  ElectricMeter as MeterIcon,
+  FileDownload as FileDownloadIcon,
+  AutoAwesome as SparklesIcon,
+  AccessTime as ClockIcon,
+  CheckCircle as CheckIcon,
+  InfoOutlined as InfoIcon,
 } from "@mui/icons-material";
 import {
   AreaChart,
@@ -26,58 +42,286 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  ReferenceArea,
 } from "recharts";
-import { UserAppliance, UserCalendarEvent } from "../../types";
+import { UserAppliance, ApplianceList, UserCalendarEvent, DailyApplianceUsage } from "../../types";
 import { useList } from "@refinedev/core";
 import { computeHourlyLoadCurve } from "../../lib/loadCurveService";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
 import { MetricCard } from "../common/MetricCard";
-import ButtonGroup from "@mui/material/ButtonGroup";
 
 export const AnalyticsView: React.FC = () => {
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string>("all");
   const [zoomPreset, setZoomPreset] = useState<"24h" | "morning" | "day" | "evening">("24h");
+  const [breakdownView, setBreakdownView] = useState<"category" | "appliances">("category");
   const [resolutionMinutes] = useState<1 | 5 | 15 | 30>(5);
 
   const appliancesRes = useList<UserAppliance>({
     resource: "user_appliances",
   }) as any;
 
+  const spacesRes = useList<ApplianceList>({
+    resource: "appliance_lists",
+  }) as any;
+
   const eventsRes = useList<UserCalendarEvent>({
     resource: "user_calendar_events",
   }) as any;
 
+  const dailyUsageRes = useList<DailyApplianceUsage>({
+    resource: "daily_appliance_usage",
+  }) as any;
+
   const appliances: UserAppliance[] = appliancesRes?.data?.data || appliancesRes?.result?.data || [];
+  const spaces: ApplianceList[] = spacesRes?.data?.data || spacesRes?.result?.data || [];
   const events: UserCalendarEvent[] = eventsRes?.data?.data || eventsRes?.result?.data || [];
+  const dailyUsageRecords: DailyApplianceUsage[] = dailyUsageRes?.data?.data || dailyUsageRes?.result?.data || [];
 
-  const totalMonthlyKwh = appliances.reduce(
-    (acc: number, curr: UserAppliance) => acc + (Number(curr.monthly_kwh) || 0),
-    0
-  ) || 250;
+  // Filter target appliances based on active space selection
+  const targetAppliances = useMemo(() => {
+    if (selectedSpaceId === "all") return appliances;
+    return appliances.filter(
+      (a) => a.list_id === selectedSpaceId || (!a.list_id && spaces.find((s) => s.id === selectedSpaceId)?.is_default)
+    );
+  }, [appliances, spaces, selectedSpaceId]);
 
-  const bill = calculateMeralcoBill(totalMonthlyKwh, 7.12);
-  const totalCost = bill.totalBill;
+  const activeSpace = spaces.find((s) => s.id === selectedSpaceId);
+  const isCommercialSelected = selectedSpaceId !== "all" && activeSpace?.tariff_type === "commercial";
+  const tariffType: "residential" | "commercial" = isCommercialSelected ? "commercial" : "residential";
 
-  // 1. Group appliances by Category
-  const catMap: Record<string, number> = {};
-  appliances.forEach((a) => {
-    const cat = a.category || "General";
-    const kwh = Number(a.monthly_kwh) || ((a.watts * a.hours_per_day * 30 * (a.quantity || 1)) / 1000);
-    catMap[cat] = (catMap[cat] || 0) + kwh;
-  });
+  // Appliance monthly kWh helper
+  const getApplianceMonthlyKwh = (a: UserAppliance): number => {
+    if (a.monthly_kwh !== undefined && a.monthly_kwh !== null && a.monthly_kwh > 0) {
+      return Number(a.monthly_kwh);
+    }
+    const hours = Number(a.hours_per_day) || 0;
+    const days = Number(a.days_per_month) || 30;
+    const qty = Number(a.quantity) || 1;
+    const watts = Number(a.watts) || 0;
+    return (watts * hours * days * qty) / 1000;
+  };
 
-  const categoryEntries = Object.entries(catMap).sort((a, b) => b[1] - a[1]);
-  const totalCatKwh = categoryEntries.reduce((acc, curr) => acc + curr[1], 0) || 1;
+  // 1. Calculate space-by-space and consolidated monthly energy
+  const spaceAnalytics = useMemo(() => {
+    let resTotalKwh = 0;
+    let resTotalBill = 0;
+    let comTotalKwh = 0;
+    let comTotalBill = 0;
 
-  // 2. Unbundled Rate Components breakdown
-  const rateComponents = [
-    { name: "Generation Charge", amount: bill.generationTotal, color: "#6366f1" },
-    { name: "Transmission Charge", amount: bill.transmissionTotal, color: "#a855f7" },
-    { name: "System Loss Charge", amount: bill.systemLossTotal, color: "#38bdf8" },
-    { name: "Distribution Network", amount: bill.distributionTotal, color: "#34d399" },
-    { name: "Government Taxes & VAT", amount: bill.totalVat + bill.localFranchiseTax, color: "#fbbf24" },
-    { name: "Universal & FIT-All Charges", amount: bill.universalCharges.total + bill.fitAll, color: "#94a3b8" },
-  ];
+    const breakdownBySpace = spaces.map((space) => {
+      const spaceApps = appliances.filter(
+        (a) => a.list_id === space.id || (!a.list_id && space.is_default)
+      );
+      const kwh = spaceApps.reduce((acc, curr) => acc + getApplianceMonthlyKwh(curr), 0);
+      const billResult = calculateMeralcoBill(kwh, undefined, 0, false, space.tariff_type);
 
+      if (space.tariff_type === "commercial") {
+        comTotalKwh += kwh;
+        comTotalBill += billResult.totalBill;
+      } else {
+        resTotalKwh += kwh;
+        resTotalBill += billResult.totalBill;
+      }
+
+      return {
+        space,
+        kwh: Math.round(kwh * 10) / 10,
+        bill: billResult.totalBill,
+        devicesCount: spaceApps.length,
+      };
+    });
+
+    const consolidatedTotalBill = breakdownBySpace.reduce((acc, curr) => acc + curr.bill, 0);
+    const consolidatedTotalKwh = resTotalKwh + comTotalKwh;
+
+    return {
+      breakdownBySpace,
+      consolidatedTotalBill,
+      consolidatedTotalKwh,
+      resTotalBill,
+      comTotalBill,
+      resTotalKwh,
+      comTotalKwh,
+    };
+  }, [appliances, spaces]);
+
+  // Target monthly kWh & Bill
+  const totalMonthlyKwh = useMemo(() => {
+    if (selectedSpaceId === "all") {
+      return spaceAnalytics.consolidatedTotalKwh;
+    }
+    return targetAppliances.reduce((acc, curr) => acc + getApplianceMonthlyKwh(curr), 0);
+  }, [selectedSpaceId, spaceAnalytics, targetAppliances]);
+
+  const bill = useMemo(() => {
+    if (selectedSpaceId === "all") {
+      // Calculate consolidated unbundled bill
+      return calculateMeralcoBill(totalMonthlyKwh, undefined, 0, false, "residential");
+    }
+    return calculateMeralcoBill(totalMonthlyKwh, undefined, 0, false, tariffType);
+  }, [selectedSpaceId, totalMonthlyKwh, tariffType]);
+
+  const totalCost = selectedSpaceId === "all" ? spaceAnalytics.consolidatedTotalBill : bill.totalBill;
+  const effectiveRate = totalMonthlyKwh > 0 ? totalCost / totalMonthlyKwh : bill.effectiveRatePerKwh || 14.8261;
+
+  // Running appliances count
+  const runningAppliances = targetAppliances.filter((a) => a.is_currently_on);
+
+  // Distribution Tier detection
+  const distributionTierInfo = useMemo(() => {
+    if (tariffType === "commercial") {
+      return { tier: "Commercial GP", label: "Flat ₱1.652/kWh", color: "info.main" };
+    }
+    if (totalMonthlyKwh <= 0) {
+      return { tier: "No Active Load", label: "0 kWh configured", color: "text.secondary" };
+    }
+    if (totalMonthlyKwh <= 100) {
+      return { tier: "Lifeline Tier", label: "≤100 kWh (Subsidized)", color: "success.main" };
+    }
+    if (totalMonthlyKwh <= 200) {
+      return { tier: "Tier 1 (0-200)", label: "Base ₱0.9803/kWh", color: "primary.main" };
+    }
+    if (totalMonthlyKwh <= 300) {
+      return { tier: "Tier 2 (201-300)", label: "Dist. ₱1.2908/kWh", color: "info.main" };
+    }
+    if (totalMonthlyKwh <= 400) {
+      return { tier: "Tier 3 (301-400)", label: "Dist. ₱1.5837/kWh", color: "warning.main" };
+    }
+    return { tier: "Tier 4 (401+)", label: "Peak Dist. ₱2.0941/kWh", color: "error.main" };
+  }, [totalMonthlyKwh, tariffType]);
+
+  // DOE PELP & Energy Efficiency Ratio
+  const efficiencyMetrics = useMemo(() => {
+    if (targetAppliances.length === 0) {
+      return { efficiencyPct: 100, inverterCount: 0, totalCount: 0, grade: "A+" };
+    }
+    const inverterOrPelpCount = targetAppliances.filter((a) => {
+      const name = (a.name || "").toLowerCase();
+      const cat = (a.category || "").toLowerCase();
+      const rating = (a.energy_rating || "").toLowerCase();
+      const source = a.source || "";
+      return (
+        name.includes("inverter") ||
+        cat.includes("inverter") ||
+        rating.includes("star") ||
+        rating.includes("5") ||
+        rating.includes("4") ||
+        source === "pelp_db"
+      );
+    }).length;
+
+    const efficiencyPct = Math.round((inverterOrPelpCount / targetAppliances.length) * 100);
+    let grade = "B";
+    if (efficiencyPct >= 80) grade = "A+";
+    else if (efficiencyPct >= 60) grade = "A";
+    else if (efficiencyPct >= 40) grade = "B";
+    else grade = "C";
+
+    return {
+      efficiencyPct,
+      inverterCount: inverterOrPelpCount,
+      totalCount: targetAppliances.length,
+      grade,
+    };
+  }, [targetAppliances]);
+
+  // Standby & Vampire Load calculation
+  const vampireLoadMetrics = useMemo(() => {
+    let standbyWattsTotal = 0;
+    let vampireDevicesCount = 0;
+
+    targetAppliances.forEach((a) => {
+      const cat = (a.category || "").toLowerCase();
+      const name = (a.name || "").toLowerCase();
+      const qty = a.quantity || 1;
+
+      let standbyPerUnit = 0;
+      if (cat.includes("tv") || cat.includes("television") || cat.includes("audio") || name.includes("tv")) {
+        standbyPerUnit = 5;
+      } else if (cat.includes("kitchen") || name.includes("microwave") || name.includes("coffee")) {
+        standbyPerUnit = 3;
+      } else if (cat.includes("computer") || name.includes("pc") || name.includes("laptop")) {
+        standbyPerUnit = 8;
+      } else if (name.includes("charger") || name.includes("adapter") || cat.includes("electronic")) {
+        standbyPerUnit = 2;
+      }
+
+      if (standbyPerUnit > 0) {
+        const idleHours = Math.max(0, 24 - (Number(a.hours_per_day) || 4));
+        standbyWattsTotal += (standbyPerUnit * qty * idleHours) / 24;
+        vampireDevicesCount += qty;
+      }
+    });
+
+    const standbyMonthlyKwh = (standbyWattsTotal * 24 * 30) / 1000;
+    const standbyMonthlyCost = standbyMonthlyKwh * effectiveRate;
+
+    return {
+      standbyWattsTotal: Math.round(standbyWattsTotal),
+      standbyMonthlyKwh: Math.round(standbyMonthlyKwh * 10) / 10,
+      standbyMonthlyCost: Math.round(standbyMonthlyCost * 100) / 100,
+      vampireDevicesCount,
+    };
+  }, [targetAppliances, effectiveRate]);
+
+  // Category Breakdown
+  const categoryBreakdown = useMemo(() => {
+    const catMap: Record<string, { kwh: number; count: number }> = {};
+    targetAppliances.forEach((a) => {
+      const cat = a.category || "General";
+      const kwh = getApplianceMonthlyKwh(a);
+      if (!catMap[cat]) catMap[cat] = { kwh: 0, count: 0 };
+      catMap[cat].kwh += kwh;
+      catMap[cat].count += a.quantity || 1;
+    });
+
+    const totalKwh = Object.values(catMap).reduce((acc, curr) => acc + curr.kwh, 0) || 1;
+    return Object.entries(catMap)
+      .map(([category, data]) => ({
+        name: category,
+        kwh: data.kwh,
+        cost: data.kwh * effectiveRate,
+        percentage: Math.round((data.kwh / totalKwh) * 100),
+        count: data.count,
+      }))
+      .sort((a, b) => b.kwh - a.kwh);
+  }, [targetAppliances, effectiveRate]);
+
+  // Individual Top Appliances Breakdown (Pareto)
+  const topAppliancesBreakdown = useMemo(() => {
+    const totalKwh = totalMonthlyKwh || 1;
+    return [...targetAppliances]
+      .map((a) => {
+        const kwh = getApplianceMonthlyKwh(a);
+        return {
+          id: a.id,
+          name: a.name,
+          category: a.category,
+          watts: a.watts,
+          quantity: a.quantity || 1,
+          hours: a.hours_per_day,
+          kwh: kwh,
+          cost: kwh * effectiveRate,
+          percentage: Math.round((kwh / totalKwh) * 100),
+          isCurrentlyOn: a.is_currently_on,
+        };
+      })
+      .sort((a, b) => b.kwh - a.kwh);
+  }, [targetAppliances, totalMonthlyKwh, effectiveRate]);
+
+  // Unbundled Rate Components breakdown
+  const rateComponents = useMemo(() => {
+    return [
+      { name: "Generation Charge", amount: bill.generationTotal, color: "#6366f1", desc: "Cost of producing electricity by generation power plants" },
+      { name: "Transmission Charge", amount: bill.transmissionTotal, color: "#a855f7", desc: "High-voltage transmission grid wheeling fee (NGCP)" },
+      { name: "System Loss Charge", amount: bill.systemLossTotal, color: "#38bdf8", desc: "Technical & non-technical line losses allowed by ERC" },
+      { name: "Distribution Network", amount: bill.distributionTotal, color: "#34d399", desc: "Meralco poles, wires, meters, customer billing & supply" },
+      { name: "Government Taxes & VAT", amount: bill.totalVat + bill.localFranchiseTax, color: "#fbbf24", desc: "12% National Value Added Tax & Local Franchise Tax" },
+      { name: "Universal & FIT-All Charges", amount: bill.universalCharges.total + bill.fitAll + bill.lifelineSubsidy, color: "#94a3b8", desc: "Missionary electrification, stranded debts, and RE Feed-in Tariff" },
+    ];
+  }, [bill]);
+
+  // Load curve zoom parameters
   let startHour = 0;
   let endHour = 24;
   if (zoomPreset === "morning") {
@@ -91,31 +335,234 @@ export const AnalyticsView: React.FC = () => {
     endHour = 24;
   }
 
-  const HOURLY_LOAD_DATA = computeHourlyLoadCurve({
-    appliances,
-    events,
-    resolutionMinutes,
-    startHour,
-    endHour,
-  });
+  const HOURLY_LOAD_DATA = useMemo(() => {
+    return computeHourlyLoadCurve({
+      appliances: targetAppliances,
+      events,
+      resolutionMinutes,
+      startHour,
+      endHour,
+      effectiveRate,
+    });
+  }, [targetAppliances, events, resolutionMinutes, startHour, endHour, effectiveRate]);
 
-  const MONTHLY_TREND_DATA = [
-    { month: "May", kwh: 0, cost: 0, status: "Prior Period" },
-    { month: "Jun", kwh: 0, cost: 0, status: "Prior Period" },
-    { month: "Jul", kwh: 0, cost: 0, status: "Prior Period" },
-    { month: "Aug (Active)", kwh: Math.round(totalMonthlyKwh), cost: Math.round(totalCost), status: "Active Tracking" },
-    { month: "Sep", kwh: Math.round(totalMonthlyKwh * 0.98), cost: Math.round(totalCost * 0.98), status: "Projected" },
-    { month: "Oct", kwh: Math.round(totalMonthlyKwh * 0.95), cost: Math.round(totalCost * 0.95), status: "Projected" },
-    { month: "Nov", kwh: Math.round(totalMonthlyKwh * 0.92), cost: Math.round(totalCost * 0.92), status: "Projected" },
-    { month: "Dec", kwh: Math.round(totalMonthlyKwh * 1.05), cost: Math.round(totalCost * 1.05), status: "Projected (Holiday)" },
-  ];
+  // Dynamic Multi-Month Trend & Seasonal Climate Forecast
+  const MONTHLY_TREND_DATA = useMemo(() => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonthIdx = now.getMonth(); // 0 to 11
+    const currentDay = now.getDate();
+    const daysInCurrentMonth = new Date(currentYear, currentMonthIdx + 1, 0).getDate();
+
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const seasonalMultipliers = [0.92, 0.94, 1.08, 1.18, 1.22, 1.02, 0.98, 0.98, 0.96, 0.95, 0.94, 1.06];
+
+    // Aggregate past dailyUsageRecords by YYYY-MM
+    const usageByMonthKey: Record<string, { kwh: number; cost: number }> = {};
+    dailyUsageRecords.forEach((rec) => {
+      if (rec.usage_date) {
+        const mKey = rec.usage_date.substring(0, 7); // "YYYY-MM"
+        if (!usageByMonthKey[mKey]) {
+          usageByMonthKey[mKey] = { kwh: 0, cost: 0 };
+        }
+        usageByMonthKey[mKey].kwh += Number(rec.kwh_consumed) || 0;
+        usageByMonthKey[mKey].cost += Number(rec.estimated_cost) || 0;
+      }
+    });
+
+    const points = [];
+    // Rolling 8-month window: 3 months past, 1 current, 4 future
+    for (let offset = -3; offset <= 4; offset++) {
+      const targetDate = new Date(currentYear, currentMonthIdx + offset, 1);
+      const tYear = targetDate.getFullYear();
+      const tMonthIdx = targetDate.getMonth();
+      const monthStr = monthNames[tMonthIdx];
+      const mKey = `${tYear}-${String(tMonthIdx + 1).padStart(2, "0")}`;
+
+      if (offset < 0) {
+        // Past months
+        const recorded = usageByMonthKey[mKey];
+        const hasRecorded = recorded && recorded.kwh > 0;
+        const kwh = hasRecorded ? recorded.kwh : Math.round(totalMonthlyKwh * seasonalMultipliers[tMonthIdx]);
+        const cost = hasRecorded ? recorded.cost : Math.round(kwh * effectiveRate);
+        points.push({
+          month: `${monthStr} ${tYear !== currentYear ? "'" + String(tYear).slice(2) : ""}`.trim(),
+          kwh: Math.round(kwh),
+          cost: Math.round(cost),
+          status: hasRecorded ? "Recorded Actuals" : "Historical Estimate",
+          isCurrent: false,
+          isFuture: false,
+          fillColor: "#38bdf8",
+        });
+      } else if (offset === 0) {
+        // Current active month
+        const recorded = usageByMonthKey[mKey];
+        const mtdKwh = recorded && recorded.kwh > 0
+          ? recorded.kwh
+          : totalMonthlyKwh * (currentDay / daysInCurrentMonth);
+        const remainingKwh = totalMonthlyKwh * ((daysInCurrentMonth - currentDay) / daysInCurrentMonth);
+        const totalActiveKwh = mtdKwh + remainingKwh;
+        const totalActiveCost = totalActiveKwh * effectiveRate;
+
+        points.push({
+          month: `${monthStr} (Active)`,
+          kwh: Math.round(totalActiveKwh),
+          cost: Math.round(totalActiveCost),
+          status: `Active Cycle (${currentDay}/${daysInCurrentMonth} days)`,
+          isCurrent: true,
+          isFuture: false,
+          fillColor: "#6366f1",
+        });
+      } else {
+        // Future months with seasonal climate multipliers
+        const mult = seasonalMultipliers[tMonthIdx];
+        const kwh = totalMonthlyKwh * mult;
+        const cost = kwh * effectiveRate;
+        let climateTag = "Projected";
+        if (tMonthIdx >= 2 && tMonthIdx <= 4) climateTag = "Projected (Summer Cooling Peak)";
+        else if (tMonthIdx === 11) climateTag = "Projected (Holiday Peak)";
+        else if (tMonthIdx >= 6 && tMonthIdx <= 8) climateTag = "Projected (Monsoon Season)";
+
+        points.push({
+          month: `${monthStr} ${tYear !== currentYear ? "'" + String(tYear).slice(2) : ""}`.trim(),
+          kwh: Math.round(kwh),
+          cost: Math.round(cost),
+          status: climateTag,
+          isCurrent: false,
+          isFuture: true,
+          fillColor: "#a855f7",
+        });
+      }
+    }
+    return points;
+  }, [dailyUsageRecords, totalMonthlyKwh, effectiveRate]);
+
+  // AI Energy Insights & Actionable Recommendations
+  const actionableInsights = useMemo(() => {
+    const list = [];
+
+    // 1. Air Conditioning Check
+    const acApps = targetAppliances.filter(
+      (a) => (a.category || "").toLowerCase().includes("air") || (a.name || "").toLowerCase().includes("ac")
+    );
+    const acKwh = acApps.reduce((acc, a) => acc + getApplianceMonthlyKwh(a), 0);
+    if (acApps.length > 0 && totalMonthlyKwh > 0) {
+      const acPct = Math.round((acKwh / totalMonthlyKwh) * 100);
+      const acCost = acKwh * effectiveRate;
+      const thermostatSaving = acCost * 0.15; // 15% savings setting thermostat to 25°C
+      list.push({
+        id: "cooling",
+        title: `Cooling accounts for ${acPct}% of your electricity`,
+        description: `Air conditioning consumes ~${acKwh.toFixed(0)} kWh (₱${acCost.toFixed(2)}/mo). Setting your thermostat to 25°C and cleaning filters monthly can save up to ₱${thermostatSaving.toFixed(2)}/mo.`,
+        saving: `Save ~₱${thermostatSaving.toFixed(0)}/mo`,
+        badgeColor: "warning",
+      });
+    }
+
+    // 2. Peak Hours Shifting (Meralco 11 AM - 4 PM & 6 PM - 9 PM)
+    const heavyLoads = targetAppliances.filter((a) => {
+      const cat = (a.category || "").toLowerCase();
+      const watts = a.watts * (a.quantity || 1);
+      return cat.includes("wash") || cat.includes("laundry") || cat.includes("iron") || cat.includes("heater") || watts >= 1000;
+    });
+    if (heavyLoads.length > 0) {
+      list.push({
+        id: "peak_shift",
+        title: "Shift heavy loads to Off-Peak hours",
+        description: `High-wattage devices (${heavyLoads.map((h) => h.name).slice(0, 2).join(", ")}) should be operated during off-peak windows (before 11:00 AM or after 9:00 PM) to avoid grid strain and maximize system efficiency.`,
+        saving: "Peak Load Optimization",
+        badgeColor: "info",
+      });
+    }
+
+    // 3. Standby / Vampire Load
+    if (vampireLoadMetrics.standbyMonthlyCost > 40) {
+      list.push({
+        id: "vampire",
+        title: `Standby vampire loads cost ~₱${vampireLoadMetrics.standbyMonthlyCost.toFixed(2)}/month`,
+        description: `${vampireLoadMetrics.vampireDevicesCount} idle electronics draw continuous standby power. Using master switch power strips can eliminate this cost completely.`,
+        saving: `Save ~₱${vampireLoadMetrics.standbyMonthlyCost.toFixed(0)}/mo`,
+        badgeColor: "success",
+      });
+    }
+
+    // 4. Inverter Upgrade Advice
+    const nonInverters = targetAppliances.filter((a) => {
+      const name = (a.name || "").toLowerCase();
+      const cat = (a.category || "").toLowerCase();
+      return (cat.includes("air") || cat.includes("ref")) && !name.includes("inverter");
+    });
+    if (nonInverters.length > 0) {
+      const nonInverterKwh = nonInverters.reduce((acc, a) => acc + getApplianceMonthlyKwh(a), 0);
+      const upgradeSavings = nonInverterKwh * 0.35 * effectiveRate;
+      list.push({
+        id: "inverter",
+        title: "Inverter upgrade potential for legacy cooling",
+        description: `You have ${nonInverters.length} non-inverter appliance(s) (${nonInverters.map((n) => n.name).slice(0, 2).join(", ")}). Upgrading to DOE PELP certified inverter units can reduce their power draw by up to 35%.`,
+        saving: `Save ~₱${upgradeSavings.toFixed(0)}/mo`,
+        badgeColor: "primary",
+      });
+    }
+
+    return list;
+  }, [targetAppliances, totalMonthlyKwh, effectiveRate, vampireLoadMetrics]);
+
+  // Export CSV handler
+  const handleExportCsv = () => {
+    let csv = `PowerForecast Energy Analytics Report\n`;
+    csv += `Generated Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}\n`;
+    csv += `Scope: ${selectedSpaceId === "all" ? "All Spaces (Consolidated)" : activeSpace?.name || "Selected Space"}\n`;
+    csv += `Tariff Type: ${tariffType.toUpperCase()}\n`;
+    csv += `Total Monthly kWh: ${totalMonthlyKwh.toFixed(2)} kWh\n`;
+    csv += `Forecasted Bill: PHP ${totalCost.toFixed(2)}\n`;
+    csv += `Effective Rate: PHP ${effectiveRate.toFixed(4)} / kWh\n\n`;
+
+    csv += `--- APPLIANCE INVENTORY BREAKDOWN ---\n`;
+    csv += `Appliance Name,Category,Rated Watts,Qty,Hours/Day,Monthly kWh,Monthly Cost (PHP)\n`;
+    topAppliancesBreakdown.forEach((a) => {
+      csv += `"${a.name}","${a.category}",${a.watts},${a.quantity},${a.hours},${a.kwh.toFixed(2)},${a.cost.toFixed(2)}\n`;
+    });
+
+    csv += `\n--- CATEGORY BREAKDOWN ---\n`;
+    csv += `Category,Devices Count,Monthly kWh,Cost (PHP),Percentage Share\n`;
+    categoryBreakdown.forEach((c) => {
+      csv += `"${c.name}",${c.count},${c.kwh.toFixed(2)},${c.cost.toFixed(2)},${c.percentage}%\n`;
+    });
+
+    csv += `\n--- ERC UNBUNDLED TARIFF CHARGES ---\n`;
+    csv += `Charge Component,Amount (PHP),Share of Bill\n`;
+    rateComponents.forEach((r) => {
+      const pct = totalCost > 0 ? ((r.amount / totalCost) * 100).toFixed(1) : "0.0";
+      csv += `"${r.name}",${r.amount.toFixed(2)},${pct}%\n`;
+    });
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `PowerForecast_Analytics_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3, md: 3.5 } }}>
-      {/* Header Banner */}
-      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "flex-start", sm: "center" }, justifyContent: "space-between", gap: 2 }}>
+      {/* 1. Header Banner & Action Buttons */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          alignItems: { xs: "flex-start", md: "center" },
+          justifyContent: "space-between",
+          gap: 2,
+        }}
+      >
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: 800, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 1.5 }}
+          >
             <Box
               sx={{
                 width: 40,
@@ -134,157 +581,347 @@ export const AnalyticsView: React.FC = () => {
             Energy Analytics & Cost Distribution
           </Typography>
           <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
-            Deep-dive cost distribution, appliance category weights, and minute-level grid demand profiles.
+            Telemetry breakdown, DOE PELP inventory efficiency, ERC unbundled cost allocation, and diurnal load profiles.
           </Typography>
         </Box>
 
-        <Button
-          variant="outlined"
-          size="small"
-          onClick={() => window.print()}
-          startIcon={<DownloadIcon />}
-          sx={{ fontWeight: 700 }}
-        >
-          Export Report
-        </Button>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={handleExportCsv}
+            startIcon={<FileDownloadIcon />}
+            sx={{ fontWeight: 700, borderRadius: 2 }}
+          >
+            Export CSV
+          </Button>
+          <Button
+            variant="contained"
+            size="small"
+            onClick={() => window.print()}
+            startIcon={<DownloadIcon />}
+            sx={{ fontWeight: 700, borderRadius: 2 }}
+          >
+            Print Report
+          </Button>
+        </Box>
       </Box>
 
-      {/* KPI Cards Row */}
+      {/* 2. Space Filter Tabs */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 0.75,
+          borderRadius: 3,
+          bgcolor: "background.paper",
+          border: "1px solid",
+          borderColor: "divider",
+          display: "flex",
+          alignItems: "center",
+          overflowX: "auto",
+        }}
+      >
+        <Tabs
+          value={selectedSpaceId}
+          onChange={(_, val) => setSelectedSpaceId(val)}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{
+            minHeight: 40,
+            "& .MuiTab-root": {
+              minHeight: 40,
+              fontWeight: 700,
+              fontSize: "0.85rem",
+              textTransform: "none",
+              borderRadius: 2,
+              px: 2,
+            },
+          }}
+        >
+          <Tab
+            value="all"
+            icon={<AnalyticsIcon fontSize="small" />}
+            iconPosition="start"
+            label={`All Spaces (${appliances.length} devices)`}
+          />
+          {spaces.map((space) => {
+            const count = appliances.filter((a) => a.list_id === space.id || (!a.list_id && space.is_default)).length;
+            const isCommercial = space.tariff_type === "commercial";
+            return (
+              <Tab
+                key={space.id}
+                value={space.id}
+                icon={isCommercial ? <StoreIcon fontSize="small" /> : <HomeIcon fontSize="small" />}
+                iconPosition="start"
+                label={
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <span>{space.name}</span>
+                    <Chip
+                      label={isCommercial ? "Commercial" : "Residential"}
+                      size="small"
+                      sx={{
+                        height: 18,
+                        fontSize: "0.68rem",
+                        fontWeight: 800,
+                        bgcolor: isCommercial ? "rgba(56, 189, 248, 0.15)" : "rgba(99, 102, 241, 0.15)",
+                        color: isCommercial ? "#38bdf8" : "#818cf8",
+                      }}
+                    />
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                      ({count})
+                    </Typography>
+                  </Box>
+                }
+              />
+            );
+          })}
+        </Tabs>
+      </Paper>
+
+      {/* 3. KPI Metrics Cards */}
       <Grid container spacing={{ xs: 2, sm: 2.5 }}>
+        {/* Monthly Volume */}
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
             title="Monthly Energy Volume"
             value={`${totalMonthlyKwh.toFixed(1)} kWh`}
-            subtitle="Household baseline load"
+            subtitle={`${targetAppliances.length} appliances • ${runningAppliances.length} live ON`}
             icon={<BoltIcon sx={{ color: "#ffd54f" }} />}
-            trend={{ value: "Tier 3", direction: "neutral" }}
+            trend={{
+              value: distributionTierInfo.tier,
+              direction: distributionTierInfo.tier.includes("Lifeline") ? "up" : "neutral",
+              label: distributionTierInfo.label,
+            }}
           />
         </Grid>
+
+        {/* Forecasted Bill */}
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
-            title="Forecasted Bill"
+            title="Forecasted Monthly Bill"
             value={`₱${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            subtitle={`Effective: ₱${bill.effectiveRatePerKwh.toFixed(2)}/kWh`}
+            subtitle={`Effective: ₱${effectiveRate.toFixed(2)}/kWh`}
             icon={<TrendingUpIcon sx={{ color: "primary.light" }} />}
-            trend={{ value: "-4.2%", direction: "down", label: "vs projected" }}
+            trend={{
+              value: `₱${(totalCost / 30).toFixed(0)}/day`,
+              direction: "neutral",
+              label: isCommercialSelected ? "Commercial GP" : "Meralco Unbundled",
+            }}
           />
         </Grid>
+
+        {/* DOE PELP Efficiency */}
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
-            title="Energy Efficiency"
-            value="89.4%"
-            subtitle="PELP star compliance"
+            title="DOE PELP & Inverter Rating"
+            value={`${efficiencyMetrics.efficiencyPct}%`}
+            subtitle={`${efficiencyMetrics.inverterCount} of ${efficiencyMetrics.totalCount} certified efficient`}
             icon={<LeafIcon sx={{ color: "success.main" }} />}
-            trend={{ value: "A+", direction: "up" }}
+            trend={{
+              value: `Grade ${efficiencyMetrics.grade}`,
+              direction: efficiencyMetrics.grade.includes("A") ? "up" : "neutral",
+              label: "Inverter ratio",
+            }}
           />
         </Grid>
+
+        {/* Standby & Vampire Load */}
         <Grid size={{ xs: 12, sm: 6, md: 3 }} data-tour="analytics-vampire-load">
           <MetricCard
-            title="Optimization Potential"
-            value="₱380.00"
-            subtitle="Via runtime scheduling"
-            icon={<LightbulbIcon sx={{ color: "warning.main" }} />}
+            title="Standby Vampire Loss"
+            value={`₱${vampireLoadMetrics.standbyMonthlyCost.toFixed(2)}`}
+            subtitle={`~${vampireLoadMetrics.standbyMonthlyKwh} kWh/mo (${vampireLoadMetrics.standbyWattsTotal}W idle)`}
+            icon={<StandbyIcon sx={{ color: "warning.main" }} />}
+            trend={{
+              value: `${vampireLoadMetrics.vampireDevicesCount} Devices`,
+              direction: "down",
+              label: "Potential cutoff savings",
+            }}
           />
         </Grid>
       </Grid>
 
-      {/* Grouped Category Breakdown & Unbundled Cost Distribution Row */}
+      {/* 4. Grouped Category / Pareto Ranking & Unbundled Cost Distribution */}
       <Grid container spacing={{ xs: 2.5, sm: 3 }}>
-        {/* Left: Appliance Category Breakdown Bars */}
+        {/* Left: Appliance Category Share & Top Consumers (Pareto) */}
         <Grid size={{ xs: 12, md: 7 }}>
-          <Card data-tour="analytics-category-bars" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5, height: "100%", display: "flex", flexDirection: "column", gap: 2.5 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Card
+            data-tour="analytics-category-bars"
+            sx={{
+              p: { xs: 2.5, sm: 3 },
+              borderRadius: 3.5,
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              gap: 2.5,
+            }}
+          >
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                 <PieChartIcon sx={{ color: "primary.main" }} />
                 <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
-                  Energy Usage by Appliance Category
+                  {breakdownView === "category" ? "Energy Usage by Category" : "Top Consuming Appliances (Pareto)"}
                 </Typography>
               </Box>
-              <Chip label={`${categoryEntries.length} Categories`} size="small" variant="outlined" sx={{ fontWeight: 700 }} />
+
+              <ButtonGroup size="small" variant="outlined">
+                <Button
+                  variant={breakdownView === "category" ? "contained" : "outlined"}
+                  onClick={() => setBreakdownView("category")}
+                  startIcon={<CategoryIcon />}
+                  sx={{ fontWeight: 700, fontSize: "0.75rem" }}
+                >
+                  Categories
+                </Button>
+                <Button
+                  variant={breakdownView === "appliances" ? "contained" : "outlined"}
+                  onClick={() => setBreakdownView("appliances")}
+                  startIcon={<ListIcon />}
+                  sx={{ fontWeight: 700, fontSize: "0.75rem" }}
+                >
+                  Top Devices
+                </Button>
+              </ButtonGroup>
             </Box>
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.25, flex: 1, justifyContent: "center" }}>
-              {categoryEntries.length === 0 ? (
-                <Typography variant="caption" sx={{ color: "text.secondary", textAlign: "center", py: 4 }}>
-                  No appliances registered yet. Add appliances to inspect category proportions.
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, flex: 1, justifyContent: "center" }}>
+              {targetAppliances.length === 0 ? (
+                <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", py: 4 }}>
+                  No appliances registered in this space. Add appliances to inspect category shares.
                 </Typography>
-              ) : (
-                categoryEntries.map(([cat, kwh]) => {
-                  const pct = Math.round((kwh / totalCatKwh) * 100);
-                  const cost = kwh * bill.effectiveRatePerKwh;
-                  return (
-                    <Box key={cat} sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary" }}>
-                          {cat}
-                        </Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary" }}>
-                          {kwh.toFixed(1)} kWh ({pct}%) • <span style={{ color: "#ffd54f" }}>₱{cost.toFixed(2)}</span>
-                        </Typography>
-                      </Box>
-                      <LinearProgress
-                        variant="determinate"
-                        value={pct}
-                        sx={{
-                          height: 8,
-                          borderRadius: 4,
-                          bgcolor: "rgba(108, 122, 224, 0.15)",
-                          "& .MuiLinearProgress-bar": {
-                            borderRadius: 4,
-                            background: "linear-gradient(90deg, #6366f1, #fbbf24)",
-                          },
-                        }}
-                      />
+              ) : breakdownView === "category" ? (
+                categoryBreakdown.map((item) => (
+                  <Box key={item.name} sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                        {item.name} ({item.count} unit{item.count > 1 ? "s" : ""})
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary" }}>
+                        {item.kwh.toFixed(1)} kWh ({item.percentage}%) •{" "}
+                        <span style={{ color: "#ffd54f", fontFamily: "monospace" }}>₱{item.cost.toFixed(2)}</span>
+                      </Typography>
                     </Box>
-                  );
-                })
+                    <LinearProgress
+                      variant="determinate"
+                      value={item.percentage}
+                      sx={{
+                        height: 8,
+                        borderRadius: 4,
+                        bgcolor: "rgba(108, 122, 224, 0.15)",
+                        "& .MuiLinearProgress-bar": {
+                          borderRadius: 4,
+                          background: "linear-gradient(90deg, #6366f1, #fbbf24)",
+                        },
+                      }}
+                    />
+                  </Box>
+                ))
+              ) : (
+                topAppliancesBreakdown.slice(0, 6).map((app) => (
+                  <Box key={app.id} sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                          {app.name}
+                        </Typography>
+                        {app.isCurrentlyOn && (
+                          <Chip label="LIVE ON" size="small" color="success" sx={{ height: 16, fontSize: "0.6rem", fontWeight: 800 }} />
+                        )}
+                      </Box>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary" }}>
+                        {app.kwh.toFixed(1)} kWh ({app.percentage}%) •{" "}
+                        <span style={{ color: "#ffd54f", fontFamily: "monospace" }}>₱{app.cost.toFixed(2)}</span>
+                      </Typography>
+                    </Box>
+                    <LinearProgress
+                      variant="determinate"
+                      value={app.percentage}
+                      sx={{
+                        height: 8,
+                        borderRadius: 4,
+                        bgcolor: "rgba(108, 122, 224, 0.15)",
+                        "& .MuiLinearProgress-bar": {
+                          borderRadius: 4,
+                          background: "linear-gradient(90deg, #a855f7, #38bdf8)",
+                        },
+                      }}
+                    />
+                  </Box>
+                ))
               )}
             </Box>
           </Card>
         </Grid>
 
-        {/* Right: Unbundled Rate Component Proportions */}
+        {/* Right: Unbundled Rate Component Distribution */}
         <Grid size={{ xs: 12, md: 5 }}>
-          <Card data-tour="analytics-insights" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5, height: "100%", display: "flex", flexDirection: "column", gap: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-              <ReceiptIcon sx={{ color: "primary.main" }} />
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
-                Unbundled Rate Component Distribution
-              </Typography>
+          <Card
+            sx={{
+              p: { xs: 2.5, sm: 3 },
+              borderRadius: 3.5,
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <ReceiptIcon sx={{ color: "primary.main" }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
+                  ERC Unbundled Cost Allocation
+                </Typography>
+              </Box>
+              <Chip
+                label={isCommercialSelected ? "Commercial GP" : "Residential ERC"}
+                size="small"
+                variant="outlined"
+                sx={{ fontWeight: 700, fontSize: "0.75rem" }}
+              />
             </Box>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25, flex: 1, justifyContent: "center" }}>
               {rateComponents.map((item) => {
                 const pct = totalCost > 0 ? Math.round((item.amount / totalCost) * 100) : 0;
                 return (
-                  <Box
-                    key={item.name}
-                    sx={{
-                      p: 1.5,
-                      borderRadius: 2,
-                      bgcolor: "rgba(15, 14, 58, 0.4)",
-                      border: "1px solid rgba(108, 122, 224, 0.15)",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: 1.5,
-                      transition: "all 0.2s ease",
-                      "&:hover": {
-                        borderColor: "primary.main",
-                        transform: "translateX(2px)",
-                      },
-                    }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                      <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: item.color, flexShrink: 0 }} />
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: "text.secondary", fontSize: "0.8rem" }}>
-                        {item.name}
+                  <TooltipMui key={item.name} title={item.desc} arrow placement="left">
+                    <Box
+                      sx={{
+                        p: 1.5,
+                        borderRadius: 2,
+                        bgcolor: "rgba(15, 14, 58, 0.4)",
+                        border: "1px solid rgba(108, 122, 224, 0.15)",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 1.5,
+                        transition: "all 0.2s ease",
+                        "&:hover": {
+                          borderColor: item.color,
+                          transform: "translateX(2px)",
+                        },
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: item.color, flexShrink: 0 }} />
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "text.secondary", fontSize: "0.8rem" }}>
+                          {item.name}
+                        </Typography>
+                      </Box>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: 800,
+                          color: "text.primary",
+                          fontSize: "0.85rem",
+                          fontFamily: "monospace",
+                          flexShrink: 0,
+                        }}
+                      >
+                        ₱{item.amount.toFixed(2)} <span style={{ color: item.color, fontSize: "0.75rem" }}>({pct}%)</span>
                       </Typography>
                     </Box>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: "text.primary", fontSize: "0.85rem", fontFamily: "monospace", flexShrink: 0 }}>
-                      ₱{item.amount.toFixed(2)} <span style={{ color: item.color, fontSize: "0.75rem" }}>({pct}%)</span>
-                    </Typography>
-                  </Box>
+                  </TooltipMui>
                 );
               })}
             </Box>
@@ -292,15 +929,15 @@ export const AnalyticsView: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* 24-Hour Continuous Load Curve Card */}
+      {/* 5. 24-Hour Diurnal Continuous Load Curve */}
       <Card data-tour="analytics-load-curve" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5 }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2, mb: 2.5 }}>
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-              24-Hour Continuous Load Profile
+              24-Hour Continuous Load Curve
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Dynamic minute-level power demand curve
+              Diurnal power demand profile with Meralco Peak windows (11 AM - 4 PM & 6 PM - 9 PM)
             </Typography>
           </Box>
 
@@ -323,51 +960,107 @@ export const AnalyticsView: React.FC = () => {
           </ButtonGroup>
         </Box>
 
-        <Box sx={{ height: 260, width: "100%" }}>
+        <Box sx={{ height: 280, width: "100%" }}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={HOURLY_LOAD_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
-                <linearGradient id="colorLoad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
+                <linearGradient id="colorLoadCurve" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.5} />
                   <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
               <XAxis dataKey="time" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} unit=" W" />
               <Tooltip
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     const d = payload[0].payload;
                     return (
-                      <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: "#0f0e3a", border: "1px solid rgba(99, 102, 241, 0.4)", color: "#ffffff" }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                          {d.time}
-                        </Typography>
-                        <Typography variant="caption" sx={{ display: "block", color: "#ffd54f", fontWeight: 800, fontFamily: "monospace" }}>
+                      <Box
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 2.5,
+                          bgcolor: "#0f0e3a",
+                          border: "1px solid rgba(99, 102, 241, 0.4)",
+                          color: "#ffffff",
+                          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                          maxWidth: 260,
+                        }}
+                      >
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5, gap: 1 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 800 }}>
+                            {d.timeLabel}
+                          </Typography>
+                          {d.isPeak && (
+                            <Chip label="PEAK HOUR" size="small" color="error" sx={{ height: 16, fontSize: "0.6rem", fontWeight: 800 }} />
+                          )}
+                        </Box>
+                        <Typography
+                          variant="caption"
+                          sx={{ display: "block", color: "#ffd54f", fontWeight: 800, fontFamily: "monospace", fontSize: "0.95rem" }}
+                        >
                           {d.watts} Watts
                         </Typography>
+                        <Typography variant="caption" sx={{ display: "block", color: "text.secondary", mt: 0.25 }}>
+                          Running Cost: ₱{d.costPerHour.toFixed(2)}/hr
+                        </Typography>
+
+                        {d.activeDevices && d.activeDevices.length > 0 && (
+                          <Box sx={{ mt: 1, pt: 1, borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+                            <Typography variant="caption" sx={{ display: "block", fontWeight: 700, color: "#818cf8", mb: 0.5 }}>
+                              Active Devices ({d.activeDevices.length}):
+                            </Typography>
+                            {d.activeDevices.slice(0, 4).map((dev: any, idx: number) => (
+                              <Typography key={idx} variant="caption" sx={{ display: "block", fontSize: "0.7rem", color: "#e0e7ff" }}>
+                                • {dev.name} ({dev.watts}W)
+                              </Typography>
+                            ))}
+                            {d.activeDevices.length > 4 && (
+                              <Typography variant="caption" sx={{ display: "block", fontSize: "0.68rem", color: "text.secondary" }}>
+                                +{d.activeDevices.length - 4} more
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
                       </Box>
                     );
                   }
                   return null;
                 }}
               />
-              <Area type="monotone" dataKey="watts" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#colorLoad)" />
+              <Area type="monotone" dataKey="watts" stroke="#6366f1" strokeWidth={2.5} fillOpacity={1} fill="url(#colorLoadCurve)" />
             </AreaChart>
           </ResponsiveContainer>
         </Box>
       </Card>
 
-      {/* Multi-Month Trend & Forecast Bar Chart */}
+      {/* 6. Dynamic Multi-Month Trend & Seasonal Climate Forecast */}
       <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5 }}>
-        <Box sx={{ mb: 2.5 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-            Multi-Month Energy Trend & Seasonal Forecast
-          </Typography>
-          <Typography variant="caption" sx={{ color: "text.secondary" }}>
-            Monthly consumption (kWh) with projection for upcoming billing cycles
-          </Typography>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5, mb: 2.5 }}>
+          <Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+              Multi-Month Energy Trend & Climatological Forecast
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              Historical recorded consumption vs seasonal weather forecasts (dry peak, monsoon, holiday)
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#38bdf8" }} />
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>Past Recorded</Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#6366f1" }} />
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>Active Month</Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#a855f7" }} />
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>Seasonal Forecast</Typography>
+            </Box>
+          </Box>
         </Box>
 
         <Box sx={{ height: 260, width: "100%" }}>
@@ -375,18 +1068,30 @@ export const AnalyticsView: React.FC = () => {
             <BarChart data={MONTHLY_TREND_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} unit=" kWh" />
               <Tooltip
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     const d = payload[0].payload;
                     return (
-                      <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: "#0f0e3a", border: "1px solid rgba(99, 102, 241, 0.4)", color: "#ffffff" }}>
+                      <Box
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 2,
+                          bgcolor: "#0f0e3a",
+                          border: "1px solid rgba(99, 102, 241, 0.4)",
+                          color: "#ffffff",
+                          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                        }}
+                      >
                         <Typography variant="caption" sx={{ fontWeight: 700 }}>
                           {d.month} • {d.status}
                         </Typography>
-                        <Typography variant="caption" sx={{ display: "block", color: "#ffd54f", fontWeight: 800, fontFamily: "monospace" }}>
-                          {d.kwh} kWh (~₱{d.cost})
+                        <Typography
+                          variant="caption"
+                          sx={{ display: "block", color: "#ffd54f", fontWeight: 800, fontFamily: "monospace", fontSize: "0.9rem" }}
+                        >
+                          {d.kwh} kWh (~₱{d.cost.toLocaleString()})
                         </Typography>
                       </Box>
                     );
@@ -398,6 +1103,66 @@ export const AnalyticsView: React.FC = () => {
             </BarChart>
           </ResponsiveContainer>
         </Box>
+      </Card>
+
+      {/* 7. Actionable AI Energy Recommendations */}
+      <Card data-tour="analytics-insights" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+          <SparklesIcon sx={{ color: "#ffd54f" }} />
+          <Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+              AI Smart Energy Audit & Actionable Insights
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              Practical recommendations based on your appliance load profile and Meralco tariff structure
+            </Typography>
+          </Box>
+        </Box>
+
+        <Grid container spacing={2}>
+          {actionableInsights.length === 0 ? (
+            <Grid size={{ xs: 12 }}>
+              <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", py: 2 }}>
+                Register appliances to generate customized energy-saving recommendations.
+              </Typography>
+            </Grid>
+          ) : (
+            actionableInsights.map((rec) => (
+              <Grid key={rec.id} size={{ xs: 12, md: 6 }}>
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 3,
+                    bgcolor: "rgba(15, 14, 58, 0.4)",
+                    border: "1px solid rgba(108, 122, 224, 0.2)",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    gap: 1.5,
+                  }}
+                >
+                  <Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1, mb: 0.75 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 800, color: "text.primary" }}>
+                        {rec.title}
+                      </Typography>
+                      <Chip
+                        label={rec.saving}
+                        size="small"
+                        color={rec.badgeColor as any}
+                        sx={{ height: 22, fontWeight: 800, fontSize: "0.72rem", flexShrink: 0 }}
+                      />
+                    </Box>
+                    <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.5, display: "block" }}>
+                      {rec.description}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
+            ))
+          )}
+        </Grid>
       </Card>
     </Box>
   );
