@@ -94,7 +94,7 @@ export const SignupPage: React.FC = () => {
           if (data?.redirectTo) {
             navigate(data.redirectTo);
           } else {
-            navigate("/dashboard");
+            navigate("/login");
           }
         },
         onError: (err: any) => setErrorMessage(err?.message || "Registration failed. Please try again."),
