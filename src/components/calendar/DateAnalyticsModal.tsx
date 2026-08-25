@@ -4,6 +4,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
@@ -18,6 +19,8 @@ import Tab from "@mui/material/Tab";
 import Tooltip from "@mui/material/Tooltip";
 import InputAdornment from "@mui/material/InputAdornment";
 import CircularProgress from "@mui/material/CircularProgress";
+import Collapse from "@mui/material/Collapse";
+import Slider from "@mui/material/Slider";
 import {
   CalendarMonth as CalendarIcon,
   Close as CloseIcon,
@@ -36,6 +39,8 @@ import {
   Store as StoreIcon,
   Timer as TimerIcon,
   AccessTime as ClockIcon,
+  ChevronRight as ChevronRightIcon,
+  Tune as TuneIcon,
 } from "@mui/icons-material";
 import { UserAppliance, UserCalendarEvent, DailyApplianceUsage, ApplianceList, ApplianceUsageLog } from "../../types";
 import { useCreate, useDelete } from "@refinedev/core";
@@ -84,6 +89,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
   // Usage state: Map of applianceId -> { hours: number, notes: string }
   const [usageState, setUsageState] = useState<Record<string, { hours: number; notes: string }>>({});
+  const [selectedApplianceId, setSelectedApplianceId] = useState<string>("");
   const [isDirty, setIsDirty] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isLoadingYesterday, setIsLoadingYesterday] = useState<boolean>(false);
@@ -269,6 +275,14 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       return true;
     });
   }, [appliances, selectedSpaceFilter, searchQuery]);
+
+  const selectedAppliance = useMemo(() => {
+    if (selectedApplianceId) {
+      const found = filteredAppliances.find((a) => a.id === selectedApplianceId);
+      if (found) return found;
+    }
+    return filteredAppliances[0] || null;
+  }, [filteredAppliances, selectedApplianceId]);
 
   // Calculate live Day Totals based on current slider positions, logs, and live stopwatches
   const dayTotals = useMemo(() => {
@@ -710,7 +724,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         open={isOpen}
         onClose={onClose}
         fullWidth
-        maxWidth="md"
+        maxWidth="lg"
         slotProps={{
           paper: {
             sx: {
@@ -912,358 +926,519 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
             </Paper>
           </Box>
 
-          {/* TAB 0: DAILY USAGE LOG (INVENTORY SLIDERS) */}
-          {activeTab === 0 && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {/* Quick Action Toolbar */}
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1.5 }}>
-                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    startIcon={<SparklesIcon />}
-                    onClick={handleApplyDefaults}
-                    sx={{ borderRadius: 2, fontWeight: 700, fontSize: "0.75rem" }}
-                  >
-                    Use Routine Defaults
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    startIcon={isLoadingYesterday ? <CircularProgress size={14} /> : <CopyIcon />}
-                    onClick={handleCopyFromYesterday}
-                    disabled={isLoadingYesterday}
-                    sx={{ borderRadius: 2, fontWeight: 700, fontSize: "0.75rem" }}
-                  >
-                    Copy Yesterday
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    color="inherit"
-                    startIcon={<ResetIcon />}
-                    onClick={handleClearAll}
-                    sx={{ borderRadius: 2, fontWeight: 700, fontSize: "0.75rem" }}
-                  >
-                    Clear (0h)
-                  </Button>
-                </Box>
+          {/* TAB 0: DAILY USAGE LOG (MASTER-DETAIL LAYOUT) */}
+          {activeTab === 0 && (() => {
+            const renderTimeLoggingStudio = (app: UserAppliance) => {
+              const state = usageState[app.id] || { hours: 0, notes: "" };
+              const hours = state.hours;
+              const qty = app.quantity || 1;
+              const kwh = calculateKwh(app.watts, hours, qty);
+              const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
 
-                {/* Space / Tariff Filter */}
-                <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
-                  <Chip
-                    label="All Spaces"
-                    size="small"
-                    clickable
-                    onClick={() => setSelectedSpaceFilter("all")}
-                    color={selectedSpaceFilter === "all" ? "primary" : "default"}
-                    variant={selectedSpaceFilter === "all" ? "filled" : "outlined"}
-                    sx={{ fontWeight: 700 }}
-                  />
-                  <Chip
-                    icon={<HomeIcon sx={{ fontSize: "14px !important" }} />}
-                    label="Residential"
-                    size="small"
-                    clickable
-                    onClick={() => setSelectedSpaceFilter("residential")}
-                    color={selectedSpaceFilter === "residential" ? "primary" : "default"}
-                    variant={selectedSpaceFilter === "residential" ? "filled" : "outlined"}
-                    sx={{ fontWeight: 700 }}
-                  />
-                  <Chip
-                    icon={<StoreIcon sx={{ fontSize: "14px !important" }} />}
-                    label="Commercial"
-                    size="small"
-                    clickable
-                    onClick={() => setSelectedSpaceFilter("commercial")}
-                    color={selectedSpaceFilter === "commercial" ? "secondary" : "default"}
-                    variant={selectedSpaceFilter === "commercial" ? "filled" : "outlined"}
-                    sx={{ fontWeight: 700 }}
-                  />
-                </Box>
-              </Box>
+              // Compute specific logs recorded for this appliance today
+              const appLogsToday: { log: ApplianceUsageLog; slice: any }[] = [];
+              (logs || []).forEach((log) => {
+                if (log.appliance_id !== app.id) return;
+                const start = new Date(log.started_at);
+                const end = log.ended_at ? new Date(log.ended_at) : new Date(start.getTime() + (log.duration_minutes || 60) * 60000);
+                const slices = splitSessionAcrossDays(start, end);
+                const match = slices.find((s) => s.dateKey === dateKey);
+                if (match) {
+                  appLogsToday.push({ log, slice: match });
+                }
+              });
 
-              {/* Search Input */}
-              <TextField
-                size="small"
-                fullWidth
-                placeholder="Search appliances by name, room, or category..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon fontSize="small" sx={{ color: "text.secondary" }} />
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-              />
+              const isLive = Boolean(applianceStopwatchMap[app.id]?.isLive);
+              const hasSessionLogs = appLogsToday.length > 0 || isLive;
+              const hms = decimalHoursToHms(hours);
 
-              {/* Appliance Cards List */}
-              {filteredAppliances.length === 0 ? (
-                <Paper variant="outlined" sx={{ p: 4, textAlign: "center", borderRadius: 3 }}>
-                  <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                    No appliances match your selected filters. Register appliances in your Inventory first!
-                  </Typography>
-                </Paper>
-              ) : (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {filteredAppliances.map((app) => {
-                    const state = usageState[app.id] || { hours: 0, notes: "" };
-                    const hours = state.hours;
-                    const qty = app.quantity || 1;
-                    const kwh = calculateKwh(app.watts, hours, qty);
-                    const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
+              return (
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: { xs: 2, sm: 2.5 },
+                    borderRadius: 3.5,
+                    borderColor: "rgba(108, 122, 224, 0.35)",
+                    bgcolor: "rgba(15, 14, 58, 0.65)",
+                    backdropFilter: "blur(12px)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.35)",
+                  }}
+                >
+                  {/* Header: Title, Category & Calculated Preview */}
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1.5, flexWrap: "wrap" }}>
+                    <Box sx={{ flex: 1, minWidth: 180 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap", mb: 0.5 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary", fontSize: "1.05rem" }}>
+                          {app.name}
+                        </Typography>
+                        {app.quantity && app.quantity > 1 && (
+                          <Chip label={`x${app.quantity}`} size="small" sx={{ height: 20, fontSize: "0.6875rem", fontWeight: 700 }} />
+                        )}
+                        {isLive && (
+                          <Chip
+                            label="🟢 Live Active"
+                            size="small"
+                            color="success"
+                            sx={{ height: 20, fontSize: "0.6875rem", fontWeight: 800 }}
+                          />
+                        )}
+                      </Box>
+                      <Typography variant="caption" sx={{ color: "text.secondary", display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
+                        <span>{app.category}</span>
+                        {app.room_location && <span>• {app.room_location}</span>}
+                        {app.brand && <span>• {app.brand}</span>}
+                        {app.model && <span>({app.model})</span>}
+                      </Typography>
+                    </Box>
 
-                    // Compute specific logs recorded for this appliance today
-                    const appLogsToday: { log: ApplianceUsageLog; slice: any }[] = [];
-                    (logs || []).forEach((log) => {
-                      if (log.appliance_id !== app.id) return;
-                      const start = new Date(log.started_at);
-                      const end = log.ended_at ? new Date(log.ended_at) : new Date(start.getTime() + (log.duration_minutes || 60) * 60000);
-                      const slices = splitSessionAcrossDays(start, end);
-                      const match = slices.find((s) => s.dateKey === dateKey);
-                      if (match) {
-                        appLogsToday.push({ log, slice: match });
-                      }
-                    });
-
-                    const isLive = Boolean(applianceStopwatchMap[app.id]?.isLive);
-                    const hasSessionLogs = appLogsToday.length > 0 || isLive;
-
-                    return (
-                      <Paper
-                        key={app.id}
-                        variant="outlined"
+                    {/* Day Cost & Energy Preview */}
+                    <Box
+                      sx={{
+                        p: 1.25,
+                        px: 2,
+                        borderRadius: 2.5,
+                        bgcolor: "rgba(99, 102, 241, 0.15)",
+                        border: "1px solid rgba(99, 102, 241, 0.35)",
+                        textAlign: "right",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Typography
+                        variant="h5"
                         sx={{
-                          p: { xs: 2, sm: 2.5 },
-                          borderRadius: 3,
-                          borderColor: hours > 0 ? "primary.main" : "rgba(108, 122, 224, 0.25)",
-                          bgcolor: hours > 0 ? "rgba(99, 102, 241, 0.07)" : "rgba(15, 14, 58, 0.45)",
-                          transition: "all 0.2s ease",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 1.5,
-                          "&:hover": {
-                            borderColor: "primary.light",
-                          },
+                          fontWeight: 900,
+                          fontFamily: "monospace",
+                          color: hours > 0 ? "#ffd54f" : "text.secondary",
+                          lineHeight: 1.1,
                         }}
                       >
-                        {/* Row 1: Appliance Info & Estimated Cost */}
-                        <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
-                          <Box sx={{ flex: 1, minWidth: 240 }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap", mb: 0.5 }}>
-                              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
-                                {app.name}
-                              </Typography>
-                              {app.quantity && app.quantity > 1 && (
-                                <Chip label={`x${app.quantity}`} size="small" sx={{ height: 20, fontSize: "0.6875rem", fontWeight: 700 }} />
-                              )}
-                              {app.room_location && (
-                                <Chip label={app.room_location} size="small" variant="outlined" sx={{ height: 20, fontSize: "0.6875rem" }} />
-                              )}
-                              <Chip label={`${app.watts}W`} size="small" sx={{ height: 20, fontSize: "0.6875rem", fontWeight: 700, bgcolor: "rgba(255, 255, 255, 0.08)" }} />
-                              {applianceStopwatchMap[app.id]?.totalHours > 0 && (
-                                <Chip
-                                  icon={<TimerIcon sx={{ fontSize: "13px !important", color: "#34d399 !important" }} />}
-                                  label={
-                                    hours > applianceStopwatchMap[app.id].totalHours + 0.05
-                                      ? `⏱️ ${applianceStopwatchMap[app.id].totalHours.toFixed(1)}h (Stopwatch) + ${(hours - applianceStopwatchMap[app.id].totalHours).toFixed(1)}h (Manual)`
-                                      : `⏱️ ${applianceStopwatchMap[app.id].totalHours >= 1 ? applianceStopwatchMap[app.id].totalHours.toFixed(1) + 'h' : Math.round(applianceStopwatchMap[app.id].totalHours * 60) + 'm'} (Stopwatch)`
-                                  }
-                                  size="small"
-                                  color="success"
-                                  variant="outlined"
-                                  sx={{ height: 20, fontSize: "0.6875rem", fontWeight: 800 }}
-                                />
-                              )}
-                              {isLive && (
-                                <Chip
-                                  label="🟢 Live Active"
-                                  size="small"
-                                  color="success"
-                                  sx={{ height: 20, fontSize: "0.6875rem", fontWeight: 800 }}
-                                />
-                              )}
-                            </Box>
-                            <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                              {app.category} {app.brand ? `• ${app.brand}` : ""} {app.model ? `(${app.model})` : ""}
-                            </Typography>
-                          </Box>
+                        ₱{cost.toFixed(2)}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem", fontFamily: "monospace", display: "block" }}>
+                        {kwh.toFixed(3)} kWh • {app.watts}W
+                      </Typography>
+                    </Box>
+                  </Box>
 
-                          {/* Calculated Day Preview */}
-                          <Box sx={{ textAlign: "right", flexShrink: 0 }}>
-                            <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: hours > 0 ? "#ffd54f" : "text.secondary", letterSpacing: "-0.01em", lineHeight: 1.1 }}>
-                              ₱{cost.toFixed(2)}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem", fontFamily: "monospace" }}>
-                              {kwh.toFixed(3)} kWh
-                            </Typography>
-                          </Box>
-                        </Box>
+                  {/* Logged Sessions (if any exist) */}
+                  {hasSessionLogs && (
+                    <Box sx={{ p: 1.5, borderRadius: 2.5, bgcolor: "rgba(0, 0, 0, 0.35)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ fontSize: "0.6875rem", fontWeight: 800, color: "primary.light", mb: 1, display: "flex", alignItems: "center", gap: 0.5 }}
+                      >
+                        <ClockIcon sx={{ fontSize: 13 }} /> Logged Sessions on this Date:
+                      </Typography>
+                      <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap", alignItems: "center" }}>
+                        {appLogsToday.map(({ log, slice }) => {
+                          const startStr = slice.startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                          const endStr = slice.endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                          const sliceKwh = calculateKwh(app.watts, slice.hours, app.quantity || 1);
+                          const sliceCost = calculateCost(sliceKwh, DEFAULT_EFFECTIVE_RATE);
 
-                        {/* Row 2: Logged Sessions (if any exist) */}
-                        {hasSessionLogs && (
-                          <Box sx={{ p: 1.25, borderRadius: 2, bgcolor: "rgba(0, 0, 0, 0.3)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
-                            <Typography variant="caption" sx={{ fontSize: "0.6875rem", fontWeight: 800, color: "primary.light", mb: 0.75, display: "flex", alignItems: "center", gap: 0.5 }}>
-                              <ClockIcon sx={{ fontSize: 13 }} /> Logged Sessions on this Date:
-                            </Typography>
-                            <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap", alignItems: "center" }}>
-                              {appLogsToday.map(({ log, slice }) => {
-                                const startStr = slice.startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-                                const endStr = slice.endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-                                const sliceKwh = calculateKwh(app.watts, slice.hours, app.quantity || 1);
-                                const sliceCost = calculateCost(sliceKwh, DEFAULT_EFFECTIVE_RATE);
-
-                                return (
-                                  <Chip
-                                    key={`${log.id}-${slice.dateKey}`}
-                                    size="small"
-                                    icon={<TimerIcon sx={{ fontSize: "13px !important", color: "#60a5fa !important" }} />}
-                                    label={`${startStr} – ${endStr} (${slice.hours.toFixed(1)}h • ₱${sliceCost.toFixed(2)})`}
-                                    onDelete={() => handleDeleteSessionLog(log.id)}
-                                    deleteIcon={<TrashIcon sx={{ fontSize: "14px !important" }} />}
-                                    sx={{
-                                      height: 24,
-                                      fontSize: "0.6875rem",
-                                      fontWeight: 700,
-                                      bgcolor: "rgba(99, 102, 241, 0.2)",
-                                      borderColor: "rgba(99, 102, 241, 0.4)",
-                                      border: "1px solid",
-                                    }}
-                                  />
-                                );
-                              })}
-                              {isLive && (
-                                <Chip
-                                  size="small"
-                                  label="🟢 Live Stopwatch Active"
-                                  color="success"
-                                  sx={{ height: 24, fontSize: "0.6875rem", fontWeight: 800 }}
-                                />
-                              )}
-                            </Box>
-                          </Box>
+                          return (
+                            <Chip
+                              key={`${log.id}-${slice.dateKey}`}
+                              size="small"
+                              icon={<TimerIcon sx={{ fontSize: "13px !important", color: "#60a5fa !important" }} />}
+                              label={`${startStr} – ${endStr} (${slice.hours.toFixed(1)}h • ₱${sliceCost.toFixed(2)})`}
+                              onDelete={() => handleDeleteSessionLog(log.id)}
+                              deleteIcon={<TrashIcon sx={{ fontSize: "14px !important" }} />}
+                              sx={{
+                                height: 26,
+                                fontSize: "0.6875rem",
+                                fontWeight: 700,
+                                bgcolor: "rgba(99, 102, 241, 0.2)",
+                                borderColor: "rgba(99, 102, 241, 0.4)",
+                                border: "1px solid",
+                              }}
+                            />
+                          );
+                        })}
+                        {isLive && (
+                          <Chip
+                            size="small"
+                            label="🟢 Live Stopwatch Active"
+                            color="success"
+                            sx={{ height: 26, fontSize: "0.6875rem", fontWeight: 800 }}
+                          />
                         )}
+                      </Box>
+                    </Box>
+                  )}
 
-                        <Divider sx={{ my: 0.5, borderColor: "rgba(255, 255, 255, 0.08)" }} />
+                  <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)" }} />
 
-                        {/* Row 3: Daily Runtime Inputs & Quick Presets Bar */}
-                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1.5 }}>
-                          {/* Left: HH:MM:SS text fields */}
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                            <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", fontSize: "0.75rem", mr: 0.5 }}>
-                              Daily Runtime:
-                            </Typography>
-                            {(() => {
-                              const hms = decimalHoursToHms(hours);
-                              return (
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, bgcolor: "rgba(0, 0, 0, 0.3)", p: 0.5, borderRadius: 2, border: "1px solid rgba(129, 140, 248, 0.2)" }}>
-                                  <TextField
-                                    type="number"
-                                    size="small"
-                                    value={hms.hours}
-                                    onChange={(e) => {
-                                      const h = Math.max(0, Math.min(24, parseInt(e.target.value) || 0));
-                                      handleHoursChange(app.id, hmsToDecimalHours(h, hms.minutes, hms.seconds));
-                                    }}
-                                    slotProps={{ input: { endAdornment: <InputAdornment position="end">h</InputAdornment> } }}
+                  {/* Runtime Input Section */}
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", fontSize: "0.75rem", letterSpacing: "0.02em" }}>
+                        DAILY OPERATING RUNTIME:
+                      </Typography>
+
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        startIcon={<PlusIcon sx={{ fontSize: "14px" }} />}
+                        onClick={() => handleOpenPastSessionModal(app)}
+                        sx={{ borderRadius: 2, fontWeight: 800, fontSize: "0.72rem", height: 28, px: 1.25 }}
+                      >
+                        Log Past Time Range
+                      </Button>
+                    </Box>
+
+                    {/* Numeric Fields & Default Habit */}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, bgcolor: "rgba(0, 0, 0, 0.4)", p: 0.75, borderRadius: 2.5, border: "1px solid rgba(129, 140, 248, 0.25)" }}>
+                        <TextField
+                          type="number"
+                          size="small"
+                          value={hms.hours}
+                          onChange={(e) => {
+                            const h = Math.max(0, Math.min(24, parseInt(e.target.value) || 0));
+                            handleHoursChange(app.id, hmsToDecimalHours(h, hms.minutes, hms.seconds));
+                          }}
+                          slotProps={{ input: { endAdornment: <InputAdornment position="end">h</InputAdornment> } }}
+                          sx={{
+                            width: 68,
+                            "& .MuiOutlinedInput-root": { height: 34, fontSize: "0.85rem", fontWeight: 800, fontFamily: "monospace" },
+                            "& input": { textAlign: "center", py: 0 },
+                          }}
+                        />
+                        <Typography variant="body2" sx={{ fontWeight: 900, color: "text.secondary" }}>:</Typography>
+                        <TextField
+                          type="number"
+                          size="small"
+                          value={hms.minutes}
+                          onChange={(e) => {
+                            const m = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
+                            handleHoursChange(app.id, hmsToDecimalHours(hms.hours, m, hms.seconds));
+                          }}
+                          slotProps={{ input: { endAdornment: <InputAdornment position="end">m</InputAdornment> } }}
+                          sx={{
+                            width: 68,
+                            "& .MuiOutlinedInput-root": { height: 34, fontSize: "0.85rem", fontWeight: 800, fontFamily: "monospace" },
+                            "& input": { textAlign: "center", py: 0 },
+                          }}
+                        />
+                        <Typography variant="body2" sx={{ fontWeight: 900, color: "text.secondary" }}>:</Typography>
+                        <TextField
+                          type="number"
+                          size="small"
+                          value={hms.seconds}
+                          onChange={(e) => {
+                            const s = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
+                            handleHoursChange(app.id, hmsToDecimalHours(hms.hours, hms.minutes, s));
+                          }}
+                          slotProps={{ input: { endAdornment: <InputAdornment position="end">s</InputAdornment> } }}
+                          sx={{
+                            width: 68,
+                            "& .MuiOutlinedInput-root": { height: 34, fontSize: "0.85rem", fontWeight: 800, fontFamily: "monospace" },
+                            "& input": { textAlign: "center", py: 0 },
+                          }}
+                        />
+                      </Box>
+
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<SparklesIcon sx={{ fontSize: "14px" }} />}
+                        onClick={() => handleHoursChange(app.id, app.hours_per_day || 8)}
+                        sx={{ borderRadius: 2, fontWeight: 700, fontSize: "0.72rem", height: 34, textTransform: "none" }}
+                      >
+                        Default ({app.hours_per_day || 8}h)
+                      </Button>
+                    </Box>
+
+                    {/* Quick Presets Bar */}
+                    <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap", alignItems: "center" }}>
+                      {[
+                        { label: "0h", value: 0 },
+                        { label: "30m", value: 0.5 },
+                        { label: "1h", value: 1 },
+                        { label: "2h", value: 2 },
+                        { label: "4h", value: 4 },
+                        { label: "8h", value: 8 },
+                        { label: "12h", value: 12 },
+                        { label: "24h", value: 24 },
+                      ].map((preset) => {
+                        const isSelected = Math.abs(hours - preset.value) < 0.02;
+                        return (
+                          <Button
+                            key={preset.label}
+                            size="small"
+                            variant={isSelected ? "contained" : "outlined"}
+                            onClick={() => handleHoursChange(app.id, preset.value)}
+                            sx={{
+                              minWidth: 42,
+                              px: 1,
+                              py: 0.4,
+                              fontSize: "0.72rem",
+                              fontWeight: 800,
+                              borderRadius: 2,
+                              height: 32,
+                            }}
+                          >
+                            {preset.label}
+                          </Button>
+                        );
+                      })}
+                    </Box>
+                  </Box>
+                </Paper>
+              );
+            };
+
+            return (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {/* Quick Action Toolbar */}
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1.5 }}>
+                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<SparklesIcon />}
+                      onClick={handleApplyDefaults}
+                      sx={{ borderRadius: 2, fontWeight: 700, fontSize: "0.75rem" }}
+                    >
+                      Use Routine Defaults
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={isLoadingYesterday ? <CircularProgress size={14} /> : <CopyIcon />}
+                      onClick={handleCopyFromYesterday}
+                      disabled={isLoadingYesterday}
+                      sx={{ borderRadius: 2, fontWeight: 700, fontSize: "0.75rem" }}
+                    >
+                      Copy Yesterday
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="inherit"
+                      startIcon={<ResetIcon />}
+                      onClick={handleClearAll}
+                      sx={{ borderRadius: 2, fontWeight: 700, fontSize: "0.75rem" }}
+                    >
+                      Clear (0h)
+                    </Button>
+                  </Box>
+
+                  {/* Space / Tariff Filter */}
+                  <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
+                    <Chip
+                      label="All Spaces"
+                      size="small"
+                      clickable
+                      onClick={() => setSelectedSpaceFilter("all")}
+                      color={selectedSpaceFilter === "all" ? "primary" : "default"}
+                      variant={selectedSpaceFilter === "all" ? "filled" : "outlined"}
+                      sx={{ fontWeight: 700 }}
+                    />
+                    <Chip
+                      icon={<HomeIcon sx={{ fontSize: "14px !important" }} />}
+                      label="Residential"
+                      size="small"
+                      clickable
+                      onClick={() => setSelectedSpaceFilter("residential")}
+                      color={selectedSpaceFilter === "residential" ? "primary" : "default"}
+                      variant={selectedSpaceFilter === "residential" ? "filled" : "outlined"}
+                      sx={{ fontWeight: 700 }}
+                    />
+                    <Chip
+                      icon={<StoreIcon sx={{ fontSize: "14px !important" }} />}
+                      label="Commercial"
+                      size="small"
+                      clickable
+                      onClick={() => setSelectedSpaceFilter("commercial")}
+                      color={selectedSpaceFilter === "commercial" ? "secondary" : "default"}
+                      variant={selectedSpaceFilter === "commercial" ? "filled" : "outlined"}
+                      sx={{ fontWeight: 700 }}
+                    />
+                  </Box>
+                </Box>
+
+                {/* Search Input */}
+                <TextField
+                  size="small"
+                  fullWidth
+                  placeholder="Search appliances by name, room, or category..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon fontSize="small" sx={{ color: "text.secondary" }} />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                />
+
+                {/* Master-Detail Layout */}
+                {filteredAppliances.length === 0 ? (
+                  <Paper variant="outlined" sx={{ p: 4, textAlign: "center", borderRadius: 3 }}>
+                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                      No appliances match your selected filters. Register appliances in your Inventory first!
+                    </Typography>
+                  </Paper>
+                ) : (
+                  <Grid container spacing={2.5}>
+                    {/* Master List (Left Column) */}
+                    <Grid size={{ xs: 12, md: 5 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 1.25,
+                          maxHeight: { md: 540 },
+                          overflowY: { md: "auto" },
+                          pr: { md: 0.5 },
+                        }}
+                      >
+                        {filteredAppliances.map((app) => {
+                          const state = usageState[app.id] || { hours: 0, notes: "" };
+                          const hours = state.hours;
+                          const qty = app.quantity || 1;
+                          const kwh = calculateKwh(app.watts, hours, qty);
+                          const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
+                          const isLive = Boolean(applianceStopwatchMap[app.id]?.isLive);
+                          const isSelected = selectedAppliance?.id === app.id;
+                          const hasHours = hours > 0;
+
+                          return (
+                            <Box key={app.id} sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                              <Paper
+                                onClick={() => setSelectedApplianceId(app.id)}
+                                variant="outlined"
+                                sx={{
+                                  p: 1.5,
+                                  borderRadius: 3,
+                                  cursor: "pointer",
+                                  borderColor: isSelected
+                                    ? "primary.main"
+                                    : hasHours
+                                    ? "rgba(99, 102, 241, 0.4)"
+                                    : "rgba(108, 122, 224, 0.2)",
+                                  bgcolor: isSelected
+                                    ? "rgba(99, 102, 241, 0.16)"
+                                    : hasHours
+                                    ? "rgba(99, 102, 241, 0.06)"
+                                    : "rgba(15, 14, 58, 0.4)",
+                                  boxShadow: isSelected ? "0 0 16px rgba(99, 102, 241, 0.3)" : "none",
+                                  transition: "all 0.2s ease",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  gap: 1.5,
+                                  "&:hover": {
+                                    borderColor: "primary.light",
+                                    bgcolor: isSelected ? "rgba(99, 102, 241, 0.2)" : "rgba(99, 102, 241, 0.1)",
+                                    transform: "translateX(2px)",
+                                  },
+                                }}
+                              >
+                                {/* Left: Appliance Icon & Name */}
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, minWidth: 0 }}>
+                                  <Box
                                     sx={{
-                                      width: 65,
-                                      "& .MuiOutlinedInput-root": { height: 32, fontSize: "0.8125rem", fontWeight: 800, fontFamily: "monospace" },
-                                      "& input": { textAlign: "center", py: 0 },
+                                      width: 36,
+                                      height: 36,
+                                      borderRadius: 2,
+                                      bgcolor: isSelected ? "primary.main" : "rgba(255, 255, 255, 0.06)",
+                                      color: isSelected ? "#ffffff" : "primary.light",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      flexShrink: 0,
                                     }}
-                                  />
-                                  <Typography variant="body2" sx={{ fontWeight: 900, color: "text.secondary" }}>:</Typography>
-                                  <TextField
-                                    type="number"
-                                    size="small"
-                                    value={hms.minutes}
-                                    onChange={(e) => {
-                                      const m = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
-                                      handleHoursChange(app.id, hmsToDecimalHours(hms.hours, m, hms.seconds));
-                                    }}
-                                    slotProps={{ input: { endAdornment: <InputAdornment position="end">m</InputAdornment> } }}
+                                  >
+                                    <BoltIcon sx={{ fontSize: 20 }} />
+                                  </Box>
+                                  <Box sx={{ minWidth: 0 }}>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "nowrap" }}>
+                                      <Typography noWrap variant="body2" sx={{ fontWeight: 800, color: "text.primary" }}>
+                                        {app.name}
+                                      </Typography>
+                                      {isLive && (
+                                        <Chip label="LIVE" size="small" color="success" sx={{ height: 16, fontSize: "0.55rem", fontWeight: 800 }} />
+                                      )}
+                                    </Box>
+                                    <Typography noWrap variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
+                                      {app.category} • {app.watts}W {app.room_location ? `(${app.room_location})` : ""}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+
+                                {/* Right: Runtime & Peso Tag */}
+                                <Box sx={{ textAlign: "right", flexShrink: 0, display: "flex", alignItems: "center", gap: 1 }}>
+                                  <Box>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        fontWeight: 800,
+                                        fontFamily: "monospace",
+                                        color: hasHours ? "#ffd54f" : "text.secondary",
+                                        fontSize: "0.85rem",
+                                        lineHeight: 1.2,
+                                      }}
+                                    >
+                                      {hasHours ? `₱${cost.toFixed(2)}` : "0.0h"}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
+                                      {hasHours ? `${hours.toFixed(1)}h` : "Unlogged"}
+                                    </Typography>
+                                  </Box>
+                                  <ChevronRightIcon
                                     sx={{
-                                      width: 65,
-                                      "& .MuiOutlinedInput-root": { height: 32, fontSize: "0.8125rem", fontWeight: 800, fontFamily: "monospace" },
-                                      "& input": { textAlign: "center", py: 0 },
-                                    }}
-                                  />
-                                  <Typography variant="body2" sx={{ fontWeight: 900, color: "text.secondary" }}>:</Typography>
-                                  <TextField
-                                    type="number"
-                                    size="small"
-                                    value={hms.seconds}
-                                    onChange={(e) => {
-                                      const s = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
-                                      handleHoursChange(app.id, hmsToDecimalHours(hms.hours, hms.minutes, s));
-                                    }}
-                                    slotProps={{ input: { endAdornment: <InputAdornment position="end">s</InputAdornment> } }}
-                                    sx={{
-                                      width: 65,
-                                      "& .MuiOutlinedInput-root": { height: 32, fontSize: "0.8125rem", fontWeight: 800, fontFamily: "monospace" },
-                                      "& input": { textAlign: "center", py: 0 },
+                                      fontSize: 18,
+                                      color: isSelected ? "primary.main" : "text.secondary",
+                                      transform: { xs: isSelected ? "rotate(90deg)" : "none", md: "none" },
+                                      transition: "transform 0.2s ease",
                                     }}
                                   />
                                 </Box>
-                              );
-                            })()}
-                          </Box>
+                              </Paper>
 
-                          {/* Right: Presets & Log Past Range */}
-                          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", alignItems: "center" }}>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="primary"
-                              startIcon={<PlusIcon sx={{ fontSize: "14px" }} />}
-                              onClick={() => handleOpenPastSessionModal(app)}
-                              sx={{ borderRadius: 1.5, fontWeight: 800, fontSize: "0.75rem", height: 30, px: 1.25, mr: 0.5 }}
-                            >
-                              Log Past Range
-                            </Button>
-                            {[
-                              { label: "0h", value: 0 },
-                              { label: "30m", value: 0.5 },
-                              { label: "1h", value: 1 },
-                              { label: "2h", value: 2 },
-                              { label: "4h", value: 4 },
-                              { label: "8h", value: 8 },
-                              { label: "24h", value: 24 },
-                            ].map((preset) => {
-                              const isSelected = Math.abs(hours - preset.value) < 0.02;
-                              return (
-                                <Button
-                                  key={preset.label}
-                                  size="small"
-                                  variant={isSelected ? "contained" : "outlined"}
-                                  onClick={() => handleHoursChange(app.id, preset.value)}
-                                  sx={{
-                                    minWidth: 36,
-                                    px: 0.75,
-                                    py: 0.3,
-                                    fontSize: "0.6875rem",
-                                    fontWeight: 800,
-                                    borderRadius: 1.5,
-                                    height: 30,
-                                  }}
-                                >
-                                  {preset.label}
-                                </Button>
-                              );
-                            })}
-                          </Box>
-                        </Box>
-                      </Paper>
-                    );
-                  })}
-                </Box>
-              )}
-            </Box>
-          )}
+                              {/* Mobile Inline Dropdown Expansion (< md) */}
+                              <Box sx={{ display: { xs: "block", md: "none" } }}>
+                                <Collapse in={isSelected} unmountOnExit timeout={200}>
+                                  <Box sx={{ pt: 1, pb: 0.5 }}>
+                                    {renderTimeLoggingStudio(app)}
+                                  </Box>
+                                </Collapse>
+                              </Box>
+                            </Box>
+                          );
+                        })}
+                      </Box>
+                    </Grid>
+
+                    {/* Detail Studio (Right Column on Desktop md+) */}
+                    <Grid size={{ xs: 12, md: 7 }} sx={{ display: { xs: "none", md: "block" } }}>
+                      <Box sx={{ position: "sticky", top: 16 }}>
+                        {selectedAppliance ? (
+                          renderTimeLoggingStudio(selectedAppliance)
+                        ) : (
+                          <Paper variant="outlined" sx={{ p: 4, textAlign: "center", borderRadius: 3.5, bgcolor: "rgba(15, 14, 58, 0.4)" }}>
+                            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                              Select an appliance from the list to log daily hours.
+                            </Typography>
+                          </Paper>
+                        )}
+                      </Box>
+                    </Grid>
+                  </Grid>
+                )}
+              </Box>
+            );
+          })()}
 
           {/* TAB 1: 24-HOUR DAY ACTIVITY & STOPWATCH TIMELINE */}
           {activeTab === 1 && (
