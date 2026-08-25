@@ -8,6 +8,11 @@ import Slider from "@mui/material/Slider";
 import Paper from "@mui/material/Paper";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
+import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
+import Tooltip from "@mui/material/Tooltip";
+import LinearProgress from "@mui/material/LinearProgress";
+import { Link } from "react-router-dom";
 import {
   AutoGraph as AutoGraphIcon,
   Tune as TuneIcon,
@@ -18,15 +23,28 @@ import {
   Security as ShieldIcon,
   Home as HomeIcon,
   Store as StoreIcon,
+  CalendarToday as CalendarIcon,
+  Speed as SpeedIcon,
+  ElectricBolt as ElectricBoltIcon,
+  RestartAlt as ResetIcon,
+  Science as ScienceIcon,
+  TipsAndUpdates as TipsIcon,
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  CheckCircle as CheckIcon,
+  WarningAmber as WarningIcon,
 } from "@mui/icons-material";
-import { UserAppliance, ApplianceList } from "../../types";
+import { UserAppliance, ApplianceList, DailyApplianceUsage, ApplianceUsageLog } from "../../types";
 import { useList } from "@refinedev/core";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
+import { calculateKwh, calculateCost, DEFAULT_EFFECTIVE_RATE } from "../../lib/dailyUsageService";
 
 export const ForecastingView: React.FC = () => {
   const [genRateDelta, setGenRateDelta] = useState<number>(0);
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>("all");
+  const [whatIfHours, setWhatIfHours] = useState<Record<string, number>>({});
 
+  // 1. Fetch Real User Inventory, Spaces, Daily Usage Records, and Stopwatch Logs
   const appliancesRes = useList<UserAppliance>({
     resource: "user_appliances",
   }) as any;
@@ -35,8 +53,18 @@ export const ForecastingView: React.FC = () => {
     resource: "appliance_lists",
   }) as any;
 
+  const dailyUsageRes = useList<DailyApplianceUsage>({
+    resource: "daily_appliance_usage",
+  }) as any;
+
+  const usageLogsRes = useList<ApplianceUsageLog>({
+    resource: "appliance_usage_logs",
+  }) as any;
+
   const appliances: UserAppliance[] = appliancesRes?.data?.data || appliancesRes?.result?.data || [];
   const spaces: ApplianceList[] = spacesRes?.data?.data || spacesRes?.result?.data || [];
+  const dailyRecords: DailyApplianceUsage[] = dailyUsageRes?.data?.data || dailyUsageRes?.result?.data || [];
+  const sessionLogs: ApplianceUsageLog[] = usageLogsRes?.data?.data || usageLogsRes?.result?.data || [];
 
   // Filter target appliances based on space selection
   const targetAppliances = useMemo(() => {
@@ -44,57 +72,215 @@ export const ForecastingView: React.FC = () => {
     return appliances.filter((a) => a.list_id === selectedSpaceId);
   }, [appliances, selectedSpaceId]);
 
+  const targetApplianceIds = useMemo(() => {
+    return new Set(targetAppliances.map((a) => a.id));
+  }, [targetAppliances]);
+
+  // Active Billing Cycle Timeline Telemetry (e.g. Current Month)
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonthIdx = now.getMonth();
+  const currentMonthStr = String(currentMonthIdx + 1).padStart(2, "0");
+  const activeMonthKey = `${currentYear}-${currentMonthStr}`;
+  const daysInActiveMonth = new Date(currentYear, currentMonthIdx + 1, 0).getDate();
+  const elapsedDays = Math.min(now.getDate(), daysInActiveMonth);
+  const remainingDays = Math.max(0, daysInActiveMonth - elapsedDays);
+
+  const activeMonthName = now.toLocaleString("en-US", { month: "long", year: "numeric" });
+
+  // Base generation rate and simulated shift
   const baseGenRate = 7.1246;
   const simulatedGenRate = Math.max(4.0, baseGenRate + genRateDelta);
 
-  // Derive simulation scenarios
-  const simulation = useMemo(() => {
-    let baselineKwh = 0;
-    let ecoKwh = 0;
-    let summerKwh = 0;
+  // Active space tariff
+  const activeSpace = spaces.find((s) => s.id === selectedSpaceId);
+  const tariffType = activeSpace?.tariff_type || "residential";
+
+  // 2. Month-To-Date (MTD) Actual Logged Telemetry
+  const mtdActuals = useMemo(() => {
+    let actualKwh = 0;
+    let actualCost = 0;
+    const loggedDatesSet = new Set<string>();
+
+    dailyRecords.forEach((rec) => {
+      if (rec.usage_date && rec.usage_date.startsWith(activeMonthKey) && targetApplianceIds.has(rec.appliance_id)) {
+        actualKwh += Number(rec.kwh_consumed) || 0;
+        actualCost += Number(rec.estimated_cost) || 0;
+        if (Number(rec.hours_used) > 0) {
+          loggedDatesSet.add(rec.usage_date);
+        }
+      }
+    });
+
+    const loggedDaysCount = loggedDatesSet.size;
+    const avgDailyLoggedKwh = loggedDaysCount > 0 ? actualKwh / loggedDaysCount : 0;
+
+    return {
+      actualKwh: Number(actualKwh.toFixed(3)),
+      actualCost: Number(actualCost.toFixed(2)),
+      loggedDaysCount,
+      avgDailyLoggedKwh: Number(avgDailyLoggedKwh.toFixed(3)),
+      hasLoggedRecords: actualKwh > 0,
+    };
+  }, [dailyRecords, activeMonthKey, targetApplianceIds]);
+
+  // 3. Daily Routine Baseline from User's Registered Inventory
+  const routineBaseline = useMemo(() => {
+    let dailyKwh = 0;
+    let dailyStandbyKwh = 0;
 
     targetAppliances.forEach((app) => {
       const hours = app.hours_per_day || 0;
       const qty = app.quantity || 1;
-      const baseMonthly = (app.watts * hours * qty * 30) / 1000;
+      const kwh = calculateKwh(app.watts, hours, qty);
+      dailyKwh += kwh;
 
-      baselineKwh += baseMonthly;
-
-      // Eco scenario: 15% reduction in cooling/heavy devices
-      const isCooling = app.category.toLowerCase().includes("air") || app.category.toLowerCase().includes("fan") || app.category.toLowerCase().includes("ref");
-      const ecoHours = isCooling ? Math.max(0, hours * 0.85) : hours;
-      ecoKwh += (app.watts * ecoHours * qty * 30) / 1000;
-
-      // Summer scenario: 25% increase in cooling devices due to ambient heat
-      const summerHours = isCooling ? hours * 1.25 : hours;
-      summerKwh += (app.watts * summerHours * qty * 30) / 1000;
+      // Standby / vampire load estimation for non-operating hours
+      const standbyWatts = (app.ai_metadata?.standby_watts as number | undefined) ?? 2.5;
+      const nonOperatingHours = Math.max(0, 24 - hours);
+      dailyStandbyKwh += (standbyWatts * nonOperatingHours * qty) / 1000;
     });
 
-    if (baselineKwh === 0) {
-      baselineKwh = 240;
-      ecoKwh = 204;
-      summerKwh = 300;
-    }
-
-    // Determine tariff type for the space (or default residential)
-    const activeSpace = spaces.find((s) => s.id === selectedSpaceId);
-    const tariffType = activeSpace?.tariff_type || "residential";
-
-    const baselineBill = calculateMeralcoBill(baselineKwh, simulatedGenRate, 0, false, tariffType).totalBill;
-    const ecoBill = calculateMeralcoBill(ecoKwh, simulatedGenRate, 0, false, tariffType).totalBill;
-    const summerBill = calculateMeralcoBill(summerKwh, simulatedGenRate, 0, false, tariffType).totalBill;
+    const monthlyBaselineKwh = Number((dailyKwh * daysInActiveMonth).toFixed(3));
+    const monthlyBaselineBill = calculateMeralcoBill(monthlyBaselineKwh, simulatedGenRate, 0, false, tariffType).totalBill;
 
     return {
-      baselineKwh,
-      ecoKwh,
-      summerKwh,
-      baselineBill,
-      ecoBill,
-      summerBill,
-      ecoSavings: baselineBill - ecoBill,
-      summerExtra: summerBill - baselineBill,
+      dailyKwh: Number(dailyKwh.toFixed(3)),
+      dailyStandbyKwh: Number(dailyStandbyKwh.toFixed(3)),
+      monthlyBaselineKwh,
+      monthlyBaselineBill,
     };
-  }, [appliances, spaces, selectedSpaceId, targetAppliances, simulatedGenRate]);
+  }, [targetAppliances, daysInActiveMonth, simulatedGenRate, tariffType]);
+
+  // 4. Composite End-of-Month Forecast (Actual Logged + Remaining Routine Days)
+  const trajectoryForecast = useMemo(() => {
+    let forecastedKwh = 0;
+    let projectedRemainingKwh = 0;
+
+    if (mtdActuals.hasLoggedRecords) {
+      projectedRemainingKwh = Number((routineBaseline.dailyKwh * remainingDays).toFixed(3));
+      forecastedKwh = Number((mtdActuals.actualKwh + projectedRemainingKwh).toFixed(3));
+    } else {
+      // If zero logs recorded for this month yet, projection runs on pure inventory routine
+      forecastedKwh = routineBaseline.monthlyBaselineKwh;
+      projectedRemainingKwh = forecastedKwh;
+    }
+
+    const forecastedBill = calculateMeralcoBill(forecastedKwh, simulatedGenRate, 0, false, tariffType).totalBill;
+    const effectiveBurnRate = daysInActiveMonth > 0 ? forecastedKwh / daysInActiveMonth : 0;
+
+    return {
+      forecastedKwh,
+      projectedRemainingKwh,
+      forecastedBill,
+      effectiveBurnRate: Number(effectiveBurnRate.toFixed(3)),
+    };
+  }, [mtdActuals, routineBaseline, remainingDays, daysInActiveMonth, simulatedGenRate, tariffType]);
+
+  // 5. Data-Driven Scenarios Based on Actual System Capabilities
+  const scenarios = useMemo(() => {
+    // Sort appliances by consumption to find real top heavy energy hogs
+    const sortedHogs = [...targetAppliances].sort((a, b) => {
+      const aKwh = (a.watts * (a.hours_per_day || 0) * (a.quantity || 1));
+      const bKwh = (b.watts * (b.hours_per_day || 0) * (b.quantity || 1));
+      return bKwh - aKwh;
+    });
+
+    const topAppliance = sortedHogs[0] || null;
+    const secondAppliance = sortedHogs[1] || null;
+
+    // Smart Optimization Scenario: Kill vampire loads + reduce top 2 heavy devices by 1h/day
+    const daysMultiplier = mtdActuals.hasLoggedRecords ? remainingDays : daysInActiveMonth;
+    let smartSavingsDailyKwh = routineBaseline.dailyStandbyKwh * 0.85; // 85% vampire load reduction
+
+    if (topAppliance) {
+      smartSavingsDailyKwh += (topAppliance.watts * 1 * (topAppliance.quantity || 1)) / 1000;
+    }
+    if (secondAppliance) {
+      smartSavingsDailyKwh += (secondAppliance.watts * 1 * (secondAppliance.quantity || 1)) / 1000;
+    }
+
+    const smartKwh = Math.max(10, trajectoryForecast.forecastedKwh - (smartSavingsDailyKwh * daysMultiplier));
+    const smartBill = calculateMeralcoBill(smartKwh, simulatedGenRate, 0, false, tariffType).totalBill;
+    const smartSavings = Math.max(0, trajectoryForecast.forecastedBill - smartBill);
+
+    // Heavy Load Stress Scenario: What if top heavy device runs +2 hours/day
+    let stressExtraDailyKwh = 0;
+    if (topAppliance) {
+      stressExtraDailyKwh += (topAppliance.watts * 2 * (topAppliance.quantity || 1)) / 1000;
+    } else {
+      stressExtraDailyKwh += 1.5;
+    }
+
+    const stressKwh = trajectoryForecast.forecastedKwh + (stressExtraDailyKwh * daysMultiplier);
+    const stressBill = calculateMeralcoBill(stressKwh, simulatedGenRate, 0, false, tariffType).totalBill;
+    const stressExtra = Math.max(0, stressBill - trajectoryForecast.forecastedBill);
+
+    return {
+      topAppliance,
+      secondAppliance,
+      smartKwh: Number(smartKwh.toFixed(1)),
+      smartBill,
+      smartSavings: Number(smartSavings.toFixed(2)),
+      stressKwh: Number(stressKwh.toFixed(1)),
+      stressBill,
+      stressExtra: Number(stressExtra.toFixed(2)),
+    };
+  }, [targetAppliances, mtdActuals, remainingDays, daysInActiveMonth, routineBaseline, trajectoryForecast, simulatedGenRate, tariffType]);
+
+  // 6. Interactive What-If Simulator Math
+  const whatIfSimulation = useMemo(() => {
+    let whatIfDailyKwh = 0;
+
+    targetAppliances.forEach((app) => {
+      const activeHours = whatIfHours[app.id] !== undefined ? whatIfHours[app.id] : (app.hours_per_day || 0);
+      const qty = app.quantity || 1;
+      whatIfDailyKwh += calculateKwh(app.watts, activeHours, qty);
+    });
+
+    const daysMultiplier = mtdActuals.hasLoggedRecords ? remainingDays : daysInActiveMonth;
+    const simulatedRemainingKwh = whatIfDailyKwh * daysMultiplier;
+    const whatIfTotalKwh = Number(((mtdActuals.hasLoggedRecords ? mtdActuals.actualKwh : 0) + simulatedRemainingKwh).toFixed(3));
+    const whatIfBill = calculateMeralcoBill(whatIfTotalKwh, simulatedGenRate, 0, false, tariffType).totalBill;
+    const billDelta = whatIfBill - trajectoryForecast.forecastedBill;
+
+    return {
+      whatIfTotalKwh,
+      whatIfBill,
+      billDelta,
+    };
+  }, [targetAppliances, whatIfHours, mtdActuals, remainingDays, daysInActiveMonth, simulatedGenRate, tariffType, trajectoryForecast]);
+
+  // 7. Appliance Pareto Breakdown (Ranked by Forecasted Energy Share)
+  const paretoBreakdown = useMemo(() => {
+    return targetAppliances
+      .map((app) => {
+        const hours = app.hours_per_day || 0;
+        const qty = app.quantity || 1;
+        const monthlyKwh = (app.watts * hours * qty * daysInActiveMonth) / 1000;
+        const cost = calculateCost(monthlyKwh, DEFAULT_EFFECTIVE_RATE);
+        const sharePercent = routineBaseline.monthlyBaselineKwh > 0 ? (monthlyKwh / routineBaseline.monthlyBaselineKwh) * 100 : 0;
+
+        return {
+          app,
+          monthlyKwh: Number(monthlyKwh.toFixed(2)),
+          cost: Number(cost.toFixed(2)),
+          sharePercent: Math.min(100, Number(sharePercent.toFixed(1))),
+        };
+      })
+      .sort((a, b) => b.monthlyKwh - a.monthlyKwh);
+  }, [targetAppliances, daysInActiveMonth, routineBaseline]);
+
+  const handleResetWhatIf = () => {
+    setWhatIfHours({});
+  };
+
+  const handleWhatIfHourChange = (appId: string, hours: number) => {
+    setWhatIfHours((prev) => ({
+      ...prev,
+      [appId]: Math.max(0, Math.min(24, Number(hours.toFixed(1)))),
+    }));
+  };
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3, md: 3.5 } }}>
@@ -106,12 +292,12 @@ export const ForecastingView: React.FC = () => {
             Predictive Energy Forecasting
           </Typography>
           <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
-            Simulate Meralco generation rate movements, model energy conservation targets, and project seasonal summer impacts.
+            Data-driven Meralco bill projections based on actual logged days and your registered appliance routines.
           </Typography>
         </Box>
         <Chip
           icon={<BoltIcon sx={{ fontSize: "16px !important", color: "#ffd54f !important" }} />}
-          label={`Simulated Load: ${simulation.baselineKwh.toFixed(1)} kWh/mo`}
+          label={`Forecast Load: ${trajectoryForecast.forecastedKwh.toFixed(1)} kWh/mo`}
           variant="outlined"
           sx={{ fontWeight: 700, borderColor: "rgba(108, 122, 224, 0.4)", bgcolor: "rgba(15, 14, 58, 0.4)" }}
         />
@@ -147,248 +333,611 @@ export const ForecastingView: React.FC = () => {
                 value={s.id}
                 icon={s.tariff_type === "commercial" ? <StoreIcon fontSize="small" /> : <HomeIcon fontSize="small" />}
                 iconPosition="start"
-                label={`${s.name} (${s.tariff_type === "commercial" ? "Commercial" : "Residential"})`}
+                label={`${s.name} (${s.tariff_type === "commercial" ? "Commercial GP" : "Residential"})`}
               />
             ))}
           </Tabs>
         </Box>
       )}
 
-      {/* 3. Meralco Rate Fluctuation Slider */}
-      <Card
-        data-tour="forecast-rate-slider"
-        sx={{
-          p: { xs: 2.5, sm: 3.5 },
-          borderRadius: 3.5,
-          position: "relative",
-          overflow: "hidden",
-          border: "1px solid",
-          borderColor: "rgba(108, 122, 224, 0.25)",
-        }}
-      >
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 1.5 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <TuneIcon sx={{ color: "primary.main" }} />
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
-                Generation Rate Movement Simulator
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                Simulated Generation Charge: ₱{simulatedGenRate.toFixed(4)}/kWh (Base: ₱7.1246)
+      {/* 3. Zero Appliances Empty State */}
+      {targetAppliances.length === 0 ? (
+        <Paper
+          variant="outlined"
+          sx={{
+            p: { xs: 4, sm: 6 },
+            borderRadius: 4,
+            textAlign: "center",
+            bgcolor: "rgba(15, 14, 58, 0.45)",
+            borderColor: "rgba(108, 122, 224, 0.25)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
+          <ElectricBoltIcon sx={{ fontSize: 52, color: "primary.light", opacity: 0.8 }} />
+          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+            No Registered Appliances Found
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.secondary", maxWidth: 460 }}>
+            Register your household or business appliances in the Appliances Hub to start receiving real-time data-driven energy forecasts and Meralco bill projections.
+          </Typography>
+          <Button
+            component={Link}
+            to="/appliances"
+            variant="contained"
+            color="primary"
+            startIcon={<BoltIcon />}
+            sx={{ borderRadius: 2.5, fontWeight: 800, px: 3, py: 1, mt: 1 }}
+          >
+            Go to Appliances Hub
+          </Button>
+        </Paper>
+      ) : (
+        <>
+          {/* 4. Active Billing Cycle Run-Rate Telemetry Banner */}
+          <Card
+            sx={{
+              p: { xs: 2.5, sm: 3 },
+              borderRadius: 3.5,
+              border: "1px solid",
+              borderColor: "rgba(108, 122, 224, 0.3)",
+              bgcolor: "rgba(15, 14, 58, 0.55)",
+              backdropFilter: "blur(12px)",
+            }}
+          >
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <CalendarIcon sx={{ color: "primary.main", fontSize: 20 }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
+                  Active Billing Cycle: {activeMonthName}
+                </Typography>
+              </Box>
+              <Chip
+                icon={<SpeedIcon sx={{ fontSize: "14px !important", color: "#34d399 !important" }} />}
+                label={
+                  mtdActuals.hasLoggedRecords
+                    ? `${mtdActuals.loggedDaysCount} Days Logged • ${remainingDays} Days Projected`
+                    : `Pure Routine Projection (${daysInActiveMonth} Days)`
+                }
+                color={mtdActuals.hasLoggedRecords ? "success" : "primary"}
+                variant="outlined"
+                size="small"
+                sx={{ fontWeight: 800, fontSize: "0.75rem" }}
+              />
+            </Box>
+
+            <Grid container spacing={2}>
+              {/* Telemetry Tile 1: MTD Actual Logged */}
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: 2.5,
+                    bgcolor: "rgba(99, 102, 241, 0.08)",
+                    borderColor: "rgba(99, 102, 241, 0.25)",
+                    height: "100%",
+                  }}
+                >
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800, letterSpacing: "0.02em" }}>
+                    MONTH-TO-DATE LOGGED (ACTUAL)
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f", my: 0.5 }}>
+                    ₱{mtdActuals.actualCost.toFixed(2)}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                    {mtdActuals.actualKwh.toFixed(3)} kWh consumed across {mtdActuals.loggedDaysCount} logged days
+                  </Typography>
+                </Paper>
+              </Grid>
+
+              {/* Telemetry Tile 2: Projected Month-End Total */}
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: 2.5,
+                    bgcolor: "rgba(16, 185, 129, 0.08)",
+                    borderColor: "rgba(16, 185, 129, 0.3)",
+                    height: "100%",
+                  }}
+                >
+                  <Typography variant="caption" sx={{ color: "success.light", fontWeight: 800, letterSpacing: "0.02em" }}>
+                    PROJECTED MONTH-END BILL
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#34d399", my: 0.5 }}>
+                    ₱{trajectoryForecast.forecastedBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                    {trajectoryForecast.forecastedKwh.toFixed(1)} kWh total ({trajectoryForecast.projectedRemainingKwh.toFixed(1)} kWh remaining baseline)
+                  </Typography>
+                </Paper>
+              </Grid>
+
+              {/* Telemetry Tile 3: Daily Burn Rate & Pacing */}
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: 2.5,
+                    bgcolor: "rgba(108, 122, 224, 0.08)",
+                    borderColor: "rgba(108, 122, 224, 0.2)",
+                    height: "100%",
+                  }}
+                >
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800, letterSpacing: "0.02em" }}>
+                    DAILY BURN RATE & PACING
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.light", my: 0.5 }}>
+                    {trajectoryForecast.effectiveBurnRate.toFixed(2)} <span style={{ fontSize: "0.875rem", fontWeight: 600 }}>kWh/day</span>
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                    Routine Baseline: {routineBaseline.dailyKwh.toFixed(2)} kWh/day
+                  </Typography>
+                </Paper>
+              </Grid>
+            </Grid>
+          </Card>
+
+          {/* 5. Meralco Rate Fluctuation Simulator */}
+          <Card
+            data-tour="forecast-rate-slider"
+            sx={{
+              p: { xs: 2.5, sm: 3.5 },
+              borderRadius: 3.5,
+              position: "relative",
+              overflow: "hidden",
+              border: "1px solid",
+              borderColor: "rgba(108, 122, 224, 0.25)",
+            }}
+          >
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 1.5 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <TuneIcon sx={{ color: "primary.main" }} />
+                <Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
+                    Generation Rate Volatility Simulator
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    Simulated Generation Charge: ₱{simulatedGenRate.toFixed(4)}/kWh (Base Meralco ERC: ₱7.1246/kWh)
+                  </Typography>
+                </Box>
+              </Box>
+              <Chip
+                label={`${genRateDelta >= 0 ? "+" : ""}₱${genRateDelta.toFixed(2)}/kWh Shift`}
+                color={genRateDelta > 0 ? "warning" : genRateDelta < 0 ? "success" : "primary"}
+                sx={{ fontWeight: 800, fontSize: "0.85rem", px: 1 }}
+              />
+            </Box>
+
+            <Box sx={{ px: { xs: 1, sm: 2 } }}>
+              <Slider
+                value={genRateDelta}
+                min={-2.0}
+                max={3.0}
+                step={0.25}
+                marks={[
+                  { value: -2.0, label: "-₱2.00 (ERC Refund)" },
+                  { value: -1.0, label: "-₱1.00" },
+                  { value: 0, label: "₱0.00 (Published)" },
+                  { value: 1.5, label: "+₱1.50" },
+                  { value: 3.0, label: "+₱3.00 (WESM Spike)" },
+                ]}
+                onChange={(_, val) => setGenRateDelta(val as number)}
+                sx={{
+                  height: 8,
+                  "& .MuiSlider-thumb": {
+                    width: 22,
+                    height: 22,
+                    boxShadow: "0 0 15px rgba(108, 122, 224, 0.6)",
+                  },
+                }}
+              />
+            </Box>
+
+            <Box sx={{ mt: 3, p: 2, borderRadius: 2.5, bgcolor: "rgba(108, 122, 224, 0.08)", border: "1px solid rgba(108, 122, 224, 0.15)", display: "flex", alignItems: "center", gap: 2 }}>
+              <InfoIcon sx={{ color: "primary.main", fontSize: 20, flexShrink: 0 }} />
+              <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.5 }}>
+                Generation costs are adjusted monthly per ERC guidelines to reflect fuel pass-through and WESM spot market rates. Your forecasted bill dynamically recalculates across all ERC unbundled brackets.
               </Typography>
             </Box>
+          </Card>
+
+          {/* 6. Four Data-Grounded Forecast Scenarios */}
+          <Box data-tour="forecast-scenarios">
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary", mb: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
+              <ScienceIcon sx={{ color: "primary.main" }} />
+              Data-Driven Forecast Scenarios & Stress Tests
+            </Typography>
+
+            <Grid container spacing={{ xs: 2.5, sm: 3 }}>
+              {/* Scenario 1: Actual Trajectory */}
+              <Grid size={{ xs: 12, md: 3 }}>
+                <Card
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 3.5,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    border: "1px solid",
+                    borderColor: "primary.main",
+                    bgcolor: "rgba(15, 14, 58, 0.7)",
+                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                    "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(99, 102, 241, 0.2)" },
+                  }}
+                >
+                  <Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                      <Typography variant="overline" sx={{ fontWeight: 800, color: "primary.light", letterSpacing: 0.5 }}>
+                        CURRENT TRAJECTORY
+                      </Typography>
+                      <Chip label="Real Logs + Routine" size="small" color="primary" sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }} />
+                    </Box>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: "text.primary", mb: 0.5, fontFamily: "monospace" }}>
+                      ₱{trajectoryForecast.forecastedBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                      {mtdActuals.hasLoggedRecords ? `${mtdActuals.loggedDaysCount} logged days + ${remainingDays} routine days` : `Pure ${daysInActiveMonth}-day baseline`}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ mt: 2.5, pt: 1.5, borderTop: "1px solid", borderColor: "divider", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>Total Energy:</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
+                      {trajectoryForecast.forecastedKwh.toFixed(1)} kWh
+                    </Typography>
+                  </Box>
+                </Card>
+              </Grid>
+
+              {/* Scenario 2: Pure Routine Baseline */}
+              <Grid size={{ xs: 12, md: 3 }}>
+                <Card
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 3.5,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    border: "1px solid",
+                    borderColor: "rgba(108, 122, 224, 0.3)",
+                    bgcolor: "rgba(15, 14, 58, 0.4)",
+                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                    "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(108, 122, 224, 0.15)" },
+                  }}
+                >
+                  <Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                      <Typography variant="overline" sx={{ fontWeight: 800, color: "text.secondary", letterSpacing: 0.5 }}>
+                        ROUTINE BASELINE
+                      </Typography>
+                      <Chip label="100% Habit Adherence" size="small" variant="outlined" sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }} />
+                    </Box>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: "text.primary", mb: 0.5, fontFamily: "monospace" }}>
+                      ₱{routineBaseline.monthlyBaselineBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                      Assuming registered inventory daily hours are kept 100%
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ mt: 2.5, pt: 1.5, borderTop: "1px solid", borderColor: "divider", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>Standard Load:</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
+                      {routineBaseline.monthlyBaselineKwh.toFixed(1)} kWh
+                    </Typography>
+                  </Box>
+                </Card>
+              </Grid>
+
+              {/* Scenario 3: Smart Energy Audit & Efficiency */}
+              <Grid size={{ xs: 12, md: 3 }}>
+                <Card
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 3.5,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    border: "1px solid",
+                    borderColor: "success.main",
+                    bgcolor: "rgba(6, 78, 59, 0.2)",
+                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                    "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(52, 211, 153, 0.2)" },
+                  }}
+                >
+                  <Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                      <Typography variant="overline" sx={{ fontWeight: 800, color: "success.light", letterSpacing: 0.5 }}>
+                        SMART ENERGY AUDIT
+                      </Typography>
+                      <Chip icon={<LeafIcon sx={{ fontSize: "12px !important", color: "white !important" }} />} label="Save Load" color="success" size="small" sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }} />
+                    </Box>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: "#34d399", mb: 0.5, fontFamily: "monospace" }}>
+                      ₱{scenarios.smartBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                      Kill vampire standby + reduce {scenarios.topAppliance?.name || "top AC"} by 1h/day
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ mt: 2.5, pt: 1.5, borderTop: "1px solid", borderColor: "rgba(52, 211, 153, 0.2)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>Monthly Savings:</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: "#34d399", fontFamily: "monospace" }}>
+                      -₱{scenarios.smartSavings.toFixed(2)}
+                    </Typography>
+                  </Box>
+                </Card>
+              </Grid>
+
+              {/* Scenario 4: Heavy Load Stress Test */}
+              <Grid size={{ xs: 12, md: 3 }}>
+                <Card
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 3.5,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    border: "1px solid",
+                    borderColor: "warning.main",
+                    bgcolor: "rgba(120, 53, 15, 0.2)",
+                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                    "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(251, 191, 36, 0.2)" },
+                  }}
+                >
+                  <Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                      <Typography variant="overline" sx={{ fontWeight: 800, color: "warning.light", letterSpacing: 0.5 }}>
+                        HEAVY LOAD STRESS
+                      </Typography>
+                      <Chip icon={<SunIcon sx={{ fontSize: "12px !important", color: "white !important" }} />} label="Surge Risk" color="warning" size="small" sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }} />
+                    </Box>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: "#fbbf24", mb: 0.5, fontFamily: "monospace" }}>
+                      ₱{scenarios.stressBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                      If {scenarios.topAppliance?.name || "top AC"} runs +2h daily for remaining days
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ mt: 2.5, pt: 1.5, borderTop: "1px solid", borderColor: "rgba(251, 191, 36, 0.2)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>Bill Increase:</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: "#fbbf24", fontFamily: "monospace" }}>
+                      +₱{scenarios.stressExtra.toFixed(2)}
+                    </Typography>
+                  </Box>
+                </Card>
+              </Grid>
+            </Grid>
           </Box>
-          <Chip
-            label={`${genRateDelta >= 0 ? "+" : ""}₱${genRateDelta.toFixed(2)}/kWh Shift`}
-            color={genRateDelta > 0 ? "warning" : genRateDelta < 0 ? "success" : "primary"}
-            sx={{ fontWeight: 800, fontSize: "0.85rem", px: 1 }}
-          />
-        </Box>
 
-        <Box sx={{ px: { xs: 1, sm: 2 } }}>
-          <Slider
-            value={genRateDelta}
-            min={-2.0}
-            max={3.0}
-            step={0.25}
-            marks={[
-              { value: -2.0, label: "-₱2.00 (ERC Refund)" },
-              { value: -1.0, label: "-₱1.00" },
-              { value: 0, label: "₱0.00 (Published)" },
-              { value: 1.5, label: "+₱1.50" },
-              { value: 3.0, label: "+₱3.00 (WESM Spike)" },
-            ]}
-            onChange={(_, val) => setGenRateDelta(val as number)}
-            sx={{
-              height: 8,
-              "& .MuiSlider-thumb": {
-                width: 22,
-                height: 22,
-                boxShadow: "0 0 15px rgba(108, 122, 224, 0.6)",
-              },
-            }}
-          />
-        </Box>
-
-        <Box sx={{ mt: 3, p: 2, borderRadius: 2.5, bgcolor: "rgba(108, 122, 224, 0.08)", border: "1px solid rgba(108, 122, 224, 0.15)", display: "flex", alignItems: "center", gap: 2 }}>
-          <InfoIcon sx={{ color: "primary.main", fontSize: 20, flexShrink: 0 }} />
-          <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.5 }}>
-            Adjust the slider to simulate Meralco generation cost fluctuations driven by WESM spot market prices, fuel pass-through, and ERC rate adjustments.
-          </Typography>
-        </Box>
-      </Card>
-
-      {/* 4. Three Realistic Scenario Comparison Cards */}
-      <Grid container spacing={{ xs: 2.5, sm: 3 }} data-tour="forecast-scenarios">
-        {/* Scenario 1: Simulated Baseline */}
-        <Grid size={{ xs: 12, md: 4 }}>
+          {/* 7. Interactive What-If Appliance Runtime Studio */}
           <Card
             sx={{
               p: { xs: 2.5, sm: 3 },
               borderRadius: 3.5,
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
               border: "1px solid",
-              borderColor: "primary.main",
-              bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(15, 14, 58, 0.7)" : "background.paper"),
-              position: "relative",
-              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-              "&:hover": {
-                transform: "translateY(-3px)",
-                boxShadow: "0 8px 24px rgba(99, 102, 241, 0.2)",
-              },
+              borderColor: "rgba(108, 122, 224, 0.3)",
+              bgcolor: "rgba(15, 14, 58, 0.5)",
             }}
           >
-            <Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
-                <Typography variant="overline" sx={{ fontWeight: 800, color: "text.secondary", letterSpacing: 1 }}>
-                  SIMULATED BASELINE
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1.5 }}>
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary", display: "flex", alignItems: "center", gap: 1 }}>
+                  <TuneIcon sx={{ color: "primary.main" }} />
+                  Interactive "What-If" Appliance Studio
                 </Typography>
-                <Chip label="Current Runtimes" size="small" sx={{ fontWeight: 700, fontSize: "0.7rem" }} />
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  Adjust operating hours on individual appliances to simulate instant month-end bill impacts
+                </Typography>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 900, color: "text.primary", mb: 0.5, fontFamily: "monospace", letterSpacing: "-0.02em" }}>
-                ₱{simulation.baselineBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                Projected monthly bill at ₱{simulatedGenRate.toFixed(2)}/kWh generation rate
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<ResetIcon sx={{ fontSize: 16 }} />}
+                  onClick={handleResetWhatIf}
+                  sx={{ borderRadius: 2, fontSize: "0.75rem", fontWeight: 700 }}
+                >
+                  Reset Defaults
+                </Button>
+                <Chip
+                  label={
+                    whatIfSimulation.billDelta === 0
+                      ? "Neutral Target (₱0.00)"
+                      : whatIfSimulation.billDelta < 0
+                      ? `Saves ₱${Math.abs(whatIfSimulation.billDelta).toFixed(2)}/mo`
+                      : `+₱${whatIfSimulation.billDelta.toFixed(2)}/mo Increase`
+                  }
+                  color={whatIfSimulation.billDelta < 0 ? "success" : whatIfSimulation.billDelta > 0 ? "warning" : "default"}
+                  sx={{ fontWeight: 900, fontSize: "0.8rem", px: 1 }}
+                />
+              </Box>
             </Box>
 
-            <Box sx={{ mt: 3, pt: 2, borderTop: "1px solid", borderColor: "divider" }}>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>Total Energy Volume:</Typography>
-                <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
-                  {simulation.baselineKwh.toFixed(1)} kWh / mo
-                </Typography>
-              </Box>
-            </Box>
+            <Divider sx={{ mb: 2.5 }} />
+
+            <Grid container spacing={2}>
+              {targetAppliances.map((app) => {
+                const currentHours = whatIfHours[app.id] !== undefined ? whatIfHours[app.id] : (app.hours_per_day || 0);
+                const defaultHours = app.hours_per_day || 0;
+                const isModified = whatIfHours[app.id] !== undefined && whatIfHours[app.id] !== defaultHours;
+
+                return (
+                  <Grid key={app.id} size={{ xs: 12, md: 6 }}>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 2,
+                        borderRadius: 2.5,
+                        bgcolor: isModified ? "rgba(99, 102, 241, 0.1)" : "rgba(255, 255, 255, 0.02)",
+                        borderColor: isModified ? "primary.main" : "rgba(255, 255, 255, 0.08)",
+                        transition: "all 0.2s ease",
+                      }}
+                    >
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                        <Box sx={{ minWidth: 0, flex: 1, mr: 1 }}>
+                          <Typography noWrap variant="body2" sx={{ fontWeight: 800 }}>
+                            {app.name}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                            {app.category} • {app.watts}W {app.room_location ? `(${app.room_location})` : ""}
+                          </Typography>
+                        </Box>
+                        <Chip
+                          label={`${currentHours.toFixed(1)}h/day`}
+                          size="small"
+                          color={isModified ? "primary" : "default"}
+                          variant={isModified ? "filled" : "outlined"}
+                          sx={{ fontWeight: 800, fontSize: "0.75rem", fontFamily: "monospace" }}
+                        />
+                      </Box>
+
+                      <Slider
+                        value={currentHours}
+                        min={0}
+                        max={24}
+                        step={0.5}
+                        onChange={(_, val) => handleWhatIfHourChange(app.id, val as number)}
+                        sx={{
+                          my: 0.5,
+                          "& .MuiSlider-thumb": { width: 16, height: 16 },
+                        }}
+                      />
+                    </Paper>
+                  </Grid>
+                );
+              })}
+            </Grid>
           </Card>
-        </Grid>
 
-        {/* Scenario 2: Energy Conservation (-15% Runtime) */}
-        <Grid size={{ xs: 12, md: 4 }}>
+          {/* 8. Appliance Pareto Energy Contribution Breakdown */}
           <Card
             sx={{
               p: { xs: 2.5, sm: 3 },
               borderRadius: 3.5,
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
               border: "1px solid",
-              borderColor: "success.main",
-              bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(6, 78, 59, 0.2)" : "rgba(16, 185, 129, 0.05)"),
-              position: "relative",
-              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-              "&:hover": {
-                transform: "translateY(-3px)",
-                boxShadow: "0 8px 24px rgba(52, 211, 153, 0.2)",
-              },
+              borderColor: "rgba(108, 122, 224, 0.25)",
+              bgcolor: "rgba(15, 14, 58, 0.4)",
             }}
           >
-            <Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
-                <Typography variant="overline" sx={{ fontWeight: 800, color: "success.light", letterSpacing: 1 }}>
-                  CONSERVATION TARGET (-15%)
-                </Typography>
-                <Chip icon={<LeafIcon sx={{ fontSize: "14px !important", color: "white !important" }} />} label="Eco Target" color="success" size="small" sx={{ fontWeight: 700, fontSize: "0.7rem" }} />
-              </Box>
-              <Typography variant="h4" sx={{ fontWeight: 900, color: "#34d399", mb: 0.5, fontFamily: "monospace", letterSpacing: "-0.02em" }}>
-                ₱{simulation.ecoBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                By reducing AC & cooling runtimes by 1–2 hours daily
-              </Typography>
-            </Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary", mb: 1 }}>
+              Appliance Monthly Energy Share (Pareto Breakdown)
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2.5 }}>
+              Ranked breakdown of which registered devices contribute the highest share of your monthly power consumption.
+            </Typography>
 
-            <Box sx={{ mt: 3, pt: 2, borderTop: "1px solid", borderColor: "rgba(52, 211, 153, 0.2)" }}>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>Monthly Net Savings:</Typography>
-                <Typography variant="caption" sx={{ fontWeight: 800, color: "#34d399", fontFamily: "monospace" }}>
-                  -₱{simulation.ecoSavings.toFixed(2)} / mo
-                </Typography>
-              </Box>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              {paretoBreakdown.map(({ app, monthlyKwh, cost, sharePercent }, idx) => (
+                <Paper
+                  key={app.id}
+                  variant="outlined"
+                  sx={{
+                    p: 1.75,
+                    borderRadius: 2.5,
+                    bgcolor: "rgba(255, 255, 255, 0.02)",
+                    borderColor: "rgba(255, 255, 255, 0.06)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1,
+                  }}
+                >
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                      <Box
+                        sx={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: "50%",
+                          bgcolor: idx < 3 ? "primary.main" : "rgba(255, 255, 255, 0.1)",
+                          color: "#ffffff",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "0.75rem",
+                          fontWeight: 900,
+                        }}
+                      >
+                        {idx + 1}
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                          {app.name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                          {app.category} • {app.watts}W • {app.hours_per_day || 0}h/day routine
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ textAlign: "right" }}>
+                      <Typography variant="body2" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f" }}>
+                        ₱{cost.toFixed(2)}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary", fontFamily: "monospace" }}>
+                        {monthlyKwh.toFixed(1)} kWh ({sharePercent}%)
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <LinearProgress
+                    variant="determinate"
+                    value={sharePercent}
+                    sx={{
+                      height: 6,
+                      borderRadius: 3,
+                      bgcolor: "rgba(255, 255, 255, 0.08)",
+                      "& .MuiLinearProgress-bar": {
+                        borderRadius: 3,
+                        bgcolor: idx === 0 ? "#ef4444" : idx === 1 ? "#f59e0b" : "primary.main",
+                      },
+                    }}
+                  />
+                </Paper>
+              ))}
             </Box>
           </Card>
-        </Grid>
 
-        {/* Scenario 3: Summer Extended Runtime (+25% Runtime) */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Card
+          {/* 9. Advisory Insights Box */}
+          <Paper
+            data-tour="forecast-advisory"
             sx={{
-              p: { xs: 2.5, sm: 3 },
+              p: 3,
               borderRadius: 3.5,
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
+              bgcolor: "background.paper",
               border: "1px solid",
-              borderColor: "warning.main",
-              bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(120, 53, 15, 0.2)" : "rgba(245, 158, 11, 0.05)"),
-              position: "relative",
-              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-              "&:hover": {
-                transform: "translateY(-3px)",
-                boxShadow: "0 8px 24px rgba(251, 191, 36, 0.2)",
-              },
+              borderColor: "divider",
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              alignItems: { xs: "flex-start", sm: "center" },
+              gap: 2.5,
             }}
           >
-            <Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
-                <Typography variant="overline" sx={{ fontWeight: 800, color: "warning.light", letterSpacing: 1 }}>
-                  SUMMER HEAVY USAGE (+25%)
-                </Typography>
-                <Chip icon={<SunIcon sx={{ fontSize: "14px !important", color: "white !important" }} />} label="Summer Surge" color="warning" size="small" sx={{ fontWeight: 700, fontSize: "0.7rem" }} />
-              </Box>
-              <Typography variant="h4" sx={{ fontWeight: 900, color: "#fbbf24", mb: 0.5, fontFamily: "monospace", letterSpacing: "-0.02em" }}>
-                ₱{simulation.summerBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: "rgba(108, 122, 224, 0.15)", color: "primary.main", flexShrink: 0 }}>
+              <ShieldIcon sx={{ fontSize: 28 }} />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "text.primary" }}>
+                ERC & Meralco Monthly Tariff Pass-Through Advisory
               </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                Hot dry season increased compressor runtime on ACs and chillers
+              <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block", lineHeight: 1.6 }}>
+                In the Philippines, the generation charge is an automatic pass-through cost adjusted every billing cycle based on fuel costs (coal, natural gas) and WESM spot market rates. Meralco distributes electricity but does not profit from the generation charge. During hot dry months, higher grid demand pushes generation rates upward.
               </Typography>
             </Box>
-
-            <Box sx={{ mt: 3, pt: 2, borderTop: "1px solid", borderColor: "rgba(251, 191, 36, 0.2)" }}>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>Projected Increase:</Typography>
-                <Typography variant="caption" sx={{ fontWeight: 800, color: "#fbbf24", fontFamily: "monospace" }}>
-                  +₱{simulation.summerExtra.toFixed(2)} / mo
-                </Typography>
-              </Box>
-            </Box>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* 5. Advisory Insights Box */}
-      <Paper
-        data-tour="forecast-advisory"
-        sx={{
-          p: 3,
-          borderRadius: 3.5,
-          bgcolor: "background.paper",
-          border: "1px solid",
-          borderColor: "divider",
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          alignItems: { xs: "flex-start", sm: "center" },
-          gap: 2.5,
-        }}
-      >
-        <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: "rgba(108, 122, 224, 0.15)", color: "primary.main", flexShrink: 0 }}>
-          <ShieldIcon sx={{ fontSize: 28 }} />
-        </Box>
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "text.primary" }}>
-            ERC & Meralco Monthly Tariff Pass-Through Advisory
-          </Typography>
-          <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block", lineHeight: 1.6 }}>
-            In the Philippines, the generation charge is an automatic pass-through cost adjusted every billing cycle based on fuel costs (coal, gas) and WESM spot market rates. Meralco distributes power but does not earn from the generation charge. During hot dry months, higher grid demand often pushes generation rates upward.
-          </Typography>
-        </Box>
-      </Paper>
+          </Paper>
+        </>
+      )}
     </Box>
   );
 };
