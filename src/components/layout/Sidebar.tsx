@@ -19,6 +19,7 @@ import {
   BarChart as AnalyticsIcon,
   VerifiedUser as ShieldIcon,
   Paid as CoinsIcon,
+  Settings as SettingsIcon,
 } from "@mui/icons-material";
 import { useList } from "@refinedev/core";
 import { UserAppliance } from "../../types";
@@ -75,6 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { label: "Analytics", icon: <AnalyticsIcon fontSize="small" />, path: "/analytics" },
     { label: "Forecasting", icon: <ShieldIcon fontSize="small" />, path: "/forecasting" },
     { label: "API Docs", icon: <CoinsIcon fontSize="small" />, path: "/docs" },
+    { label: "Settings", icon: <SettingsIcon fontSize="small" />, path: "/settings" },
   ];
 
   const drawerContent = (

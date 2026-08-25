@@ -11,6 +11,11 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
 import Badge from "@mui/material/Badge";
+import Divider from "@mui/material/Divider";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
 import {
   Menu as MenuIcon,
   LightMode as SunIcon,
@@ -23,8 +28,10 @@ import {
   NotificationsNone as NotificationsIcon,
   NotificationsActive as NotificationsActiveIcon,
   HelpOutlined as HelpIcon,
+  Settings as SettingsIcon,
+  Shield as ShieldIcon,
 } from "@mui/icons-material";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useGetIdentity, useLogout } from "@refinedev/core";
 import { checkSupabaseConnection } from "../../lib/supabaseClient";
 import { NotificationPopover } from "./NotificationPopover";
@@ -46,6 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAiScanner,
 }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { startTour, isActive: isTourActive } = useTour();
   const currentTourPage = ROUTE_TO_TOUR_PAGE[location.pathname] || (location.pathname === "/" ? "dashboard" : null);
 
@@ -54,6 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [dbStatus, setDbStatus] = useState<{ ok: boolean; latency?: number }>({ ok: true, latency: 45 });
   const notifPermission = getNotificationPermission();
 
@@ -334,32 +343,108 @@ export const Header: React.FC<HeaderProps> = ({
             slotProps={{
               paper: {
                 sx: {
-                  minWidth: 200,
+                  minWidth: 230,
                   p: 0.75,
                   borderRadius: 3,
+                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
+                  border: "1px solid rgba(129, 140, 248, 0.2)",
+                  bgcolor: "rgba(15, 14, 58, 0.95)",
+                  backdropFilter: "blur(20px)",
                 },
               },
             }}
           >
-            <Box sx={{ px: 2, py: 1 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+            <Box sx={{ px: 2, py: 1.25 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "text.primary" }}>
                 {identity?.name || "PowerForecast User"}
               </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.75 }}>
                 {identity?.email || "Authenticated Account"}
               </Typography>
+              <Chip
+                icon={<ShieldIcon sx={{ fontSize: "12px !important", color: "#ffd54f !important" }} />}
+                label="👑 Household Owner"
+                size="small"
+                sx={{
+                  height: 20,
+                  fontSize: "0.625rem",
+                  fontWeight: 800,
+                  bgcolor: "rgba(255, 213, 79, 0.15)",
+                  color: "#ffd54f",
+                  border: "1px solid rgba(255, 213, 79, 0.3)",
+                }}
+              />
             </Box>
+
+            <Divider sx={{ my: 0.75, borderColor: "rgba(255, 255, 255, 0.08)" }} />
+
             <MenuItem
               onClick={() => {
                 setAnchorEl(null);
-                logout();
+                navigate("/settings");
               }}
-              sx={{ gap: 1, color: "error.main", fontSize: "0.8125rem", fontWeight: 600, borderRadius: 1.5 }}
+              sx={{ gap: 1.25, fontSize: "0.8125rem", fontWeight: 700, borderRadius: 1.5, py: 0.75 }}
+            >
+              <SettingsIcon fontSize="small" sx={{ color: "primary.light" }} />
+              Settings
+            </MenuItem>
+
+            <MenuItem
+              onClick={() => {
+                setAnchorEl(null);
+                setIsLogoutConfirmOpen(true);
+              }}
+              sx={{ gap: 1.25, color: "error.main", fontSize: "0.8125rem", fontWeight: 700, borderRadius: 1.5, py: 0.75 }}
             >
               <LogoutIcon fontSize="small" />
               Sign Out
             </MenuItem>
           </Menu>
+
+          {/* Sign Out Confirmation Modal */}
+          <Dialog
+            open={isLogoutConfirmOpen}
+            onClose={() => setIsLogoutConfirmOpen(false)}
+            maxWidth="xs"
+            fullWidth
+            slotProps={{
+              paper: {
+                sx: {
+                  borderRadius: 3.5,
+                  border: "1px solid rgba(129, 140, 248, 0.25)",
+                  bgcolor: "rgba(15, 14, 58, 0.95)",
+                  backdropFilter: "blur(20px)",
+                  p: 1,
+                },
+              },
+            }}
+          >
+            <DialogTitle sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1.25 }}>
+              <LogoutIcon sx={{ color: "error.main" }} />
+              Confirm Sign Out
+            </DialogTitle>
+            <DialogContent>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                Are you sure you want to sign out and end your active session on PowerForecast?
+              </Typography>
+            </DialogContent>
+            <DialogActions sx={{ p: 2 }}>
+              <Button onClick={() => setIsLogoutConfirmOpen(false)} sx={{ fontWeight: 700 }}>
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={() => {
+                  setIsLogoutConfirmOpen(false);
+                  logout();
+                }}
+                sx={{ fontWeight: 800, borderRadius: 2, px: 2 }}
+              >
+                Sign Out
+              </Button>
+            </DialogActions>
+          </Dialog>
 
           {/* Smart Notification Preferences Popover */}
           <NotificationPopover

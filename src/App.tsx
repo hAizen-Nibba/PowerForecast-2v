@@ -15,6 +15,7 @@ import { CalendarPage } from "./pages/CalendarPage";
 import { AnalyticsPage } from "./pages/AnalyticsPage";
 import { ForecastingPage } from "./pages/ForecastingPage";
 import { ApiDocsPage } from "./pages/ApiDocsPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
@@ -32,6 +33,7 @@ import {
   ReceiptLong as ReceiptIcon,
   ManageAccounts as AccountIcon,
   HistoryEdu as ChangelogIcon,
+  Settings as SettingsIcon,
 } from "@mui/icons-material";
 
 export const App: React.FC = () => {
@@ -124,6 +126,14 @@ export const App: React.FC = () => {
                   icon: <ApiIcon fontSize="small" />,
                 },
               },
+              {
+                name: "settings",
+                list: "/settings",
+                meta: {
+                  label: "Settings",
+                  icon: <SettingsIcon fontSize="small" />,
+                },
+              },
             ]}
             options={{
               syncWithLocation: true,
@@ -155,6 +165,7 @@ export const App: React.FC = () => {
                 <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/forecasting" element={<ForecastingPage />} />
                 <Route path="/docs" element={<ApiDocsPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
               </Route>
 
               {/* Catch-all fallback */}
