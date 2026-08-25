@@ -21,6 +21,7 @@ import { SignupPage } from "./pages/SignupPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { VersionBadge } from "./components/common/VersionBadge";
 import { ToastProvider } from "./components/common/ToastProvider";
+import { LanguageProvider } from "./context/LanguageContext";
 import { AppTheme } from "./theme/AppTheme";
 import {
   Dashboard as DashboardIcon,
@@ -39,8 +40,9 @@ import {
 export const App: React.FC = () => {
   return (
     <AppTheme>
-      <ToastProvider>
-        <HashRouter>
+      <LanguageProvider>
+        <ToastProvider>
+          <HashRouter>
           <Refine
             dataProvider={resilientDataProvider}
             authProvider={authProvider}
@@ -176,8 +178,9 @@ export const App: React.FC = () => {
           </Refine>
         </HashRouter>
       </ToastProvider>
-    </AppTheme>
-  );
+    </LanguageProvider>
+  </AppTheme>
+);
 };
 
 export default App;

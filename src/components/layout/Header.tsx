@@ -38,6 +38,7 @@ import { NotificationPopover } from "./NotificationPopover";
 import { getNotificationPermission } from "../../lib/notificationService";
 import { useTour } from "../../hooks/useTour";
 import { ROUTE_TO_TOUR_PAGE } from "../tour/tourSteps";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface HeaderProps {
   onOpenSidebar: () => void;
@@ -54,6 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const { startTour, isActive: isTourActive } = useTour();
   const currentTourPage = ROUTE_TO_TOUR_PAGE[location.pathname] || (location.pathname === "/" ? "dashboard" : null);
 
@@ -151,7 +153,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <CloudOffIcon sx={{ color: "#f87171 !important", fontSize: "15px !important" }} />
                 )
               }
-              label={dbStatus.ok ? "Supabase Live" : "Local Mode"}
+              label={dbStatus.ok ? t("header.dbLive", "Supabase Live") : t("header.localMode", "Local Mode")}
               size="small"
               sx={{
                 fontWeight: 700,
@@ -363,7 +365,7 @@ export const Header: React.FC<HeaderProps> = ({
               </Typography>
               <Chip
                 icon={<ShieldIcon sx={{ fontSize: "12px !important", color: "#ffd54f !important" }} />}
-                label="👑 Household Owner"
+                label={t("header.ownerBadge", "👑 Household Owner")}
                 size="small"
                 sx={{
                   height: 20,
@@ -386,7 +388,7 @@ export const Header: React.FC<HeaderProps> = ({
               sx={{ gap: 1.25, fontSize: "0.8125rem", fontWeight: 700, borderRadius: 1.5, py: 0.75 }}
             >
               <SettingsIcon fontSize="small" sx={{ color: "primary.light" }} />
-              Settings
+              {t("header.settings", "Settings")}
             </MenuItem>
 
             <MenuItem
@@ -397,7 +399,7 @@ export const Header: React.FC<HeaderProps> = ({
               sx={{ gap: 1.25, color: "error.main", fontSize: "0.8125rem", fontWeight: 700, borderRadius: 1.5, py: 0.75 }}
             >
               <LogoutIcon fontSize="small" />
-              Sign Out
+              {t("header.signOut", "Sign Out")}
             </MenuItem>
           </Menu>
 
@@ -421,16 +423,16 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <DialogTitle sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1.25 }}>
               <LogoutIcon sx={{ color: "error.main" }} />
-              Confirm Sign Out
+              {t("header.confirmSignOut", "Confirm Sign Out")}
             </DialogTitle>
             <DialogContent>
               <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                Are you sure you want to sign out and end your active session on PowerForecast?
+                {t("header.signOutPrompt", "Are you sure you want to sign out and end your active session on PowerForecast?")}
               </Typography>
             </DialogContent>
             <DialogActions sx={{ p: 2 }}>
               <Button onClick={() => setIsLogoutConfirmOpen(false)} sx={{ fontWeight: 700 }}>
-                Cancel
+                {t("header.cancel", "Cancel")}
               </Button>
               <Button
                 variant="contained"
@@ -441,7 +443,7 @@ export const Header: React.FC<HeaderProps> = ({
                 }}
                 sx={{ fontWeight: 800, borderRadius: 2, px: 2 }}
               >
-                Sign Out
+                {t("header.signOut", "Sign Out")}
               </Button>
             </DialogActions>
           </Dialog>

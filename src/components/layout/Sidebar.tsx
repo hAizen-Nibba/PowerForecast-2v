@@ -24,6 +24,7 @@ import {
 import { useList } from "@refinedev/core";
 import { UserAppliance } from "../../types";
 import { APP_VERSION } from "../../lib/supabaseClient";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -39,6 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onClose,
 }) => {
   const location = useLocation();
+  const { t } = useLanguage();
 
   const appliancesRes = useList<UserAppliance>({
     resource: "user_appliances",
@@ -69,14 +71,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const totalSessionCost = runningAppliances.reduce((acc, curr) => acc + getAccumulatedPesos(curr), 0);
 
   const navItems = [
-    { label: "Dashboard", icon: <DashboardIcon fontSize="small" />, path: "/dashboard" },
-    { label: "Bill Calculator", icon: <CalculatorIcon fontSize="small" />, path: "/calculator" },
-    { label: "Appliance Hub", icon: <BoltIcon fontSize="small" />, path: "/appliances" },
-    { label: "Smart Calendar", icon: <CalendarIcon fontSize="small" />, path: "/calendar" },
-    { label: "Analytics", icon: <AnalyticsIcon fontSize="small" />, path: "/analytics" },
-    { label: "Forecasting", icon: <ShieldIcon fontSize="small" />, path: "/forecasting" },
-    { label: "API Docs", icon: <CoinsIcon fontSize="small" />, path: "/docs" },
-    { label: "Settings", icon: <SettingsIcon fontSize="small" />, path: "/settings" },
+    { label: t("nav.dashboard", "Dashboard"), icon: <DashboardIcon fontSize="small" />, path: "/dashboard" },
+    { label: t("nav.calculator", "Bill Calculator"), icon: <CalculatorIcon fontSize="small" />, path: "/calculator" },
+    { label: t("nav.appliances", "Appliance Hub"), icon: <BoltIcon fontSize="small" />, path: "/appliances" },
+    { label: t("nav.calendar", "Smart Calendar"), icon: <CalendarIcon fontSize="small" />, path: "/calendar" },
+    { label: t("nav.analytics", "Analytics"), icon: <AnalyticsIcon fontSize="small" />, path: "/analytics" },
+    { label: t("nav.forecasting", "Forecasting"), icon: <ShieldIcon fontSize="small" />, path: "/forecasting" },
+    { label: t("nav.docs", "API Docs"), icon: <CoinsIcon fontSize="small" />, path: "/docs" },
   ];
 
   const drawerContent = (
@@ -210,11 +211,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }}
               />
               <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>
-                Live Load
+                {t("nav.liveLoad", "Live Load")}
               </Typography>
             </Box>
             <Chip
-              label={`${runningCount} Active`}
+              label={`${runningCount} ${runningCount === 1 ? "Active" : "Active"}`}
               size="small"
               sx={{
                 height: 20,

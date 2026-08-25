@@ -38,8 +38,10 @@ import { UserAppliance, ApplianceList, DailyApplianceUsage, ApplianceUsageLog } 
 import { useList } from "@refinedev/core";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
 import { calculateKwh, calculateCost, DEFAULT_EFFECTIVE_RATE } from "../../lib/dailyUsageService";
+import { useLanguage } from "../../context/LanguageContext";
 
 export const ForecastingView: React.FC = () => {
+  const { t, language } = useLanguage();
   const [genRateDelta, setGenRateDelta] = useState<number>(0);
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>("all");
   const [whatIfHours, setWhatIfHours] = useState<Record<string, number>>({});
@@ -289,10 +291,10 @@ export const ForecastingView: React.FC = () => {
         <Box>
           <Typography variant="h5" sx={{ fontWeight: 800, color: "text.primary", display: "flex", alignItems: "center", gap: 1.5 }}>
             <AutoGraphIcon sx={{ color: "primary.main" }} />
-            Predictive Energy Forecasting
+            {t("fc.title", "Predictive Energy Forecasting")}
           </Typography>
           <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
-            Data-driven Meralco bill projections based on actual logged days and your registered appliance routines.
+            {t("fc.subtitle", "Data-driven Meralco bill projections based on actual logged days and your registered appliance routines.")}
           </Typography>
         </Box>
         <Chip
@@ -326,7 +328,7 @@ export const ForecastingView: React.FC = () => {
               },
             }}
           >
-            <Tab value="all" label={`All Spaces Combined (${spaces.length})`} />
+            <Tab value="all" label={language === "tl" ? `Lahat ng Espasyo (${spaces.length})` : `All Spaces Combined (${spaces.length})`} />
             {spaces.map((s) => (
               <Tab
                 key={s.id}
@@ -358,10 +360,12 @@ export const ForecastingView: React.FC = () => {
         >
           <ElectricBoltIcon sx={{ fontSize: 52, color: "primary.light", opacity: 0.8 }} />
           <Typography variant="h6" sx={{ fontWeight: 800 }}>
-            No Registered Appliances Found
+            {language === "tl" ? "Walang Rehistradong Kagamitan" : "No Registered Appliances Found"}
           </Typography>
           <Typography variant="body2" sx={{ color: "text.secondary", maxWidth: 460 }}>
-            Register your household or business appliances in the Appliances Hub to start receiving real-time data-driven energy forecasts and Meralco bill projections.
+            {language === "tl"
+              ? "Magrehistro ng iyong mga kagamitan sa bahay o negosyo sa Sentro ng Kagamitan para magsimulang makatanggap ng data-driven na prediksyon sa bill."
+              : "Register your household or business appliances in the Appliances Hub to start receiving real-time data-driven energy forecasts and Meralco bill projections."}
           </Typography>
           <Button
             component={Link}
@@ -371,7 +375,7 @@ export const ForecastingView: React.FC = () => {
             startIcon={<BoltIcon />}
             sx={{ borderRadius: 2.5, fontWeight: 800, px: 3, py: 1, mt: 1 }}
           >
-            Go to Appliances Hub
+            {language === "tl" ? "Pumunta sa Sentro ng Kagamitan" : "Go to Appliances Hub"}
           </Button>
         </Paper>
       ) : (
@@ -391,7 +395,7 @@ export const ForecastingView: React.FC = () => {
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <CalendarIcon sx={{ color: "primary.main", fontSize: 20 }} />
                 <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
-                  Active Billing Cycle: {activeMonthName}
+                  {t("fc.activeCycle", "Active Billing Cycle")}: {activeMonthName}
                 </Typography>
               </Box>
               <Chip
@@ -422,7 +426,7 @@ export const ForecastingView: React.FC = () => {
                   }}
                 >
                   <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800, letterSpacing: "0.02em" }}>
-                    MONTH-TO-DATE LOGGED (ACTUAL)
+                    {t("fc.mtdLogged", "MONTH-TO-DATE LOGGED (ACTUAL)")}
                   </Typography>
                   <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f", my: 0.5 }}>
                     ₱{mtdActuals.actualCost.toFixed(2)}
@@ -446,7 +450,7 @@ export const ForecastingView: React.FC = () => {
                   }}
                 >
                   <Typography variant="caption" sx={{ color: "success.light", fontWeight: 800, letterSpacing: "0.02em" }}>
-                    PROJECTED MONTH-END BILL
+                    {t("fc.projectedMonthEnd", "PROJECTED MONTH-END BILL")}
                   </Typography>
                   <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#34d399", my: 0.5 }}>
                     ₱{trajectoryForecast.forecastedBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -470,7 +474,7 @@ export const ForecastingView: React.FC = () => {
                   }}
                 >
                   <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800, letterSpacing: "0.02em" }}>
-                    DAILY BURN RATE & PACING
+                    {t("fc.dailyBurnRate", "DAILY BURN RATE & PACING")}
                   </Typography>
                   <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.light", my: 0.5 }}>
                     {trajectoryForecast.effectiveBurnRate.toFixed(2)} <span style={{ fontSize: "0.875rem", fontWeight: 600 }}>kWh/day</span>
@@ -500,7 +504,7 @@ export const ForecastingView: React.FC = () => {
                 <TuneIcon sx={{ color: "primary.main" }} />
                 <Box>
                   <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
-                    Generation Rate Volatility Simulator
+                    {t("fc.genVolatilityTitle", "Generation Rate Volatility Simulator")}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     Simulated Generation Charge: ₱{simulatedGenRate.toFixed(4)}/kWh (Base Meralco ERC: ₱7.1246/kWh)
@@ -551,7 +555,7 @@ export const ForecastingView: React.FC = () => {
           <Box data-tour="forecast-scenarios">
             <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary", mb: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
               <ScienceIcon sx={{ color: "primary.main" }} />
-              Data-Driven Forecast Scenarios & Stress Tests
+              {t("fc.scenariosTitle", "Data-Driven Forecast Scenarios & Stress Tests")}
             </Typography>
 
             <Grid container spacing={{ xs: 2.5, sm: 3 }}>
@@ -575,20 +579,22 @@ export const ForecastingView: React.FC = () => {
                   <Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                       <Typography variant="overline" sx={{ fontWeight: 800, color: "primary.light", letterSpacing: 0.5 }}>
-                        CURRENT TRAJECTORY
+                        {t("fc.scenarioTrajectory", "CURRENT TRAJECTORY")}
                       </Typography>
-                      <Chip label="Real Logs + Routine" size="small" color="primary" sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }} />
+                      <Chip label={language === "tl" ? "Tala + Karaniwan" : "Real Logs + Routine"} size="small" color="primary" sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }} />
                     </Box>
                     <Typography variant="h5" sx={{ fontWeight: 900, color: "text.primary", mb: 0.5, fontFamily: "monospace" }}>
                       ₱{trajectoryForecast.forecastedBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Typography>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                      {mtdActuals.hasLoggedRecords ? `${mtdActuals.loggedDaysCount} logged days + ${remainingDays} routine days` : `Pure ${daysInActiveMonth}-day baseline`}
+                      {mtdActuals.hasLoggedRecords
+                        ? `${mtdActuals.loggedDaysCount} ${language === "tl" ? "naitalang araw" : "logged days"} + ${remainingDays} ${language === "tl" ? "karaniwang araw" : "routine days"}`
+                        : `Pure ${daysInActiveMonth}-day baseline`}
                     </Typography>
                   </Box>
 
                   <Box sx={{ mt: 2.5, pt: 1.5, borderTop: "1px solid", borderColor: "divider", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>Total Energy:</Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>{language === "tl" ? "Kabuuang Enerhiya:" : "Total Energy:"}</Typography>
                     <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
                       {trajectoryForecast.forecastedKwh.toFixed(1)} kWh
                     </Typography>
@@ -616,20 +622,20 @@ export const ForecastingView: React.FC = () => {
                   <Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                       <Typography variant="overline" sx={{ fontWeight: 800, color: "text.secondary", letterSpacing: 0.5 }}>
-                        ROUTINE BASELINE
+                        {t("fc.scenarioBaseline", "ROUTINE BASELINE")}
                       </Typography>
-                      <Chip label="100% Habit Adherence" size="small" variant="outlined" sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }} />
+                      <Chip label={language === "tl" ? "100% Karaniwang Oras" : "100% Habit Adherence"} size="small" variant="outlined" sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }} />
                     </Box>
                     <Typography variant="h5" sx={{ fontWeight: 900, color: "text.primary", mb: 0.5, fontFamily: "monospace" }}>
                       ₱{routineBaseline.monthlyBaselineBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Typography>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                      Assuming registered inventory daily hours are kept 100%
+                      {language === "tl" ? "Kung 100% nasusunod ang rehistradong oras araw-araw" : "Assuming registered inventory daily hours are kept 100%"}
                     </Typography>
                   </Box>
 
                   <Box sx={{ mt: 2.5, pt: 1.5, borderTop: "1px solid", borderColor: "divider", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>Standard Load:</Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>{language === "tl" ? "Karaniwang Load:" : "Standard Load:"}</Typography>
                     <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
                       {routineBaseline.monthlyBaselineKwh.toFixed(1)} kWh
                     </Typography>
@@ -657,20 +663,22 @@ export const ForecastingView: React.FC = () => {
                   <Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                       <Typography variant="overline" sx={{ fontWeight: 800, color: "success.light", letterSpacing: 0.5 }}>
-                        SMART ENERGY AUDIT
+                        {t("fc.scenarioSmart", "SMART ENERGY AUDIT")}
                       </Typography>
-                      <Chip icon={<LeafIcon sx={{ fontSize: "12px !important", color: "white !important" }} />} label="Save Load" color="success" size="small" sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }} />
+                      <Chip icon={<LeafIcon sx={{ fontSize: "12px !important", color: "white !important" }} />} label={language === "tl" ? "Tipid Load" : "Save Load"} color="success" size="small" sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }} />
                     </Box>
                     <Typography variant="h5" sx={{ fontWeight: 900, color: "#34d399", mb: 0.5, fontFamily: "monospace" }}>
                       ₱{scenarios.smartBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Typography>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                      Kill vampire standby + reduce {scenarios.topAppliance?.name || "top AC"} by 1h/day
+                      {language === "tl"
+                        ? `Alisin ang standby + bawas 1h/day sa ${scenarios.topAppliance?.name || "top AC"}`
+                        : `Kill vampire standby + reduce ${scenarios.topAppliance?.name || "top AC"} by 1h/day`}
                     </Typography>
                   </Box>
 
                   <Box sx={{ mt: 2.5, pt: 1.5, borderTop: "1px solid", borderColor: "rgba(52, 211, 153, 0.2)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>Monthly Savings:</Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>{language === "tl" ? "Buwanang Matitipid:" : "Monthly Savings:"}</Typography>
                     <Typography variant="caption" sx={{ fontWeight: 800, color: "#34d399", fontFamily: "monospace" }}>
                       -₱{scenarios.smartSavings.toFixed(2)}
                     </Typography>
@@ -698,20 +706,22 @@ export const ForecastingView: React.FC = () => {
                   <Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                       <Typography variant="overline" sx={{ fontWeight: 800, color: "warning.light", letterSpacing: 0.5 }}>
-                        HEAVY LOAD STRESS
+                        {t("fc.scenarioStress", "HEAVY LOAD STRESS")}
                       </Typography>
-                      <Chip icon={<SunIcon sx={{ fontSize: "12px !important", color: "white !important" }} />} label="Surge Risk" color="warning" size="small" sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }} />
+                      <Chip icon={<SunIcon sx={{ fontSize: "12px !important", color: "white !important" }} />} label={language === "tl" ? "Peligro sa Bill" : "Surge Risk"} color="warning" size="small" sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }} />
                     </Box>
                     <Typography variant="h5" sx={{ fontWeight: 900, color: "#fbbf24", mb: 0.5, fontFamily: "monospace" }}>
                       ₱{scenarios.stressBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Typography>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                      If {scenarios.topAppliance?.name || "top AC"} runs +2h daily for remaining days
+                      {language === "tl"
+                        ? `Kung ang ${scenarios.topAppliance?.name || "top AC"} ay gagamitin ng +2h araw-araw`
+                        : `If ${scenarios.topAppliance?.name || "top AC"} runs +2h daily for remaining days`}
                     </Typography>
                   </Box>
 
                   <Box sx={{ mt: 2.5, pt: 1.5, borderTop: "1px solid", borderColor: "rgba(251, 191, 36, 0.2)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>Bill Increase:</Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>{language === "tl" ? "Dagdag sa Bill:" : "Bill Increase:"}</Typography>
                     <Typography variant="caption" sx={{ fontWeight: 800, color: "#fbbf24", fontFamily: "monospace" }}>
                       +₱{scenarios.stressExtra.toFixed(2)}
                     </Typography>
@@ -735,10 +745,10 @@ export const ForecastingView: React.FC = () => {
               <Box>
                 <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary", display: "flex", alignItems: "center", gap: 1 }}>
                   <TuneIcon sx={{ color: "primary.main" }} />
-                  Interactive "What-If" Appliance Studio
+                  {t("fc.whatIfTitle", 'Interactive "What-If" Appliance Studio')}
                 </Typography>
                 <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                  Adjust operating hours on individual appliances to simulate instant month-end bill impacts
+                  {t("fc.whatIfSubtitle", "Adjust operating hours on individual appliances to simulate instant month-end bill impacts")}
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -749,15 +759,15 @@ export const ForecastingView: React.FC = () => {
                   onClick={handleResetWhatIf}
                   sx={{ borderRadius: 2, fontSize: "0.75rem", fontWeight: 700 }}
                 >
-                  Reset Defaults
+                  {t("fc.resetDefaults", "Reset Defaults")}
                 </Button>
                 <Chip
                   label={
                     whatIfSimulation.billDelta === 0
-                      ? "Neutral Target (₱0.00)"
+                      ? language === "tl" ? "Eksaktong Target (₱0.00)" : "Neutral Target (₱0.00)"
                       : whatIfSimulation.billDelta < 0
-                      ? `Saves ₱${Math.abs(whatIfSimulation.billDelta).toFixed(2)}/mo`
-                      : `+₱${whatIfSimulation.billDelta.toFixed(2)}/mo Increase`
+                      ? `${language === "tl" ? "Makakatipid ng" : "Saves"} ₱${Math.abs(whatIfSimulation.billDelta).toFixed(2)}/mo`
+                      : `+₱${whatIfSimulation.billDelta.toFixed(2)}/mo ${language === "tl" ? "Dagdag" : "Increase"}`
                   }
                   color={whatIfSimulation.billDelta < 0 ? "success" : whatIfSimulation.billDelta > 0 ? "warning" : "default"}
                   sx={{ fontWeight: 900, fontSize: "0.8rem", px: 1 }}
@@ -832,10 +842,10 @@ export const ForecastingView: React.FC = () => {
             }}
           >
             <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary", mb: 1 }}>
-              Appliance Monthly Energy Share (Pareto Breakdown)
+              {t("fc.paretoTitle", "Appliance Monthly Energy Share (Pareto Breakdown)")}
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2.5 }}>
-              Ranked breakdown of which registered devices contribute the highest share of your monthly power consumption.
+              {t("fc.paretoSubtitle", "Ranked breakdown of which registered devices contribute the highest share of your monthly power consumption.")}
             </Typography>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>

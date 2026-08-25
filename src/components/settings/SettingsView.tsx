@@ -46,6 +46,7 @@ import {
 import { useGetIdentity, useLogout } from "@refinedev/core";
 import { useToast } from "../common/ToastProvider";
 import { supabaseClient } from "../../lib/supabaseClient";
+import { useLanguage, Language } from "../../context/LanguageContext";
 
 interface HouseholdMember {
   id: string;
@@ -61,19 +62,14 @@ export const SettingsView: React.FC = () => {
   const { data: identity } = useGetIdentity<any>();
   const { mutate: logout } = useLogout();
   const { showSuccess, showError, showInfo } = useToast();
-
-  // 1. Language State
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {
-    return localStorage.getItem("powerforecast_language") || "en";
-  });
+  const { language, setLanguage, t } = useLanguage();
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const lang = e.target.value;
-    setSelectedLanguage(lang);
-    localStorage.setItem("powerforecast_language", lang);
+    const lang = e.target.value as Language;
+    setLanguage(lang);
     showSuccess(
       lang === "tl" ? "Wika ay pinalitan sa Tagalog (Filipino)!" : "Language updated to English (US)!",
-      "Language Updated"
+      lang === "tl" ? "Na-update ang Wika" : "Language Updated"
     );
   };
 
@@ -143,20 +139,26 @@ export const SettingsView: React.FC = () => {
 
     setMembers((prev) => [...prev, newMember]);
     setGeneratedInvite({ code, link });
-    showSuccess(`Invitation generated for ${inviteName}! You can now share the invite link.`, "Invite Created");
+    showSuccess(
+      language === "tl" ? `Nagawa ang imbitasyon para kay ${inviteName}!` : `Invitation generated for ${inviteName}! You can now share the invite link.`,
+      language === "tl" ? "Imbitasyon Nagawa" : "Invite Created"
+    );
   };
 
   const handleCopyLink = () => {
     if (!generatedInvite?.link) return;
     navigator.clipboard.writeText(generatedInvite.link);
     setCopiedLink(true);
-    showSuccess("Invite link copied to clipboard! Ready to share on Messenger or Viber.", "Link Copied");
+    showSuccess(
+      language === "tl" ? "Nakopya na ang invite link sa clipboard!" : "Invite link copied to clipboard! Ready to share on Messenger or Viber.",
+      language === "tl" ? "Nakopya ang Link" : "Link Copied"
+    );
     setTimeout(() => setCopiedLink(false), 3000);
   };
 
   const handleRemoveMember = (memberId: string, memberName: string) => {
     setMembers((prev) => prev.filter((m) => m.id !== memberId));
-    showInfo(`Removed ${memberName} from household.`);
+    showInfo(language === "tl" ? `Tinanggal si ${memberName} sa household.` : `Removed ${memberName} from household.`);
   };
 
   // 3. Account Deletion Security Flow (2-Step Verification)
@@ -191,7 +193,11 @@ export const SettingsView: React.FC = () => {
         });
 
         if (authErr) {
-          setDeleteError("Incorrect password. Please verify your current account password.");
+          setDeleteError(
+            language === "tl"
+              ? "Maling password. Pakisuri ang kasalukuyang password ng iyong account."
+              : "Incorrect password. Please verify your current account password."
+          );
           setIsDeleting(false);
           return;
         }
@@ -216,7 +222,12 @@ export const SettingsView: React.FC = () => {
       localStorage.removeItem("powerforecast_active_user");
       localStorage.removeItem(householdStorageKey);
 
-      showSuccess("Your account and all associated telemetry have been permanently deleted.", "Account Deleted");
+      showSuccess(
+        language === "tl"
+          ? "Ang iyong account at lahat ng datos ay permanenteng nabura na."
+          : "Your account and all associated telemetry have been permanently deleted.",
+        language === "tl" ? "Nabura ang Account" : "Account Deleted"
+      );
       setIsDeleteModalOpen(false);
 
       // 4. Sign out
@@ -233,10 +244,10 @@ export const SettingsView: React.FC = () => {
       <Box sx={{ pb: 2, borderBottom: "1px solid", borderColor: "divider" }}>
         <Typography variant="h5" sx={{ fontWeight: 800, color: "text.primary", display: "flex", alignItems: "center", gap: 1.5 }}>
           <SettingsIcon sx={{ color: "primary.main" }} />
-          Account & Household Settings
+          {t("settings.title", "Account & Household Settings")}
         </Typography>
         <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
-          Manage your language preferences, invite family members with tailored roles, and manage your account security.
+          {t("settings.subtitle", "Manage your language preferences, invite family members with tailored roles, and manage your account security.")}
         </Typography>
       </Box>
 
@@ -253,14 +264,14 @@ export const SettingsView: React.FC = () => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
           <LanguageIcon sx={{ color: "primary.main" }} />
           <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
-            Language & Localization (Wika)
+            {t("settings.langTitle", "Language & Localization (Wika)")}
           </Typography>
         </Box>
         <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2 }}>
-          Choose your preferred interface and notification language.
+          {t("settings.langSubtitle", "Choose your preferred interface and notification language.")}
         </Typography>
 
-        <RadioGroup row value={selectedLanguage} onChange={handleLanguageChange}>
+        <RadioGroup row value={language} onChange={handleLanguageChange}>
           <FormControlLabel
             value="en"
             control={<Radio color="primary" />}
@@ -302,10 +313,10 @@ export const SettingsView: React.FC = () => {
             <HouseholdIcon sx={{ color: "primary.main" }} />
             <Box>
               <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
-                Household Sharing & Multi-User Access
+                {t("settings.householdTitle", "Household Sharing & Multi-User Access")}
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                Invite family members to control stopwatches and log daily usage while keeping master billing locked
+                {t("settings.householdSubtitle", "Invite family members to control stopwatches and log daily usage while keeping master billing locked")}
               </Typography>
             </Box>
           </Box>
@@ -316,7 +327,7 @@ export const SettingsView: React.FC = () => {
             onClick={handleOpenInviteModal}
             sx={{ borderRadius: 2.5, fontWeight: 800, px: 2, fontSize: "0.8125rem" }}
           >
-            Invite Family Member
+            {t("settings.inviteMember", "Invite Family Member")}
           </Button>
         </Box>
 
@@ -327,11 +338,11 @@ export const SettingsView: React.FC = () => {
           <Table size="small">
             <TableHead>
               <TableRow sx={{ bgcolor: "rgba(255, 255, 255, 0.03)" }}>
-                <TableCell sx={{ fontWeight: 800, fontSize: "0.75rem", color: "text.secondary" }}>MEMBER</TableCell>
-                <TableCell sx={{ fontWeight: 800, fontSize: "0.75rem", color: "text.secondary" }}>EMAIL</TableCell>
-                <TableCell sx={{ fontWeight: 800, fontSize: "0.75rem", color: "text.secondary" }}>ROLE & PERMISSIONS</TableCell>
-                <TableCell sx={{ fontWeight: 800, fontSize: "0.75rem", color: "text.secondary" }}>STATUS</TableCell>
-                <TableCell sx={{ fontWeight: 800, fontSize: "0.75rem", color: "text.secondary", textAlign: "right" }}>ACTIONS</TableCell>
+                <TableCell sx={{ fontWeight: 800, fontSize: "0.75rem", color: "text.secondary" }}>{t("settings.member", "MEMBER")}</TableCell>
+                <TableCell sx={{ fontWeight: 800, fontSize: "0.75rem", color: "text.secondary" }}>{t("settings.email", "EMAIL")}</TableCell>
+                <TableCell sx={{ fontWeight: 800, fontSize: "0.75rem", color: "text.secondary" }}>{t("settings.role", "ROLE & PERMISSIONS")}</TableCell>
+                <TableCell sx={{ fontWeight: 800, fontSize: "0.75rem", color: "text.secondary" }}>{t("settings.status", "STATUS")}</TableCell>
+                <TableCell sx={{ fontWeight: 800, fontSize: "0.75rem", color: "text.secondary", textAlign: "right" }}>{t("settings.actions", "ACTIONS")}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -356,14 +367,14 @@ export const SettingsView: React.FC = () => {
                     {m.role === "owner" ? (
                       <Chip
                         icon={<ShieldIcon sx={{ fontSize: "14px !important", color: "#ffd54f !important" }} />}
-                        label="👑 Household Owner (Full Access)"
+                        label={language === "tl" ? "👑 May-ari ng Bahay (Full Access)" : "👑 Household Owner (Full Access)"}
                         size="small"
                         sx={{ fontWeight: 800, fontSize: "0.6875rem", bgcolor: "rgba(255, 213, 79, 0.15)", color: "#ffd54f", border: "1px solid rgba(255, 213, 79, 0.3)" }}
                       />
                     ) : (
                       <Chip
                         icon={<BoltIcon sx={{ fontSize: "14px !important", color: "#60a5fa !important" }} />}
-                        label="👥 Family Member (Usage Logging)"
+                        label={language === "tl" ? "👥 Miyembro ng Pamilya (Usage Logging)" : "👥 Family Member (Usage Logging)"}
                         size="small"
                         sx={{ fontWeight: 800, fontSize: "0.6875rem", bgcolor: "rgba(96, 165, 250, 0.15)", color: "#60a5fa", border: "1px solid rgba(96, 165, 250, 0.3)" }}
                       />
@@ -371,7 +382,7 @@ export const SettingsView: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={m.status === "active" ? "🟢 Active" : `⏳ Pending (${m.inviteCode || "Invite"})`}
+                      label={m.status === "active" ? t("settings.active", "🟢 Active") : `${t("settings.pending", "⏳ Pending")} (${m.inviteCode || "Invite"})`}
                       size="small"
                       color={m.status === "active" ? "success" : "warning"}
                       variant="outlined"
@@ -381,7 +392,7 @@ export const SettingsView: React.FC = () => {
                   <TableCell sx={{ textAlign: "right" }}>
                     {m.role === "owner" ? (
                       <Typography variant="caption" sx={{ color: "text.secondary", fontStyle: "italic" }}>
-                        Primary Admin
+                        {t("settings.primaryAdmin", "Primary Admin")}
                       </Typography>
                     ) : (
                       <Button
@@ -390,7 +401,7 @@ export const SettingsView: React.FC = () => {
                         onClick={() => handleRemoveMember(m.id, m.name)}
                         sx={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "none", py: 0.2 }}
                       >
-                        Remove
+                        {t("settings.remove", "Remove")}
                       </Button>
                     )}
                   </TableCell>
@@ -403,7 +414,7 @@ export const SettingsView: React.FC = () => {
         {/* Hierarchy Explanation Matrix */}
         <Box sx={{ mt: 3, p: 2, borderRadius: 2.5, bgcolor: "rgba(108, 122, 224, 0.06)", border: "1px solid rgba(108, 122, 224, 0.15)" }}>
           <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.light", display: "block", mb: 1 }}>
-            🛡️ HOUSEHOLD PERMISSION MATRIX
+            {t("settings.permMatrix", "🛡️ HOUSEHOLD PERMISSION MATRIX")}
           </Typography>
           <Grid container spacing={1.5}>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -411,10 +422,10 @@ export const SettingsView: React.FC = () => {
                 <CheckIcon sx={{ fontSize: 16, color: "#34d399", mt: 0.2 }} />
                 <Box>
                   <Typography variant="caption" sx={{ fontWeight: 700, color: "text.primary", display: "block" }}>
-                    👑 Household Owner (Admin)
+                    {language === "tl" ? "👑 May-ari ng Bahay (Admin)" : "👑 Household Owner (Admin)"}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                    Complete access to ALL features: inventory, billing rates, spaces, AI Scanner, CSV exports, invite members, and account settings.
+                    {t("settings.ownerDesc", "Complete access to ALL features: inventory, billing rates, spaces, AI Scanner, CSV exports, invite members, and account settings.")}
                   </Typography>
                 </Box>
               </Box>
@@ -424,10 +435,10 @@ export const SettingsView: React.FC = () => {
                 <CheckIcon sx={{ fontSize: 16, color: "#60a5fa", mt: 0.2 }} />
                 <Box>
                   <Typography variant="caption" sx={{ fontWeight: 700, color: "text.primary", display: "block" }}>
-                    👥 Family Member (Usage Logging)
+                    {language === "tl" ? "👥 Miyembro ng Pamilya (Usage Logging)" : "👥 Family Member (Usage Logging)"}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                    Can control live stopwatches, log daily hours on Smart Calendar, and view load curves. Restricted from master rate changes and account deletion.
+                    {t("settings.memberDesc", "Can control live stopwatches, log daily hours on Smart Calendar, and view load curves. Restricted from master rate changes and account deletion.")}
                   </Typography>
                 </Box>
               </Box>
@@ -451,11 +462,11 @@ export const SettingsView: React.FC = () => {
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
               <WarningIcon sx={{ color: "error.main" }} />
               <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "error.light" }}>
-                Danger Zone: Account Deletion
+                {t("settings.dangerTitle", "Danger Zone: Account Deletion")}
               </Typography>
             </Box>
             <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.5 }}>
-              Permanently erase your account, registered appliances, daily calendar logs, live stopwatch history, and analytics records. This action is irreversible.
+              {t("settings.dangerSubtitle", "Permanently erase your account, registered appliances, daily calendar logs, live stopwatch history, and analytics records. This action is irreversible.")}
             </Typography>
           </Box>
           <Button
@@ -472,7 +483,7 @@ export const SettingsView: React.FC = () => {
               "&:hover": { bgcolor: "rgba(248, 113, 113, 0.15)", borderColor: "error.main" },
             }}
           >
-            Delete My Account
+            {t("settings.deleteAccount", "Delete My Account")}
           </Button>
         </Box>
       </Card>
@@ -497,16 +508,16 @@ export const SettingsView: React.FC = () => {
       >
         <DialogTitle sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1.25 }}>
           <PersonAddIcon sx={{ color: "primary.main" }} />
-          Invite Household Family Member
+          {t("settings.inviteModalTitle", "Invite Household Family Member")}
         </DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
           {!generatedInvite ? (
             <Box component="form" onSubmit={handleSendInvite} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                Enter the name and email address of the family member you want to add. They will receive permission to control appliance stopwatches and log daily hours.
+                {t("settings.inviteModalDesc", "Enter the name and email address of the family member you want to add. They will receive permission to control appliance stopwatches and log daily hours.")}
               </Typography>
               <TextField
-                label="Full Name"
+                label={t("settings.fullName", "Full Name")}
                 placeholder="e.g. Maria Santos"
                 fullWidth
                 size="small"
@@ -515,7 +526,7 @@ export const SettingsView: React.FC = () => {
                 required
               />
               <TextField
-                label="Email Address"
+                label={t("settings.emailAddr", "Email Address")}
                 placeholder="e.g. maria@gmail.com"
                 type="email"
                 fullWidth
@@ -526,22 +537,22 @@ export const SettingsView: React.FC = () => {
               />
               <DialogActions sx={{ px: 0, pt: 1 }}>
                 <Button onClick={() => setIsInviteModalOpen(false)} sx={{ fontWeight: 700 }}>
-                  Cancel
+                  {t("header.cancel", "Cancel")}
                 </Button>
                 <Button type="submit" variant="contained" color="primary" sx={{ fontWeight: 800, borderRadius: 2 }}>
-                  Generate Invitation
+                  {t("settings.generateInvite", "Generate Invitation")}
                 </Button>
               </DialogActions>
             </Box>
           ) : (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2, py: 1 }}>
               <Alert severity="success" sx={{ borderRadius: 2.5 }}>
-                Invitation successfully created for <strong>{inviteName}</strong>!
+                {language === "tl" ? `Matagumpay na nagawa ang imbitasyon para kay ${inviteName}!` : `Invitation successfully created for ${inviteName}!`}
               </Alert>
 
               <Box sx={{ p: 2, borderRadius: 2.5, bgcolor: "rgba(0, 0, 0, 0.4)", border: "1px solid rgba(99, 102, 241, 0.3)" }}>
                 <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800, display: "block", mb: 0.5 }}>
-                  HOUSEHOLD INVITE CODE:
+                  {t("settings.inviteCodeLabel", "HOUSEHOLD INVITE CODE:")}
                 </Typography>
                 <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f", letterSpacing: 2 }}>
                   {generatedInvite.code}
@@ -562,17 +573,17 @@ export const SettingsView: React.FC = () => {
                   onClick={handleCopyLink}
                   sx={{ borderRadius: 2, fontWeight: 800, flexShrink: 0, height: 40 }}
                 >
-                  {copiedLink ? "Copied" : "Copy Link"}
+                  {copiedLink ? t("settings.linkCopied", "Copied") : t("settings.copyLink", "Copy Link")}
                 </Button>
               </Box>
 
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                Share this link on Messenger or Viber. When they register, they will automatically be joined to your household.
+                {t("settings.sharePrompt", "Share this link on Messenger or Viber. When they register, they will automatically be joined to your household.")}
               </Typography>
 
               <DialogActions sx={{ px: 0, pt: 1 }}>
                 <Button onClick={() => setIsInviteModalOpen(false)} variant="outlined" sx={{ fontWeight: 700, borderRadius: 2 }}>
-                  Done
+                  {t("settings.done", "Done")}
                 </Button>
               </DialogActions>
             </Box>
@@ -600,11 +611,11 @@ export const SettingsView: React.FC = () => {
       >
         <DialogTitle sx={{ fontWeight: 800, color: "error.light", display: "flex", alignItems: "center", gap: 1.25 }}>
           <WarningIcon sx={{ color: "error.main" }} />
-          Confirm Permanent Account Deletion
+          {t("settings.deleteModalTitle", "Confirm Permanent Account Deletion")}
         </DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
           <Alert severity="error" sx={{ borderRadius: 2.5, fontWeight: 600 }}>
-            This action is permanent and cannot be undone. All your appliances, daily logs, stopwatch records, and analytics telemetry will be deleted.
+            {t("settings.deleteWarning", "This action is permanent and cannot be undone. All your appliances, daily logs, stopwatch records, and analytics telemetry will be deleted.")}
           </Alert>
 
           {deleteError && (
@@ -616,12 +627,12 @@ export const SettingsView: React.FC = () => {
           {/* Step 1: Password Verification */}
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             <Typography variant="caption" sx={{ fontWeight: 800, color: "text.primary" }}>
-              STEP 1: ENTER YOUR ACCOUNT PASSWORD
+              {t("settings.step1Password", "STEP 1: ENTER YOUR ACCOUNT PASSWORD")}
             </Typography>
             <TextField
               type={showPassword ? "text" : "password"}
               size="small"
-              placeholder="Enter current password..."
+              placeholder={language === "tl" ? "Ilagay ang kasalukuyang password..." : "Enter current password..."}
               fullWidth
               value={deletePassword}
               onChange={(e) => setDeletePassword(e.target.value)}
@@ -648,7 +659,11 @@ export const SettingsView: React.FC = () => {
           {/* Step 2: Explicit Confirmation Text */}
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             <Typography variant="caption" sx={{ fontWeight: 800, color: "text.primary" }}>
-              STEP 2: TYPE <span style={{ color: "#f87171", fontWeight: 900 }}>Confirm</span> TO AUTHORIZE DELETION
+              {language === "tl" ? (
+                <>HAKBANG 2: I-TYPE ANG <span style={{ color: "#f87171", fontWeight: 900 }}>Confirm</span> PARA PAHINTULUTAN ANG PAGBURA</>
+              ) : (
+                <>STEP 2: TYPE <span style={{ color: "#f87171", fontWeight: 900 }}>Confirm</span> TO AUTHORIZE DELETION</>
+              )}
             </Typography>
             <TextField
               size="small"
@@ -667,7 +682,7 @@ export const SettingsView: React.FC = () => {
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={() => setIsDeleteModalOpen(false)} disabled={isDeleting} sx={{ fontWeight: 700 }}>
-            Cancel
+            {t("header.cancel", "Cancel")}
           </Button>
           <Button
             variant="contained"
@@ -677,7 +692,7 @@ export const SettingsView: React.FC = () => {
             startIcon={isDeleting ? <CircularProgress size={16} color="inherit" /> : <DeleteIcon />}
             sx={{ fontWeight: 900, borderRadius: 2, px: 2.5 }}
           >
-            {isDeleting ? "Deleting Account..." : "Permanently Delete My Account"}
+            {isDeleting ? t("settings.deleteExecuting", "Deleting Account...") : t("settings.deletePerm", "Permanently Delete My Account")}
           </Button>
         </DialogActions>
       </Dialog>

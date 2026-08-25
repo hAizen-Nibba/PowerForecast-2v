@@ -34,8 +34,10 @@ import { useList } from "@refinedev/core";
 import { UserAppliance, ApplianceList } from "../types";
 import { calculateMeralcoBill } from "../lib/meralcoCalculator";
 import { useNotifications } from "../hooks/useNotifications";
+import { useLanguage } from "../context/LanguageContext";
 
 export const DashboardPage: React.FC = () => {
+  const { t } = useLanguage();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPelpModalOpen, setIsPelpModalOpen] = useState(false);
   const [isAiScannerOpen, setIsAiScannerOpen] = useState(false);
@@ -133,7 +135,7 @@ export const DashboardPage: React.FC = () => {
         <Box sx={{ maxWidth: 660 }}>
           <Chip
             icon={<BoltIcon sx={{ color: "#ffd54f !important", fontSize: "14px !important" }} />}
-            label="Active Grid Telemetry"
+            label={t("dash.gridTelemetry", "Active Grid Telemetry")}
             size="small"
             sx={{
               mb: 1.5,
@@ -147,11 +149,11 @@ export const DashboardPage: React.FC = () => {
           />
 
           <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.02em", mb: 0.75 }}>
-            Energy & Tariff Dashboard
+            {t("dash.title", "Energy & Tariff Dashboard")}
           </Typography>
 
           <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6, mb: 2.5 }}>
-            Real-time household & business telemetry, Meralco unbundled tariff projections, DOE PELP certified inventory, and sub-metering cost split.
+            {t("dash.subtitle", "Real-time household & business telemetry, Meralco unbundled tariff projections, DOE PELP certified inventory, and sub-metering cost split.")}
           </Typography>
 
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.25 }}>
@@ -174,7 +176,7 @@ export const DashboardPage: React.FC = () => {
                   onClick={() => setIsAddModalOpen(true)}
                   startIcon={<PlusIcon />}
                 >
-                  Add Appliance
+                  {t("dash.addAppliance", "Add Appliance")}
                 </Button>
                 <Button
                   variant="outlined"
@@ -182,7 +184,7 @@ export const DashboardPage: React.FC = () => {
                   onClick={() => setIsPelpModalOpen(true)}
                   startIcon={<DatabaseIcon sx={{ color: "primary.light" }} />}
                 >
-                  PELP Catalog
+                  {t("dash.pelpCatalog", "PELP Catalog")}
                 </Button>
                 <Button
                   variant="outlined"
@@ -190,7 +192,7 @@ export const DashboardPage: React.FC = () => {
                   onClick={() => setIsAiScannerOpen(true)}
                   startIcon={<SparklesIcon sx={{ color: "#ffd54f" }} />}
                 >
-                  AI Scanner
+                  {t("dash.aiScanner", "AI Scanner")}
                 </Button>
               </>
             )}
@@ -213,13 +215,13 @@ export const DashboardPage: React.FC = () => {
           }}
         >
           <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.light", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>
-            Current Draw Load
+            {t("dash.currentDraw", "CURRENT DRAW LOAD")}
           </Typography>
           <Typography variant="h3" sx={{ fontWeight: 900, fontFamily: "monospace", my: 0.5, letterSpacing: "-0.02em" }}>
             {activeWattage} <Typography component="span" variant="body2" sx={{ color: "text.secondary", fontWeight: 600 }}>Watts</Typography>
           </Typography>
           <Typography variant="caption" sx={{ color: "#f59e0b", fontWeight: 700, fontFamily: "monospace", display: "block" }}>
-            ₱{((activeWattage / 1000) * 14.8261).toFixed(2)}/hr running rate
+            ₱{((activeWattage / 1000) * 14.8261).toFixed(2)}/hr {t("dash.runningRate", "running rate")}
           </Typography>
         </Paper>
       </Card>
@@ -228,36 +230,36 @@ export const DashboardPage: React.FC = () => {
       <Grid container spacing={{ xs: 2, sm: 2.5 }} data-tour="dashboard-kpi-cards">
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
-            title="Consolidated Monthly Bill"
+            title={t("dash.consolidatedBill", "Consolidated Monthly Bill")}
             value={`₱${spaceAnalytics.consolidatedTotalBill.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            subtitle={spaces.length > 1 ? `Combined across ${spaces.length} spaces` : "Household projected bill"}
+            subtitle={spaces.length > 1 ? `${t("dash.combinedAcross", "Combined across")} ${spaces.length} ${t("dash.spaces", "spaces")}` : "Household projected bill"}
             icon={<BoltIcon sx={{ color: "#ffd54f" }} />}
             trend={{ value: `${spaces.length} Spaces`, direction: "neutral" }}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
-            title="Monthly Energy Volume"
+            title={t("dash.monthlyVolume", "Monthly Energy Volume")}
             value={`${totalMonthlyKwh.toFixed(1)} kWh`}
-            subtitle="Total registered load"
+            subtitle={t("dash.totalRegistered", "Total registered load")}
             icon={<TrendingUpIcon sx={{ color: "primary.light" }} />}
             trend={{ value: totalMonthlyKwh <= 100 ? "Lifeline" : "Standard", direction: "neutral" }}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
-            title="Active Appliances"
+            title={t("dash.activeAppliances", "Active Appliances")}
             value={`${runningAppliances.length} / ${appliances.length}`}
-            subtitle="Circuits online"
+            subtitle={t("nav.circuitsOnline", "Circuits online")}
             icon={<SpeedIcon sx={{ color: "success.main" }} />}
             trend={{ value: `${runningAppliances.length} ON`, direction: "up" }}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
-            title="Daily Avg Energy"
+            title={t("dash.dailyAvg", "Daily Avg Energy")}
             value={`${(totalMonthlyKwh / 30).toFixed(1)} kWh`}
-            subtitle="Projected daily run"
+            subtitle={t("dash.projectedPacing", "Projected daily run")}
             icon={<ClockIcon sx={{ color: "success.main" }} />}
             trend={{ value: "30-day baseline", direction: "neutral" }}
           />
