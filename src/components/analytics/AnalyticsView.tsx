@@ -37,6 +37,7 @@ import {
   Area,
   BarChart,
   Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -346,7 +347,7 @@ export const AnalyticsView: React.FC = () => {
     });
   }, [targetAppliances, events, resolutionMinutes, startHour, endHour, effectiveRate]);
 
-  // Dynamic Multi-Month Trend & Seasonal Climate Forecast
+  // Pure Appliance Baseline Multi-Month Trend & Predictions (No fake past months, No weather multipliers)
   const MONTHLY_TREND_DATA = useMemo(() => {
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -355,12 +356,11 @@ export const AnalyticsView: React.FC = () => {
     const daysInCurrentMonth = new Date(currentYear, currentMonthIdx + 1, 0).getDate();
 
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const seasonalMultipliers = [0.92, 0.94, 1.08, 1.18, 1.22, 1.02, 0.98, 0.98, 0.96, 0.95, 0.94, 1.06];
 
-    // Aggregate past dailyUsageRecords by YYYY-MM
+    // 1. Group real recorded dailyUsageRecords by YYYY-MM
     const usageByMonthKey: Record<string, { kwh: number; cost: number }> = {};
     dailyUsageRecords.forEach((rec) => {
-      if (rec.usage_date) {
+      if (rec.usage_date && rec.kwh_consumed > 0) {
         const mKey = rec.usage_date.substring(0, 7); // "YYYY-MM"
         if (!usageByMonthKey[mKey]) {
           usageByMonthKey[mKey] = { kwh: 0, cost: 0 };
@@ -371,71 +371,67 @@ export const AnalyticsView: React.FC = () => {
     });
 
     const points = [];
-    // Rolling 8-month window: 3 months past, 1 current, 4 future
-    for (let offset = -3; offset <= 4; offset++) {
+
+    // 2. Only include past months that HAVE GENUINE RECORDED LOGS in the database (e.g. check up to 6 months back)
+    for (let offset = -6; offset < 0; offset++) {
       const targetDate = new Date(currentYear, currentMonthIdx + offset, 1);
       const tYear = targetDate.getFullYear();
       const tMonthIdx = targetDate.getMonth();
       const monthStr = monthNames[tMonthIdx];
       const mKey = `${tYear}-${String(tMonthIdx + 1).padStart(2, "0")}`;
 
-      if (offset < 0) {
-        // Past months
-        const recorded = usageByMonthKey[mKey];
-        const hasRecorded = recorded && recorded.kwh > 0;
-        const kwh = hasRecorded ? recorded.kwh : Math.round(totalMonthlyKwh * seasonalMultipliers[tMonthIdx]);
-        const cost = hasRecorded ? recorded.cost : Math.round(kwh * effectiveRate);
+      const recorded = usageByMonthKey[mKey];
+      // ONLY push if genuine recorded data exists for this past month
+      if (recorded && recorded.kwh > 0) {
         points.push({
           month: `${monthStr} ${tYear !== currentYear ? "'" + String(tYear).slice(2) : ""}`.trim(),
-          kwh: Math.round(kwh),
-          cost: Math.round(cost),
-          status: hasRecorded ? "Recorded Actuals" : "Historical Estimate",
-          isCurrent: false,
-          isFuture: false,
+          kwh: Math.round(recorded.kwh),
+          cost: Math.round(recorded.cost),
+          status: "Recorded Actuals",
+          type: "recorded",
           fillColor: "#38bdf8",
-        });
-      } else if (offset === 0) {
-        // Current active month
-        const recorded = usageByMonthKey[mKey];
-        const mtdKwh = recorded && recorded.kwh > 0
-          ? recorded.kwh
-          : totalMonthlyKwh * (currentDay / daysInCurrentMonth);
-        const remainingKwh = totalMonthlyKwh * ((daysInCurrentMonth - currentDay) / daysInCurrentMonth);
-        const totalActiveKwh = mtdKwh + remainingKwh;
-        const totalActiveCost = totalActiveKwh * effectiveRate;
-
-        points.push({
-          month: `${monthStr} (Active)`,
-          kwh: Math.round(totalActiveKwh),
-          cost: Math.round(totalActiveCost),
-          status: `Active Cycle (${currentDay}/${daysInCurrentMonth} days)`,
-          isCurrent: true,
-          isFuture: false,
-          fillColor: "#6366f1",
-        });
-      } else {
-        // Future months with seasonal climate multipliers
-        const mult = seasonalMultipliers[tMonthIdx];
-        const kwh = totalMonthlyKwh * mult;
-        const cost = kwh * effectiveRate;
-        let climateTag = "Projected";
-        if (tMonthIdx >= 2 && tMonthIdx <= 4) climateTag = "Projected (Summer Cooling Peak)";
-        else if (tMonthIdx === 11) climateTag = "Projected (Holiday Peak)";
-        else if (tMonthIdx >= 6 && tMonthIdx <= 8) climateTag = "Projected (Monsoon Season)";
-
-        points.push({
-          month: `${monthStr} ${tYear !== currentYear ? "'" + String(tYear).slice(2) : ""}`.trim(),
-          kwh: Math.round(kwh),
-          cost: Math.round(cost),
-          status: climateTag,
-          isCurrent: false,
-          isFuture: true,
-          fillColor: "#a855f7",
         });
       }
     }
+
+    // 3. Current Active Month (e.g., Aug)
+    const currentMonthKey = `${currentYear}-${String(currentMonthIdx + 1).padStart(2, "0")}`;
+    const currentRecorded = usageByMonthKey[currentMonthKey];
+    const mtdKwh = currentRecorded && currentRecorded.kwh > 0
+      ? currentRecorded.kwh
+      : totalMonthlyKwh * (currentDay / daysInCurrentMonth);
+    const remainingKwh = totalMonthlyKwh * ((daysInCurrentMonth - currentDay) / daysInCurrentMonth);
+    const totalActiveKwh = mtdKwh + remainingKwh;
+    const totalActiveCost = totalActiveKwh * effectiveRate;
+
+    points.push({
+      month: `${monthNames[currentMonthIdx]} (Active)`,
+      kwh: Math.round(totalActiveKwh),
+      cost: Math.round(totalActiveCost),
+      status: `Active Cycle • Day ${currentDay} of ${daysInCurrentMonth} (MTD + Projected)`,
+      type: "active",
+      fillColor: "#6366f1",
+    });
+
+    // 4. Future Months (Next 5 Months): Pure Baseline Prediction from registered appliance routines
+    for (let offset = 1; offset <= 5; offset++) {
+      const targetDate = new Date(currentYear, currentMonthIdx + offset, 1);
+      const tYear = targetDate.getFullYear();
+      const tMonthIdx = targetDate.getMonth();
+      const monthStr = monthNames[tMonthIdx];
+
+      points.push({
+        month: `${monthStr} (Predicted)`,
+        kwh: Math.round(totalMonthlyKwh),
+        cost: Math.round(totalCost),
+        status: "Predicted Cycle • Based on active appliance baseline routine",
+        type: "predicted",
+        fillColor: "#818cf8",
+      });
+    }
+
     return points;
-  }, [dailyUsageRecords, totalMonthlyKwh, effectiveRate]);
+  }, [dailyUsageRecords, totalMonthlyKwh, totalCost, effectiveRate]);
 
   // AI Energy Insights & Actionable Recommendations
   const actionableInsights = useMemo(() => {
@@ -1035,30 +1031,32 @@ export const AnalyticsView: React.FC = () => {
         </Box>
       </Card>
 
-      {/* 6. Dynamic Multi-Month Trend & Seasonal Climate Forecast */}
+      {/* 6. Multi-Month Trend & Predictive Baseline Forecast */}
       <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5 }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5, mb: 2.5 }}>
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-              Multi-Month Energy Trend & Climatological Forecast
+              Multi-Month Consumption Trend & Predictive Forecast
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Historical recorded consumption vs seasonal weather forecasts (dry peak, monsoon, holiday)
+              Active billing cycle telemetry alongside forward-looking baseline predictions based on your registered appliance routines
             </Typography>
           </Box>
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#38bdf8" }} />
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>Past Recorded</Typography>
-            </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+            {MONTHLY_TREND_DATA.some((d) => d.type === "recorded") && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#38bdf8" }} />
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>Recorded History</Typography>
+              </Box>
+            )}
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
               <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#6366f1" }} />
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>Active Month</Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>Active Billing Cycle</Typography>
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#a855f7" }} />
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>Seasonal Forecast</Typography>
+              <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#818cf8" }} />
+              <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>Predicted (Appliance Baseline)</Typography>
             </Box>
           </Box>
         </Box>
@@ -1084,14 +1082,25 @@ export const AnalyticsView: React.FC = () => {
                           boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
                         }}
                       >
-                        <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                          {d.month} • {d.status}
-                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 800, fontSize: "0.85rem" }}>
+                            {d.month}
+                          </Typography>
+                          {d.type === "predicted" && (
+                            <Chip label="PREDICTED" size="small" sx={{ height: 16, fontSize: "0.6rem", fontWeight: 800, bgcolor: "rgba(129, 140, 248, 0.2)", color: "#818cf8" }} />
+                          )}
+                          {d.type === "active" && (
+                            <Chip label="ACTIVE" size="small" color="primary" sx={{ height: 16, fontSize: "0.6rem", fontWeight: 800 }} />
+                          )}
+                        </Box>
                         <Typography
                           variant="caption"
-                          sx={{ display: "block", color: "#ffd54f", fontWeight: 800, fontFamily: "monospace", fontSize: "0.9rem" }}
+                          sx={{ display: "block", color: "#ffd54f", fontWeight: 800, fontFamily: "monospace", fontSize: "0.95rem" }}
                         >
                           {d.kwh} kWh (~₱{d.cost.toLocaleString()})
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: "block", color: "text.secondary", mt: 0.5, fontSize: "0.72rem" }}>
+                          {d.status}
                         </Typography>
                       </Box>
                     );
@@ -1099,7 +1108,11 @@ export const AnalyticsView: React.FC = () => {
                   return null;
                 }}
               />
-              <Bar dataKey="kwh" fill="#6366f1" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="kwh" radius={[6, 6, 0, 0]}>
+                {MONTHLY_TREND_DATA.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fillColor} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </Box>
