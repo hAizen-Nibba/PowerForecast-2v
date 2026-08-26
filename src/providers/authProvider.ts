@@ -105,6 +105,8 @@ export const authProvider: AuthProvider = {
             security_question: securityQuestion || "",
             security_answer: (securityAnswer || "").trim().toLowerCase(),
           },
+          // Tell Supabase where to send the user after they click the email link
+          emailRedirectTo: `${window.location.origin}/#/verified`,
         },
       });
 
@@ -133,23 +135,19 @@ export const authProvider: AuthProvider = {
         }
       }
 
-      if (data?.user) {
-        const activeUser = {
-          id: data.user.id,
-          email: data.user.email || trimmedEmail,
-          name: name?.trim() || data.user.user_metadata?.name || trimmedEmail.split("@")[0],
-          avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${trimmedEmail}`,
-          role: "authenticated",
-          householdType: householdType || "Residential (Meralco 230V)",
-        };
-        localStorage.setItem("powerforecast_active_user", JSON.stringify(activeUser));
-        devLog.info("Auth", "User registered successfully", activeUser);
+      // Unconditionally redirect to /verify-email to support UI demonstration requirements
+      // Regardless of whether Supabase Auto-Confirms or requires Email confirmation
+      if (data?.user && data?.session) {
+        // Sign out instantly so we don't accidentally leave them logged in if we force them to verification
+        await supabaseClient.auth.signOut();
       }
 
+      devLog.info("Auth", "User registered. Redirecting to verification page.");
       return {
         success: true,
-        redirectTo: "/dashboard",
-      };
+        successNotification: false,
+        redirectTo: `/verify-email?email=${encodeURIComponent(trimmedEmail)}`,
+      } as any;
     } catch (err: any) {
       devLog.error("Auth", "Unexpected registration error:", err);
       return {
