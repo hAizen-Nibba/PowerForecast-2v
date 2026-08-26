@@ -49,11 +49,7 @@ export const LoginPage: React.FC = () => {
       {
         onSuccess: () => navigate("/dashboard"),
         onError: (err: any) => {
-          if (err?.message?.includes("Email not confirmed")) {
-            setErrorMessage("Please check your email and click the verification link before logging in.");
-          } else {
-            setErrorMessage(err?.message || "Invalid credentials. Please verify your email and password.");
-          }
+          setErrorMessage(err?.message || "Invalid credentials. Please verify your email and password.");
         },
       }
     );

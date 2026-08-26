@@ -135,24 +135,42 @@ export const authProvider: AuthProvider = {
         }
       }
 
-      // Only sign out when Supabase auto-confirmed the user (email confirmation DISABLED).
-      // In that case, data.session is non-null. We use scope:'global' to server-side
-      // invalidate the refresh token so it cannot be restored from localStorage.
-      // When email confirmation is ENABLED, data.session is null and we skip this entirely
-      // so that the confirmation email OTP/token is NOT disrupted.
-      if (data?.user && data?.session) {
-        await supabaseClient.auth.signOut({ scope: 'global' });
+      // If a session was created during sign up, set active user and go directly to dashboard
+      let userSession = data?.session;
+      let userId = data?.user?.id;
+
+      if (!userSession && data?.user) {
+        // If Supabase didn't return an active session immediately, log in with password
+        try {
+          const signInRes = await supabaseClient.auth.signInWithPassword({
+            email: trimmedEmail,
+            password: password.trim(),
+          });
+          if (signInRes.data?.session) {
+            userSession = signInRes.data.session;
+            userId = signInRes.data.user?.id || userId;
+          }
+        } catch (signInErr) {
+          devLog.warn("Auth", "Automatic post-registration login attempt:", signInErr);
+        }
       }
 
-      // Stamp registration time so VerifyEmailPage can verify that email_confirmed_at
-      // is genuinely newer than this moment (guards against auto-confirm false positives).
-      sessionStorage.setItem('powerforecast_registered_at', Date.now().toString());
+      if (userId) {
+        const activeUser = {
+          id: userId,
+          email: trimmedEmail,
+          name: name?.trim() || trimmedEmail.split("@")[0],
+          avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${trimmedEmail}`,
+          role: "authenticated",
+          householdType: householdType || "Residential",
+        };
+        localStorage.setItem("powerforecast_active_user", JSON.stringify(activeUser));
+      }
 
-      devLog.info("Auth", "User registered. Redirecting to verification page.");
+      devLog.info("Auth", "User registered successfully. Proceeding to dashboard.");
       return {
         success: true,
-        successNotification: false,
-        redirectTo: `/verify-email?email=${encodeURIComponent(trimmedEmail)}`,
+        redirectTo: "/dashboard",
       } as any;
     } catch (err: any) {
       devLog.error("Auth", "Unexpected registration error:", err);

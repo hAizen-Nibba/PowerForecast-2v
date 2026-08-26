@@ -19,8 +19,6 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
-import { VerifyEmailPage } from "./pages/VerifyEmailPage";
-import { EmailVerifiedPage } from "./pages/EmailVerifiedPage";
 import { VersionBadge } from "./components/common/VersionBadge";
 import { ToastProvider } from "./components/common/ToastProvider";
 import { LanguageProvider } from "./context/LanguageContext";
@@ -153,8 +151,8 @@ export const App: React.FC = () => {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/verify-email" element={<VerifyEmailPage />} />
-              <Route path="/verified" element={<EmailVerifiedPage />} />
+              <Route path="/verify-email" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/verified" element={<Navigate to="/dashboard" replace />} />
 
               {/* App Workspace Pages (Protected under Authenticated guard and Layout) */}
               <Route
