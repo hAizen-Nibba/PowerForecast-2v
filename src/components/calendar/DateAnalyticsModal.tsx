@@ -36,6 +36,8 @@ import {
   WarningAmber as WarningIcon,
   CalendarMonth as CalendarIcon,
   CheckCircle as CheckIcon,
+  PlayArrow as PlayIcon,
+  Stop as StopIcon,
 } from "@mui/icons-material";
 import { UserAppliance, DailyApplianceUsage, ApplianceList, ApplianceUsageLog } from "../../types";
 import { useCreate, useDelete, useUpdate } from "@refinedev/core";
@@ -386,6 +388,88 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
     });
     setIsDirty(true);
     showInfo("Reset all appliance inputs to 0 hours for this day.");
+  };
+
+  // Action: Start or Stop Live Stopwatch for Today
+  const handleToggleLiveStopwatch = async (app: UserAppliance) => {
+    const isCurrentlyOn = Boolean(app.is_currently_on && app.last_turned_on_at);
+
+    if (isCurrentlyOn && app.last_turned_on_at) {
+      // Turning OFF
+      const start = new Date(app.last_turned_on_at);
+      const end = new Date();
+      const durationMinutes = Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000));
+      const hours = durationMinutes / 60;
+      const kwh = calculateKwh(app.watts, hours, app.quantity || 1);
+      const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
+
+      try {
+        await new Promise<void>((resolve, reject) => {
+          createLog(
+            {
+              resource: "appliance_usage_logs",
+              values: {
+                appliance_id: app.id,
+                user_id: app.user_id || null,
+                started_at: start.toISOString(),
+                ended_at: end.toISOString(),
+                duration_minutes: durationMinutes,
+                kwh_consumed: kwh,
+                estimated_cost: cost,
+                source: "stopwatch",
+              },
+            },
+            {
+              onSuccess: () => resolve(),
+              onError: (err: any) => reject(err),
+            }
+          );
+        });
+
+        await accumulateLiveSessionDailyUsage({
+          appliance_id: app.id,
+          durationMinutes,
+          watts: app.watts,
+          quantity: app.quantity || 1,
+          effectiveRate: DEFAULT_EFFECTIVE_RATE,
+          user_id: app.user_id || null,
+          startTime: start,
+          endTime: end,
+        });
+
+        updateAppliance({
+          resource: "user_appliances",
+          id: app.id,
+          values: {
+            is_currently_on: false,
+            last_turned_on_at: null,
+          },
+        });
+
+        showSuccess(
+          `Stopped stopwatch for ${app.name} (${(durationMinutes / 60).toFixed(2)} hrs • ${kwh.toFixed(3)} kWh • ₱${cost.toFixed(2)})`,
+          "Stopwatch Session Saved"
+        );
+
+        if (onUsageSaved) onUsageSaved();
+      } catch (err: any) {
+        showError(`Failed to save stopwatch session: ${err?.message}`);
+      }
+    } else {
+      // Turning ON
+      const nowIso = new Date().toISOString();
+      updateAppliance({
+        resource: "user_appliances",
+        id: app.id,
+        values: {
+          is_currently_on: true,
+          last_turned_on_at: nowIso,
+        },
+      });
+
+      showSuccess(`⏱️ Live stopwatch started for ${app.name}! Elapsed runtime is now tracking in real time.`, "Stopwatch Active");
+      if (onUsageSaved) onUsageSaved();
+    }
   };
 
   // Action: Open Past Time Range Modal
@@ -1218,16 +1302,38 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                         {isSelectedToday ? "TODAY OPERATING RUNTIME:" : isPastDate ? "RETROSPECTIVE OPERATING RUNTIME:" : "PROJECTED OPERATING RUNTIME:"}
                       </Typography>
 
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="primary"
-                        startIcon={<PlusIcon sx={{ fontSize: "14px" }} />}
-                        onClick={() => handleOpenPastSessionModal(app)}
-                        sx={{ borderRadius: 2, fontWeight: 800, fontSize: "0.72rem", height: 28, px: 1.25 }}
-                      >
-                        {isPastDate ? "Log Past Time Range (Exact Times)" : "Log Past Time Range"}
-                      </Button>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                        {isSelectedToday && (
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color={isLive ? "error" : "success"}
+                            startIcon={isLive ? <StopIcon sx={{ fontSize: "14px" }} /> : <PlayIcon sx={{ fontSize: "14px" }} />}
+                            onClick={() => handleToggleLiveStopwatch(app)}
+                            sx={{
+                              borderRadius: 2,
+                              fontWeight: 800,
+                              fontSize: "0.72rem",
+                              height: 28,
+                              px: 1.5,
+                              boxShadow: isLive ? "0 0 12px rgba(239, 68, 68, 0.5)" : "0 0 12px rgba(16, 185, 129, 0.4)",
+                            }}
+                          >
+                            {isLive ? "⏹️ Stop Stopwatch" : "⏱️ Start Stopwatch Now"}
+                          </Button>
+                        )}
+
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="primary"
+                          startIcon={<PlusIcon sx={{ fontSize: "14px" }} />}
+                          onClick={() => handleOpenPastSessionModal(app)}
+                          sx={{ borderRadius: 2, fontWeight: 800, fontSize: "0.72rem", height: 28, px: 1.25 }}
+                        >
+                          {isPastDate ? "Log Past Time Range (Exact Times)" : "Log Past Time Range"}
+                        </Button>
+                      </Box>
                     </Box>
 
                     {/* Numeric Fields & Default Habit */}
