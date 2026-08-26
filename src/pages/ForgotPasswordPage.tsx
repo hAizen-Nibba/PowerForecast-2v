@@ -82,10 +82,9 @@ export const ForgotPasswordPage: React.FC = () => {
         }
       }
 
-      // Default fallback question for legacy accounts
       if (!foundQuestion) {
-        foundQuestion = "What is your primary household electricity meter number?";
-        foundAnswer = "meralco"; // Default answer fallback for seeded demo accounts
+        setErrorMessage("Security question is not configured for this account. Please contact support.");
+        return;
       }
 
       setSecurityQuestion(foundQuestion);
@@ -134,11 +133,9 @@ export const ForgotPasswordPage: React.FC = () => {
 
     setIsLoading(true);
     try {
-      // Attempt Supabase password update if active session exists
-      try {
-        await supabaseClient.auth.updateUser({ password: newPassword.trim() });
-      } catch (authErr) {
-        devLog.info("Auth", "Password updated for registered account via security challenge");
+      const { error } = await supabaseClient.auth.updateUser({ password: newPassword.trim() });
+      if (error) {
+        throw error;
       }
 
       devLog.info("Auth", `Password successfully reset for ${email} via Security Question.`);
