@@ -341,7 +341,7 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
 
             {(() => {
               const app = getAppliance(editingLog.appliance_id);
-              const watts = app?.watts || 1000;
+              const watts = (app?.watts || 1000) * (app?.quantity || 1);
               const totalH = editHours + editMinutes / 60;
               const kwh = (watts * totalH) / 1000;
               const cost = kwh * 14.8261;

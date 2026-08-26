@@ -44,6 +44,7 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
 
   // Duration adjustment state
   const [isAdjusting, setIsAdjusting] = useState(false);
+  const [hasManuallyEdited, setHasManuallyEdited] = useState(false);
   const [customDays, setCustomDays] = useState(0);
   const [customHours, setCustomHours] = useState(0);
   const [customMinutes, setCustomMinutes] = useState(0);
@@ -55,6 +56,7 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
     if (!isOpen || !appliance?.is_currently_on || !appliance.last_turned_on_at) {
       setElapsedSeconds(0);
       setIsAdjusting(false);
+      setHasManuallyEdited(false);
       return;
     }
 
@@ -73,16 +75,10 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
   // Sync custom inputs when first toggling edit mode
   const handleToggleAdjust = () => {
     if (!isAdjusting) {
-      const totalSecs = elapsedSeconds;
-      const d = Math.floor(totalSecs / 86400);
-      const remAfterDays = totalSecs % 86400;
-      const h = Math.floor(remAfterDays / 3600);
-      const m = Math.floor((remAfterDays % 3600) / 60);
-      const s = remAfterDays % 60;
-      setCustomDays(d);
-      setCustomHours(h);
-      setCustomMinutes(m);
-      setCustomSeconds(s);
+      setHasManuallyEdited(false);
+      handleResetToElapsed();
+    } else {
+      setHasManuallyEdited(false);
     }
     setIsAdjusting(!isAdjusting);
   };
@@ -102,7 +98,7 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
   const adjustedKwh = calculateKwh(watts, adjustedHours, 1);
   const adjustedCost = calculateCost(adjustedKwh, genRate);
 
-  const isDurationModified = isAdjusting && Math.abs(totalAdjustedSeconds - elapsedSeconds) > 30;
+  const isDurationModified = isAdjusting && hasManuallyEdited;
 
   const formatDuration = (secs: number) => {
     const days = Math.floor(secs / 86400);
@@ -121,6 +117,7 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
     setCustomHours(h);
     setCustomMinutes(m);
     setCustomSeconds(0);
+    setHasManuallyEdited(true);
   };
 
   const handleResetToElapsed = () => {
@@ -134,6 +131,7 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
     setCustomHours(h);
     setCustomMinutes(m);
     setCustomSeconds(s);
+    setHasManuallyEdited(false);
   };
 
   // Compute Multi-Day Allocation Slices preview
@@ -158,8 +156,13 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
     if (!appliance) return;
     setIsStopping(true);
     try {
-      if (overrideDurationMinutes !== undefined || isDurationModified) {
-        const finalMinutes = overrideDurationMinutes !== undefined ? overrideDurationMinutes : Math.max(1, Math.round(totalAdjustedSeconds / 60));
+      if (overrideDurationMinutes !== undefined) {
+        const finalMinutes = overrideDurationMinutes;
+        const startTime = appliance.last_turned_on_at ? new Date(appliance.last_turned_on_at) : new Date();
+        const endTime = new Date(startTime.getTime() + finalMinutes * 60000);
+        await onStopSession(appliance.id, finalMinutes, endTime);
+      } else if (isDurationModified) {
+        const finalMinutes = Math.max(1, Math.round(totalAdjustedSeconds / 60));
         const startTime = appliance.last_turned_on_at ? new Date(appliance.last_turned_on_at) : new Date();
         const endTime = new Date(startTime.getTime() + finalMinutes * 60000);
         await onStopSession(appliance.id, finalMinutes, endTime);
@@ -259,7 +262,10 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
                           size="small"
                           type="number"
                           value={customDays}
-                          onChange={(e) => setCustomDays(Math.max(0, parseInt(e.target.value) || 0))}
+                          onChange={(e) => {
+                            setCustomDays(Math.max(0, parseInt(e.target.value) || 0));
+                            setHasManuallyEdited(true);
+                          }}
                           slotProps={{ htmlInput: { min: 0, max: 30 } }}
                           fullWidth
                         />
@@ -271,7 +277,10 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
                         size="small"
                         type="number"
                         value={customHours}
-                        onChange={(e) => setCustomHours(Math.max(0, parseInt(e.target.value) || 0))}
+                        onChange={(e) => {
+                          setCustomHours(Math.max(0, parseInt(e.target.value) || 0));
+                          setHasManuallyEdited(true);
+                        }}
                         slotProps={{ htmlInput: { min: 0, max: 23 } }}
                         fullWidth
                       />
@@ -282,7 +291,10 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
                         size="small"
                         type="number"
                         value={customMinutes}
-                        onChange={(e) => setCustomMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
+                        onChange={(e) => {
+                          setCustomMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)));
+                          setHasManuallyEdited(true);
+                        }}
                         slotProps={{ htmlInput: { min: 0, max: 59 } }}
                         fullWidth
                       />
@@ -293,7 +305,10 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
                         size="small"
                         type="number"
                         value={customSeconds}
-                        onChange={(e) => setCustomSeconds(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
+                        onChange={(e) => {
+                          setCustomSeconds(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)));
+                          setHasManuallyEdited(true);
+                        }}
                         slotProps={{ htmlInput: { min: 0, max: 59 } }}
                         fullWidth
                       />
@@ -339,12 +354,14 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
               {/* 24-Hour Visual Day Progress Track */}
               {appliance?.last_turned_on_at && (() => {
                 const start = new Date(appliance.last_turned_on_at);
-                const now = new Date();
-                const startFrac = start.getHours() + start.getMinutes() / 60 + start.getSeconds() / 3600;
-                const nowFrac = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
-                const leftPct = (startFrac / 24) * 100;
-                const widthPct = Math.max(2, ((nowFrac - startFrac) / 24) * 100);
                 const startTimeStr = start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+                // Use the latest day slice to accurately calculate current active bar within today's 24h axis
+                const currentSlice = previewSlices.length > 0 ? previewSlices[previewSlices.length - 1] : null;
+                const leftPct = currentSlice ? (currentSlice.startHourFrac / 24) * 100 : ((start.getHours() + start.getMinutes() / 60) / 24) * 100;
+                const widthPct = currentSlice
+                  ? Math.max(2, Math.min(100 - leftPct, ((currentSlice.endHourFrac - currentSlice.startHourFrac) / 24) * 100))
+                  : 5;
 
                 return (
                   <Box sx={{ mt: 0.5, p: 1.5, borderRadius: 2, bgcolor: "rgba(0, 0, 0, 0.3)", border: "1px solid rgba(52, 211, 153, 0.2)" }}>
@@ -584,7 +601,10 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
         <Box sx={{ display: "flex", gap: 1 }}>
           <Button
             variant="outlined"
-            onClick={() => executeStop(Math.max(1, Math.round(elapsedSeconds / 60)))}
+            onClick={() => {
+              setHasManuallyEdited(false);
+              executeStop();
+            }}
             disabled={isStopping}
             sx={{ fontWeight: 700, borderRadius: 2 }}
           >

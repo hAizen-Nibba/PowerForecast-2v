@@ -28,6 +28,7 @@ import {
 import { UserAppliance, ApplianceList } from "../../types";
 import {
   formatDateToKey,
+  parseKeyToDate,
   calculateKwh,
   calculateCost,
   DEFAULT_EFFECTIVE_RATE,
@@ -106,8 +107,8 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
       end = new Date(year, month + 1, 0);
       label = `Entire Month (${monthName} 1 – ${monthName} ${end.getDate()})`;
     } else if (rangeType === "custom") {
-      start = new Date(customStartDate || firstOfMonthStr);
-      end = new Date(customEndDate || lastOfMonthStr);
+      start = parseKeyToDate(customStartDate || firstOfMonthStr);
+      end = parseKeyToDate(customEndDate || lastOfMonthStr);
       label = `${customStartDate} to ${customEndDate}`;
     } else if (rangeType === "single_day") {
       start = new Date(currentSelectedDate);

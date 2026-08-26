@@ -38,6 +38,8 @@ import {
   formatDateToKey,
   computeDayMetrics,
   accumulateLiveSessionDailyUsage,
+  deductSessionDailyUsage,
+  reconcileUpdatedSessionLog,
   DEFAULT_EFFECTIVE_RATE,
 } from "../../lib/dailyUsageService";
 
@@ -93,8 +95,8 @@ export const SmartCalendar: React.FC = () => {
   const { mutate: updateAppliance } = useUpdate();
   const { mutate: createLog } = useCreate();
   const { mutate: createEvent } = useCreate();
-  const { mutate: deleteEvent } = useDelete();
-  const { mutate: deleteLog } = useDelete();
+  const { mutate: deleteEvent, mutateAsync: deleteEventAsync } = useDelete();
+  const { mutate: deleteLog, mutateAsync: deleteLogAsync } = useDelete();
 
   const events: UserCalendarEvent[] = eventsRes?.data?.data || eventsRes?.result?.data || [];
   const allAppliances: UserAppliance[] = appliancesRes?.data?.data || appliancesRes?.result?.data || [];
@@ -277,8 +279,26 @@ export const SmartCalendar: React.FC = () => {
   };
 
   const handleDeleteLog = async (id: string) => {
-    deleteLog({ resource: "appliance_usage_logs", id });
-    showInfo("Session log deleted.");
+    const log = logs.find((l) => l.id === id);
+    if (log) {
+      const app = appliances.find((a) => a.id === log.appliance_id);
+      if (app) {
+        await deductSessionDailyUsage({
+          appliance_id: app.id,
+          durationMinutes: log.duration_minutes || 60,
+          watts: app.watts,
+          quantity: app.quantity || 1,
+          effectiveRate: DEFAULT_EFFECTIVE_RATE,
+          user_id: app.user_id || null,
+          startTime: new Date(log.started_at),
+          endTime: log.ended_at ? new Date(log.ended_at) : new Date(new Date(log.started_at).getTime() + (log.duration_minutes || 60) * 60000),
+        });
+      }
+    }
+    await deleteLogAsync({ resource: "appliance_usage_logs", id });
+    if (logsRes?.refetch) logsRes.refetch();
+    if (dailyUsageRes?.refetch) dailyUsageRes.refetch();
+    showInfo("Session log deleted and daily usage reconciled.");
   };
 
   const handleUpdateLog = async (id: string, newDurationMinutes: number) => {
@@ -292,6 +312,7 @@ export const SmartCalendar: React.FC = () => {
     const end = new Date(start.getTime() + newDurationMinutes * 60000);
     const kwh = (watts * qty * (newDurationMinutes / 60)) / 1000;
     const cost = kwh * DEFAULT_EFFECTIVE_RATE;
+    const oldMinutes = log.duration_minutes || 60;
 
     updateAppliance(
       {
@@ -307,28 +328,45 @@ export const SmartCalendar: React.FC = () => {
       {
         onSuccess: async () => {
           if (app) {
-            await accumulateLiveSessionDailyUsage({
+            await reconcileUpdatedSessionLog({
               appliance_id: app.id,
-              durationMinutes: newDurationMinutes,
+              oldDurationMinutes: oldMinutes,
+              newDurationMinutes: newDurationMinutes,
               watts: app.watts,
               quantity: app.quantity || 1,
               effectiveRate: DEFAULT_EFFECTIVE_RATE,
               user_id: app.user_id || null,
               startTime: start,
-              endTime: end,
             });
           }
           if (logsRes?.refetch) logsRes.refetch();
           if (dailyUsageRes?.refetch) dailyUsageRes.refetch();
-          showSuccess("Session log updated successfully!");
+          showSuccess("Session log updated and daily usage reconciled!");
         },
       }
     );
   };
 
   const handleClearAllLogs = async () => {
-    logs.forEach((l) => deleteLog({ resource: "appliance_usage_logs", id: l.id }));
-    showInfo("All session logs cleared.");
+    for (const l of logs) {
+      const app = appliances.find((a) => a.id === l.appliance_id);
+      if (app) {
+        await deductSessionDailyUsage({
+          appliance_id: app.id,
+          durationMinutes: l.duration_minutes || 60,
+          watts: app.watts,
+          quantity: app.quantity || 1,
+          effectiveRate: DEFAULT_EFFECTIVE_RATE,
+          user_id: app.user_id || null,
+          startTime: new Date(l.started_at),
+          endTime: l.ended_at ? new Date(l.ended_at) : new Date(new Date(l.started_at).getTime() + (l.duration_minutes || 60) * 60000),
+        });
+      }
+    }
+    await Promise.all(logs.map((l) => deleteLogAsync({ resource: "appliance_usage_logs", id: l.id })));
+    if (logsRes?.refetch) logsRes.refetch();
+    if (dailyUsageRes?.refetch) dailyUsageRes.refetch();
+    showInfo("All session logs cleared and daily usage reconciled.");
   };
 
   const handleCreateEvent = async (eventData: Partial<UserCalendarEvent>) => {
@@ -340,12 +378,14 @@ export const SmartCalendar: React.FC = () => {
   };
 
   const handleDeleteEvent = async (id: string) => {
-    deleteEvent({ resource: "user_calendar_events", id });
+    await deleteEventAsync({ resource: "user_calendar_events", id });
+    if (eventsRes?.refetch) eventsRes.refetch();
     showInfo("Schedule slot removed.");
   };
 
   const handleBulkDeleteEvents = async (ids: string[]) => {
-    ids.forEach((id) => deleteEvent({ resource: "user_calendar_events", id }));
+    await Promise.all(ids.map((id) => deleteEventAsync({ resource: "user_calendar_events", id })));
+    if (eventsRes?.refetch) eventsRes.refetch();
     showInfo(`Removed ${ids.length} scheduled slots.`);
   };
 

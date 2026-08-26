@@ -405,6 +405,114 @@ export async function accumulateLiveSessionDailyUsage(params: {
   }
 }
 
+/**
+ * Deducts a session's hours from the daily usage table across midnight boundaries (e.g. when a log is deleted)
+ */
+export async function deductSessionDailyUsage(params: {
+  appliance_id: string;
+  durationMinutes: number;
+  watts: number;
+  quantity?: number;
+  effectiveRate?: number;
+  user_id?: string | null;
+  startTime?: Date;
+  endTime?: Date;
+}): Promise<void> {
+  const quantity = params.quantity || 1;
+  const rate = params.effectiveRate || DEFAULT_EFFECTIVE_RATE;
+
+  const endTime = params.endTime || new Date();
+  const startTime = params.startTime || new Date(endTime.getTime() - params.durationMinutes * 60000);
+
+  const slices = splitSessionAcrossDays(startTime, endTime);
+
+  for (const slice of slices) {
+    try {
+      let query = supabaseClient
+        .from("daily_appliance_usage")
+        .select("*")
+        .eq("appliance_id", params.appliance_id)
+        .eq("usage_date", slice.dateKey);
+
+      if (params.user_id) {
+        query = query.eq("user_id", params.user_id);
+      }
+
+      const { data: existing } = await query.maybeSingle();
+      if (!existing) continue;
+
+      const currentHours = Number(existing.hours_used || 0);
+      const totalHours = Math.max(0, Number((currentHours - slice.hours).toFixed(2)));
+      const kwh = calculateKwh(params.watts, totalHours, quantity);
+      const cost = calculateCost(kwh, rate);
+
+      await supabaseClient.from("daily_appliance_usage").upsert(
+        {
+          appliance_id: params.appliance_id,
+          user_id: params.user_id || null,
+          usage_date: slice.dateKey,
+          hours_used: totalHours,
+          kwh_consumed: kwh,
+          estimated_cost: cost,
+          source: existing.source || "live_session",
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "user_id,appliance_id,usage_date",
+        }
+      );
+
+      devLog.info(
+        "DailyUsageService",
+        `Deducted session slice for ${params.appliance_id} on ${slice.dateKey}: -${slice.hours.toFixed(2)}h -> Total: ${totalHours}h`
+      );
+    } catch (err: any) {
+      devLog.warn("DailyUsageService", `Failed to deduct session for ${slice.dateKey}: ${err?.message}`);
+    }
+  }
+}
+
+/**
+ * Reconciles an updated session log by removing old duration slices and applying new duration slices
+ */
+export async function reconcileUpdatedSessionLog(params: {
+  appliance_id: string;
+  oldDurationMinutes: number;
+  newDurationMinutes: number;
+  watts: number;
+  quantity?: number;
+  effectiveRate?: number;
+  user_id?: string | null;
+  startTime: Date;
+}): Promise<void> {
+  const oldEndTime = new Date(params.startTime.getTime() + params.oldDurationMinutes * 60000);
+  const newEndTime = new Date(params.startTime.getTime() + params.newDurationMinutes * 60000);
+
+  // 1. Deduct old slice(s)
+  await deductSessionDailyUsage({
+    appliance_id: params.appliance_id,
+    durationMinutes: params.oldDurationMinutes,
+    watts: params.watts,
+    quantity: params.quantity,
+    effectiveRate: params.effectiveRate,
+    user_id: params.user_id,
+    startTime: params.startTime,
+    endTime: oldEndTime,
+  });
+
+  // 2. Accumulate new slice(s)
+  await accumulateLiveSessionDailyUsage({
+    appliance_id: params.appliance_id,
+    durationMinutes: params.newDurationMinutes,
+    watts: params.watts,
+    quantity: params.quantity,
+    effectiveRate: params.effectiveRate,
+    user_id: params.user_id,
+    startTime: params.startTime,
+    endTime: newEndTime,
+  });
+}
+
 export interface DayMetricSummary {
   kwh: number;
   cost: number;

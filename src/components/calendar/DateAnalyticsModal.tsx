@@ -54,6 +54,7 @@ import {
   decimalHoursToHms,
   splitSessionAcrossDays,
   accumulateLiveSessionDailyUsage,
+  deductSessionDailyUsage,
 } from "../../lib/dailyUsageService";
 import { supabaseClient } from "../../lib/supabaseClient";
 import { useToast } from "../common/ToastProvider";
@@ -204,8 +205,9 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
     initialUsageRecords.forEach((rec) => {
       if (rec.usage_date === dateKey) {
+        const swHours = applianceStopwatchMap[rec.appliance_id]?.totalHours || 0;
         initialMap[rec.appliance_id] = {
-          hours: Number(rec.hours_used) || 0,
+          hours: Math.max(Number(rec.hours_used) || 0, swHours),
           notes: rec.notes || "",
         };
       }
@@ -235,8 +237,9 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         setUsageState((prev) => {
           const updated = { ...prev };
           data.forEach((rec: DailyApplianceUsage) => {
+            const swHours = applianceStopwatchMap[rec.appliance_id]?.totalHours || 0;
             updated[rec.appliance_id] = {
-              hours: Number(rec.hours_used) || 0,
+              hours: Math.max(Number(rec.hours_used) || 0, swHours),
               notes: rec.notes || "",
             };
           });
@@ -480,6 +483,22 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
   };
 
   const handleDeleteSessionLog = async (logId: string) => {
+    const log = (logs || []).find((l) => l.id === logId);
+    if (log) {
+      const app = appliances.find((a) => a.id === log.appliance_id);
+      if (app) {
+        await deductSessionDailyUsage({
+          appliance_id: app.id,
+          durationMinutes: log.duration_minutes || 60,
+          watts: app.watts,
+          quantity: app.quantity || 1,
+          effectiveRate: DEFAULT_EFFECTIVE_RATE,
+          user_id: app.user_id || null,
+          startTime: new Date(log.started_at),
+          endTime: log.ended_at ? new Date(log.ended_at) : new Date(new Date(log.started_at).getTime() + (log.duration_minutes || 60) * 60000),
+        });
+      }
+    }
     deleteLog(
       {
         resource: "appliance_usage_logs",
@@ -487,7 +506,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       },
       {
         onSuccess: () => {
-          showInfo("Session log removed.");
+          showInfo("Session log removed and daily usage reconciled.");
           if (onUsageSaved) onUsageSaved();
         },
       }
@@ -538,12 +557,13 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       const state = usageState[app.id];
       const hours = state && state.hours > 0 ? state.hours : (hasLoggedData ? 0 : app.hours_per_day);
       const appStart = app.start_hour !== undefined ? app.start_hour : 8;
-      const appEnd = (appStart + hours) % 24;
 
       const isActive =
-        appStart <= appEnd
-          ? hour >= appStart && hour < appEnd
-          : hour >= appStart || hour < appEnd;
+        hours >= 24
+          ? true
+          : (appStart + hours) <= 24
+          ? hour >= appStart && hour < (appStart + hours)
+          : hour >= appStart || hour < ((appStart + hours) % 24);
 
       if (isActive && hours > 0) {
         totalWatts += app.watts * (app.quantity || 1);
