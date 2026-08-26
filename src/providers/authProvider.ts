@@ -135,12 +135,18 @@ export const authProvider: AuthProvider = {
         }
       }
 
-      // Unconditionally redirect to /verify-email to support UI demonstration requirements
-      // Regardless of whether Supabase Auto-Confirms or requires Email confirmation
+      // Only sign out when Supabase auto-confirmed the user (email confirmation DISABLED).
+      // In that case, data.session is non-null. We use scope:'global' to server-side
+      // invalidate the refresh token so it cannot be restored from localStorage.
+      // When email confirmation is ENABLED, data.session is null and we skip this entirely
+      // so that the confirmation email OTP/token is NOT disrupted.
       if (data?.user && data?.session) {
-        // Sign out instantly so we don't accidentally leave them logged in if we force them to verification
-        await supabaseClient.auth.signOut();
+        await supabaseClient.auth.signOut({ scope: 'global' });
       }
+
+      // Stamp registration time so VerifyEmailPage can verify that email_confirmed_at
+      // is genuinely newer than this moment (guards against auto-confirm false positives).
+      sessionStorage.setItem('powerforecast_registered_at', Date.now().toString());
 
       devLog.info("Auth", "User registered. Redirecting to verification page.");
       return {
