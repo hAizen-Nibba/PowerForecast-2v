@@ -12,11 +12,11 @@ import Paper from "@mui/material/Paper";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Chip from "@mui/material/Chip";
-import Grid from "@mui/material/Grid";
 import Divider from "@mui/material/Divider";
 import MenuItem from "@mui/material/MenuItem";
 import InputAdornment from "@mui/material/InputAdornment";
 import CircularProgress from "@mui/material/CircularProgress";
+import Tooltip from "@mui/material/Tooltip";
 import {
   Bolt as BoltIcon,
   Close as CloseIcon,
@@ -24,6 +24,9 @@ import {
   AutoAwesome as SparklesIcon,
   CalendarMonth as CalendarIcon,
   TrendingUp as TrendingUpIcon,
+  Check as CheckIcon,
+  Lock as LockIcon,
+  Clear as ClearIcon,
 } from "@mui/icons-material";
 import { UserAppliance, ApplianceList } from "../../types";
 import { useCreate } from "@refinedev/core";
@@ -63,18 +66,26 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
   const [hms, setHms] = useState({ hours: 8, minutes: 0, seconds: 0 });
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  // Elaborated Past Dates Mode state
+  // Month and Date boundaries for the Mini Calendar
   const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
-  const firstOfMonthStr = `${year}-${String(month + 1).padStart(2, "0")}-01`;
-  const yesterdayDate = new Date(today);
-  yesterdayDate.setDate(today.getDate() - 1);
-  const yesterdayStr = formatDateToKey(yesterdayDate >= new Date(year, month, 1) ? yesterdayDate : today);
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth(); // 0-indexed
+  const todayDateNumber = today.getDate();
+  const todayKey = formatDateToKey(today);
 
-  const [elaboratedStartDate, setElaboratedStartDate] = useState<string>(firstOfMonthStr);
-  const [elaboratedEndDate, setElaboratedEndDate] = useState<string>(yesterdayStr);
-  const [shouldBackfillHistory, setShouldBackfillHistory] = useState<boolean>(true);
+  const totalDaysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDayWeekdayIndex = new Date(currentYear, currentMonth, 1).getDay();
+  const monthName = today.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+  // Initial set of selected past dates: Day 1 up to yesterday
+  const [selectedDateKeys, setSelectedDateKeys] = useState<Set<string>>(() => {
+    const keys = new Set<string>();
+    for (let d = 1; d < todayDateNumber; d++) {
+      const dKey = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      keys.add(dKey);
+    }
+    return keys;
+  });
 
   const { showSuccess, showWarning, showError } = useToast();
   const { mutateAsync: createAppliance } = useCreate();
@@ -87,13 +98,72 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
       setTargetListId(selectedListId || incomingAppliance.list_id || spaces[0]?.id || "");
       setRoomLocation(incomingAppliance.room_location || "Living Room");
       setActiveTab(0);
+
+      // Re-initialize past days
+      const keys = new Set<string>();
+      for (let d = 1; d < todayDateNumber; d++) {
+        const dKey = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        keys.add(dKey);
+      }
+      setSelectedDateKeys(keys);
     }
-  }, [isOpen, incomingAppliance, selectedListId, spaces]);
+  }, [isOpen, incomingAppliance, selectedListId, spaces, currentYear, currentMonth, todayDateNumber]);
 
   const handleHoursChange = (decimal: number) => {
     const clamped = Math.max(0, Math.min(24, Number(decimal.toFixed(2))));
     setHoursPerDay(clamped);
     setHms(decimalHoursToHms(clamped));
+  };
+
+  // Mini Calendar Selection Shortcuts
+  const handleSelectAllPast = () => {
+    const keys = new Set<string>();
+    for (let d = 1; d < todayDateNumber; d++) {
+      const dKey = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      keys.add(dKey);
+    }
+    setSelectedDateKeys(keys);
+  };
+
+  const handleSelectWeekdays = () => {
+    const keys = new Set<string>();
+    for (let d = 1; d < todayDateNumber; d++) {
+      const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
+      if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+        const dKey = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        keys.add(dKey);
+      }
+    }
+    setSelectedDateKeys(keys);
+  };
+
+  const handleSelectWeekends = () => {
+    const keys = new Set<string>();
+    for (let d = 1; d < todayDateNumber; d++) {
+      const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        const dKey = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        keys.add(dKey);
+      }
+    }
+    setSelectedDateKeys(keys);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedDateKeys(new Set<string>());
+  };
+
+  const handleToggleDay = (dKey: string, isPast: boolean) => {
+    if (!isPast) return;
+    setSelectedDateKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(dKey)) {
+        next.delete(dKey);
+      } else {
+        next.add(dKey);
+      }
+      return next;
+    });
   };
 
   const watts = incomingAppliance?.watts || 100;
@@ -105,17 +175,10 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
   const monthlyKwh = dailyKwh * 30;
   const monthlyCost = dailyCost * 30;
 
-  // Elaborated date range calculations
-  const elaboratedDaysCount = useMemo(() => {
-    if (!elaboratedStartDate || !elaboratedEndDate) return 0;
-    const s = parseKeyToDate(elaboratedStartDate);
-    const e = parseKeyToDate(elaboratedEndDate);
-    if (e < s) return 0;
-    const diff = Math.abs(e.getTime() - s.getTime());
-    return Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
-  }, [elaboratedStartDate, elaboratedEndDate]);
-
-  const elaboratedTotalCost = dailyCost * elaboratedDaysCount;
+  // Elaborated selection totals
+  const selectedDaysCount = selectedDateKeys.size;
+  const backfillTotalKwh = dailyKwh * selectedDaysCount;
+  const backfillTotalCost = dailyCost * selectedDaysCount;
 
   const handleSave = async () => {
     if (!incomingAppliance) return;
@@ -153,19 +216,23 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
         );
       }
 
-      // If Elaborated Past Dates mode was used and backfill is checked
-      if (activeTab === 1 && shouldBackfillHistory && elaboratedDaysCount > 0 && hoursPerDay > 0 && createdItem?.id) {
+      // If Elaborated Past Dates mode was used and user has selected past dates
+      if (activeTab === 1 && selectedDateKeys.size > 0 && hoursPerDay > 0 && createdItem?.id) {
         try {
-          await batchSaveDailyUsageAcrossRange({
-            startDate: parseKeyToDate(elaboratedStartDate),
-            endDate: parseKeyToDate(elaboratedEndDate),
-            appliances: [{ ...createdItem, hours_per_day: hoursPerDay, watts, quantity }],
-            effectiveRate: DEFAULT_EFFECTIVE_RATE,
-            source: "routine_default",
-            overwriteExisting: true,
-          });
+          const sortedDates = Array.from(selectedDateKeys).sort();
+          for (const dKey of sortedDates) {
+            const dDate = parseKeyToDate(dKey);
+            await batchSaveDailyUsageAcrossRange({
+              startDate: dDate,
+              endDate: dDate,
+              appliances: [{ ...createdItem, hours_per_day: hoursPerDay, watts, quantity }],
+              effectiveRate: DEFAULT_EFFECTIVE_RATE,
+              source: "routine_default",
+              overwriteExisting: true,
+            });
+          }
           showSuccess(
-            `Backfilled ${elaboratedDaysCount} historical day(s) for ${incomingAppliance.name}!`,
+            `Backfilled ${selectedDateKeys.size} historical day(s) for ${incomingAppliance.name}!`,
             "History Backfilled"
           );
         } catch (backfillErr: any) {
@@ -397,48 +464,197 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
           </Box>
         )}
 
-        {/* TAB 1: ELABORATED PAST DATES (METICULOUS HISTORICAL BACKFILL) */}
+        {/* TAB 1: ELABORATED PAST DATES (INTERACTIVE MINI CALENDAR GRID) */}
         {activeTab === 1 && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Box>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", letterSpacing: "0.04em" }}>
-                🗓️ SELECT PAST DATES TO BACKFILL USAGE:
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem" }}>
-                For meticulous tracking: Record historical days using this appliance before today.
-              </Typography>
+            <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+              <Box>
+                <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", letterSpacing: "0.04em" }}>
+                  📅 SELECT PAST DATES TO BACKFILL USAGE ({monthName.toUpperCase()}):
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem" }}>
+                  Click days you operated this appliance before today. Future dates are strictly locked.
+                </Typography>
+              </Box>
             </Box>
 
-            <Grid container spacing={1.5}>
-              <Grid size={6}>
-                <TextField
-                  label="From Date"
-                  type="date"
-                  size="small"
-                  fullWidth
-                  value={elaboratedStartDate}
-                  onChange={(e) => setElaboratedStartDate(e.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
-              </Grid>
-              <Grid size={6}>
-                <TextField
-                  label="To Date"
-                  type="date"
-                  size="small"
-                  fullWidth
-                  value={elaboratedEndDate}
-                  onChange={(e) => setElaboratedEndDate(e.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
-              </Grid>
-            </Grid>
+            {/* Quick Selection Shortcuts */}
+            <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap" }}>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={handleSelectAllPast}
+                sx={{ fontSize: "0.6875rem", py: 0.4, px: 1, borderRadius: 1.5, fontWeight: 800 }}
+              >
+                ⚡ All Past (1–{todayDateNumber - 1})
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={handleSelectWeekdays}
+                sx={{ fontSize: "0.6875rem", py: 0.4, px: 1, borderRadius: 1.5, fontWeight: 800 }}
+              >
+                💼 Weekdays Only
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={handleSelectWeekends}
+                sx={{ fontSize: "0.6875rem", py: 0.4, px: 1, borderRadius: 1.5, fontWeight: 800 }}
+              >
+                🏖️ Weekends Only
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                color="inherit"
+                onClick={handleClearSelection}
+                startIcon={<ClearIcon sx={{ fontSize: 13 }} />}
+                sx={{ fontSize: "0.6875rem", py: 0.4, px: 1, borderRadius: 1.5, fontWeight: 700, opacity: 0.75 }}
+              >
+                Clear
+              </Button>
+            </Box>
+
+            {/* Mini Calendar Grid */}
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 1.5,
+                borderRadius: 2.5,
+                bgcolor: "rgba(0, 0, 0, 0.4)",
+                borderColor: "rgba(108, 122, 224, 0.25)",
+              }}
+            >
+              {/* Month Header Label */}
+              <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.light", mb: 1, display: "block", textAlign: "center", letterSpacing: "0.06em" }}>
+                {monthName.toUpperCase()}
+              </Typography>
+
+              {/* Day-of-Week Headers */}
+              <Box sx={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 0.5, mb: 0.75, textAlign: "center" }}>
+                {["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map((dName, idx) => (
+                  <Typography
+                    key={dName}
+                    variant="caption"
+                    sx={{
+                      fontSize: "0.625rem",
+                      fontWeight: 800,
+                      color: idx === 0 || idx === 6 ? "#ffd54f" : "text.secondary",
+                    }}
+                  >
+                    {dName}
+                  </Typography>
+                ))}
+              </Box>
+
+              {/* Days Grid */}
+              <Box sx={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 0.5 }}>
+                {/* Empty cells before Day 1 */}
+                {Array.from({ length: firstDayWeekdayIndex }).map((_, i) => (
+                  <Box key={`pad-${i}`} sx={{ height: 32 }} />
+                ))}
+
+                {/* Days of Month */}
+                {Array.from({ length: totalDaysInMonth }).map((_, i) => {
+                  const dayNum = i + 1;
+                  const dKey = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+                  const isPast = dayNum < todayDateNumber;
+                  const isToday = dayNum === todayDateNumber;
+                  const isFuture = dayNum > todayDateNumber;
+                  const isSelected = selectedDateKeys.has(dKey);
+
+                  if (isFuture) {
+                    return (
+                      <Tooltip key={dKey} title="Future date (cannot log past usage)">
+                        <Box
+                          sx={{
+                            height: 32,
+                            borderRadius: 1.5,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            bgcolor: "rgba(255, 255, 255, 0.02)",
+                            opacity: 0.25,
+                            cursor: "not-allowed",
+                            border: "1px solid rgba(255, 255, 255, 0.04)",
+                          }}
+                        >
+                          <Typography variant="caption" sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
+                            {dayNum}
+                          </Typography>
+                        </Box>
+                      </Tooltip>
+                    );
+                  }
+
+                  if (isToday) {
+                    return (
+                      <Tooltip key={dKey} title="Today (tracked via live stopwatch)">
+                        <Box
+                          sx={{
+                            height: 32,
+                            borderRadius: 1.5,
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            bgcolor: "rgba(99, 102, 241, 0.12)",
+                            border: "1px dashed rgba(99, 102, 241, 0.6)",
+                            cursor: "not-allowed",
+                          }}
+                        >
+                          <Typography variant="caption" sx={{ fontSize: "0.6875rem", fontWeight: 900, color: "primary.light", lineHeight: 1 }}>
+                            {dayNum}
+                          </Typography>
+                          <Typography variant="caption" sx={{ fontSize: "0.5rem", fontWeight: 800, color: "#34d399", lineHeight: 1 }}>
+                            TODAY
+                          </Typography>
+                        </Box>
+                      </Tooltip>
+                    );
+                  }
+
+                  // Past Clickable Day
+                  return (
+                    <Box
+                      key={dKey}
+                      onClick={() => handleToggleDay(dKey, isPast)}
+                      sx={{
+                        height: 32,
+                        borderRadius: 1.5,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        bgcolor: isSelected ? "primary.main" : "rgba(255, 255, 255, 0.03)",
+                        border: isSelected ? "1px solid #818cf8" : "1px solid rgba(255, 255, 255, 0.08)",
+                        color: isSelected ? "#ffffff" : "text.primary",
+                        boxShadow: isSelected ? "0 0 10px rgba(99, 102, 241, 0.5)" : "none",
+                        transition: "all 0.12s ease",
+                        "&:hover": {
+                          bgcolor: isSelected ? "primary.dark" : "rgba(99, 102, 241, 0.2)",
+                          borderColor: "primary.main",
+                        },
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.25 }}>
+                        <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: isSelected ? 900 : 600 }}>
+                          {dayNum}
+                        </Typography>
+                        {isSelected && <CheckIcon sx={{ fontSize: 11, color: "#ffd54f" }} />}
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+            </Paper>
 
             {/* Daily Hours for Backfill */}
             <Box sx={{ p: 1.5, borderRadius: 2.5, bgcolor: "rgba(0, 0, 0, 0.25)", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
-                  Daily Runtime for Backfill Range:
+                  Daily Runtime for Backfill Days:
                 </Typography>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#ffd54f" }}>
                   {hoursPerDay} hrs / day
@@ -460,6 +676,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
               </Box>
             </Box>
 
+            {/* Backfill Total Summary Banner */}
             <Paper
               variant="outlined"
               sx={{
@@ -470,13 +687,15 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 1,
               }}
             >
               <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
-                Backfill Range Total ({elaboratedDaysCount} days):
+                Backfill Selection Total ({selectedDaysCount} days):
               </Typography>
               <Typography variant="subtitle2" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f" }}>
-                ~₱{elaboratedTotalCost.toFixed(2)} ({((dailyKwh * elaboratedDaysCount)).toFixed(2)} kWh)
+                ~₱{backfillTotalCost.toFixed(2)} ({backfillTotalKwh.toFixed(2)} kWh)
               </Typography>
             </Paper>
           </Box>
