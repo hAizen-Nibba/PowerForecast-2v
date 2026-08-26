@@ -30,6 +30,7 @@ import { PelpItem, ApplianceList, UserAppliance } from "../../types";
 import { useCreate, useList, useUpdate } from "@refinedev/core";
 import { getDefaultStartHour } from "../../lib/loadCurveService";
 import { DuplicateApplianceModal } from "./DuplicateApplianceModal";
+import { ApplianceRoutineModal } from "./ApplianceRoutineModal";
 
 interface PelpCatalogModalProps {
   isOpen: boolean;
@@ -48,6 +49,10 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [importedControlNo, setImportedControlNo] = useState<string | null>(null);
   const [selectedListId, setSelectedListId] = useState<string>("");
+
+  // Routine & Target Quota Modal state
+  const [routineModalIncoming, setRoutineModalIncoming] = useState<Partial<UserAppliance> | null>(null);
+  const [isRoutineModalOpen, setIsRoutineModalOpen] = useState(false);
 
   // Duplicate modal states
   const [duplicateIncoming, setDuplicateIncoming] = useState<Partial<UserAppliance> | null>(null);
@@ -143,18 +148,8 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
       return;
     }
 
-    createAppliance(
-      {
-        resource: "user_appliances",
-        values: incomingPayload,
-      },
-      {
-        onSuccess: () => {
-          setImportedControlNo(item.control_no);
-          setTimeout(() => setImportedControlNo(null), 3000);
-        },
-      }
-    );
+    setRoutineModalIncoming(incomingPayload);
+    setIsRoutineModalOpen(true);
   };
 
   const handleCombineQuantity = (existing: UserAppliance) => {
@@ -413,6 +408,24 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
       </DialogActions>
     </Dialog>
 
+    {/* Routine & Target Quota Modal */}
+    {isRoutineModalOpen && (
+      <ApplianceRoutineModal
+        isOpen={isRoutineModalOpen}
+        onClose={() => {
+          setIsRoutineModalOpen(false);
+          setRoutineModalIncoming(null);
+        }}
+        incomingAppliance={routineModalIncoming}
+        spaces={spaces}
+        selectedListId={selectedListId}
+        onApplianceCreated={(created) => {
+          setImportedControlNo(created.control_no || created.name || null);
+          setTimeout(() => setImportedControlNo(null), 3000);
+        }}
+      />
+    )}
+
     {/* Duplicate Appliance Resolution Modal */}
     {isDuplicateModalOpen && (
       <DuplicateApplianceModal
@@ -426,7 +439,11 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
         existingAppliance={duplicateExisting}
         spaceName={spaces.find((s) => s.id === (selectedListId || spaces[0]?.id))?.name || "Current Space"}
         onCombineQuantity={handleCombineQuantity}
-        onAddDistinct={handleAddDistinct}
+        onAddDistinct={(payload) => {
+          setIsDuplicateModalOpen(false);
+          setRoutineModalIncoming(payload);
+          setIsRoutineModalOpen(true);
+        }}
       />
     )}
     </>

@@ -38,7 +38,7 @@ import {
   CheckCircle as CheckIcon,
 } from "@mui/icons-material";
 import { UserAppliance, DailyApplianceUsage, ApplianceList, ApplianceUsageLog } from "../../types";
-import { useCreate, useDelete } from "@refinedev/core";
+import { useCreate, useDelete, useUpdate } from "@refinedev/core";
 import {
   formatDateToKey,
   parseKeyToDate,
@@ -106,6 +106,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
   const { showSuccess, showInfo, showError } = useToast();
   const { mutate: createLog } = useCreate();
   const { mutate: deleteLog } = useDelete();
+  const { mutate: updateAppliance } = useUpdate();
 
   // Timeline Block Action Modal State
   const [selectedBlockForAction, setSelectedBlockForAction] = useState<{
@@ -116,6 +117,12 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
   const [blockEditStartDateTime, setBlockEditStartDateTime] = useState("");
   const [blockEditEndDateTime, setBlockEditEndDateTime] = useState("");
   const [isSavingBlockAction, setIsSavingBlockAction] = useState(false);
+
+  // Progressive Routine Conversion Modal (Route 3 -> 4)
+  const [progressiveRoutinePrompt, setProgressiveRoutinePrompt] = useState<{
+    appliance: UserAppliance;
+    durationHours: number;
+  } | null>(null);
 
   // Past Time Range Logger State
   const [isPastSessionModalOpen, setIsPastSessionModalOpen] = useState(false);
@@ -455,6 +462,15 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       setSelectedApplianceForPastSession(null);
       if (onUsageSaved) {
         onUsageSaved();
+      }
+
+      // Progressive Routine Conversion (Route 3 -> 4): If appliance currently has no routine (0h), prompt user
+      if (app && (!app.hours_per_day || app.hours_per_day <= 0)) {
+        const totalHours = totalMinutes / 60;
+        setProgressiveRoutinePrompt({
+          appliance: app,
+          durationHours: Number(totalHours.toFixed(1)),
+        });
       }
     } catch (err: any) {
       showError(`Failed to save past session: ${err?.message}`);
@@ -1324,15 +1340,6 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                     <Button
                       size="small"
                       variant="outlined"
-                      startIcon={<SparklesIcon />}
-                      onClick={handleApplyDefaults}
-                      sx={{ borderRadius: 2, fontWeight: 700, fontSize: "0.75rem" }}
-                    >
-                      Use Routine Defaults
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
                       startIcon={isLoadingYesterday ? <CircularProgress size={14} /> : <CopyIcon />}
                       onClick={handleCopyFromYesterday}
                       disabled={isLoadingYesterday}
@@ -1642,9 +1649,40 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
                           {/* Session Blocks */}
                           {sessions.length === 0 ? (
-                            <Box sx={{ height: "100%", display: "flex", alignItems: "center", px: 2 }}>
-                              <Typography variant="caption" sx={{ color: "text.secondary", opacity: 0.4, fontSize: "0.6875rem" }}>
-                                No stopwatch sessions recorded on this day
+                            <Box
+                              onClick={() => handleOpenPastSessionModal(appliance)}
+                              sx={{
+                                height: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                px: 1.5,
+                                cursor: "pointer",
+                                bgcolor: isPastDate ? "rgba(99, 102, 241, 0.05)" : "transparent",
+                                transition: "all 0.15s ease",
+                                "&:hover": {
+                                  bgcolor: isPastDate ? "rgba(99, 102, 241, 0.15)" : "transparent",
+                                },
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: isPastDate ? "primary.light" : "text.secondary",
+                                  fontWeight: isPastDate ? 700 : 400,
+                                  fontSize: "0.6875rem",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 0.5,
+                                  opacity: isPastDate ? 0.95 : 0.4,
+                                }}
+                              >
+                                {isPastDate ? (
+                                  <>
+                                    <PlusIcon sx={{ fontSize: 13 }} /> No session logged on this date • Click to record exact duration / session
+                                  </>
+                                ) : (
+                                  "No live stopwatch session recorded yet today"
+                                )}
                               </Typography>
                             </Box>
                           ) : (
@@ -2088,6 +2126,139 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
               sx={{ borderRadius: 2, fontWeight: 700 }}
             >
               Done
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
+      {/* Progressive Routine Conversion Prompt Dialog (Route 3 -> 4) */}
+      {progressiveRoutinePrompt && (
+        <Dialog
+          open={Boolean(progressiveRoutinePrompt)}
+          onClose={() => setProgressiveRoutinePrompt(null)}
+          maxWidth="xs"
+          fullWidth
+          slotProps={{
+            paper: {
+              sx: {
+                borderRadius: 3.5,
+                bgcolor: "#0b0a26",
+                backgroundImage: "radial-gradient(ellipse at top, rgba(99, 102, 241, 0.2) 0%, rgba(11, 10, 38, 0.98) 70%)",
+                border: "1px solid rgba(129, 140, 248, 0.35)",
+                boxShadow: "0 32px 80px rgba(0, 0, 0, 0.8)",
+                color: "#ffffff",
+                p: 1,
+              },
+            },
+          }}
+        >
+          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.5, pb: 1 }}>
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: 2,
+                bgcolor: "primary.main",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <SparklesIcon sx={{ color: "#ffd54f", fontSize: 20 }} />
+            </Box>
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                Set as Routine Target Quota?
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                {progressiveRoutinePrompt.appliance.name} has no daily routine set.
+              </Typography>
+            </Box>
+          </DialogTitle>
+
+          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1.5 }}>
+            <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.85rem" }}>
+              You logged <strong style={{ color: "#ffffff" }}>{progressiveRoutinePrompt.durationHours} hours</strong> for this device. Would you like to use <strong style={{ color: "#ffd54f" }}>{progressiveRoutinePrompt.durationHours}h/day</strong> as your baseline target routine?
+            </Typography>
+
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <Paper
+                variant="outlined"
+                onClick={() => {
+                  updateAppliance({
+                    resource: "user_appliances",
+                    id: progressiveRoutinePrompt.appliance.id,
+                    values: {
+                      hours_per_day: progressiveRoutinePrompt.durationHours,
+                      days_per_month: 30,
+                    },
+                  });
+                  showSuccess(`Set ${progressiveRoutinePrompt.durationHours}h/day everyday routine for ${progressiveRoutinePrompt.appliance.name}!`);
+                  setProgressiveRoutinePrompt(null);
+                  if (onUsageSaved) onUsageSaved();
+                }}
+                sx={{
+                  p: 1.5,
+                  borderRadius: 2.5,
+                  cursor: "pointer",
+                  bgcolor: "rgba(99, 102, 241, 0.12)",
+                  borderColor: "primary.main",
+                  transition: "all 0.15s ease",
+                  "&:hover": { bgcolor: "rgba(99, 102, 241, 0.25)" },
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.light" }}>
+                  🗓️ Everyday (7 Days / Week)
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  Applies {progressiveRoutinePrompt.durationHours}h/day quota across 30 days/month
+                </Typography>
+              </Paper>
+
+              <Paper
+                variant="outlined"
+                onClick={() => {
+                  updateAppliance({
+                    resource: "user_appliances",
+                    id: progressiveRoutinePrompt.appliance.id,
+                    values: {
+                      hours_per_day: progressiveRoutinePrompt.durationHours,
+                      days_per_month: 22,
+                    },
+                  });
+                  showSuccess(`Set ${progressiveRoutinePrompt.durationHours}h/day weekday routine for ${progressiveRoutinePrompt.appliance.name}!`);
+                  setProgressiveRoutinePrompt(null);
+                  if (onUsageSaved) onUsageSaved();
+                }}
+                sx={{
+                  p: 1.5,
+                  borderRadius: 2.5,
+                  cursor: "pointer",
+                  bgcolor: "rgba(255, 255, 255, 0.03)",
+                  borderColor: "rgba(255, 255, 255, 0.12)",
+                  transition: "all 0.15s ease",
+                  "&:hover": { bgcolor: "rgba(255, 255, 255, 0.08)" },
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "text.primary" }}>
+                  📆 Custom Frequency (Weekdays / 22 Days)
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  Applies {progressiveRoutinePrompt.durationHours}h/day quota on active days
+                </Typography>
+              </Paper>
+            </Box>
+          </DialogContent>
+
+          <DialogActions sx={{ p: 2, px: 3, justifyContent: "space-between" }}>
+            <Button
+              variant="text"
+              size="small"
+              color="inherit"
+              onClick={() => setProgressiveRoutinePrompt(null)}
+              sx={{ fontWeight: 700, textTransform: "none" }}
+            >
+              No, Just Log for this Day
             </Button>
           </DialogActions>
         </Dialog>
