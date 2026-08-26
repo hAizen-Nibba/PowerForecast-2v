@@ -683,11 +683,37 @@ export function computeDayMetrics(
   events: UserCalendarEvent[],
   effectiveRate: number = DEFAULT_EFFECTIVE_RATE
 ): DayMetricSummary {
-  // 1. If we have logged usage records for this day
-  if (loggedUsageForDay && loggedUsageForDay.length > 0) {
-    const totalKwh = loggedUsageForDay.reduce((acc, curr) => acc + (Number(curr.kwh_consumed) || 0), 0);
-    const totalCost = loggedUsageForDay.reduce((acc, curr) => acc + (Number(curr.estimated_cost) || 0), 0);
-    const activeCount = loggedUsageForDay.filter((u) => Number(u.hours_used) > 0).length;
+  const targetApplianceIds = new Set(appliances.map((a) => a.id));
+  const filteredLogged = (loggedUsageForDay || []).filter((u) => targetApplianceIds.has(u.appliance_id));
+
+  const isToday = dateKey === formatDateToKey(new Date());
+
+  // 1. If we have logged usage records for this day's appliances
+  if (filteredLogged.length > 0) {
+    let totalKwh = filteredLogged.reduce((acc, curr) => acc + (Number(curr.kwh_consumed) || 0), 0);
+    let totalCost = filteredLogged.reduce((acc, curr) => acc + (Number(curr.estimated_cost) || 0), 0);
+    let activeCount = filteredLogged.filter((u) => Number(u.hours_used) > 0).length;
+
+    // If today, also incorporate running stopwatches not yet accumulated into saved daily rows
+    if (isToday) {
+      appliances.forEach((app) => {
+        if (app.is_currently_on && app.last_turned_on_at) {
+          const alreadyLogged = filteredLogged.some((r) => r.appliance_id === app.id && Number(r.hours_used) > 0);
+          if (!alreadyLogged) {
+            const start = new Date(app.last_turned_on_at);
+            const now = new Date();
+            const slices = splitSessionAcrossDays(start, now);
+            const todaySlice = slices.find((s) => s.dateKey === dateKey);
+            if (todaySlice && todaySlice.hours > 0) {
+              const liveKwh = calculateKwh(app.watts, todaySlice.hours, app.quantity || 1);
+              totalKwh += liveKwh;
+              totalCost += calculateCost(liveKwh, effectiveRate);
+              activeCount += 1;
+            }
+          }
+        }
+      });
+    }
 
     return {
       kwh: Number(totalKwh.toFixed(2)),

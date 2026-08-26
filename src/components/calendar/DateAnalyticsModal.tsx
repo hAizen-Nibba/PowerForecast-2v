@@ -226,9 +226,8 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
     initialUsageRecords.forEach((rec) => {
       if (rec.usage_date === dateKey) {
-        const swHours = applianceStopwatchMap[rec.appliance_id]?.totalHours || 0;
         initialMap[rec.appliance_id] = {
-          hours: Math.max(Number(rec.hours_used) || 0, swHours),
+          hours: Number(rec.hours_used) || 0,
           notes: rec.notes || "",
         };
       }
@@ -258,9 +257,8 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         setUsageState((prev) => {
           const updated = { ...prev };
           data.forEach((rec: DailyApplianceUsage) => {
-            const swHours = applianceStopwatchMap[rec.appliance_id]?.totalHours || 0;
             updated[rec.appliance_id] = {
-              hours: Math.max(Number(rec.hours_used) || 0, swHours),
+              hours: Number(rec.hours_used) || 0,
               notes: rec.notes || "",
             };
           });
@@ -315,9 +313,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
     appliances.forEach((app) => {
       const state = usageState[app.id];
-      const manualHours = state ? state.hours : 0;
-      const swHours = applianceStopwatchMap[app.id]?.totalHours || 0;
-      const effectiveHours = Math.max(manualHours, swHours);
+      const effectiveHours = state ? state.hours : 0;
 
       if (effectiveHours > 0) {
         activeDevices += 1;
@@ -332,7 +328,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       cost: totalCost,
       activeDevices,
     };
-  }, [appliances, usageState, applianceStopwatchMap]);
+  }, [appliances, usageState]);
 
   // Update hours for a single appliance
   const handleHoursChange = (appId: string, hours: number) => {
