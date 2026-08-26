@@ -191,6 +191,7 @@ export async function batchSaveDailyUsageAcrossRange(params: {
   effectiveRate?: number;
   source?: "routine_default" | "manual";
   overwriteExisting?: boolean;
+  excludeToday?: boolean;
   userId?: string | null;
 }): Promise<{ success: boolean; totalDays: number; totalRows: number }> {
   const {
@@ -200,6 +201,7 @@ export async function batchSaveDailyUsageAcrossRange(params: {
     effectiveRate = DEFAULT_EFFECTIVE_RATE,
     source = "routine_default",
     overwriteExisting = true,
+    excludeToday = false,
     userId = null,
   } = params;
 
@@ -211,9 +213,13 @@ export async function batchSaveDailyUsageAcrossRange(params: {
   const dateKeys: string[] = [];
   const current = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
   const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+  const todayKey = formatDateToKey(new Date());
 
   while (current <= end) {
-    dateKeys.push(formatDateToKey(current));
+    const dKey = formatDateToKey(current);
+    if (!excludeToday || dKey !== todayKey) {
+      dateKeys.push(dKey);
+    }
     current.setDate(current.getDate() + 1);
   }
 
@@ -240,7 +246,6 @@ export async function batchSaveDailyUsageAcrossRange(params: {
 
   const allRows: any[] = [];
   const sessionLogRows: any[] = [];
-  const todayKey = formatDateToKey(new Date());
 
   dateKeys.forEach((dKey) => {
     const isPastOrToday = dKey <= todayKey;

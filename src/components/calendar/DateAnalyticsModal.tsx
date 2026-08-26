@@ -134,7 +134,10 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
     year: "numeric",
   });
 
-  const isSelectedToday = dateKey === formatDateToKey(new Date());
+  const todayKey = formatDateToKey(new Date());
+  const isSelectedToday = dateKey === todayKey;
+  const isPastDate = dateKey < todayKey;
+  const isFutureDate = dateKey > todayKey;
   const hasActiveStopwatch = appliances.some((a) => a.is_currently_on && a.last_turned_on_at);
   const [, setLiveTick] = useState(0);
 
@@ -786,25 +789,37 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                 <Typography variant="h6" sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}>
                   {formattedDate}
                 </Typography>
-                {hasLoggedData ? (
+                {isSelectedToday ? (
                   <Chip
-                    label="Actual Logged"
+                    label={hasActiveStopwatch ? "🟢 Today • Live Active" : "🟢 Today • Live Ready"}
                     size="small"
                     color="success"
-                    icon={<CheckIcon sx={{ fontSize: "14px !important" }} />}
                     sx={{ height: 22, fontSize: "0.7rem", fontWeight: 800 }}
+                  />
+                ) : isPastDate ? (
+                  <Chip
+                    label={hasLoggedData ? "📅 Past Historical Log" : "📅 Unlogged Past Day"}
+                    size="small"
+                    color={hasLoggedData ? "primary" : "default"}
+                    variant={hasLoggedData ? "filled" : "outlined"}
+                    sx={{ height: 22, fontSize: "0.7rem", fontWeight: 700 }}
                   />
                 ) : (
                   <Chip
-                    label="Routine Baseline"
+                    label="🔮 Projected Target / Future Budget"
                     size="small"
+                    color="secondary"
                     variant="outlined"
-                    sx={{ height: 22, fontSize: "0.7rem", fontWeight: 700, borderColor: "rgba(255, 255, 255, 0.2)" }}
+                    sx={{ height: 22, fontSize: "0.7rem", fontWeight: 700 }}
                   />
                 )}
               </Box>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                Track daily appliance hours, inspect 24h stopwatch activity, and manage target energy quotas.
+                {isSelectedToday
+                  ? "Track real-time stopwatch usage and inspect progress against your daily target energy quota."
+                  : isPastDate
+                  ? "Retrospective daily record. Enter exact elapsed runtime or inject timestamped time ranges."
+                  : "Forecasted energy allocation and estimated bill based on inventory baseline targets."}
               </Typography>
             </Box>
           </Box>
@@ -1104,7 +1119,13 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                     {/* Telemetry Status Line */}
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
                       <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.7rem", fontWeight: 700 }}>
-                        ⏱️ Logged Today: <strong style={{ color: "#ffffff" }}>{hours.toFixed(1)} hrs</strong> ({kwh.toFixed(2)} kWh)
+                        {isSelectedToday ? (
+                          <>⏱️ Logged Today: <strong style={{ color: "#ffffff" }}>{hours.toFixed(1)} hrs</strong> ({kwh.toFixed(2)} kWh)</>
+                        ) : isPastDate ? (
+                          <>📋 Historical Record: <strong style={{ color: "#ffffff" }}>{hours.toFixed(1)} hrs</strong> ({kwh.toFixed(2)} kWh)</>
+                        ) : (
+                          <>🔮 Planned Target Quota: <strong style={{ color: "#ffffff" }}>{targetHours.toFixed(1)} hrs</strong> ({targetKwh.toFixed(2)} kWh)</>
+                        )}
                       </Typography>
 
                       {isContinuous ? (
@@ -1178,7 +1199,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
                       <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", fontSize: "0.75rem", letterSpacing: "0.02em" }}>
-                        DAILY OPERATING RUNTIME:
+                        {isSelectedToday ? "TODAY OPERATING RUNTIME:" : isPastDate ? "RETROSPECTIVE OPERATING RUNTIME:" : "PROJECTED OPERATING RUNTIME:"}
                       </Typography>
 
                       <Button
@@ -1189,7 +1210,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                         onClick={() => handleOpenPastSessionModal(app)}
                         sx={{ borderRadius: 2, fontWeight: 800, fontSize: "0.72rem", height: 28, px: 1.25 }}
                       >
-                        Log Past Time Range
+                        {isPastDate ? "Log Past Time Range (Exact Times)" : "Log Past Time Range"}
                       </Button>
                     </Box>
 
@@ -1252,7 +1273,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                         onClick={() => handleHoursChange(app.id, app.hours_per_day || 8)}
                         sx={{ borderRadius: 2, fontWeight: 700, fontSize: "0.72rem", height: 34, textTransform: "none" }}
                       >
-                        Default Target ({app.hours_per_day || 8}h)
+                        Apply Target Quota ({app.hours_per_day || 8}h)
                       </Button>
                     </Box>
 

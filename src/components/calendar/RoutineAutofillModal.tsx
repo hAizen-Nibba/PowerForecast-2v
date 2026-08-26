@@ -59,6 +59,7 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
   const [rangeType, setRangeType] = useState<AutofillRangeType>("month_to_today");
   const [selectedSpaceFilter, setSelectedSpaceFilter] = useState<string>("all");
   const [overwriteExisting, setOverwriteExisting] = useState<boolean>(true);
+  const [excludeToday, setExcludeToday] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   const year = currentSelectedDate.getFullYear();
@@ -100,8 +101,18 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
 
     if (rangeType === "month_to_today") {
       start = new Date(year, month, 1);
-      end = isCurrentMonth ? new Date() : new Date(year, month + 1, 0);
-      label = `${monthName} 1 – ${isCurrentMonth ? "Today (" + monthName + " " + today.getDate() + ")" : "End of Month"}`;
+      if (isCurrentMonth) {
+        if (excludeToday && today.getDate() > 1) {
+          end = new Date(year, month, today.getDate() - 1);
+          label = `${monthName} 1 – Yesterday (${monthName} ${today.getDate() - 1})`;
+        } else {
+          end = new Date(year, month, today.getDate());
+          label = `${monthName} 1 – Today (${monthName} ${today.getDate()})`;
+        }
+      } else {
+        end = new Date(year, month + 1, 0);
+        label = `Full Month (${monthName} 1 – ${monthName} ${end.getDate()})`;
+      }
     } else if (rangeType === "full_month") {
       start = new Date(year, month, 1);
       end = new Date(year, month + 1, 0);
@@ -116,20 +127,27 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
       label = currentSelectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
     }
 
-    // Count days
+    // Count days (accounting for excludeToday if range covers today)
     let count = 0;
     if (end >= start) {
-      const diffTime = Math.abs(end.getTime() - start.getTime());
-      count = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      const cur = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      const endD = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+      const todayK = formatDateToKey(new Date());
+      while (cur <= endD) {
+        if (!excludeToday || rangeType === "single_day" || formatDateToKey(cur) !== todayK) {
+          count += 1;
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
     }
 
     return {
       startDate: start,
       endDate: end,
-      dateCount: Math.max(1, count),
+      dateCount: Math.max(0, count),
       rangeLabel: label,
     };
-  }, [rangeType, year, month, currentDayNum, isCurrentMonth, today, currentSelectedDate, customStartDate, customEndDate, firstOfMonthStr, lastOfMonthStr]);
+  }, [rangeType, year, month, currentDayNum, isCurrentMonth, today, currentSelectedDate, customStartDate, customEndDate, firstOfMonthStr, lastOfMonthStr, excludeToday]);
 
   // Compute daily metrics from routine baselines
   const dailyMetrics = useMemo(() => {
@@ -173,6 +191,7 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
         effectiveRate: DEFAULT_EFFECTIVE_RATE,
         source: "routine_default",
         overwriteExisting,
+        excludeToday,
       });
 
       if (result.success) {
@@ -251,7 +270,7 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
           </Typography>
 
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.25 }}>
-            {/* Option 1: 1st to Today */}
+            {/* Option 1: 1st to Today / Yesterday */}
             <Paper
               variant="outlined"
               onClick={() => setRangeType("month_to_today")}
@@ -269,11 +288,13 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
                 <CalendarIcon sx={{ fontSize: 18, color: rangeType === "month_to_today" ? "primary.main" : "text.secondary" }} />
                 <Typography variant="body2" sx={{ fontWeight: 800, color: rangeType === "month_to_today" ? "primary.light" : "text.primary" }}>
-                  1st of Month to Today
+                  {isCurrentMonth && excludeToday && today.getDate() > 1 ? "1st of Month to Yesterday" : "1st of Month to Today"}
                 </Typography>
               </Box>
               <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                Fills Day 1 up to today ({isCurrentMonth ? today.getDate() : currentDayNum} days)
+                {isCurrentMonth && excludeToday && today.getDate() > 1
+                  ? `Fills Day 1 up to yesterday (${today.getDate() - 1} days), preserving Today for live stopwatch`
+                  : `Fills Day 1 up to today (${isCurrentMonth ? today.getDate() : currentDayNum} days)`}
               </Typography>
             </Paper>
 
@@ -472,21 +493,48 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
           </Box>
 
           {rangeType !== "single_day" && (
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={overwriteExisting}
-                  onChange={(e) => setOverwriteExisting(e.target.checked)}
-                  size="small"
-                />
-              }
-              label={
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                  Overwrite days that already have logged data (Uncheck to only fill unlogged/empty days)
-                </Typography>
-              }
-              sx={{ mt: 0.5, mb: 0 }}
-            />
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mt: 0.5 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={excludeToday}
+                    onChange={(e) => setExcludeToday(e.target.checked)}
+                    size="small"
+                    color="primary"
+                  />
+                }
+                label={
+                  <Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "text.primary" }}>
+                        ⏱️ Exclude Today (Keep Today empty for live stopwatch tracking)
+                      </Typography>
+                      <Chip label="Recommended" size="small" color="primary" sx={{ height: 18, fontSize: "0.625rem", fontWeight: 800 }} />
+                    </Box>
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
+                      Preserves Today for real-time tracking instead of marking it 100% finished in advance.
+                    </Typography>
+                  </Box>
+                }
+                sx={{ alignItems: "flex-start", m: 0 }}
+              />
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={overwriteExisting}
+                    onChange={(e) => setOverwriteExisting(e.target.checked)}
+                    size="small"
+                  />
+                }
+                label={
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    Overwrite days that already have logged data (Uncheck to only fill unlogged/empty days)
+                  </Typography>
+                }
+                sx={{ m: 0 }}
+              />
+            </Box>
           )}
         </Paper>
       </DialogContent>
