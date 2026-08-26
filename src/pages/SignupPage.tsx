@@ -59,6 +59,13 @@ export const SignupPage: React.FC = () => {
       return;
     }
 
+    // Basic email validation regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setErrorMessage("Please enter a valid email address.");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setErrorMessage("Passwords do not match. Please verify and try again.");
       return;
@@ -83,7 +90,13 @@ export const SignupPage: React.FC = () => {
         securityAnswer,
       },
       {
-        onSuccess: () => navigate("/dashboard"),
+        onSuccess: (data: any) => {
+          if (data?.redirectTo) {
+            navigate(data.redirectTo);
+          } else {
+            navigate(`/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+          }
+        },
         onError: (err: any) => setErrorMessage(err?.message || "Registration failed. Please try again."),
       }
     );

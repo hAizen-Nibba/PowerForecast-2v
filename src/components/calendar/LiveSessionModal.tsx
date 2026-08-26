@@ -87,8 +87,6 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
     setIsAdjusting(!isAdjusting);
   };
 
-  if (!appliance && !receiptLog) return null;
-
   const isLive = appliance?.is_currently_on;
   const watts = appliance?.watts ? appliance.watts * (appliance.quantity || 1) : 1000;
   const genRate = DEFAULT_EFFECTIVE_RATE;
@@ -174,6 +172,8 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
       onClose();
     }
   };
+
+  if (!appliance && !receiptLog) return null;
 
   return (
     <>
