@@ -142,11 +142,12 @@ export const authProvider: AuthProvider = {
         await supabaseClient.auth.signOut();
       }
 
-      devLog.info("Auth", "User registered. Redirecting to login page per request.");
+      devLog.info("Auth", "User registered. Redirecting to verification page.");
       return {
         success: true,
-        redirectTo: "/login",
-      };
+        successNotification: false,
+        redirectTo: `/verify-email?email=${encodeURIComponent(trimmedEmail)}`,
+      } as any;
     } catch (err: any) {
       devLog.error("Auth", "Unexpected registration error:", err);
       return {

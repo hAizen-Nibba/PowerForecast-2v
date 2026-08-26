@@ -94,7 +94,7 @@ export const SignupPage: React.FC = () => {
           if (data?.redirectTo) {
             navigate(data.redirectTo);
           } else {
-            navigate("/login");
+            navigate(`/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}`);
           }
         },
         onError: (err: any) => setErrorMessage(err?.message || "Registration failed. Please try again."),
