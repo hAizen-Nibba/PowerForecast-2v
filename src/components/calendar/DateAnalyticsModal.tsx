@@ -4,12 +4,10 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Box from "@mui/material/Box";
-import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import TextField from "@mui/material/TextField";
-import MenuItem from "@mui/material/MenuItem";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import Card from "@mui/material/Card";
@@ -18,11 +16,9 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Tooltip from "@mui/material/Tooltip";
 import InputAdornment from "@mui/material/InputAdornment";
+import LinearProgress from "@mui/material/LinearProgress";
 import CircularProgress from "@mui/material/CircularProgress";
-import Collapse from "@mui/material/Collapse";
-import Slider from "@mui/material/Slider";
 import {
-  CalendarMonth as CalendarIcon,
   Close as CloseIcon,
   Add as PlusIcon,
   Delete as TrashIcon,
@@ -31,20 +27,18 @@ import {
   AutoAwesome as SparklesIcon,
   RestartAlt as ResetIcon,
   Save as SaveIcon,
-  CheckCircle as CheckCircleIcon,
   Timeline as TimelineIcon,
-  FormatListBulleted as ListIcon,
   Search as SearchIcon,
-  Home as HomeIcon,
-  Store as StoreIcon,
   Timer as TimerIcon,
   AccessTime as ClockIcon,
   ChevronRight as ChevronRightIcon,
   Tune as TuneIcon,
-  Edit as EditIcon,
+  WarningAmber as WarningIcon,
+  CalendarMonth as CalendarIcon,
+  CheckCircle as CheckIcon,
 } from "@mui/icons-material";
-import { UserAppliance, UserCalendarEvent, DailyApplianceUsage, ApplianceList, ApplianceUsageLog } from "../../types";
-import { useCreate, useUpdate, useDelete } from "@refinedev/core";
+import { UserAppliance, DailyApplianceUsage, ApplianceList, ApplianceUsageLog } from "../../types";
+import { useCreate, useDelete } from "@refinedev/core";
 import {
   formatDateToKey,
   parseKeyToDate,
@@ -57,7 +51,6 @@ import {
   splitSessionAcrossDays,
   accumulateLiveSessionDailyUsage,
   deductSessionDailyUsage,
-  allocateNonOverlappingSlots,
 } from "../../lib/dailyUsageService";
 import { supabaseClient } from "../../lib/supabaseClient";
 import { useToast } from "../common/ToastProvider";
@@ -68,7 +61,7 @@ interface DateAnalyticsModalProps {
   onClose: () => void;
   selectedDate: Date;
   appliances: UserAppliance[];
-  events: UserCalendarEvent[];
+  events?: any[];
   initialUsageRecords?: DailyApplianceUsage[];
   spaces?: ApplianceList[];
   selectedSpaceId?: string;
@@ -76,14 +69,26 @@ interface DateAnalyticsModalProps {
   onUsageSaved?: () => void;
 }
 
+interface TimelineSessionBlock {
+  id: string;
+  logId?: string;
+  rawLog?: ApplianceUsageLog;
+  type: "logged_session" | "live_stopwatch";
+  startHour: number;
+  endHour: number;
+  durationHours: number;
+  kwh: number;
+  cost: number;
+  startTimeStr: string;
+  endTimeStr: string;
+}
+
 export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
   isOpen,
   onClose,
   selectedDate,
   appliances,
-  events,
   initialUsageRecords = [],
-  spaces = [],
   logs = [],
   onUsageSaved,
 }) => {
@@ -98,36 +103,19 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isLoadingYesterday, setIsLoadingYesterday] = useState<boolean>(false);
 
-  // Scheduled events creation state
-  const [eventTitle, setEventTitle] = useState("");
-  const [eventApplianceId, setEventApplianceId] = useState("");
-  const [startHour, setStartHour] = useState(14);
-  const [durationHours, setDurationHours] = useState(2);
-  const [isAddingEvent, setIsAddingEvent] = useState(false);
-
   const { showSuccess, showInfo, showError } = useToast();
-  const { mutate: createEvent, isLoading: isCreatingEvent } = useCreate();
-  const { mutate: updateEvent, isLoading: isUpdatingEvent } = useUpdate();
-  const { mutate: deleteEvent } = useDelete();
   const { mutate: createLog } = useCreate();
   const { mutate: deleteLog } = useDelete();
 
   // Timeline Block Action Modal State
   const [selectedBlockForAction, setSelectedBlockForAction] = useState<{
-    block: any;
+    block: TimelineSessionBlock;
     appliance: UserAppliance;
   } | null>(null);
   const [isEditingBlockRange, setIsEditingBlockRange] = useState(false);
   const [blockEditStartDateTime, setBlockEditStartDateTime] = useState("");
   const [blockEditEndDateTime, setBlockEditEndDateTime] = useState("");
   const [isSavingBlockAction, setIsSavingBlockAction] = useState(false);
-
-  // Scheduled Task Editing State (Tab 2)
-  const [editingEventId, setEditingEventId] = useState<string | null>(null);
-  const [editEventTitle, setEditEventTitle] = useState("");
-  const [editEventApplianceId, setEditEventApplianceId] = useState("");
-  const [editEventHour, setEditEventHour] = useState(14);
-  const [editEventDuration, setEditEventDuration] = useState(2);
 
   // Past Time Range Logger State
   const [isPastSessionModalOpen, setIsPastSessionModalOpen] = useState(false);
@@ -145,18 +133,6 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
     day: "numeric",
     year: "numeric",
   });
-
-  const dayOfWeekMap: Record<number, "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat"> = {
-    0: "sun",
-    1: "mon",
-    2: "tue",
-    3: "wed",
-    4: "thu",
-    5: "fri",
-    6: "sat",
-  };
-  const dayStr = dayOfWeekMap[selectedDate.getDay()];
-  const dayEvents = events.filter((e) => e.day === dayStr || e.is_recurring);
 
   const isSelectedToday = dateKey === formatDateToKey(new Date());
   const hasActiveStopwatch = appliances.some((a) => a.is_currently_on && a.last_turned_on_at);
@@ -306,7 +282,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
     return filteredAppliances[0] || null;
   }, [filteredAppliances, selectedApplianceId]);
 
-  // Calculate live Day Totals based on current slider positions, logs, and live stopwatches
+  // Calculate live Day Totals based on current inputs, logs, and live stopwatches
   const dayTotals = useMemo(() => {
     let totalKwh = 0;
     let activeDevices = 0;
@@ -345,21 +321,6 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
   // Action: Populate with Routine Baseline Defaults (hours_per_day from inventory)
   const handleApplyDefaults = () => {
     setIsRoutineModalOpen(true);
-  };
-
-  const handleApplyRoutineToCurrentDay = () => {
-    setUsageState((prev) => {
-      const next = { ...prev };
-      appliances.forEach((app) => {
-        next[app.id] = {
-          hours: Number(app.hours_per_day) || 0,
-          notes: prev[app.id]?.notes || "",
-        };
-      });
-      return next;
-    });
-    setIsDirty(true);
-    showInfo("Loaded routine baseline hours for this day.");
   };
 
   // Action: Copy from yesterday's usage
@@ -516,19 +477,19 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         });
       }
     }
-      deleteLog(
-        {
-          resource: "appliance_usage_logs",
-          id: logId,
+    deleteLog(
+      {
+        resource: "appliance_usage_logs",
+        id: logId,
+      },
+      {
+        onSuccess: () => {
+          showInfo("Session log removed and daily usage reconciled.");
+          if (onUsageSaved) onUsageSaved();
         },
-        {
-          onSuccess: () => {
-            showInfo("Session log removed and daily usage reconciled.");
-            if (onUsageSaved) onUsageSaved();
-          },
-        }
-      );
-    };
+      }
+    );
+  };
 
   // Block Click Action Handlers
   const handleBlockClick = (block: TimelineSessionBlock, appliance: UserAppliance) => {
@@ -562,14 +523,10 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
   const handleDeleteBlockSession = async () => {
     if (!selectedBlockForAction) return;
-    const { block, appliance } = selectedBlockForAction;
+    const { block } = selectedBlockForAction;
     if (block.logId) {
       await handleDeleteSessionLog(block.logId);
       setSelectedBlockForAction(null);
-    } else if (block.type === "manual_routine") {
-      handleHoursChange(appliance.id, 0);
-      setSelectedBlockForAction(null);
-      showInfo(`Cleared daily routine hours for ${appliance.name}`);
     }
   };
 
@@ -630,32 +587,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         });
 
         showSuccess(`Updated session for ${appliance.name} (${(durationMinutes / 60).toFixed(1)} hrs)!`);
-      } else {
-        await supabaseClient.from("appliance_usage_logs").insert({
-          appliance_id: appliance.id,
-          user_id: appliance.user_id || null,
-          started_at: start.toISOString(),
-          ended_at: end.toISOString(),
-          duration_minutes: durationMinutes,
-          kwh_consumed: kwh,
-          estimated_cost: cost,
-          source: "converted_routine",
-        });
-
-        await accumulateLiveSessionDailyUsage({
-          appliance_id: appliance.id,
-          durationMinutes,
-          watts: appliance.watts,
-          quantity: appliance.quantity || 1,
-          effectiveRate: DEFAULT_EFFECTIVE_RATE,
-          user_id: appliance.user_id || null,
-          startTime: start,
-          endTime: end,
-        });
-
-        showSuccess(`Logged timestamped session for ${appliance.name} (${(durationMinutes / 60).toFixed(1)} hrs)!`);
       }
-
       setSelectedBlockForAction(null);
       if (onUsageSaved) onUsageSaved();
     } catch (err: any) {
@@ -663,40 +595,6 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
     } finally {
       setIsSavingBlockAction(false);
     }
-  };
-
-  // Scheduled Task (Tab 2) Edit Handlers
-  const handleStartEditEvent = (ev: UserCalendarEvent) => {
-    setEditingEventId(ev.id);
-    setEditEventTitle(ev.title || "");
-    setEditEventApplianceId(ev.appliance_id || "");
-    setEditEventHour(ev.hour || 8);
-    setEditEventDuration(ev.duration_hours || 1);
-  };
-
-  const handleCancelEditEvent = () => {
-    setEditingEventId(null);
-  };
-
-  const handleSaveEventEdit = (eventId: string) => {
-    updateEvent(
-      {
-        resource: "user_calendar_events",
-        id: eventId,
-        values: {
-          title: editEventTitle,
-          appliance_id: editEventApplianceId || null,
-          hour: editEventHour,
-          duration_hours: editEventDuration,
-        },
-      },
-      {
-        onSuccess: () => {
-          setEditingEventId(null);
-          showSuccess("Updated scheduled task!");
-        },
-      }
-    );
   };
 
   // Save all usage rows to Supabase
@@ -756,15 +654,6 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       }
     });
 
-    // Scheduled event load
-    dayEvents.forEach((ev) => {
-      const evEnd = ev.hour + ev.duration_hours;
-      if (hour >= ev.hour && hour < evEnd) {
-        const associatedApp = appliances.find((a) => a.id === ev.appliance_id);
-        totalWatts += associatedApp ? associatedApp.watts * (associatedApp.quantity || 1) : 500;
-      }
-    });
-
     const hourlyCost = (totalWatts / 1000) * DEFAULT_EFFECTIVE_RATE;
     const period = hour >= 12 ? "PM" : "AM";
     const h12 = hour % 12 === 0 ? 12 : hour % 12;
@@ -778,26 +667,12 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
   const peakWatts = Math.max(...hourlyData.map((d) => d.watts), 0);
 
-  interface TimelineSessionBlock {
-    id: string;
-    logId?: string;
-    rawLog?: ApplianceUsageLog;
-    type: "logged_session" | "live_stopwatch" | "manual_routine";
-    startHour: number;
-    endHour: number;
-    durationHours: number;
-    kwh: number;
-    cost: number;
-    startTimeStr: string;
-    endTimeStr: string;
-  }
-
-  // Compute 24-Hour Visual Activity & Stopwatch Timeline Data
+  // Compute Pure 24-Hour Stopwatch Activity Timeline Data (Strictly Verified Stopwatch Logs)
   const timelineData = useMemo(() => {
     return filteredAppliances.map((app) => {
       const sessionBlocks: TimelineSessionBlock[] = [];
 
-      // 1. Logs for this appliance that have a slice on this date
+      // 1. Finished/Logged Stopwatch Sessions for this appliance that have a slice on this date
       (logs || []).forEach((log) => {
         if (log.appliance_id !== app.id) return;
         const start = new Date(log.started_at);
@@ -825,7 +700,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         }
       });
 
-      // 2. If viewing today and appliance is currently running stopwatch
+      // 2. If viewing today and appliance is currently running a live stopwatch
       if (isSelectedToday && app.is_currently_on && app.last_turned_on_at) {
         const start = new Date(app.last_turned_on_at);
         const now = new Date();
@@ -845,72 +720,13 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
             kwh: liveKwh,
             cost: liveCost,
             startTimeStr: matchingSlice.startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            endTimeStr: "LIVE RUNNING",
+            endTimeStr: "LIVE ACTIVE",
           });
         }
       }
 
-      // 3. Routine / Extra Manual hours allocation into non-overlapping free time slots
-      const recordedDayHours = Math.max(0, Math.min(24, usageState[app.id]?.hours || 0));
-      const stopwatchHoursSum = sessionBlocks.reduce((acc, curr) => acc + curr.durationHours, 0);
-
-      const occupiedIntervals = sessionBlocks.map((s) => ({
-        startHour: s.startHour,
-        endHour: s.endHour,
-      }));
-
-      const preferredStartHour = app.start_hour !== undefined ? app.start_hour : 8;
-
-      if (recordedDayHours > stopwatchHoursSum + 0.05) {
-        const extraHours = Math.min(24 - stopwatchHoursSum, recordedDayHours - stopwatchHoursSum);
-        const freeSlots = allocateNonOverlappingSlots(occupiedIntervals, extraHours, preferredStartHour);
-
-        freeSlots.forEach((slot, idx) => {
-          const duration = Math.max(0.001, slot.endHour - slot.startHour);
-          const kwh = calculateKwh(app.watts, duration, app.quantity || 1);
-          const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
-          const startH = Math.floor(slot.startHour);
-          const startM = Math.round((slot.startHour % 1) * 60);
-          const endH = Math.floor(slot.endHour);
-          const endM = Math.round((slot.endHour % 1) * 60);
-
-          sessionBlocks.push({
-            id: `manual-extra-${app.id}-${idx}`,
-            type: "manual_routine" as const,
-            startHour: slot.startHour,
-            endHour: slot.endHour,
-            durationHours: duration,
-            kwh,
-            cost,
-            startTimeStr: `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")} (Manual)`,
-            endTimeStr: `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`,
-          });
-        });
-      } else if (sessionBlocks.length === 0 && recordedDayHours > 0) {
-        const freeSlots = allocateNonOverlappingSlots([], recordedDayHours, preferredStartHour);
-
-        freeSlots.forEach((slot, idx) => {
-          const duration = Math.max(0.001, slot.endHour - slot.startHour);
-          const kwh = calculateKwh(app.watts, duration, app.quantity || 1);
-          const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
-          const startH = Math.floor(slot.startHour);
-          const startM = Math.round((slot.startHour % 1) * 60);
-          const endH = Math.floor(slot.endHour);
-          const endM = Math.round((slot.endHour % 1) * 60);
-
-          sessionBlocks.push({
-            id: `manual-${app.id}-${idx}`,
-            type: "manual_routine" as const,
-            startHour: slot.startHour,
-            endHour: slot.endHour,
-            durationHours: duration,
-            kwh,
-            cost,
-            startTimeStr: `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")} (Manual)`,
-            endTimeStr: `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`,
-          });
-        });
-      }
+      // Sort session blocks chronologically by startHour
+      sessionBlocks.sort((a, b) => a.startHour - b.startHour);
 
       const totalAppHours = Math.min(
         24,
@@ -923,34 +739,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         totalHours: totalAppHours,
       };
     });
-  }, [filteredAppliances, logs, dateKey, isSelectedToday, usageState]);
-
-  const handleAddEvent = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!eventTitle.trim()) return;
-
-    createEvent(
-      {
-        resource: "user_calendar_events",
-        values: {
-          title: eventTitle,
-          category: "appliance",
-          day: dayStr,
-          hour: startHour,
-          duration_hours: durationHours,
-          appliance_id: eventApplianceId || null,
-          is_recurring: false,
-        },
-      },
-      {
-        onSuccess: () => {
-          setEventTitle("");
-          setIsAddingEvent(false);
-          showSuccess("Schedule task added!");
-        },
-      }
-    );
-  };
+  }, [filteredAppliances, logs, dateKey, isSelectedToday]);
 
   return (
     <>
@@ -962,91 +751,81 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         slotProps={{
           paper: {
             sx: {
-              borderRadius: 3.5,
-              border: "1px solid",
-              borderColor: "rgba(129, 140, 248, 0.25)",
-              backdropFilter: "blur(24px)",
+              borderRadius: { xs: 3, sm: 4 },
+              bgcolor: "#0b0a26",
+              backgroundImage: "radial-gradient(ellipse at top, rgba(99, 102, 241, 0.15) 0%, rgba(11, 10, 38, 0.98) 70%)",
+              boxShadow: "0 32px 80px rgba(0, 0, 0, 0.8)",
+              border: "1px solid rgba(108, 122, 224, 0.3)",
+              color: "#ffffff",
+              overflow: "hidden",
               maxHeight: "92vh",
-              display: "flex",
-              flexDirection: "column",
             },
           },
         }}
       >
-        {/* Header */}
-        <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: { xs: 2.5, sm: 3 }, py: 2, flexShrink: 0 }}>
+        {/* MODAL HEADER */}
+        <DialogTitle sx={{ p: { xs: 2, sm: 2.5 }, pb: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <Box
               sx={{
-                width: 42,
-                height: 42,
+                width: 44,
+                height: 44,
                 borderRadius: 2.5,
-                bgcolor: "primary.main",
-                color: "#ffffff",
+                bgcolor: "rgba(99, 102, 241, 0.2)",
+                color: "primary.light",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                flexShrink: 0,
+                border: "1px solid rgba(99, 102, 241, 0.4)",
               }}
             >
-              <CalendarIcon sx={{ color: "#ffd54f", fontSize: 24 }} />
+              <CalendarIcon sx={{ fontSize: 24 }} />
             </Box>
             <Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: "-0.01em" }}>
+                <Typography variant="h6" sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}>
                   {formattedDate}
                 </Typography>
                 {hasLoggedData ? (
                   <Chip
-                    icon={<CheckCircleIcon sx={{ fontSize: "14px !important", color: "#34d399 !important" }} />}
                     label="Actual Logged"
                     size="small"
                     color="success"
-                    sx={{ fontWeight: 800, fontSize: "0.6875rem", height: 22 }}
+                    icon={<CheckIcon sx={{ fontSize: "14px !important" }} />}
+                    sx={{ height: 22, fontSize: "0.7rem", fontWeight: 800 }}
                   />
                 ) : (
                   <Chip
-                    label="Projected Estimate"
+                    label="Routine Baseline"
                     size="small"
                     variant="outlined"
-                    sx={{ fontWeight: 700, fontSize: "0.6875rem", height: 22 }}
-                  />
-                )}
-                {isDirty && (
-                  <Chip
-                    label="Unsaved Changes"
-                    size="small"
-                    color="warning"
-                    sx={{ fontWeight: 800, fontSize: "0.6875rem", height: 22 }}
+                    sx={{ height: 22, fontSize: "0.7rem", fontWeight: 700, borderColor: "rgba(255, 255, 255, 0.2)" }}
                   />
                 )}
               </Box>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                Track daily appliance hours, inspect 24h peak concurrency, and manage scheduled energy tasks.
+                Track daily appliance hours, inspect 24h stopwatch activity, and manage target energy quotas.
               </Typography>
             </Box>
           </Box>
-          <IconButton onClick={onClose} size="small" sx={{ border: "1px solid", borderColor: "divider" }}>
-            <CloseIcon fontSize="small" />
+          <IconButton onClick={onClose} size="small" sx={{ color: "text.secondary" }}>
+            <CloseIcon />
           </IconButton>
         </DialogTitle>
 
-        <Divider />
-
-        {/* Tabs */}
-        <Box sx={{ px: { xs: 2, sm: 3 }, borderBottom: 1, borderColor: "divider", bgcolor: "background.paper", flexShrink: 0 }}>
+        {/* TABS HEADER (2 STREAMLINED TABS) */}
+        <Box sx={{ px: { xs: 2, sm: 3 }, borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
           <Tabs
             value={activeTab}
             onChange={(_, val) => setActiveTab(val)}
-            variant="scrollable"
-            scrollButtons="auto"
             sx={{
-              minHeight: 46,
+              minHeight: 44,
               "& .MuiTab-root": {
-                minHeight: 46,
                 textTransform: "none",
-                fontWeight: 700,
-                fontSize: "0.8125rem",
+                fontWeight: 800,
+                fontSize: "0.85rem",
+                minHeight: 44,
+                py: 1,
               },
             }}
           >
@@ -1058,18 +837,13 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
             <Tab
               icon={<TimelineIcon fontSize="small" />}
               iconPosition="start"
-              label="24-Hour Activity Timeline"
-            />
-            <Tab
-              icon={<ListIcon fontSize="small" />}
-              iconPosition="start"
-              label={`Scheduled Tasks (${dayEvents.length})`}
+              label="24-Hour Stopwatch Activity"
             />
           </Tabs>
         </Box>
 
         <DialogContent sx={{ p: { xs: 2, sm: 2.75 }, display: "flex", flexDirection: "column", gap: 2.5, overflowY: "auto" }}>
-          {/* KPI Banner always visible */}
+          {/* KPI BANNER */}
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 1.5, flexShrink: 0 }}>
             {/* Day Bill Cost */}
             <Paper
@@ -1160,7 +934,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
             </Paper>
           </Box>
 
-          {/* TAB 0: DAILY USAGE LOG (MASTER-DETAIL LAYOUT) */}
+          {/* TAB 0: DAILY USAGE LOG (MASTER-DETAIL STUDIO LAYOUT WITH TARGET BUDGET QUOTA GAUGE) */}
           {activeTab === 0 && (() => {
             const renderTimeLoggingStudio = (app: UserAppliance) => {
               const state = usageState[app.id] || { hours: 0, notes: "" };
@@ -1168,6 +942,20 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
               const qty = app.quantity || 1;
               const kwh = calculateKwh(app.watts, hours, qty);
               const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
+
+              // Target Quota & Remaining Hours Telemetry
+              const targetHours = Number(app.hours_per_day) || 0;
+              const isContinuous = targetHours >= 24;
+              const remainingHours = Math.max(0, targetHours - hours);
+              const overHours = Math.max(0, hours - targetHours);
+              const remainingKwh = calculateKwh(app.watts, remainingHours, qty);
+              const remainingCost = calculateCost(remainingKwh, DEFAULT_EFFECTIVE_RATE);
+              const overKwh = calculateKwh(app.watts, overHours, qty);
+              const overCost = calculateCost(overKwh, DEFAULT_EFFECTIVE_RATE);
+              const targetKwh = calculateKwh(app.watts, targetHours, qty);
+              const targetCost = calculateCost(targetKwh, DEFAULT_EFFECTIVE_RATE);
+              const progressPct = targetHours > 0 ? Math.min(100, Math.round((hours / targetHours) * 100)) : 0;
+              const isOverBudget = !isContinuous && targetHours > 0 && hours > targetHours;
 
               // Compute specific logs recorded for this appliance today
               const appLogsToday: { log: ApplianceUsageLog; slice: any }[] = [];
@@ -1192,7 +980,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                   sx={{
                     p: { xs: 2, sm: 2.5 },
                     borderRadius: 3.5,
-                    borderColor: "rgba(108, 122, 224, 0.35)",
+                    borderColor: isOverBudget ? "rgba(239, 68, 68, 0.4)" : "rgba(108, 122, 224, 0.35)",
                     bgcolor: "rgba(15, 14, 58, 0.65)",
                     backdropFilter: "blur(12px)",
                     display: "flex",
@@ -1234,8 +1022,8 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                         p: 1.25,
                         px: 2,
                         borderRadius: 2.5,
-                        bgcolor: "rgba(99, 102, 241, 0.15)",
-                        border: "1px solid rgba(99, 102, 241, 0.35)",
+                        bgcolor: isOverBudget ? "rgba(239, 68, 68, 0.15)" : "rgba(99, 102, 241, 0.15)",
+                        border: isOverBudget ? "1px solid rgba(239, 68, 68, 0.35)" : "1px solid rgba(99, 102, 241, 0.35)",
                         textAlign: "right",
                         flexShrink: 0,
                       }}
@@ -1245,7 +1033,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                         sx={{
                           fontWeight: 900,
                           fontFamily: "monospace",
-                          color: hours > 0 ? "#ffd54f" : "text.secondary",
+                          color: isOverBudget ? "#f87171" : hours > 0 ? "#ffd54f" : "text.secondary",
                           lineHeight: 1.1,
                         }}
                       >
@@ -1257,6 +1045,86 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                     </Box>
                   </Box>
 
+                  {/* TARGET BUDGET & REMAINING QUOTA GAUGE BAR */}
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 1.75,
+                      borderRadius: 2.5,
+                      bgcolor: isOverBudget
+                        ? "rgba(239, 68, 68, 0.08)"
+                        : "rgba(99, 102, 241, 0.08)",
+                      borderColor: isOverBudget
+                        ? "rgba(239, 68, 68, 0.25)"
+                        : "rgba(99, 102, 241, 0.25)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1,
+                    }}
+                  >
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 800, color: "text.primary", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: 0.5 }}>
+                        🎯 Daily Target Quota: <strong>{targetHours > 0 ? `${targetHours.toFixed(1)} hrs` : "On-Demand"}</strong>
+                        {targetHours > 0 && <span style={{ opacity: 0.7 }}>(₱{targetCost.toFixed(2)} budget)</span>}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontWeight: 800,
+                          fontFamily: "monospace",
+                          color: isOverBudget ? "#f87171" : "primary.light",
+                          fontSize: "0.75rem",
+                        }}
+                      >
+                        {targetHours > 0 ? `${Math.round((hours / targetHours) * 100)}% consumed` : `${hours.toFixed(1)}h logged`}
+                      </Typography>
+                    </Box>
+
+                    {/* Progress Track */}
+                    {targetHours > 0 && (
+                      <LinearProgress
+                        variant="determinate"
+                        value={isContinuous ? 100 : progressPct}
+                        sx={{
+                          height: 8,
+                          borderRadius: 2,
+                          bgcolor: "rgba(255, 255, 255, 0.08)",
+                          "& .MuiLinearProgress-bar": {
+                            borderRadius: 2,
+                            bgcolor: isOverBudget
+                              ? "#ef4444"
+                              : isContinuous
+                              ? "#3b82f6"
+                              : "linear-gradient(90deg, #6366f1 0%, #34d399 100%)",
+                          },
+                        }}
+                      />
+                    )}
+
+                    {/* Telemetry Status Line */}
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+                      <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.7rem", fontWeight: 700 }}>
+                        ⏱️ Logged Today: <strong style={{ color: "#ffffff" }}>{hours.toFixed(1)} hrs</strong> ({kwh.toFixed(2)} kWh)
+                      </Typography>
+
+                      {isContinuous ? (
+                        <Chip
+                          label="🔄 24/7 Steady Background Load"
+                          size="small"
+                          sx={{ height: 20, fontSize: "0.625rem", fontWeight: 800, bgcolor: "rgba(59, 130, 246, 0.2)", color: "#93c5fd" }}
+                        />
+                      ) : isOverBudget ? (
+                        <Typography variant="caption" sx={{ color: "#f87171", fontWeight: 800, fontSize: "0.72rem", display: "flex", alignItems: "center", gap: 0.5 }}>
+                          <WarningIcon sx={{ fontSize: 14 }} /> Exceeded target by +{overHours.toFixed(1)} hrs (+₱{overCost.toFixed(2)} over budget)
+                        </Typography>
+                      ) : targetHours > 0 ? (
+                        <Typography variant="caption" sx={{ color: "#34d399", fontWeight: 800, fontSize: "0.72rem" }}>
+                          ⏳ Remaining: {remainingHours.toFixed(1)} hrs (₱{remainingCost.toFixed(2)} budget left)
+                        </Typography>
+                      ) : null}
+                    </Box>
+                  </Paper>
+
                   {/* Logged Sessions (if any exist) */}
                   {hasSessionLogs && (
                     <Box sx={{ p: 1.5, borderRadius: 2.5, bgcolor: "rgba(0, 0, 0, 0.35)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
@@ -1264,7 +1132,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                         variant="caption"
                         sx={{ fontSize: "0.6875rem", fontWeight: 800, color: "primary.light", mb: 1, display: "flex", alignItems: "center", gap: 0.5 }}
                       >
-                        <ClockIcon sx={{ fontSize: 13 }} /> Logged Sessions on this Date:
+                        <ClockIcon sx={{ fontSize: 13 }} /> Logged Stopwatch Sessions on this Date:
                       </Typography>
                       <Box sx={{ display: "flex", gap: 0.75, flexWrap: "wrap", alignItems: "center" }}>
                         {appLogsToday.map(({ log, slice }) => {
@@ -1384,7 +1252,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                         onClick={() => handleHoursChange(app.id, app.hours_per_day || 8)}
                         sx={{ borderRadius: 2, fontWeight: 700, fontSize: "0.72rem", height: 34, textTransform: "none" }}
                       >
-                        Default ({app.hours_per_day || 8}h)
+                        Default Target ({app.hours_per_day || 8}h)
                       </Button>
                     </Box>
 
@@ -1457,236 +1325,195 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                       color="inherit"
                       startIcon={<ResetIcon />}
                       onClick={handleClearAll}
-                      sx={{ borderRadius: 2, fontWeight: 700, fontSize: "0.75rem" }}
+                      sx={{ borderRadius: 2, fontWeight: 700, fontSize: "0.75rem", opacity: 0.8 }}
                     >
                       Clear (0h)
                     </Button>
                   </Box>
 
-                  {/* Space / Tariff Filter */}
-                  <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
-                    <Chip
-                      label="All Spaces"
-                      size="small"
-                      clickable
-                      onClick={() => setSelectedSpaceFilter("all")}
-                      color={selectedSpaceFilter === "all" ? "primary" : "default"}
-                      variant={selectedSpaceFilter === "all" ? "filled" : "outlined"}
-                      sx={{ fontWeight: 700 }}
-                    />
-                    <Chip
-                      icon={<HomeIcon sx={{ fontSize: "14px !important" }} />}
-                      label="Residential"
-                      size="small"
-                      clickable
-                      onClick={() => setSelectedSpaceFilter("residential")}
-                      color={selectedSpaceFilter === "residential" ? "primary" : "default"}
-                      variant={selectedSpaceFilter === "residential" ? "filled" : "outlined"}
-                      sx={{ fontWeight: 700 }}
-                    />
-                    <Chip
-                      icon={<StoreIcon sx={{ fontSize: "14px !important" }} />}
-                      label="Commercial"
-                      size="small"
-                      clickable
-                      onClick={() => setSelectedSpaceFilter("commercial")}
-                      color={selectedSpaceFilter === "commercial" ? "secondary" : "default"}
-                      variant={selectedSpaceFilter === "commercial" ? "filled" : "outlined"}
-                      sx={{ fontWeight: 700 }}
-                    />
+                  {/* Tariff Space Filter */}
+                  <Box sx={{ display: "flex", gap: 0.75, alignItems: "center" }}>
+                    {["all", "residential", "commercial"].map((sp) => (
+                      <Chip
+                        key={sp}
+                        label={sp.charAt(0).toUpperCase() + sp.slice(1)}
+                        size="small"
+                        clickable
+                        onClick={() => setSelectedSpaceFilter(sp)}
+                        variant={selectedSpaceFilter === sp ? "filled" : "outlined"}
+                        color={selectedSpaceFilter === sp ? "primary" : "default"}
+                        sx={{ fontWeight: 800, fontSize: "0.7rem", height: 26 }}
+                      />
+                    ))}
                   </Box>
                 </Box>
 
-                {/* Search Input */}
-                <TextField
-                  size="small"
-                  fullWidth
-                  placeholder="Search appliances by name, room, or category..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon fontSize="small" sx={{ color: "text.secondary" }} />
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
-                />
-
                 {/* Master-Detail Layout */}
-                {filteredAppliances.length === 0 ? (
-                  <Paper variant="outlined" sx={{ p: 4, textAlign: "center", borderRadius: 3 }}>
-                    <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                      No appliances match your selected filters. Register appliances in your Inventory first!
-                    </Typography>
-                  </Paper>
-                ) : (
-                  <Grid container spacing={2.5}>
-                    {/* Master List (Left Column) */}
-                    <Grid size={{ xs: 12, md: 5 }}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 1.25,
-                          maxHeight: { md: 540 },
-                          overflowY: { md: "auto" },
-                          pr: { md: 0.5 },
-                        }}
-                      >
-                        {filteredAppliances.map((app) => {
-                          const state = usageState[app.id] || { hours: 0, notes: "" };
-                          const hours = state.hours;
-                          const qty = app.quantity || 1;
-                          const kwh = calculateKwh(app.watts, hours, qty);
-                          const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
-                          const isLive = Boolean(applianceStopwatchMap[app.id]?.isLive);
-                          const isSelected = selectedAppliance?.id === app.id;
-                          const hasHours = hours > 0;
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", md: "320px 1fr" },
+                    gap: 2,
+                    alignItems: "start",
+                  }}
+                >
+                  {/* Left Column: Appliance Selection List */}
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 3,
+                      bgcolor: "rgba(15, 14, 58, 0.4)",
+                      borderColor: "rgba(108, 122, 224, 0.2)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1,
+                      maxHeight: { xs: "auto", md: "520px" },
+                      overflowY: "auto",
+                    }}
+                  >
+                    {/* Search Bar */}
+                    <TextField
+                      size="small"
+                      placeholder="Search appliances..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <SearchIcon fontSize="small" sx={{ color: "text.secondary" }} />
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 2,
+                          height: 34,
+                          fontSize: "0.8rem",
+                          bgcolor: "rgba(0, 0, 0, 0.3)",
+                        },
+                      }}
+                    />
 
-                          return (
-                            <Box key={app.id} sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                              <Paper
-                                onClick={() => setSelectedApplianceId(app.id)}
-                                variant="outlined"
+                    {/* Appliance Items */}
+                    {filteredAppliances.length === 0 ? (
+                      <Typography variant="caption" sx={{ color: "text.secondary", textAlign: "center", py: 3 }}>
+                        No appliances found.
+                      </Typography>
+                    ) : (
+                      filteredAppliances.map((app) => {
+                        const isSelected = selectedAppliance?.id === app.id;
+                        const state = usageState[app.id] || { hours: 0, notes: "" };
+                        const hours = state.hours;
+                        const cost = calculateCost(calculateKwh(app.watts, hours, app.quantity || 1), DEFAULT_EFFECTIVE_RATE);
+                        const isLive = Boolean(applianceStopwatchMap[app.id]?.isLive);
+                        const targetHours = Number(app.hours_per_day) || 0;
+                        const isOver = targetHours > 0 && targetHours < 24 && hours > targetHours;
+
+                        return (
+                          <Paper
+                            key={app.id}
+                            variant="outlined"
+                            onClick={() => setSelectedApplianceId(app.id)}
+                            sx={{
+                              p: 1.25,
+                              borderRadius: 2.5,
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              gap: 1,
+                              bgcolor: isSelected
+                                ? "rgba(99, 102, 241, 0.2)"
+                                : "rgba(255, 255, 255, 0.02)",
+                              borderColor: isSelected
+                                ? "primary.main"
+                                : isOver
+                                ? "rgba(239, 68, 68, 0.4)"
+                                : "rgba(255, 255, 255, 0.06)",
+                              transition: "all 0.15s ease",
+                              "&:hover": {
+                                bgcolor: "rgba(99, 102, 241, 0.12)",
+                              },
+                            }}
+                          >
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+                              <Box
                                 sx={{
-                                  p: 1.5,
-                                  borderRadius: 3,
-                                  cursor: "pointer",
-                                  borderColor: isSelected
-                                    ? "primary.main"
-                                    : hasHours
-                                    ? "rgba(99, 102, 241, 0.4)"
-                                    : "rgba(108, 122, 224, 0.2)",
-                                  bgcolor: isSelected
-                                    ? "rgba(99, 102, 241, 0.16)"
-                                    : hasHours
-                                    ? "rgba(99, 102, 241, 0.06)"
-                                    : "rgba(15, 14, 58, 0.4)",
-                                  boxShadow: isSelected ? "0 0 16px rgba(99, 102, 241, 0.3)" : "none",
-                                  transition: "all 0.2s ease",
+                                  width: 32,
+                                  height: 32,
+                                  borderRadius: 2,
+                                  bgcolor: hours > 0 ? "rgba(99, 102, 241, 0.2)" : "rgba(255, 255, 255, 0.05)",
+                                  color: hours > 0 ? "primary.light" : "text.secondary",
                                   display: "flex",
                                   alignItems: "center",
-                                  justifyContent: "space-between",
-                                  gap: 1.5,
-                                  "&:hover": {
-                                    borderColor: "primary.light",
-                                    bgcolor: isSelected ? "rgba(99, 102, 241, 0.2)" : "rgba(99, 102, 241, 0.1)",
-                                    transform: "translateX(2px)",
-                                  },
+                                  justifyContent: "center",
+                                  flexShrink: 0,
                                 }}
                               >
-                                {/* Left: Appliance Icon & Name */}
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, minWidth: 0 }}>
-                                  <Box
-                                    sx={{
-                                      width: 36,
-                                      height: 36,
-                                      borderRadius: 2,
-                                      bgcolor: isSelected ? "primary.main" : "rgba(255, 255, 255, 0.06)",
-                                      color: isSelected ? "#ffffff" : "primary.light",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      flexShrink: 0,
-                                    }}
-                                  >
-                                    <BoltIcon sx={{ fontSize: 20 }} />
-                                  </Box>
-                                  <Box sx={{ minWidth: 0 }}>
-                                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "nowrap" }}>
-                                      <Typography noWrap variant="body2" sx={{ fontWeight: 800, color: "text.primary" }}>
-                                        {app.name}
-                                      </Typography>
-                                      {isLive && (
-                                        <Chip label="LIVE" size="small" color="success" sx={{ height: 16, fontSize: "0.55rem", fontWeight: 800 }} />
-                                      )}
-                                    </Box>
-                                    <Typography noWrap variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
-                                      {app.category} • {app.watts}W {app.room_location ? `(${app.room_location})` : ""}
-                                    </Typography>
-                                  </Box>
+                                <BoltIcon fontSize="small" />
+                              </Box>
+                              <Box sx={{ minWidth: 0 }}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                  <Typography noWrap variant="body2" sx={{ fontWeight: 800, fontSize: "0.82rem" }}>
+                                    {app.name}
+                                  </Typography>
+                                  {isLive && (
+                                    <Chip label="LIVE" size="small" color="success" sx={{ height: 16, fontSize: "0.5625rem", fontWeight: 900 }} />
+                                  )}
                                 </Box>
-
-                                {/* Right: Runtime & Peso Tag */}
-                                <Box sx={{ textAlign: "right", flexShrink: 0, display: "flex", alignItems: "center", gap: 1 }}>
-                                  <Box>
-                                    <Typography
-                                      variant="body2"
-                                      sx={{
-                                        fontWeight: 800,
-                                        fontFamily: "monospace",
-                                        color: hasHours ? "#ffd54f" : "text.secondary",
-                                        fontSize: "0.85rem",
-                                        lineHeight: 1.2,
-                                      }}
-                                    >
-                                      {hasHours ? `₱${cost.toFixed(2)}` : "0.0h"}
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
-                                      {hasHours ? `${hours.toFixed(1)}h` : "Unlogged"}
-                                    </Typography>
-                                  </Box>
-                                  <ChevronRightIcon
-                                    sx={{
-                                      fontSize: 18,
-                                      color: isSelected ? "primary.main" : "text.secondary",
-                                      transform: { xs: isSelected ? "rotate(90deg)" : "none", md: "none" },
-                                      transition: "transform 0.2s ease",
-                                    }}
-                                  />
-                                </Box>
-                              </Paper>
-
-                              {/* Mobile Inline Dropdown Expansion (< md) */}
-                              <Box sx={{ display: { xs: "block", md: "none" } }}>
-                                <Collapse in={isSelected} unmountOnExit timeout={200}>
-                                  <Box sx={{ pt: 1, pb: 0.5 }}>
-                                    {renderTimeLoggingStudio(app)}
-                                  </Box>
-                                </Collapse>
+                                <Typography noWrap variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
+                                  {app.category} • {app.watts}W {app.room_location ? `(${app.room_location})` : ""}
+                                </Typography>
                               </Box>
                             </Box>
-                          );
-                        })}
-                      </Box>
-                    </Grid>
 
-                    {/* Detail Studio (Right Column on Desktop md+) */}
-                    <Grid size={{ xs: 12, md: 7 }} sx={{ display: { xs: "none", md: "block" } }}>
-                      <Box sx={{ position: "sticky", top: 16 }}>
-                        {selectedAppliance ? (
-                          renderTimeLoggingStudio(selectedAppliance)
-                        ) : (
-                          <Paper variant="outlined" sx={{ p: 4, textAlign: "center", borderRadius: 3.5, bgcolor: "rgba(15, 14, 58, 0.4)" }}>
-                            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                              Select an appliance from the list to log daily hours.
-                            </Typography>
+                            <Box sx={{ textAlign: "right", flexShrink: 0 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 900, fontFamily: "monospace", color: isOver ? "#f87171" : hours > 0 ? "#ffd54f" : "text.secondary", fontSize: "0.82rem" }}>
+                                ₱{cost.toFixed(2)}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
+                                {hours.toFixed(1)}h
+                              </Typography>
+                            </Box>
                           </Paper>
-                        )}
-                      </Box>
-                    </Grid>
-                  </Grid>
-                )}
+                        );
+                      })
+                    )}
+                  </Paper>
+
+                  {/* Right Column: Selected Appliance Logging Studio */}
+                  <Box>
+                    {selectedAppliance ? (
+                      renderTimeLoggingStudio(selectedAppliance)
+                    ) : (
+                      <Paper variant="outlined" sx={{ p: 4, textAlign: "center", borderRadius: 3.5, bgcolor: "rgba(15, 14, 58, 0.4)" }}>
+                        <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                          Select an appliance from the list to adjust its operating hours.
+                        </Typography>
+                      </Paper>
+                    )}
+                  </Box>
+                </Box>
               </Box>
             );
           })()}
 
-          {/* TAB 1: 24-HOUR DAY ACTIVITY & STOPWATCH TIMELINE */}
+          {/* TAB 1: 24-HOUR PURE STOPWATCH ACTIVITY TIMELINE */}
           {activeTab === 1 && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <Card sx={{ p: 2.5, borderRadius: 3 }}>
                 {/* Header & Legend */}
                 <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "flex-start", sm: "center" }, justifyContent: "space-between", gap: 1.5, mb: 2 }}>
                   <Box>
                     <Typography variant="subtitle1" sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1 }}>
                       <TimelineIcon sx={{ color: "primary.main" }} />
-                      24-Hour Activity & Stopwatch Timeline
+                      24-Hour Stopwatch Activity Timeline
                     </Typography>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                      Exact session blocks throughout the day (00:00 – 24:00) with real-time stopwatch metering
+                      Exact metered sessions recorded via stopwatch (00:00 – 24:00)
                     </Typography>
                   </Box>
 
@@ -1695,19 +1522,13 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                       <Box sx={{ width: 10, height: 10, borderRadius: 1, bgcolor: "#34d399", animation: "pulse 1.5s infinite" }} />
                       <Typography variant="caption" sx={{ fontWeight: 700, color: "#34d399", fontSize: "0.6875rem" }}>
-                        Live Running Stopwatch
+                        Live Running Stopwatch (Present)
                       </Typography>
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                       <Box sx={{ width: 10, height: 10, borderRadius: 1, bgcolor: "#6366f1" }} />
                       <Typography variant="caption" sx={{ fontWeight: 700, color: "#818cf8", fontSize: "0.6875rem" }}>
-                        Logged Session
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                      <Box sx={{ width: 10, height: 10, borderRadius: 1, bgcolor: "rgba(168, 85, 247, 0.6)" }} />
-                      <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", fontSize: "0.6875rem" }}>
-                        Daily Routine
+                        Logged Stopwatch Session (Past)
                       </Typography>
                     </Box>
                   </Box>
@@ -1763,7 +1584,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                               sx={{ height: 18, fontSize: "0.625rem", fontWeight: 700 }}
                             />
                             <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
-                              {totalHours > 0 ? `${totalHours.toFixed(1)}h total` : "Inactive"}
+                              {totalHours > 0 ? `${totalHours.toFixed(1)}h metered` : "No stopwatch logs"}
                             </Typography>
                           </Box>
                         </Box>
@@ -1802,7 +1623,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                           {sessions.length === 0 ? (
                             <Box sx={{ height: "100%", display: "flex", alignItems: "center", px: 2 }}>
                               <Typography variant="caption" sx={{ color: "text.secondary", opacity: 0.4, fontSize: "0.6875rem" }}>
-                                No activity recorded on this day
+                                No stopwatch sessions recorded on this day
                               </Typography>
                             </Box>
                           ) : (
@@ -1810,7 +1631,6 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                               const left = (session.startHour / 24) * 100;
                               const width = Math.max(1.5, (session.durationHours / 24) * 100);
                               const isLiveBlock = session.type === "live_stopwatch";
-                              const isManual = session.type === "manual_routine";
 
                               return (
                                 <Tooltip
@@ -1819,7 +1639,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                   title={
                                     <Box sx={{ p: 0.5 }}>
                                       <Typography variant="caption" sx={{ fontWeight: 800, color: isLiveBlock ? "#34d399" : "#a5b4fc", display: "block" }}>
-                                        {isLiveBlock ? "⏱️ LIVE RUNNING STOPWATCH" : isManual ? "🟣 Routine Log (Click to Edit)" : "🔵 Logged Session (Click to Edit / Delete)"}
+                                        {isLiveBlock ? "⏱️ LIVE RUNNING STOPWATCH" : "🔵 Logged Stopwatch Session (Click to Edit / Delete)"}
                                       </Typography>
                                       <Typography variant="caption" sx={{ display: "block" }}>
                                         Time: {session.startTimeStr} ➔ {session.endTimeStr}
@@ -1830,9 +1650,11 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                       <Typography variant="caption" sx={{ display: "block", color: "#ffd54f", fontWeight: 800, fontFamily: "monospace" }}>
                                         {session.kwh.toFixed(3)} kWh • ₱{session.cost.toFixed(2)}
                                       </Typography>
-                                      <Typography variant="caption" sx={{ display: "block", color: "primary.light", fontWeight: 800, mt: 0.5 }}>
-                                        👉 Click block to inspect / edit / delete
-                                      </Typography>
+                                      {!isLiveBlock && (
+                                        <Typography variant="caption" sx={{ display: "block", color: "primary.light", fontWeight: 800, mt: 0.5 }}>
+                                          👉 Click block to inspect / edit / delete
+                                        </Typography>
+                                      )}
                                     </Box>
                                   }
                                 >
@@ -1846,11 +1668,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                       bottom: 3,
                                       borderRadius: 1.5,
                                       cursor: "pointer",
-                                      bgcolor: isLiveBlock
-                                        ? "#10b981"
-                                        : isManual
-                                        ? "rgba(168, 85, 247, 0.7)"
-                                        : "#6366f1",
+                                      bgcolor: isLiveBlock ? "#10b981" : "#6366f1",
                                       border: isLiveBlock ? "1px solid #34d399" : "1px solid rgba(255, 255, 255, 0.2)",
                                       boxShadow: isLiveBlock ? "0 0 10px rgba(52, 211, 153, 0.6)" : "none",
                                       display: "flex",
@@ -1902,391 +1720,153 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                     Peak Simultaneous Demand: <strong>{peakWatts} W</strong> ({((peakWatts / 1000) * DEFAULT_EFFECTIVE_RATE).toFixed(2)} ₱/hr)
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                    💡 Hover over any colored session block to inspect metered kWh and peso cost.
+                    💡 Hover over any session block to inspect metered kWh and peso cost.
                   </Typography>
                 </Box>
               </Card>
-            </Box>
-          )}
-
-          {/* TAB 2: SCHEDULED TASKS */}
-          {activeTab === 2 && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                  Scheduled Tasks for {selectedDate.toLocaleDateString("en-US", { weekday: "long" })}s ({dayEvents.length})
-                </Typography>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => setIsAddingEvent(!isAddingEvent)}
-                  startIcon={<PlusIcon />}
-                  sx={{ borderRadius: 2, fontWeight: 700 }}
-                >
-                  {isAddingEvent ? "Cancel" : "Add Task"}
-                </Button>
-              </Box>
-
-              {isAddingEvent && (
-                <Paper variant="outlined" sx={{ p: 2, borderRadius: 2.5 }}>
-                  <form onSubmit={handleAddEvent}>
-                    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
-                      <TextField
-                        required
-                        fullWidth
-                        size="small"
-                        label="Event / Task Title"
-                        value={eventTitle}
-                        onChange={(e) => setEventTitle(e.target.value)}
-                        placeholder="e.g. Weekend Laundry Cycle"
-                      />
-                      <TextField
-                        select
-                        fullWidth
-                        size="small"
-                        label="Associated Appliance (Optional)"
-                        value={eventApplianceId}
-                        onChange={(e) => setEventApplianceId(e.target.value)}
-                      >
-                        <MenuItem value="">Custom / Manual Draw</MenuItem>
-                        {appliances.map((app) => (
-                          <MenuItem key={app.id} value={app.id}>
-                            {app.name} ({app.watts}W)
-                          </MenuItem>
-                        ))}
-                      </TextField>
-                      <TextField
-                        select
-                        fullWidth
-                        size="small"
-                        label="Start Hour"
-                        value={startHour}
-                        onChange={(e) => setStartHour(Number(e.target.value))}
-                      >
-                        {Array.from({ length: 24 }).map((_, h) => (
-                          <MenuItem key={h} value={h}>
-                            {h % 12 === 0 ? 12 : h % 12} {h >= 12 ? "PM" : "AM"}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-                      <TextField
-                        type="number"
-                        fullWidth
-                        size="small"
-                        label="Duration (Hours)"
-                        value={durationHours}
-                        onChange={(e) => setDurationHours(Number(e.target.value) || 1)}
-                      />
-                      <Box sx={{ gridColumn: { xs: "1", sm: "1 / -1" }, display: "flex", justifyContent: "flex-end" }}>
-                        <Button type="submit" variant="contained" size="small" disabled={isCreatingEvent} sx={{ fontWeight: 800 }}>
-                          Schedule Task
-                        </Button>
-                      </Box>
-                    </Box>
-                  </form>
-                </Paper>
-              )}
-
-              {dayEvents.length === 0 ? (
-                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", textAlign: "center", py: 3 }}>
-                  No scheduled tasks for this day. Add laundry, baking, or aircon routines!
-                </Typography>
-              ) : (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  {dayEvents.map((ev) => {
-                    const isEditingThis = editingEventId === ev.id;
-                    if (isEditingThis) {
-                      return (
-                        <Paper
-                          key={ev.id}
-                          variant="outlined"
-                          sx={{ p: 2, borderRadius: 2.5, bgcolor: "rgba(99, 102, 241, 0.08)", borderColor: "primary.main", display: "flex", flexDirection: "column", gap: 1.5 }}
-                        >
-                          <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.light" }}>
-                            Edit Scheduled Task
-                          </Typography>
-                          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
-                            <TextField
-                              size="small"
-                              label="Task Title"
-                              value={editEventTitle}
-                              onChange={(e) => setEditEventTitle(e.target.value)}
-                              fullWidth
-                            />
-                            <TextField
-                              select
-                              size="small"
-                              label="Associated Appliance"
-                              value={editEventApplianceId}
-                              onChange={(e) => setEditEventApplianceId(e.target.value)}
-                              fullWidth
-                            >
-                              <MenuItem value="">Custom / Manual Draw</MenuItem>
-                              {appliances.map((app) => (
-                                <MenuItem key={app.id} value={app.id}>
-                                  {app.name} ({app.watts}W)
-                                </MenuItem>
-                              ))}
-                            </TextField>
-                            <TextField
-                              select
-                              size="small"
-                              label="Start Hour"
-                              value={editEventHour}
-                              onChange={(e) => setEditEventHour(Number(e.target.value))}
-                              fullWidth
-                            >
-                              {Array.from({ length: 24 }).map((_, h) => (
-                                <MenuItem key={h} value={h}>
-                                  {h % 12 === 0 ? 12 : h % 12} {h >= 12 ? "PM" : "AM"}
-                                </MenuItem>
-                              ))}
-                            </TextField>
-                            <TextField
-                              type="number"
-                              size="small"
-                              label="Duration (Hours)"
-                              value={editEventDuration}
-                              onChange={(e) => setEditEventDuration(Math.max(0.5, Number(e.target.value) || 1))}
-                              fullWidth
-                            />
-                          </Box>
-                          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
-                            <Button size="small" onClick={handleCancelEditEvent}>
-                              Cancel
-                            </Button>
-                            <Button
-                              variant="contained"
-                              size="small"
-                              onClick={() => handleSaveEventEdit(ev.id)}
-                              disabled={isUpdatingEvent}
-                              sx={{ fontWeight: 800 }}
-                            >
-                              {isUpdatingEvent ? "Saving..." : "Save Changes"}
-                            </Button>
-                          </Box>
-                        </Paper>
-                      );
-                    }
-
-                    return (
-                      <Paper
-                        key={ev.id}
-                        variant="outlined"
-                        sx={{ p: 1.5, borderRadius: 2.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}
-                      >
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                            {ev.title}
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                            {ev.hour % 12 === 0 ? 12 : ev.hour % 12} {ev.hour >= 12 ? "PM" : "AM"} • {ev.duration_hours}h duration
-                          </Typography>
-                        </Box>
-
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={() => handleStartEditEvent(ev)}
-                            title="Edit Task"
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => {
-                              deleteEvent({
-                                resource: "user_calendar_events",
-                                id: ev.id,
-                              });
-                            }}
-                            title="Delete Task"
-                          >
-                            <TrashIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      </Paper>
-                    );
-                  })}
-                </Box>
-              )}
             </Box>
           )}
         </DialogContent>
 
         <Divider />
 
-        {/* Footer Dialog Actions */}
-        <DialogActions sx={{ p: 2, px: 3, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-          <Button variant="outlined" onClick={onClose} sx={{ borderRadius: 2, fontWeight: 700 }}>
+        {/* MODAL FOOTER */}
+        <DialogActions sx={{ p: { xs: 2, sm: 2.5 }, pt: 1.5, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 1.5 }}>
+          <Button variant="outlined" onClick={onClose} sx={{ borderRadius: 2.5, fontWeight: 700 }}>
             Close
           </Button>
 
-          {activeTab === 0 && (
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={isSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-              onClick={handleSaveUsage}
-              disabled={isSaving}
-              sx={{ borderRadius: 2, fontWeight: 800, px: 3 }}
-            >
-              {isSaving ? "Saving..." : isDirty ? "Save Day Log *" : "Saved (Save Again)"}
-            </Button>
-          )}
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={isSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+            onClick={handleSaveUsage}
+            disabled={isSaving}
+            sx={{
+              borderRadius: 2.5,
+              fontWeight: 800,
+              px: 3,
+              boxShadow: "0 4px 14px rgba(99, 102, 241, 0.4)",
+            }}
+          >
+            {isSaving ? "Saving..." : isDirty ? "Save Daily Log" : "Saved (Save Again)"}
+          </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Log Past Time Range Dialog */}
-      {selectedApplianceForPastSession && (
-        <Dialog
-          open={isPastSessionModalOpen}
-          onClose={() => setIsPastSessionModalOpen(false)}
-          maxWidth="sm"
-          fullWidth
-          slotProps={{ paper: { sx: { borderRadius: 3, p: 1 } } }}
-        >
-          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.5, fontWeight: 800 }}>
-            <TimerIcon sx={{ color: "primary.main", fontSize: 28 }} />
-            Log Past Time Range
-          </DialogTitle>
-          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              Record an exact runtime window for <strong>{selectedApplianceForPastSession.name}</strong> ({selectedApplianceForPastSession.watts}W). Overnight sessions will automatically be split at 12:00 AM midnight across spanned dates!
-            </Typography>
-
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
-              <TextField
-                label="Start Date & Time"
-                type="datetime-local"
-                size="small"
-                fullWidth
-                value={pastStartDateTime}
-                onChange={(e) => setPastStartDateTime(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-              <TextField
-                label="End Date & Time"
-                type="datetime-local"
-                size="small"
-                fullWidth
-                value={pastEndDateTime}
-                onChange={(e) => setPastEndDateTime(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-            </Box>
-
-            {/* Dynamic Multi-Day Splitting Preview */}
-            {pastSessionSlices.length > 0 ? (
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2.5, bgcolor: "rgba(0,0,0,0.2)" }}>
-                <Typography variant="caption" sx={{ fontWeight: 800, color: "text.primary", mb: 1, display: "block" }}>
-                  🗓️ Smart Midnight Calendar Distribution ({pastSessionSlices.length} Day{pastSessionSlices.length > 1 ? "s" : ""} Spanned):
-                </Typography>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
-                  {pastSessionSlices.map((slice) => {
-                    const sliceKwh = calculateKwh(selectedApplianceForPastSession.watts, slice.hours, selectedApplianceForPastSession.quantity || 1);
-                    const sliceCost = calculateCost(sliceKwh, DEFAULT_EFFECTIVE_RATE);
-                    const startStr = slice.startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-                    const endStr = slice.endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-                    return (
-                      <Box
-                        key={slice.dateKey}
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          px: 1.5,
-                          py: 0.75,
-                          borderRadius: 1.5,
-                          bgcolor: "rgba(255, 255, 255, 0.04)",
-                          fontSize: "0.75rem",
-                        }}
-                      >
-                        <Box>
-                          <Typography variant="caption" sx={{ fontWeight: 800, display: "block" }}>
-                            📅 {slice.dateKey}
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
-                            {startStr} – {endStr}
-                          </Typography>
-                        </Box>
-                        <Typography variant="caption" sx={{ color: "#ffd54f", fontWeight: 800, fontFamily: "monospace" }}>
-                          {slice.hours.toFixed(2)} hrs • {sliceKwh.toFixed(3)} kWh • ₱{sliceCost.toFixed(2)}
-                        </Typography>
-                      </Box>
-                    );
-                  })}
-                </Box>
-
-                <Divider sx={{ my: 1.5, borderColor: "rgba(255,255,255,0.1)" }} />
-
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography variant="caption" sx={{ fontWeight: 800 }}>
-                    Total Runtime & Incurred Cost:
-                  </Typography>
-                  {(() => {
-                    const totalH = pastSessionSlices.reduce((acc, s) => acc + s.hours, 0);
-                    const totalK = calculateKwh(selectedApplianceForPastSession.watts, totalH, selectedApplianceForPastSession.quantity || 1);
-                    const totalC = calculateCost(totalK, DEFAULT_EFFECTIVE_RATE);
-                    return (
-                      <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "#34d399" }}>
-                        {totalH.toFixed(2)} hrs ({totalK.toFixed(3)} kWh • ₱{totalC.toFixed(2)})
-                      </Typography>
-                    );
-                  })()}
-                </Box>
-              </Paper>
-            ) : (
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: "rgba(239, 68, 68, 0.1)", borderColor: "rgba(239, 68, 68, 0.3)" }}>
-                <Typography variant="caption" sx={{ color: "error.main", fontWeight: 700 }}>
-                  Please select an End Time that is after the Start Time.
-                </Typography>
-              </Paper>
-            )}
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button onClick={() => setIsPastSessionModalOpen(false)} color="inherit" sx={{ fontWeight: 700 }}>
-              Cancel
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleSavePastSession}
-              disabled={isSavingPastSession || pastSessionSlices.length === 0}
-              startIcon={isSavingPastSession ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-              sx={{ fontWeight: 800, borderRadius: 2 }}
-            >
-              {isSavingPastSession ? "Recording..." : "Save Past Session"}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      )}
-
-      {/* Routine Defaults Autofill Modal across Date Ranges */}
+      {/* Routine Autofill Modal */}
       <RoutineAutofillModal
         isOpen={isRoutineModalOpen}
         onClose={() => setIsRoutineModalOpen(false)}
         currentSelectedDate={selectedDate}
         appliances={appliances}
-        spaces={spaces}
-        onApplyToCurrentDay={handleApplyRoutineToCurrentDay}
+        onApplyToCurrentDay={() => {
+          appliances.forEach((app) => {
+            handleHoursChange(app.id, app.hours_per_day || 0);
+          });
+          showInfo("Loaded routine baseline hours.");
+        }}
         onBatchSaved={() => {
-          handleApplyRoutineToCurrentDay();
-          setIsDirty(false);
           if (onUsageSaved) onUsageSaved();
+          onClose();
         }}
       />
 
-      {/* Interactive Timeline Block Inspector & Editor Dialog */}
+      {/* Past Session Range Modal */}
+      {isPastSessionModalOpen && selectedApplianceForPastSession && (
+        <Dialog
+          open={isPastSessionModalOpen}
+          onClose={() => setIsPastSessionModalOpen(false)}
+          fullWidth
+          maxWidth="xs"
+          slotProps={{
+            paper: {
+              sx: {
+                borderRadius: 3.5,
+                bgcolor: "#0f0e3a",
+                border: "1px solid rgba(108, 122, 224, 0.4)",
+                boxShadow: "0 24px 64px rgba(0, 0, 0, 0.6)",
+                color: "#ffffff",
+                p: 1,
+              },
+            },
+          }}
+        >
+          <DialogTitle sx={{ pb: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>
+                Log Past Session
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                {selectedApplianceForPastSession.name} ({selectedApplianceForPastSession.watts}W)
+              </Typography>
+            </Box>
+            <IconButton size="small" onClick={() => setIsPastSessionModalOpen(false)}>
+              <CloseIcon sx={{ color: "text.secondary" }} />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1.5 }}>
+            <TextField
+              type="datetime-local"
+              label="Start Date & Time"
+              value={pastStartDateTime}
+              onChange={(e) => setPastStartDateTime(e.target.value)}
+              size="small"
+              fullWidth
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+            <TextField
+              type="datetime-local"
+              label="End Date & Time"
+              value={pastEndDateTime}
+              onChange={(e) => setPastEndDateTime(e.target.value)}
+              size="small"
+              fullWidth
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+
+            {pastSessionSlices.length > 0 && (
+              <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: "rgba(99, 102, 241, 0.1)" }}>
+                <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.light", display: "block" }}>
+                  Summary:
+                </Typography>
+                <Typography variant="caption" sx={{ display: "block", color: "text.secondary" }}>
+                  Spans {pastSessionSlices.length} calendar day(s)
+                </Typography>
+                {pastSessionSlices.map((s) => (
+                  <Typography key={s.dateKey} variant="caption" sx={{ display: "block", fontFamily: "monospace" }}>
+                    • {s.dateKey}: {s.hours.toFixed(2)}h ({calculateKwh(selectedApplianceForPastSession.watts, s.hours, selectedApplianceForPastSession.quantity || 1).toFixed(3)} kWh)
+                  </Typography>
+                ))}
+              </Paper>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button variant="outlined" size="small" onClick={() => setIsPastSessionModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleSavePastSession}
+              disabled={isSavingPastSession || pastSessionSlices.length === 0}
+              sx={{ fontWeight: 800 }}
+            >
+              {isSavingPastSession ? "Saving..." : "Save Session"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
+
+      {/* Selected Block Session Action Dialog */}
       {selectedBlockForAction && (
         <Dialog
           open={Boolean(selectedBlockForAction)}
           onClose={() => {
-            setSelectedBlockForAction(null);
-            setIsEditingBlockRange(false);
+            if (!isSavingBlockAction) {
+              setSelectedBlockForAction(null);
+              setIsEditingBlockRange(false);
+            }
           }}
           fullWidth
           maxWidth="sm"
@@ -2310,8 +1890,8 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                   width: 38,
                   height: 38,
                   borderRadius: 2,
-                  bgcolor: selectedBlockForAction.block.type === "live_stopwatch" ? "rgba(16, 185, 129, 0.2)" : selectedBlockForAction.block.type === "logged_session" ? "rgba(99, 102, 241, 0.2)" : "rgba(168, 85, 247, 0.2)",
-                  color: selectedBlockForAction.block.type === "live_stopwatch" ? "#34d399" : selectedBlockForAction.block.type === "logged_session" ? "#818cf8" : "#c084fc",
+                  bgcolor: selectedBlockForAction.block.type === "live_stopwatch" ? "rgba(16, 185, 129, 0.2)" : "rgba(99, 102, 241, 0.2)",
+                  color: selectedBlockForAction.block.type === "live_stopwatch" ? "#34d399" : "#818cf8",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -2324,7 +1904,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                   {selectedBlockForAction.appliance.name}
                 </Typography>
                 <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                  {selectedBlockForAction.appliance.watts}W • {selectedBlockForAction.block.type === "live_stopwatch" ? "Live Running Stopwatch" : selectedBlockForAction.block.type === "logged_session" ? "Timestamped Session Log" : "Daily Routine Slot"}
+                  {selectedBlockForAction.appliance.watts}W • {selectedBlockForAction.block.type === "live_stopwatch" ? "Live Running Stopwatch" : "Timestamped Stopwatch Session Log"}
                 </Typography>
               </Box>
             </Box>
@@ -2464,17 +2044,6 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                 sx={{ borderRadius: 2, fontWeight: 800 }}
               >
                 Delete Session Log
-              </Button>
-            ) : selectedBlockForAction.block.type === "manual_routine" ? (
-              <Button
-                color="error"
-                variant="outlined"
-                startIcon={<TrashIcon />}
-                onClick={handleDeleteBlockSession}
-                disabled={isSavingBlockAction}
-                sx={{ borderRadius: 2, fontWeight: 800 }}
-              >
-                Clear Routine Hours
               </Button>
             ) : selectedBlockForAction.block.type === "live_stopwatch" ? (
               <Button
