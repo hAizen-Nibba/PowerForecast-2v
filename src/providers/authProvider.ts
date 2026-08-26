@@ -135,32 +135,19 @@ export const authProvider: AuthProvider = {
         }
       }
 
-      // If session is null, it means Email Confirmation is ON and they need to verify.
+      // Unconditionally redirect to /verify-email to support UI demonstration requirements
+      // Regardless of whether Supabase Auto-Confirms or requires Email confirmation
       if (data?.user && data?.session) {
-        const activeUser = {
-          id: data.user.id,
-          email: data.user.email || trimmedEmail,
-          name: name?.trim() || data.user.user_metadata?.name || trimmedEmail.split("@")[0],
-          avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${trimmedEmail}`,
-          role: "authenticated",
-          householdType: householdType || "Residential (Meralco 230V)",
-        };
-        localStorage.setItem("powerforecast_active_user", JSON.stringify(activeUser));
-        devLog.info("Auth", "User registered successfully and logged in", activeUser);
-
-        return {
-          success: true,
-          redirectTo: "/dashboard",
-        };
+        // Sign out instantly so we don't accidentally leave them logged in if we force them to verification
+        await supabaseClient.auth.signOut();
       }
 
-      // Email confirmation is required, so do NOT set active user in localStorage
-      // and do NOT redirect to dashboard automatically.
-      devLog.info("Auth", "User registered. Email confirmation required.");
+      devLog.info("Auth", "User registered. Redirecting to verification page.");
       return {
         success: true,
+        successNotification: false,
         redirectTo: `/verify-email?email=${encodeURIComponent(trimmedEmail)}`,
-      };
+      } as any;
     } catch (err: any) {
       devLog.error("Auth", "Unexpected registration error:", err);
       return {
