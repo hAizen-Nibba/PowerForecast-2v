@@ -38,14 +38,31 @@ export const VerifyEmailPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // Retrieve the registration timestamp stamped by authProvider.register().
+    // We use this to ensure email_confirmed_at is genuinely newer than this signup.
+    // The timestamp guard is the sole protection against false-positive verification —
+    // no session exists when email confirmation is enabled so no signOut is needed here.
+    const registeredAt = parseInt(sessionStorage.getItem('powerforecast_registered_at') || '0', 10);
+
+    const isGenuinelyVerified = (confirmedAtStr: string | null | undefined): boolean => {
+      if (!confirmedAtStr) return false;
+      const confirmedMs = new Date(confirmedAtStr).getTime();
+      // Must be confirmed AFTER the registration moment (with a 2-second buffer for clock skew)
+      return confirmedMs > registeredAt - 2000;
+    };
+
     // ── 1. Supabase onAuthStateChange listener (same-tab redirect fallback) ──
     const { data: authListener } = supabaseClient.auth.onAuthStateChange(
       (event, session) => {
+        // Only treat this as a genuine verification if:
+        //   a) The Supabase event is SIGNED_IN or USER_UPDATED (not just any state change), AND
+        //   b) email_confirmed_at is present and was set AFTER this registration began.
+        // Removed plain 'SIGNED_IN' as a trigger by itself — that fires for any login.
         if (
-          event === "SIGNED_IN" ||
-          event === "USER_UPDATED" ||
-          session?.user?.email_confirmed_at
+          (event === "SIGNED_IN" || event === "USER_UPDATED") &&
+          isGenuinelyVerified(session?.user?.email_confirmed_at)
         ) {
+          sessionStorage.removeItem('powerforecast_registered_at');
           handleVerified();
         }
       }
@@ -55,7 +72,8 @@ export const VerifyEmailPage: React.FC = () => {
     const pollInterval = setInterval(async () => {
       try {
         const { data } = await supabaseClient.auth.getSession();
-        if (data?.session?.user?.email_confirmed_at) {
+        if (isGenuinelyVerified(data?.session?.user?.email_confirmed_at)) {
+          sessionStorage.removeItem('powerforecast_registered_at');
           handleVerified();
         }
       } catch {
@@ -69,6 +87,7 @@ export const VerifyEmailPage: React.FC = () => {
       channel = new BroadcastChannel(AUTH_CHANNEL);
       channel.onmessage = (event) => {
         if (event.data?.type === "VERIFICATION_SUCCESS") {
+          sessionStorage.removeItem('powerforecast_registered_at');
           handleVerified();
         }
       };
@@ -82,6 +101,7 @@ export const VerifyEmailPage: React.FC = () => {
         try {
           const payload = JSON.parse(event.newValue || "{}");
           if (payload.verified) {
+            sessionStorage.removeItem('powerforecast_registered_at');
             handleVerified();
           }
         } catch {
