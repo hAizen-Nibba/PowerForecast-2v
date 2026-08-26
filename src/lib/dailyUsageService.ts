@@ -83,13 +83,14 @@ export async function upsertDailyUsageRecord(params: {
   user_id?: string | null;
 }): Promise<DailyApplianceUsage | null> {
   const quantity = params.quantity || 1;
-  const kwh = calculateKwh(params.watts, params.hours_used, quantity);
+  const clampedHours = Math.max(0, Math.min(24, Number(params.hours_used.toFixed(2))));
+  const kwh = calculateKwh(params.watts, clampedHours, quantity);
   const cost = calculateCost(kwh, params.effectiveRate || DEFAULT_EFFECTIVE_RATE);
 
   const payload: Partial<DailyApplianceUsage> = {
     appliance_id: params.appliance_id,
     usage_date: params.usage_date,
-    hours_used: Number(params.hours_used.toFixed(2)),
+    hours_used: clampedHours,
     kwh_consumed: kwh,
     estimated_cost: cost,
     source: params.source || "manual",
@@ -115,7 +116,7 @@ export async function upsertDailyUsageRecord(params: {
       return null;
     }
 
-    devLog.info("DailyUsageService", `Saved daily usage: ${params.hours_used}h (${kwh} kWh / ₱${cost})`, data);
+    devLog.info("DailyUsageService", `Saved daily usage: ${clampedHours}h (${kwh} kWh / ₱${cost})`, data);
     return data as DailyApplianceUsage;
   } catch (err: any) {
     devLog.error("DailyUsageService", `Exception in upsertDailyUsageRecord: ${err?.message}`, err);
@@ -143,13 +144,14 @@ export async function batchSaveDailyUsage(
 
   const rows = entries.map((e) => {
     const qty = e.quantity || 1;
-    const kwh = calculateKwh(e.watts, e.hours_used, qty);
+    const clampedHours = Math.max(0, Math.min(24, Number(e.hours_used.toFixed(2))));
+    const kwh = calculateKwh(e.watts, clampedHours, qty);
     const cost = calculateCost(kwh, e.effectiveRate || DEFAULT_EFFECTIVE_RATE);
 
     return {
       appliance_id: e.appliance_id,
       usage_date,
-      hours_used: Number(e.hours_used.toFixed(2)),
+      hours_used: clampedHours,
       kwh_consumed: kwh,
       estimated_cost: cost,
       source: e.source || "manual",
@@ -339,6 +341,114 @@ export function splitSessionAcrossDays(startTime: Date, endTime: Date): DaySessi
   return slices;
 }
 
+export interface TimeInterval {
+  startHour: number;
+  endHour: number;
+}
+
+/**
+ * Finds available non-overlapping time intervals throughout a 24-hour day (0 to 24)
+ * to place desired hours, prioritizing starting near preferredStartHour.
+ */
+export function allocateNonOverlappingSlots(
+  occupiedIntervals: TimeInterval[],
+  neededHours: number,
+  preferredStartHour: number = 8
+): TimeInterval[] {
+  if (neededHours <= 0.001) return [];
+
+  // Normalize occupied intervals and filter out zero/negative duration
+  const sortedOccupied = [...occupiedIntervals]
+    .map((iv) => ({
+      startHour: Math.max(0, Math.min(24, iv.startHour)),
+      endHour: Math.max(0, Math.min(24, iv.endHour)),
+    }))
+    .filter((iv) => iv.endHour > iv.startHour)
+    .sort((a, b) => a.startHour - b.startHour);
+
+  // Merge overlapping or contiguous occupied intervals
+  const mergedOccupied: TimeInterval[] = [];
+  for (const iv of sortedOccupied) {
+    if (mergedOccupied.length === 0) {
+      mergedOccupied.push({ ...iv });
+    } else {
+      const last = mergedOccupied[mergedOccupied.length - 1];
+      if (iv.startHour <= last.endHour + 0.001) {
+        last.endHour = Math.max(last.endHour, iv.endHour);
+      } else {
+        mergedOccupied.push({ ...iv });
+      }
+    }
+  }
+
+  // Find all free gaps in the 24-hour period [0, 24]
+  const freeGaps: TimeInterval[] = [];
+  let currentPos = 0;
+
+  for (const occ of mergedOccupied) {
+    if (occ.startHour > currentPos + 0.001) {
+      freeGaps.push({ startHour: currentPos, endHour: occ.startHour });
+    }
+    currentPos = Math.max(currentPos, occ.endHour);
+  }
+  if (currentPos < 24 - 0.001) {
+    freeGaps.push({ startHour: currentPos, endHour: 24 });
+  }
+
+  if (freeGaps.length === 0) return [];
+
+  // Score free gaps based on proximity to preferredStartHour
+  const scoredGaps = freeGaps
+    .map((gap) => {
+      let dist = 0;
+      if (preferredStartHour < gap.startHour) {
+        dist = gap.startHour - preferredStartHour;
+      } else if (preferredStartHour >= gap.endHour) {
+        dist = preferredStartHour - gap.endHour + 24;
+      }
+      return { gap, dist };
+    })
+    .sort((a, b) => a.dist - b.dist);
+
+  let hoursRemaining = Math.min(24, neededHours);
+  const allocated: TimeInterval[] = [];
+
+  for (const { gap } of scoredGaps) {
+    if (hoursRemaining <= 0.001) break;
+
+    // If preferred start hour falls within this gap, start there
+    let start = gap.startHour;
+    if (preferredStartHour >= gap.startHour && preferredStartHour < gap.endHour) {
+      start = preferredStartHour;
+    }
+
+    const availableFromStart = gap.endHour - start;
+    const take = Math.min(hoursRemaining, availableFromStart);
+
+    if (take > 0.001) {
+      allocated.push({
+        startHour: start,
+        endHour: start + take,
+      });
+      hoursRemaining -= take;
+    }
+
+    // If space remains before preferredStartHour in this same gap:
+    if (hoursRemaining > 0.001 && start > gap.startHour) {
+      const takeBefore = Math.min(hoursRemaining, start - gap.startHour);
+      if (takeBefore > 0.001) {
+        allocated.push({
+          startHour: start - takeBefore,
+          endHour: start,
+        });
+        hoursRemaining -= takeBefore;
+      }
+    }
+  }
+
+  return allocated.sort((a, b) => a.startHour - b.startHour);
+}
+
 /**
  * Accumulates live stopwatch runtime into the daily usage table across midnight boundaries
  */
@@ -375,7 +485,7 @@ export async function accumulateLiveSessionDailyUsage(params: {
       const { data: existing } = await query.maybeSingle();
 
       const currentHours = existing ? Number(existing.hours_used || 0) : 0;
-      const totalHours = Number((currentHours + slice.hours).toFixed(2));
+      const totalHours = Math.max(0, Math.min(24, Number((currentHours + slice.hours).toFixed(2))));
       const kwh = calculateKwh(params.watts, totalHours, quantity);
       const cost = calculateCost(kwh, rate);
 

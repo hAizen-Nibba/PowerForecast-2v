@@ -55,6 +55,7 @@ import {
   splitSessionAcrossDays,
   accumulateLiveSessionDailyUsage,
   deductSessionDailyUsage,
+  allocateNonOverlappingSlots,
 } from "../../lib/dailyUsageService";
 import { supabaseClient } from "../../lib/supabaseClient";
 import { useToast } from "../common/ToastProvider";
@@ -660,48 +661,72 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         }
       }
 
-      // 3. Additive Hybrid: If user logged extra manual hours in addition to session logs
-      const manualHours = usageState[app.id]?.hours || 0;
+      // 3. Routine / Extra Manual hours allocation into non-overlapping free time slots
+      const recordedDayHours = Math.max(0, Math.min(24, usageState[app.id]?.hours || 0));
       const stopwatchHoursSum = sessionBlocks.reduce((acc, curr) => acc + curr.durationHours, 0);
 
-      if (manualHours > stopwatchHoursSum + 0.05) {
-        const extraManualHours = manualHours - stopwatchHoursSum;
-        const startH = app.start_hour !== undefined ? app.start_hour : 8;
-        const endH = Math.min(24, startH + extraManualHours);
-        const kwh = calculateKwh(app.watts, extraManualHours, app.quantity || 1);
-        const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
+      const occupiedIntervals = sessionBlocks.map((s) => ({
+        startHour: s.startHour,
+        endHour: s.endHour,
+      }));
 
-        sessionBlocks.push({
-          id: `manual-extra-${app.id}`,
-          type: "manual_routine" as const,
-          startHour: startH,
-          endHour: endH,
-          durationHours: extraManualHours,
-          kwh,
-          cost,
-          startTimeStr: `${String(startH).padStart(2, "0")}:00 (Manual)`,
-          endTimeStr: `${String(Math.floor(endH)).padStart(2, "0")}:${String(Math.round((endH % 1) * 60)).padStart(2, "0")}`,
+      const preferredStartHour = app.start_hour !== undefined ? app.start_hour : 8;
+
+      if (recordedDayHours > stopwatchHoursSum + 0.05) {
+        const extraHours = Math.min(24 - stopwatchHoursSum, recordedDayHours - stopwatchHoursSum);
+        const freeSlots = allocateNonOverlappingSlots(occupiedIntervals, extraHours, preferredStartHour);
+
+        freeSlots.forEach((slot, idx) => {
+          const duration = Math.max(0.001, slot.endHour - slot.startHour);
+          const kwh = calculateKwh(app.watts, duration, app.quantity || 1);
+          const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
+          const startH = Math.floor(slot.startHour);
+          const startM = Math.round((slot.startHour % 1) * 60);
+          const endH = Math.floor(slot.endHour);
+          const endM = Math.round((slot.endHour % 1) * 60);
+
+          sessionBlocks.push({
+            id: `manual-extra-${app.id}-${idx}`,
+            type: "manual_routine" as const,
+            startHour: slot.startHour,
+            endHour: slot.endHour,
+            durationHours: duration,
+            kwh,
+            cost,
+            startTimeStr: `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")} (Manual)`,
+            endTimeStr: `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`,
+          });
         });
-      } else if (sessionBlocks.length === 0 && manualHours > 0) {
-        const startH = app.start_hour !== undefined ? app.start_hour : 8;
-        const endH = Math.min(24, startH + manualHours);
-        const kwh = calculateKwh(app.watts, manualHours, app.quantity || 1);
-        const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
+      } else if (sessionBlocks.length === 0 && recordedDayHours > 0) {
+        const freeSlots = allocateNonOverlappingSlots([], recordedDayHours, preferredStartHour);
 
-        sessionBlocks.push({
-          id: `manual-${app.id}`,
-          type: "manual_routine" as const,
-          startHour: startH,
-          endHour: endH,
-          durationHours: manualHours,
-          kwh,
-          cost,
-          startTimeStr: `${String(startH).padStart(2, "0")}:00 (Manual)`,
-          endTimeStr: `${String(Math.floor(endH)).padStart(2, "0")}:${String(Math.round((endH % 1) * 60)).padStart(2, "0")}`,
+        freeSlots.forEach((slot, idx) => {
+          const duration = Math.max(0.001, slot.endHour - slot.startHour);
+          const kwh = calculateKwh(app.watts, duration, app.quantity || 1);
+          const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
+          const startH = Math.floor(slot.startHour);
+          const startM = Math.round((slot.startHour % 1) * 60);
+          const endH = Math.floor(slot.endHour);
+          const endM = Math.round((slot.endHour % 1) * 60);
+
+          sessionBlocks.push({
+            id: `manual-${app.id}-${idx}`,
+            type: "manual_routine" as const,
+            startHour: slot.startHour,
+            endHour: slot.endHour,
+            durationHours: duration,
+            kwh,
+            cost,
+            startTimeStr: `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")} (Manual)`,
+            endTimeStr: `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`,
+          });
         });
       }
 
-      const totalAppHours = sessionBlocks.reduce((acc, curr) => acc + curr.durationHours, 0);
+      const totalAppHours = Math.min(
+        24,
+        sessionBlocks.reduce((acc, curr) => acc + curr.durationHours, 0)
+      );
 
       return {
         appliance: app,
@@ -1656,9 +1681,15 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                           fontSize: "0.5625rem",
                                           fontWeight: 800,
                                           fontFamily: "monospace",
+                                          maxWidth: "100%",
+                                          overflow: "hidden",
+                                          textOverflow: "ellipsis",
+                                          px: 0.25,
                                         }}
                                       >
-                                        {session.startTimeStr}
+                                        {width > 16
+                                          ? session.startTimeStr
+                                          : `${String(Math.floor(session.startHour)).padStart(2, "0")}:${String(Math.round((session.startHour % 1) * 60)).padStart(2, "0")}`}
                                       </Typography>
                                     )}
                                   </Box>

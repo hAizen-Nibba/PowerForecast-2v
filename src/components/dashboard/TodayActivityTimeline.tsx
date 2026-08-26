@@ -20,6 +20,7 @@ import {
   calculateCost,
   DEFAULT_EFFECTIVE_RATE,
   splitSessionAcrossDays,
+  allocateNonOverlappingSlots,
 } from "../../lib/dailyUsageService";
 
 interface TodayActivityTimelineProps {
@@ -123,50 +124,75 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
         }
       }
 
-      // 3. Daily Routine / Manual Logged Hours
+      // 3. Daily Routine / Manual Logged Hours (Allocated to non-overlapping idle slots)
       const dayRecord = dailyUsage.find((d) => d.appliance_id === app.id);
-      const manualHours = Number(dayRecord?.hours_used) || 0;
+      const recordedDayHours = Math.max(0, Math.min(24, Number(dayRecord?.hours_used) || 0));
       const stopwatchHoursSum = sessionBlocks.reduce((acc, curr) => acc + curr.durationHours, 0);
 
-      if (manualHours > stopwatchHoursSum) {
-        const extraManualHours = manualHours - stopwatchHoursSum;
-        const startH = app.start_hour !== undefined ? app.start_hour : 8;
-        const endH = Math.min(24, startH + extraManualHours);
-        const routineKwh = calculateKwh(app.watts, extraManualHours, app.quantity || 1);
-        const routineCost = calculateCost(routineKwh, DEFAULT_EFFECTIVE_RATE);
+      const occupiedIntervals = sessionBlocks.map((s) => ({
+        startHour: s.startHour,
+        endHour: s.endHour,
+      }));
 
-        sessionBlocks.push({
-          id: `routine-${app.id}`,
-          type: "daily_routine",
-          startHour: startH,
-          endHour: endH,
-          durationHours: extraManualHours,
-          kwh: routineKwh,
-          cost: routineCost,
-          startTimeStr: `${String(startH).padStart(2, "0")}:00`,
-          endTimeStr: `${String(Math.floor(endH)).padStart(2, "0")}:${String(Math.round((endH % 1) * 60)).padStart(2, "0")}`,
+      const preferredStartHour = app.start_hour !== undefined ? app.start_hour : 8;
+
+      if (recordedDayHours > stopwatchHoursSum + 0.05) {
+        const extraHours = Math.min(24 - stopwatchHoursSum, recordedDayHours - stopwatchHoursSum);
+        const freeSlots = allocateNonOverlappingSlots(occupiedIntervals, extraHours, preferredStartHour);
+
+        freeSlots.forEach((slot, idx) => {
+          const duration = Math.max(0.001, slot.endHour - slot.startHour);
+          const routineKwh = calculateKwh(app.watts, duration, app.quantity || 1);
+          const routineCost = calculateCost(routineKwh, DEFAULT_EFFECTIVE_RATE);
+          const startH = Math.floor(slot.startHour);
+          const startM = Math.round((slot.startHour % 1) * 60);
+          const endH = Math.floor(slot.endHour);
+          const endM = Math.round((slot.endHour % 1) * 60);
+
+          sessionBlocks.push({
+            id: `routine-extra-${app.id}-${idx}`,
+            type: "daily_routine",
+            startHour: slot.startHour,
+            endHour: slot.endHour,
+            durationHours: duration,
+            kwh: routineKwh,
+            cost: routineCost,
+            startTimeStr: `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")}`,
+            endTimeStr: `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`,
+          });
         });
       } else if (sessionBlocks.length === 0 && app.hours_per_day > 0) {
         // Routine Baseline placeholder
-        const startH = app.start_hour !== undefined ? app.start_hour : 8;
-        const endH = Math.min(24, startH + app.hours_per_day);
-        const routineKwh = calculateKwh(app.watts, app.hours_per_day, app.quantity || 1);
-        const routineCost = calculateCost(routineKwh, DEFAULT_EFFECTIVE_RATE);
+        const baselineHours = Math.min(24, app.hours_per_day);
+        const freeSlots = allocateNonOverlappingSlots([], baselineHours, preferredStartHour);
 
-        sessionBlocks.push({
-          id: `baseline-${app.id}`,
-          type: "daily_routine",
-          startHour: startH,
-          endHour: endH,
-          durationHours: app.hours_per_day,
-          kwh: routineKwh,
-          cost: routineCost,
-          startTimeStr: `${String(startH).padStart(2, "0")}:00 (Scheduled)`,
-          endTimeStr: `${String(Math.floor(endH)).padStart(2, "0")}:${String(Math.round((endH % 1) * 60)).padStart(2, "0")}`,
+        freeSlots.forEach((slot, idx) => {
+          const duration = Math.max(0.001, slot.endHour - slot.startHour);
+          const routineKwh = calculateKwh(app.watts, duration, app.quantity || 1);
+          const routineCost = calculateCost(routineKwh, DEFAULT_EFFECTIVE_RATE);
+          const startH = Math.floor(slot.startHour);
+          const startM = Math.round((slot.startHour % 1) * 60);
+          const endH = Math.floor(slot.endHour);
+          const endM = Math.round((slot.endHour % 1) * 60);
+
+          sessionBlocks.push({
+            id: `baseline-${app.id}-${idx}`,
+            type: "daily_routine",
+            startHour: slot.startHour,
+            endHour: slot.endHour,
+            durationHours: duration,
+            kwh: routineKwh,
+            cost: routineCost,
+            startTimeStr: `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")} (Scheduled)`,
+            endTimeStr: `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`,
+          });
         });
       }
 
-      const totalDayHours = sessionBlocks.reduce((acc, curr) => acc + curr.durationHours, 0);
+      const totalDayHours = Math.min(
+        24,
+        sessionBlocks.reduce((acc, curr) => acc + curr.durationHours, 0)
+      );
 
       return {
         app,
