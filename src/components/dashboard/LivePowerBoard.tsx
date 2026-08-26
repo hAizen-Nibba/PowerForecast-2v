@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
@@ -51,7 +51,17 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
     return () => clearInterval(interval);
   }, []);
 
-  const demand = calculateSimultaneousDemand(appliances, 9.2);
+  // ⚡ Bolt Optimization: Memoize demand calculation to avoid running on every second tick
+  const demand = useMemo(() => calculateSimultaneousDemand(appliances, 9.2), [appliances]);
+
+  // ⚡ Bolt Optimization: Replace O(N*M) space lookup with O(N) map building and O(1) lookup
+  const spacesMap = useMemo(() => {
+    const map: Record<string, ApplianceList> = {};
+    spaces.forEach((s) => {
+      map[s.id] = s;
+    });
+    return map;
+  }, [spaces]);
 
   const getCategoryIcon = (category: string) => {
     switch (category?.toLowerCase()) {
@@ -228,7 +238,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
             {appliances.map((app: UserAppliance) => {
               const isOn = app.is_currently_on;
               const totalWatts = app.watts * (app.quantity || 1);
-              const appSpace = spaces.find((s) => s.id === app.list_id);
+              const appSpace = app.list_id ? spacesMap[app.list_id] : undefined;
               const effectiveRate = app.tariff_type === "commercial" ? 15.2 : 14.8261;
               const hourlyRate = ((totalWatts / 1000) * effectiveRate).toFixed(2);
               const liveSpent = getAccumulatedPesos(app);
