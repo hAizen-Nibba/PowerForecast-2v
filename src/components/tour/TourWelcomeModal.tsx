@@ -27,21 +27,15 @@ interface TourWelcomeModalProps {
 const WELCOME_COPY: Record<TourLanguage, { heading: string; body: string; start: string; skip: string }> = {
   en: {
     heading: 'Welcome to PowerForecast!',
-    body: 'Take a quick guided tour to learn how each feature helps you track, manage, and forecast your electricity consumption and Meralco bill.',
-    start: 'Start Tour',
+    body: 'Take a comprehensive guided tour to learn how to track appliances, set daily target quotas, meter live stopwatches, and forecast your Meralco electric bill.',
+    start: 'Start Guided Tour',
     skip: 'Skip for now',
   },
   tl: {
     heading: 'Maligayang Pagdating sa PowerForecast!',
-    body: 'Mag-take ng mabilisang guided tour para matutunan kung paano ka tinutulungan ng bawat feature na i-track, i-manage, at i-forecast ang iyong konsumo ng kuryente at Meralco bill.',
-    start: 'Simulan ang Tour',
+    body: 'Sumali sa isang komprehensibong gabay upang matutunan kung paano magtala ng gamit, magtakda ng daily target quota, gumamit ng live stopwatch, at mag-forecast ng Meralco bill.',
+    start: 'Simulan ang Gabay',
     skip: 'Laktawan muna',
-  },
-  taglish: {
-    heading: 'Welcome to PowerForecast!',
-    body: 'Mag-take ng quick guided tour para matutunan kung paano ka tinutulungan ng bawat feature na i-track, manage, at forecast ang iyong electricity consumption at Meralco bill.',
-    start: 'Start Tour',
-    skip: 'Skip muna',
   },
 };
 
@@ -226,8 +220,7 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
               }}
             >
               <ToggleButton value="en">English</ToggleButton>
-              <ToggleButton value="tl">Tagalog</ToggleButton>
-              <ToggleButton value="taglish">Taglish</ToggleButton>
+              <ToggleButton value="tl">Tagalog (Filipino)</ToggleButton>
             </ToggleButtonGroup>
           </Box>
 

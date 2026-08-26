@@ -51,7 +51,7 @@ function clearTourSeen(pageName?: string) {
 function getSavedLanguage(): TourLanguage {
   try {
     const saved = localStorage.getItem(LANG_STORAGE_KEY);
-    if (saved === 'en' || saved === 'tl' || saved === 'taglish') return saved;
+    if (saved === 'en' || saved === 'tl') return saved;
   } catch {
     // fallback
   }

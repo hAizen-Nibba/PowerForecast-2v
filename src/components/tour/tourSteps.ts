@@ -1,7 +1,7 @@
-// Tour Step Definitions — 30 steps across 6 pages × 3 languages
-// Each step targets a `data-tour="<id>"` attribute on the page
+// Tour Step Definitions — 30 comprehensive steps across 6 pages in English & Tagalog
+// Each step targets a `data-tour="<id>"` attribute on the corresponding page
 
-export type TourLanguage = 'en' | 'tl' | 'taglish';
+export type TourLanguage = 'en' | 'tl';
 
 export interface TourStepCopy {
   title: string;
@@ -10,7 +10,7 @@ export interface TourStepCopy {
 
 export interface TourStep {
   id: string;
-  placement?: 'top' | 'bottom' | 'left' | 'right' | 'auto';
+  placement: 'top' | 'bottom' | 'left' | 'right';
   copy: Record<TourLanguage, TourStepCopy>;
 }
 
@@ -20,13 +20,12 @@ export interface PageTour {
   steps: TourStep[];
 }
 
-// ─── DASHBOARD ───────────────────────────────────────────────
+// ─── 1. DASHBOARD ───────────────────────────────────────────
 const dashboardTour: PageTour = {
   pageName: 'dashboard',
   pageTitle: {
-    en: 'Dashboard Tour',
-    tl: 'Gabay sa Dashboard',
-    taglish: 'Dashboard Tour',
+    en: 'Dashboard & Live Telemetry Tour',
+    tl: 'Gabay sa Dashboard at Live Telemetry',
   },
   steps: [
     {
@@ -34,19 +33,14 @@ const dashboardTour: PageTour = {
       placement: 'bottom',
       copy: {
         en: {
-          title: '⚡ Real-Time Active Power & Running Rate',
+          title: '⚡ Live Power Load & Instant Burn Rate',
           description:
-            'This is your live command center. See the total wattage currently being drawn by all running appliances, plus the real-time ₱/hr running rate so you know exactly how much electricity costs you every hour.',
+            'This real-time telemetry card monitors your aggregate household draw right now. See total running wattage (W), the number of active appliances, and your live billing velocity (₱/hour) computed against your actual Meralco tariff.',
         },
         tl: {
-          title: '⚡ Live na Kuryente at Running Rate',
+          title: '⚡ Live Konsumo ng Kuryente at Halaga Bawat Oras',
           description:
-            'Ito ang iyong live command center. Dito makikita ang kabuuang wattage ng lahat ng bukas na appliance, kasama ang ₱/hr running rate para alam mo kung magkano ang pumapatak na gastos bawat oras.',
-        },
-        taglish: {
-          title: '⚡ Real-Time Active Power & Running Rate',
-          description:
-            'Dito mo makikita ang kasalukuyang wattage na sabay-sabay na tumatakbo sa iyong bahay. Kasama rin dito ang live ₱/hr running rate para alam mo kung magkano ang pumapatak na gastos bawat oras habang nakabukas ang mga gamit.',
+            'Ipinapakita sa real-time telemetry card na ito ang kabuuang lakas ng kuryente na ginagamit ngayon. Makikita rito ang kabuuang wattage (W), bilang ng nakabukas na gamit, at bilis ng gastos (₱/oras) batay sa iyong Meralco rate.',
         },
       },
     },
@@ -55,19 +49,14 @@ const dashboardTour: PageTour = {
       placement: 'bottom',
       copy: {
         en: {
-          title: '📊 Monthly Projected Bill & Energy Volume',
+          title: '📊 Month-to-Date Audited Consumption & Goals',
           description:
-            'Your monthly summary at a glance: projected Meralco bill based on active appliances, total kWh volume (Lifeline or Standard rate), number of online appliances, and daily burn rate.',
+            'Track your cumulative monthly kWh, current accrued bill cost, and remaining projected cost for the billing cycle. These meters balance your audited actual stopwatch logs with daily baseline routine quotas.',
         },
         tl: {
-          title: '📊 Buwanang Bill at Energy Volume',
+          title: '📊 Buwanang Naitalang Konsumo at Target',
           description:
-            'Ang iyong buwanang buod: tinatayang Meralco bill base sa mga aktibong appliance, kabuuang kWh volume (Lifeline o Standard rate), dami ng bukas na appliance, at daily burn rate.',
-        },
-        taglish: {
-          title: '📊 Monthly Projected Bill & Energy Volume',
-          description:
-            'Ito ang iyong buwanang summary: Ang tinatayang Meralco bill mo base sa active appliances, kabuuang kWh volume (kung Lifeline o Standard rate ka), dami ng bukas na appliances, at daily burn rate.',
+            'Subaybayan ang naipong kWh ngayong buwan, kasalukuyang naipong bayarin sa kuryente, at projected na babayaran sa katapusan ng buwan. Binabalanse nito ang aktwal na na-log sa stopwatch at ang iyong baseline target quota.',
         },
       },
     },
@@ -76,19 +65,14 @@ const dashboardTour: PageTour = {
       placement: 'bottom',
       copy: {
         en: {
-          title: '🏢 Multi-Space & Sub-Metering Split',
+          title: '🏘️ Spaces & Sub-Meter Distribution',
           description:
-            'Have a rental, store, or separate room? See the consumption split and corresponding bill per space using the correct Residential or Commercial Meralco tariff.',
+            'Compare energy usage across sub-meters such as your Residential Main House, Commercial Sari-Sari Store, or Rental Units. Each space maintains independent tariff rates and separate billing calculators.',
         },
         tl: {
-          title: '🏢 Multi-Space at Sub-Metering',
+          title: '🏘️ Paghahati ayon sa Spaces at Sub-Meters',
           description:
-            'May paupahan, tindahan, o hiwalay na kwarto ka ba? Dito makikita ang hatian ng konsumo at kaukulang bill kada space gamit ang tamang Residential o Commercial na taripa.',
-        },
-        taglish: {
-          title: '🏢 Multi-Space & Sub-Metering Split',
-          description:
-            'May paupahan, tindahan, o hiwalay na kwarto ka ba? Dito mo makikita ang hatian ng konsumo at kaukulang bill kada space gamit ang tamang Residential o Commercial Meralco tariff.',
+            'Ikumpara ang konsumo ng kuryente sa iba\'t ibang sub-meters tulad ng Pangunahing Bahay (Residential), Tindahan (Commercial), o Paupahan. Bawat space ay may sariling tariff rate at hiwalay na kalkulasyon ng bill.',
         },
       },
     },
@@ -97,19 +81,14 @@ const dashboardTour: PageTour = {
       placement: 'top',
       copy: {
         en: {
-          title: '🔌 Circuit Breaker & Live Power Toggles',
+          title: '⏱️ Live Stopwatch Control & Session Logging',
           description:
-            'Try clicking these! Toggle any appliance circuit ON or OFF to instantly see how much wattage and cost changes in your live dashboard.',
+            'Control running appliances in real time. Start a live stopwatch when powering on a high-draw appliance like an Air Conditioner to meter elapsed seconds, cumulative kWh, and generate an exact peso cost receipt upon stopping.',
         },
         tl: {
-          title: '🔌 Circuit Breaker at Live Power Toggles',
+          title: '⏱️ Live Stopwatch at Pagtatala ng Sesyon',
           description:
-            'Subukan itong pindutin! I-toggle ang circuit ng bawat appliance para makita agad kung gaano ang mababawas o madadagdag sa live wattage at gastos.',
-        },
-        taglish: {
-          title: '🔌 Circuit Breaker & Live Power Toggles',
-          description:
-            'Subukan itong pindutin! Pwede mong i-turn ON o OFF ang circuit ng bawat appliance para makita agad kung gaano kalaki ang mababawas o madadagdag sa live wattage at gastos.',
+            'Kontrolin ang mga nakabukas na appliance sa real-time. Simulan ang stopwatch kapag binuksan ang mabibigat na gamit tulad ng Aircon upang maitala ang bawat segundo, naipong kWh, at makakuha ng resibo ng eksaktong halaga sa piso.',
         },
       },
     },
@@ -118,19 +97,14 @@ const dashboardTour: PageTour = {
       placement: 'left',
       copy: {
         en: {
-          title: '🍩 Energy Breakdown by Category',
+          title: '🍩 Appliance Category Energy Load Distribution',
           description:
-            'The donut chart shows which appliance category (Cooling, Cooking, Lighting) consumes the largest percentage of your electricity this month.',
+            'Visual breakdown of your home energy share across categories like Cooling, Refrigeration, Cooking, Lighting, and Entertainment. Instantly identify which device classes drive the largest portion of your electric bill.',
         },
         tl: {
-          title: '🍩 Hatian ng Kuryente ayon sa Kategorya',
+          title: '🍩 Distribusyon ng Konsumo ayon sa Kategorya',
           description:
-            'Ipinapakita ng donut chart kung aling kategorya (Cooling, Cooking, Lighting) ang kumakain ng pinakamalaking porsyento ng iyong kuryente ngayong buwan.',
-        },
-        taglish: {
-          title: '🍩 Energy Breakdown by Category',
-          description:
-            'Ipinapakita ng donut chart kung aling appliance o kategorya (Cooling, Cooking, Lighting) ang kumakain ng pinakamalaking porsyento ng iyong kuryente ngayong buwan.',
+            'Visual na paghahati-hati ng konsumo sa mga kategorya tulad ng Pagpapalamig (Aircon/Fan), Refrigerator, Pagluluto, Ilaw, at Libangan. Madaling matutukoy kung aling uri ng gamit ang may pinakamalaking ambag sa bayarin.',
         },
       },
     },
@@ -139,149 +113,117 @@ const dashboardTour: PageTour = {
       placement: 'top',
       copy: {
         en: {
-          title: '🚀 Quick Navigation Modules',
+          title: '🚀 Quick Navigation & Smart Tools',
           description:
-            'Jump directly to the Bill Calculator, Appliance Hub, or Smart Calendar from these quick-access cards.',
+            'One-click shortcuts to add new certified appliances from the DOE PELP catalog, jump into the Smart Calendar telemetry studio, or run Monte Carlo billing simulations in Forecasting.',
         },
         tl: {
-          title: '🚀 Mga Mabilisang Shortcut',
+          title: '🚀 Mabilisang Aksyon at Smart Tools',
           description:
-            'Dumiretso sa Bill Calculator, Appliance Hub, o Smart Calendar mula sa mga quick-access cards na ito.',
-        },
-        taglish: {
-          title: '🚀 Quick Navigation Modules',
-          description:
-            'Jump directly sa Bill Calculator, Appliance Hub, o Smart Calendar mula sa mga quick-access cards na ito.',
+            'Mabilisang daan upang magdagdag ng mga certified appliance mula sa DOE PELP catalog, pumunta sa Smart Calendar para magtala ng oras, o magsagawa ng Monte Carlo billing simulation sa Forecasting.',
         },
       },
     },
   ],
 };
 
-// ─── BILL CALCULATOR ────────────────────────────────────────
+// ─── 2. BILL CALCULATOR ─────────────────────────────────────
 const calculatorTour: PageTour = {
   pageName: 'calculator',
   pageTitle: {
-    en: 'Bill Calculator Tour',
-    tl: 'Gabay sa Bill Calculator',
-    taglish: 'Bill Calculator Tour',
+    en: 'Meralco Bill Calculator Tour',
+    tl: 'Gabay sa Meralco Bill Calculator',
   },
   steps: [
     {
-      id: 'calc-tariff-selector',
+      id: 'calculator-summary',
       placement: 'bottom',
       copy: {
         en: {
-          title: '🏠 Residential vs Commercial Tariff',
+          title: '🧾 Full Meralco Unbundled Bill Summary',
           description:
-            'Select whether your meter is a Residential account or General Power (Commercial/Store). The system automatically applies the correct distribution tiers and demand charge structure.',
+            'Accurate breakdown reflecting official Meralco unbundled billing regulations. View your estimated total monthly amount, overall effective rate per kWh, and total monthly energy draw.',
         },
         tl: {
-          title: '🏠 Residential vs Commercial na Taripa',
+          title: '🧾 Buod ng Opisyal na Meralco Unbundled Bill',
           description:
-            'Piliin kung Residential account o General Power (Commercial/Tindahan) ang iyong metro. Awtomatikong ia-apply ng system ang tamang distribution tiers at demand charge structure.',
-        },
-        taglish: {
-          title: '🏠 Residential vs Commercial Tariff',
-          description:
-            'Piliin kung Residential account o General Power (Commercial/Store) ang iyong metro. Awtomatikong ia-apply ng system ang tamang distribution tiers at demand charge structure.',
+            'Tumpak na kalkulasyon ayon sa opisyal na unbundled billing system ng Meralco. Makikita rito ang tinatayang kabuuang babayarin sa buwan, pangkalahatang rate bawat kWh, at buwanang konsumo.',
         },
       },
     },
     {
-      id: 'calc-kwh-slider',
+      id: 'calculator-kwh-slider',
       placement: 'bottom',
       copy: {
         en: {
-          title: '⚡ Monthly Consumption (kWh)',
+          title: '🎚️ Interactive Monthly Consumption Slider',
           description:
-            'Drag the slider or type your kWh reading from your Meralco bill. Instantly see the effect on total charges and whether you qualify for the Lifeline Subsidy discount (1-100 kWh).',
+            'Drag the slider to simulate monthly kWh consumption levels and see how your bill escalates through higher generation and distribution price brackets in real time.',
         },
         tl: {
-          title: '⚡ Buwanang Konsumo (kWh)',
+          title: '🎚️ Interactive na Slider ng Konsumo (kWh)',
           description:
-            'I-drag ang slider o i-type ang kWh reading mula sa iyong Meralco bill. Makikita mo agad ang epekto nito sa kabuuang bayarin at kung pasok ka sa Lifeline Subsidy discount (1-100 kWh).',
-        },
-        taglish: {
-          title: '⚡ Monthly Consumption (kWh)',
-          description:
-            'I-drag ang slider o i-type ang kWh reading mula sa iyong Meralco bill. Makikita mo agad ang epekto nito sa kabuuang bayarin at kung pasok ka sa Lifeline Subsidy discount (1-100 kWh).',
+            'I-drag ang slider upang subukan ang iba\'t ibang antas ng konsumo (kWh) at makita kung paano tumataas ang bayarin sa iba\'t ibang antas ng generation at distribution charges.',
         },
       },
     },
     {
-      id: 'calc-subsidies',
-      placement: 'bottom',
-      copy: {
-        en: {
-          title: '🏷️ Subsidies & Rate Adjustments',
-          description:
-            'Check the Senior Citizen discount if your meter is registered (5% discount under 100 kWh), and adjust the Generation Rate if Meralco announced a price adjustment this month.',
-        },
-        tl: {
-          title: '🏷️ Mga Subsidiya at Pag-adjust ng Rate',
-          description:
-            'I-check ang Senior Citizen discount kung rehistrado ang inyong metro (5% discount under 100 kWh), at i-adjust ang Generation Rate kung may anunsyo si Meralco na price adjustment ngayong buwan.',
-        },
-        taglish: {
-          title: '🏷️ Subsidies & Rate Adjustments',
-          description:
-            'I-check ang Senior Citizen discount kung rehistrado ang inyong metro (5% discount under 100 kWh), at i-adjust ang Generation Rate kung nag-anunsyo si Meralco ng price adjustment ngayong buwan.',
-        },
-      },
-    },
-    {
-      id: 'calc-unbundled',
+      id: 'calculator-unbundled-rates',
       placement: 'top',
       copy: {
         en: {
-          title: '📑 Unbundled 5-Pillar Rate Breakdown',
+          title: '📑 12-Component Unbundled Tariff Breakdown',
           description:
-            'Not all charges go to Meralco! See the transparent breakdown: Generation (Power Plants), Transmission (NGCP Grid), System Loss, Distribution (Meralco), and Government Taxes (VAT & Universal Charges).',
+            'Inspect exact regulatory line items: Generation Charge, Transmission Charge, System Loss, Distribution, Supply, Metering, Universal Charges, FIT-All, and 12% Government VAT.',
         },
         tl: {
-          title: '📑 Unbundled 5-Pillar na Rate Breakdown',
+          title: '📑 Detalyadong 12 Bahagi ng Meralco Charges',
           description:
-            'Hindi lang sa Meralco napupunta ang bayad! Dito makikita ang transparent na breakdown: Generation (Power Plants), Transmission (NGCP Grid), System Loss, Distribution (Meralco), at Government Taxes (VAT & Universal Charges).',
-        },
-        taglish: {
-          title: '📑 Unbundled 5-Pillar Rate Breakdown',
-          description:
-            'Hindi lang sa Meralco napupunta ang bayad! Dito mo makikita ang transparent breakdown: Generation (Power Plants), Transmission (NGCP Grid), System Loss, Distribution (Meralco), at Government Taxes (VAT & Universal Charges).',
+            'Suriin ang bawat bahagi ng bayarin: Generation Charge, Transmission Charge, System Loss, Distribution, Supply, Metering, Universal Charges, FIT-All, at 12% Value Added Tax (VAT).',
         },
       },
     },
     {
-      id: 'calc-whatif',
+      id: 'calculator-space-comparison',
       placement: 'top',
       copy: {
         en: {
-          title: '💡 What-If Savings Simulator',
+          title: '⚖️ Residential vs. Commercial Space Comparison',
           description:
-            'Want to reduce your bill? Enter an appliance wattage and how many hours per day you\'d cut — we\'ll show you the exact Pesos (₱) and kWh you\'d save per month!',
+            'Toggle between Residential tariffs and General Power Commercial tariffs to evaluate cost differences for business spaces, sub-metered rentals, or mixed-use properties.',
         },
         tl: {
-          title: '💡 What-If Savings Simulator',
+          title: '⚖️ Paghahambing ng Residential at Commercial Rates',
           description:
-            'Gusto mong magbawas ng bill? Ipasok ang wattage ng appliance at kung ilang oras mo ito babawasan bawat araw — ipapakita namin ang eksaktong Pesos (₱) at kWh na matitipid mo kada buwan!',
+            'Magpalipat-lipat sa Residential tariff at General Commercial tariff upang suriin ang pagkakaiba ng singil para sa negosyo, paupahan, o commercial spaces.',
         },
-        taglish: {
-          title: '💡 What-If Savings Simulator',
+      },
+    },
+    {
+      id: 'calculator-lifeline-tier',
+      placement: 'top',
+      copy: {
+        en: {
+          title: '🏷️ Lifeline Subsidy & Senior Citizen Discounts',
           description:
-            'Gusto mong magbawas ng bill? Ipasok ang wattage ng appliance at kung ilang oras mo ito babawasan bawat araw — ipapakita namin ang eksaktong Pesos (₱) at kWh na matitipid mo kada buwan!',
+            'Automatic deduction applied for low-income brackets consuming below 100 kWh/month, alongside 5% Senior Citizen energy discount rules.',
+        },
+        tl: {
+          title: '🏷️ Lifeline Subsidy at Diskwento para sa Senior Citizen',
+          description:
+            'Awtomatikong diskwento para sa mga tahanang kumukonsumo ng mas mababa sa 100 kWh bawat buwan, kasama ang 5% diskwento para sa mga kwalipikadong Senior Citizen.',
         },
       },
     },
   ],
 };
 
-// ─── APPLIANCE HUB ──────────────────────────────────────────
+// ─── 3. APPLIANCE HUB ───────────────────────────────────────
 const appliancesTour: PageTour = {
   pageName: 'appliances',
   pageTitle: {
-    en: 'Appliance Hub Tour',
-    tl: 'Gabay sa Appliance Hub',
-    taglish: 'Appliance Hub Tour',
+    en: 'Appliance Hub & Inventory Tour',
+    tl: 'Gabay sa Appliance Hub at Imbentaryo',
   },
   steps: [
     {
@@ -289,19 +231,14 @@ const appliancesTour: PageTour = {
       placement: 'bottom',
       copy: {
         en: {
-          title: '🗂️ Organize by Spaces / Sub-Meters',
+          title: '🗂️ Organize by Spaces & Sub-Meters',
           description:
-            'Separate appliances into "Main House", "Commercial Sari-Sari Store", or "Apartment Unit 2". Each space has its own tariff rate and independent bill computation.',
+            'Group your devices into spaces like "Main Residence", "Sari-Sari Store", or "Apartment Unit". Each space maintains its own tariff structure, wattage capacity, and energy budgets.',
         },
         tl: {
-          title: '🗂️ Ayusin ayon sa Spaces / Sub-Meters',
+          title: '🗂️ Ayusin ayon sa Spaces at Sub-Meters',
           description:
-            'Ihiwalay ang mga appliance sa "Main House", "Commercial Sari-Sari Store", o "Apartment Unit 2". Bawat space ay may sariling tariff rate at independent bill computation.',
-        },
-        taglish: {
-          title: '🗂️ Organize by Spaces / Sub-Meters',
-          description:
-            'Ihiwalay ang appliances sa "Main House", "Commercial Sari-Sari Store", o "Apartment Unit 2". Bawat space ay may sariling tariff rate at independent bill computation.',
+            'Pangkatin ang mga gamit sa mga space tulad ng "Pangunahing Bahay", "Tindahan", o "Paupahan". Bawat space ay may sariling tariff rate, kapasidad ng kuryente, at badyet.',
         },
       },
     },
@@ -310,19 +247,14 @@ const appliancesTour: PageTour = {
       placement: 'bottom',
       copy: {
         en: {
-          title: '➕ Add Appliances & Smart Tools',
+          title: '➕ Certified PELP Database & AI Scanner',
           description:
-            'Add your own appliance with "Add Appliance", pick from thousands of certified units in the DOE PELP Database for automatic wattage & star ratings, or use the AI Scanner to photograph nameplates!',
+            'Import from thousands of certified Philippine DOE PELP models with official laboratory-tested wattages and star ratings, create custom manual devices, or scan energy stickers with AI Vision.',
         },
         tl: {
-          title: '➕ Magdagdag ng Appliance at Smart Tools',
+          title: '➕ DOE PELP Database at AI Scanner',
           description:
-            'Mag-add ng sariling appliance, pumili mula sa libu-libong certified units sa DOE PELP Database para automatic ang wattage at star rating, o gamitin ang AI Scanner para picturan ang nameplate!',
-        },
-        taglish: {
-          title: '➕ Add Appliances & Smart Tools',
-          description:
-            'Mag-add ng sariling appliance gamit ang "Add Appliance", o pumili mula sa libu-libong certified items sa DOE PELP Database para automatic ang wattage at star rating, o gamitin ang AI Scanner para picturan ang nameplate!',
+            'Pumili mula sa libu-libong sertipikadong modelo sa opisyal na DOE PELP database na may subok na wattage at star rating, maglagay ng custom na gamit, o kumuha ng litrato ng energy sticker gamit ang AI Scanner.',
         },
       },
     },
@@ -331,19 +263,14 @@ const appliancesTour: PageTour = {
       placement: 'bottom',
       copy: {
         en: {
-          title: '⚡ Appliance Card Controls',
+          title: '🎯 Daily Target Quotas & Habit Benchmarks',
           description:
-            'Each card has a power button for live load toggling, monthly consumption info, edit button to change usage hours, and a schedule button to plan it directly on the Smart Calendar.',
+            'When adding or editing appliances, set your Daily Target Quota (e.g. 8h/day). This serves as your budget benchmark for over/under budget tracking. You can also backfill past dates in the current month via the Mini Calendar.',
         },
         tl: {
-          title: '⚡ Mga Kontrol ng Appliance Card',
+          title: '🎯 Pang-araw-araw na Target Quota at Badyet',
           description:
-            'Bawat card ay may power button para sa live load, impormasyon sa buwanang konsumo, edit button para baguhin ang oras ng gamit, at button para i-schedule sa Smart Calendar.',
-        },
-        taglish: {
-          title: '⚡ Appliance Card Controls',
-          description:
-            'Bawat card ay may power button para sa live load, impormasyon sa buwanang konsumo, edit button para baguhin ang oras ng gamit, at button para i-schedule direkta sa Smart Calendar.',
+            'Sa pagdaragdag o pag-edit ng gamit, itakda ang Daily Target Quota (hal. 8 oras/araw). Ito ang magsisilbing basehang badyet. Maaari ding mag-backfill ng nakaraang mga araw sa kasalukuyang buwan gamit ang Mini Calendar.',
         },
       },
     },
@@ -352,19 +279,14 @@ const appliancesTour: PageTour = {
       placement: 'bottom',
       copy: {
         en: {
-          title: '🔍 Search & Filter',
+          title: '🔍 Category & Room Location Filters',
           description:
-            'Easily find appliances by category filter (Cooling, Kitchen, Entertainment, Lighting) or room filter (Living Room, Master Bedroom, Dirty Kitchen).',
+            'Quickly filter devices by functional category (Air Conditioners, Refrigerators, Lighting, Kitchen) or room location (Living Room, Kitchen, Bedroom).',
         },
         tl: {
-          title: '🔍 Maghanap at Mag-filter',
+          title: '🔍 Pagsala ayon sa Kategorya at Lokasyon ng Silid',
           description:
-            'Madaling hanapin ang mga gamit sa pamamagitan ng category filter (Cooling, Kitchen, Entertainment, Lighting) o room filter (Living Room, Master Bedroom, Dirty Kitchen).',
-        },
-        taglish: {
-          title: '🔍 Search & Filter',
-          description:
-            'Madaling hanapin ang mga gamit sa pamamagitan ng category filter (Cooling, Kitchen, Entertainment, Lighting) o room filter (Living Room, Master Bedroom, Dirty Kitchen).',
+            'Mabilisang i-filter ang mga gamit ayon sa kategorya (Aircon, Refrigerator, Ilaw, Kusina) o lokasyon sa bahay (Sala, Kusina, Silid-tulugan).',
         },
       },
     },
@@ -373,52 +295,41 @@ const appliancesTour: PageTour = {
       placement: 'left',
       copy: {
         en: {
-          title: '⚙️ Space & Tariff Management',
+          title: '⚙️ Space & Tariff Rate Management',
           description:
-            'Manage your spaces here — rename, change tariff type (Residential ↔ Commercial), set as default, or delete spaces you no longer need.',
+            'Create new sub-metered areas, assign Residential or Commercial tariffs, set default spaces, and customize effective electricity rates per kWh.',
         },
         tl: {
-          title: '⚙️ Space at Tariff Management',
+          title: '⚙️ Pamamahala ng Space at Rate ng Kuryente',
           description:
-            'Pamahalaan ang iyong mga space dito — palitan ang pangalan, baguhin ang tariff type (Residential ↔ Commercial), i-set bilang default, o burahin ang mga hindi na kailangan.',
-        },
-        taglish: {
-          title: '⚙️ Space & Tariff Management',
-          description:
-            'Manage ang iyong mga space dito — rename, change tariff type (Residential ↔ Commercial), set as default, o delete ang mga hindi na kailangan.',
+            'Gumawa ng mga bagong sub-meter area, magtakda kung Residential o Commercial rate, pumili ng default space, at i-customize ang halaga bawat kWh.',
         },
       },
     },
   ],
 };
 
-// ─── SMART CALENDAR ─────────────────────────────────────────
+// ─── 4. SMART CALENDAR ──────────────────────────────────────
 const calendarTour: PageTour = {
   pageName: 'calendar',
   pageTitle: {
-    en: 'Smart Calendar Tour',
-    tl: 'Gabay sa Smart Calendar',
-    taglish: 'Smart Calendar Tour',
+    en: 'Smart Calendar & Telemetry Studio Tour',
+    tl: 'Gabay sa Smart Calendar at Telemetry Studio',
   },
   steps: [
     {
-      id: 'calendar-live-sessions',
-      placement: 'bottom',
+      id: 'calendar-grid',
+      placement: 'top',
       copy: {
         en: {
-          title: '⏱️ Live Stopwatch & Real-Time Cost Tracker',
+          title: '📅 3-Mode Contextual Calendar Telemetry',
           description:
-            'When you turn on an appliance, the live session ticker appears here. Every second counts accumulated wattage and pesos (₱). Stop it anytime to generate a usage receipt.',
+            'Click any day to open the telemetry studio. It adapts automatically:\n• 🟢 TODAY: Live active stopwatches, real-time budget countdown, and running kWh.\n• 📅 PAST DAYS: Historical records, retrospective [h:m:s] input, and + Log Past Time Range.\n• 🔮 FUTURE DAYS: Projected baseline allocations.',
         },
         tl: {
-          title: '⏱️ Live Stopwatch at Real-Time Cost Tracker',
+          title: '📅 Tatlong Antas ng Kalendaryo (Kasalukuyan, Nakalipas, Hinaharap)',
           description:
-            'Kapag may appliance kang binuksan, lalabas dito ang live session ticker. Bawat segundo ay binibilang ang naipong wattage at piso (₱). I-stop ito anumang oras para makagawa ng usage receipt.',
-        },
-        taglish: {
-          title: '⏱️ Live Stopwatch & Real-Time Cost Tracker',
-          description:
-            'Kapag may appliance kang binuksan, lalabas dito ang live session ticker. Bawat segundo ay binibilang ang naipong wattage at piso (₱). Pwede mo itong i-stop anumang oras para makagawa ng usage receipt.',
+            'Pindutin ang anumang araw upang buksan ang telemetry studio:\n• 🟢 NGAYON: Live stopwatch, real-time na pagbawas sa natitirang badyet, at naipong kWh.\n• 📅 NAKALIPAS: Kasaysayan ng nagamit, manual na oras, at pagtatala ng nakaraang sesyon.\n• 🔮 HINAHARAP: Projected na kalkulasyon batay sa iyong baseline habits.',
         },
       },
     },
@@ -427,325 +338,262 @@ const calendarTour: PageTour = {
       placement: 'bottom',
       copy: {
         en: {
-          title: '✨ 1-Click Routine Autofill',
+          title: '✨ Smart Routine Autofill with Exclude Today',
           description:
-            'Too lazy to schedule one by one? Use Routine Autofill for 1-click generation of your regular daily habits (like 8-hr night aircon, morning refrigerator, evening lighting).',
+            'Batch apply routine quotas across the calendar. Option 1 applies baseline hours from the 1st of the month to yesterday while keeping Today clean and ready for real-time live stopwatches.',
         },
         tl: {
-          title: '✨ 1-Click Routine Autofill',
+          title: '✨ Smart Routine Autofill (Ihiwalay ang Araw Ngayon)',
           description:
-            'Tinatamad mag-schedule isa-isa? Gamitin ang Routine Autofill para sa 1-click generation ng regular mong daily habits (tulad ng 8-hr night aircon, morning refrigerator, evening lighting).',
-        },
-        taglish: {
-          title: '✨ 1-Click Routine Autofill',
-          description:
-            'Tinatamad mag-schedule isa-isa? Gamitin ang Routine Autofill para sa 1-click generation ng regular mong daily habits (tulad ng 8-hr night aircon, morning refrigerator, evening lighting).',
+            'Mabilisang ilapat ang routine quota sa buong kalendaryo. Ang Option 1 ay naglalagay ng baseline mula ika-1 ng buwan hanggang kahapon habang pinananatiling malinis ang araw ngayon para sa live stopwatch.',
         },
       },
     },
     {
-      id: 'calendar-grid',
+      id: 'calendar-live-sessions',
+      placement: 'bottom',
+      copy: {
+        en: {
+          title: '📈 24-Hour Activity Timeline & Progressive Routines',
+          description:
+            'Inspect meter tracks (00:00 – 24:00). On past days, click any unlogged appliance track to log exact start and end times. Logging a session on an On-Demand device will intelligently offer to set it as your daily routine!',
+        },
+        tl: {
+          title: '📈 24-Oras na Timeline at Progressive Routine Conversion',
+          description:
+            'Suriin ang 24-oras na timeline (00:00 – 24:00). Sa nakalipas na araw, pindutin ang unlogged track upang maglagay ng eksaktong oras ng simula at tapos. Kapag nag-log sa gamit na walang routine, awtomatiko itong mag-aalok na gawin itong pang-araw-araw na routine!',
+        },
+      },
+    },
+    {
+      id: 'calendar-day-modal',
       placement: 'top',
       copy: {
         en: {
-          title: '🗓️ Daily Energy Cost Heatmap',
+          title: '🎛️ Appliance Quota Gauges & Over-Budget Alerts',
           description:
-            'Each calendar day shows a color and badge indicating total kWh and cost (₱) for that day. The more intense the color, the higher the consumption.',
+            'Adjust operating hours with instant preset chips or fine-grained [h:m:s] inputs. Red gauges alert you immediately when usage exceeds your daily target quota.',
         },
         tl: {
-          title: '🗓️ Daily Energy Cost Heatmap',
+          title: '🎛️ Quota Gauge at Alerto sa Sobrang Paggamit',
           description:
-            'Bawat araw sa kalendaryo ay may kulay at badge na nagpapakita ng kabuuang kWh at gastos (₱) sa araw na iyon. Mas matingkad ang kulay, mas mataas ang konsumo.',
-        },
-        taglish: {
-          title: '🗓️ Daily Energy Cost Heatmap',
-          description:
-            'Bawat araw sa kalendaryo ay may kulay at badge na nagpapakita ng kabuuang kWh at gastos (₱) sa araw na iyon. Mas matingkad ang kulay, mas mataas ang konsumo.',
+            'Baguhin ang oras ng gamit gamit ang preset buttons o eksaktong [oras:minuto]. Ang pulang alerto ay agad magbababala kapag lumagpas ang nagamit sa itinakdang daily target quota.',
         },
       },
     },
     {
-      id: 'calendar-day-click',
-      placement: 'bottom',
+      id: 'calendar-legend',
+      placement: 'top',
       copy: {
         en: {
-          title: '📈 Click for Day Analytics',
+          title: '🏷️ Calendar Day Badges & Color Cues',
           description:
-            'Click any date to open the full day timeline: see peak hours, which appliance consumed the most, and the complete session receipt log.',
+            'Days marked with ~ indicate estimated routine projections, while checkmarked days represent audited actual logs. Flame badges highlight high-consumption peak load days.',
         },
         tl: {
-          title: '📈 I-click para sa Day Analytics',
+          title: '🏷️ Mga Palatandaan at Kulay sa Kalendaryo',
           description:
-            'I-click ang anumang petsa para buksan ang full day timeline: makikita mo kung anong oras nag-peak ang kuryente, sinong appliance ang pinakamatakaw, at ang kumpletong session receipt log.',
-        },
-        taglish: {
-          title: '📈 Click for Day Analytics',
-          description:
-            'I-click ang anumang petsa para buksan ang full day timeline: Makikita mo kung anong oras nag-peak ang kuryente, sinong appliance ang pinakamatakaw, at ang kumpletong log ng session receipts.',
-        },
-      },
-    },
-    {
-      id: 'calendar-queue',
-      placement: 'bottom',
-      copy: {
-        en: {
-          title: '⏰ Upcoming Scheduled Tasks',
-          description:
-            'View the list of scheduled appliances set to trigger at specific times. Manage upcoming turn-on and turn-off tasks from here.',
-        },
-        tl: {
-          title: '⏰ Mga Nakaiskedyul na Gawain',
-          description:
-            'Tingnan ang listahan ng mga naka-schedule na appliances na nakatakdang mag-trigger sa takdang oras.',
-        },
-        taglish: {
-          title: '⏰ Upcoming Scheduled Tasks',
-          description:
-            'Tingnan ang listahan ng mga naka-schedule na appliances na nakatakdang mag-trigger sa takdang oras.',
+            'Ang simbolong ~ ay nagpapahiwatig ng projected na konsumo, habang ang may checkmark ay audited na aktwal na naitala. Ang simbolo ng apoy ay nagbababala ng mataas na konsumo sa araw na iyon.',
         },
       },
     },
   ],
 };
 
-// ─── ANALYTICS ──────────────────────────────────────────────
+// ─── 5. ANALYTICS ───────────────────────────────────────────
 const analyticsTour: PageTour = {
   pageName: 'analytics',
   pageTitle: {
-    en: 'Analytics Tour',
-    tl: 'Gabay sa Analytics',
-    taglish: 'Analytics Tour',
+    en: 'Analytics & Consumption Profiling Tour',
+    tl: 'Gabay sa Analytics at Pagsusuri ng Konsumo',
   },
   steps: [
+    {
+      id: 'analytics-kpi-row',
+      placement: 'bottom',
+      copy: {
+        en: {
+          title: '⚡ Key Performance Telemetry Indicators',
+          description:
+            'Instant high-level summary of your average daily kWh load, average daily cost, maximum peak power demand, and overall monthly active appliance count.',
+        },
+        tl: {
+          title: '⚡ Mahahalagang Sukatan sa Paggamit ng Kuryente',
+          description:
+            'Mabilisang buod ng karaniwang konsumo bawat araw (kWh), karaniwang gastos bawat araw, pinakamataas na sabay-sabay na lakas ng kuryente (Peak Watts), at bilang ng aktibong gamit.',
+        },
+      },
+    },
     {
       id: 'analytics-load-curve',
       placement: 'bottom',
       copy: {
         en: {
-          title: '📉 24-Hour Diurnal Power Curve',
+          title: '📈 24-Hour Peak Load Curve (Meralco Peak Hours)',
           description:
-            'This area chart shows your power profile across 24 hours. See when your Peak Load (all appliances running simultaneously) and Off-Peak hours are.',
+            'Visualizes your household electricity demand by hour of the day. Highlights critical peak window hours (6:00 PM – 10:00 PM) to help you shift heavy tasks to off-peak periods.',
         },
         tl: {
-          title: '📉 24-Oras na Diurnal Power Curve',
+          title: '📈 24-Oras na Load Curve (Oras ng Peak Demand)',
           description:
-            'Ipinapakita ng area chart na ito ang profile ng kuryente mo sa loob ng 24 oras. Dito mo makikita kung kailan ang Peak Load (oras na sabay-sabay ang gamit) at Off-Peak hours.',
-        },
-        taglish: {
-          title: '📉 24-Hour Diurnal Power Curve',
-          description:
-            'Ipinapakita ng area chart na ito ang profile ng kuryente mo sa loob ng 24 oras. Dito mo makikita kung kailan ang Peak Load (oras na sabay-sabay ang gamit) at Off-Peak hours.',
+            'Ipinapakita ang lakas ng kuryente sa bawat oras ng maghapon. Binibigyang-diin ang Peak Hours (6:00 PM hanggang 10:00 PM) upang mailipat ang paggamit ng mabibigat na gamit sa mas murang oras.',
         },
       },
     },
     {
-      id: 'analytics-time-presets',
-      placement: 'bottom',
-      copy: {
-        en: {
-          title: '🔍 Time Zoom Presets',
-          description:
-            'Select a zoom filter to isolate a specific part of the day (e.g. 12AM-8AM for sleep, 8AM-4PM for work/store, 4PM-12AM for evening).',
-        },
-        tl: {
-          title: '🔍 Mga Time Zoom Preset',
-          description:
-            'Piliin ang zoom filter para ma-isolate ang partikular na bahagi ng araw (hal. 12AM-8AM para sa tulog, 8AM-4PM para sa work/tindahan, 4PM-12AM para sa gabi).',
-        },
-        taglish: {
-          title: '🔍 Time Zoom Presets',
-          description:
-            'Piliin ang zoom filter para ma-isolate ang partikular na bahagi ng araw (hal. 12AM-8AM para sa tulog, 8AM-4PM para sa work/store, 4PM-12AM para sa gabi).',
-        },
-      },
-    },
-    {
-      id: 'analytics-vampire-load',
-      placement: 'bottom',
-      copy: {
-        en: {
-          title: '🧛 Vampire Load (Standby Power)',
-          description:
-            'This is the consumption of appliances plugged in but on standby or off (chargers, microwave displays, TV standby). Unplugging these is the fastest way to cut your bill!',
-        },
-        tl: {
-          title: '🧛 Vampire Load (Standby Power)',
-          description:
-            'Ito ang konsumo ng mga appliances na nakasaksak kahit naka-standby o naka-off (mga charger, microwave display, TV standby). Ang pag-unplug sa mga ito ay mabilisang bawas-bill!',
-        },
-        taglish: {
-          title: '🧛 Vampire Load (Standby Power)',
-          description:
-            'Ito ang konsumo ng mga appliances na nakasaksak kahit naka-standby o naka-off (mga charger, microwave display, TV standby). Ang pag-unplug sa mga ito ay mabilisang bawas-bill!',
-        },
-      },
-    },
-    {
-      id: 'analytics-category-bars',
+      id: 'analytics-category-chart',
       placement: 'top',
       copy: {
         en: {
-          title: '🥧 Category Share & Cost Allocation',
+          title: '📊 Consumption by Category Breakdown',
           description:
-            'Quick ranking of categories (Aircon vs Kitchen vs Laundry) and how much of your bill goes to each unbundled component.',
+            'Compare the percentage and total peso cost attributed to Cooling, Food Preservation, Laundry, Cooking, and Entertainment systems.',
         },
         tl: {
-          title: '🥧 Category Share at Cost Allocation',
+          title: '📊 Paghahati-hati ng Gastos ayon sa Kategorya',
           description:
-            'Mabilisang ranking ng mga kategorya (Aircon vs Kitchen vs Laundry) at kung gaano kalaking porsyento ng iyong bayarin ang napupunta sa bawat unbundled component.',
-        },
-        taglish: {
-          title: '🥧 Category Share & Cost Allocation',
-          description:
-            'Mabilisang ranking ng mga kategorya (Aircon vs Kitchen vs Laundry) at kung gaano kalaking porsyento ng iyong bayarin ang napupunta sa bawat unbundled component.',
+            'Ikumpara ang porsyento at kabuuang halaga sa piso ng konsumo para sa Pagpapalamig, Refrigerator, Paglalaba, Pagluluto, at Libangan.',
         },
       },
     },
     {
-      id: 'analytics-insights',
+      id: 'analytics-space-distribution',
       placement: 'top',
       copy: {
         en: {
-          title: '💡 AI Energy Recommendations',
+          title: '🏢 Multi-Space Sub-Meter Analytics',
           description:
-            'The system automatically provides practical tips (e.g., shifting heavy laundry tasks to off-peak hours or adjusting aircon thermostat settings to save money).',
+            'Examine energy share between separate spaces. Essential for landlords tracking rental units or homeowners managing a home business alongside their residential quarters.',
         },
         tl: {
-          title: '💡 AI Energy Recommendations',
+          title: '🏢 Pagsusuri sa Iba\'t Ibang Spaces at Sub-Meters',
           description:
-            'Awtomatikong nagbibigay ang system ng mga praktikal na payo (halimbawa: paglipat ng mabibigat na laundry tasks sa off-peak hours o pag-adjust ng aircon thermostat para makatipid).',
+            'Suriin ang hatian ng kuryente sa iba\'t ibang lugar. Mahalaga para sa mga nagpapaupa o may-ari ng bahay na may kasabay na negosyo tulad ng tindahan.',
         },
-        taglish: {
-          title: '💡 AI Energy Recommendations',
+      },
+    },
+    {
+      id: 'analytics-historical-trend',
+      placement: 'top',
+      copy: {
+        en: {
+          title: '📅 Historical Billing & Consumption Trends',
           description:
-            'Awtomatikong nagbibigay ang system ng mga praktikal na payo (halimbawa: paglipat ng mabibigat na laundry tasks sa off-peak hours o pag-adjust ng aircon thermostat para makatipid).',
+            'Track your progress over consecutive months to verify if your energy conservation habits successfully lowered your overall Meralco electric bill.',
+        },
+        tl: {
+          title: '📅 Kasaysayan at Trend ng Buwanang Konsumo',
+          description:
+            'Subaybayan ang pagbabago sa nakaraang mga buwan upang makita kung naging epektibo ang pagtitipid sa pagbaba ng iyong Meralco bill.',
         },
       },
     },
   ],
 };
 
-// ─── FORECASTING ────────────────────────────────────────────
+// ─── 6. FORECASTING ─────────────────────────────────────────
 const forecastingTour: PageTour = {
   pageName: 'forecasting',
   pageTitle: {
-    en: 'Forecasting Tour',
-    tl: 'Gabay sa Forecasting',
-    taglish: 'Forecasting Tour',
+    en: 'AI Forecasting & Monte Carlo Simulation Tour',
+    tl: 'Gabay sa AI Forecasting at Simulation',
   },
   steps: [
     {
-      id: 'forecast-rate-slider',
+      id: 'forecasting-hero-kpi',
       placement: 'bottom',
       copy: {
         en: {
-          title: '🎚️ Meralco Rate Stress-Test',
+          title: '🔮 End-of-Month Bill Projection',
           description:
-            'What happens to your bill if the generation charge jumps by +₱1.50/kWh next month due to a WESM spike? Adjust the slider to see the impact on your budget.',
+            'Predictive engine projecting your final month bill with confidence intervals, combining audited past actuals with remaining future habit baselines.',
         },
         tl: {
-          title: '🎚️ Meralco Rate Stress-Test',
+          title: '🔮 Pagtataya sa Kabuuang Bill sa Katapusan ng Buwan',
           description:
-            'Ano ang mangyayari sa bill mo kung tumaas ng +₱1.50/kWh ang generation charge sa susunod na buwan dahil sa WESM spike? I-adjust ang slider para makita ang epekto sa iyong budget.',
-        },
-        taglish: {
-          title: '🎚️ Meralco Rate Stress-Test',
-          description:
-            'Ano ang mangyayari sa bill mo kung tumaas ng +₱1.50/kWh ang generation charge sa susunod na buwan dahil sa WESM spike? I-adjust ang slider para makita ang epekto sa iyong budget.',
+            'Predictive engine na nagtataya ng iyong magiging bayarin sa katapusan ng buwan, pinagsasama ang naitala nang mga araw at ang inaasahang gawi sa natitirang mga araw.',
         },
       },
     },
     {
-      id: 'forecast-scenarios',
-      placement: 'top',
-      copy: {
-        en: {
-          title: '🎯 Baseline, Eco & Summer Scenarios',
-          description:
-            'Compare three scenarios: Baseline (current habits), Eco Mode (15% savings on cooling with ₱ equivalent), and Summer Heatwave (+25% surge due to extreme heat).',
-        },
-        tl: {
-          title: '🎯 Baseline, Eco at Summer Scenarios',
-          description:
-            'Inihahambing ng card na ito ang tatlong sitwasyon: Baseline (kasalukuyang gawi), Eco Mode (15% tipid sa cooling na may katumbas na ₱ savings), at Summer Heatwave (+25% surge dahil sa matinding init).',
-        },
-        taglish: {
-          title: '🎯 Baseline, Eco & Summer Scenarios',
-          description:
-            'Inihahambing ng card na ito ang tatlong sitwasyon: Baseline (kasalukuyang gawi), Eco Mode (15% tipid sa cooling na may katumbas na ₱ savings), at Summer Heatwave (+25% surge dahil sa matinding init).',
-        },
-      },
-    },
-    {
-      id: 'forecast-space-tabs',
+      id: 'forecasting-monte-carlo',
       placement: 'bottom',
       copy: {
         en: {
-          title: '🏢 Forecast Scope Selector',
+          title: '🎲 Monte Carlo Probabilistic Risk Modeling',
           description:
-            'Choose which space to forecast: all spaces combined, or drill down into a specific residential or commercial sub-meter.',
+            'Runs 500+ stochastic iterations considering temperature variations and usage fluctuations to display Best-Case, Expected, and Worst-Case billing scenarios.',
         },
         tl: {
-          title: '🏢 Forecast Scope Selector',
+          title: '🎲 Monte Carlo Probabilistic Simulation',
           description:
-            'Piliin kung aling space ang i-forecast: lahat ng spaces na pinagsama, o mag-drill down sa isang partikular na residential o commercial sub-meter.',
-        },
-        taglish: {
-          title: '🏢 Forecast Scope Selector',
-          description:
-            'Piliin kung aling space ang i-forecast: lahat ng spaces combined, o mag-drill down sa isang specific na residential o commercial sub-meter.',
+            'Nagsasagawa ng mahigit 500 simulasyon na isinasaalang-alang ang init ng panahon at pabago-bagong paggamit upang ipakita ang Pinakamababang Halaga, Karaniwang Halaga, at Pinakamataas na Posibleng Gastos.',
         },
       },
     },
     {
-      id: 'forecast-advisory',
+      id: 'forecasting-concurrency-risk',
       placement: 'top',
       copy: {
         en: {
-          title: '🛡️ Tariff Pass-Through Advisory',
+          title: '⚠️ Peak Demand & Breaker Concurrency Risk',
           description:
-            'Read advisories about how the Philippine generation charge works as an automatic pass-through cost adjusted every billing cycle based on fuel costs and WESM spot market rates.',
+            'Detects high-risk time windows where multiple high-wattage appliances (like Water Heater + AC + Induction Cooker) might overlap and trip your main circuit breaker.',
         },
         tl: {
-          title: '🛡️ Tariff Pass-Through Advisory',
+          title: '⚠️ Alerto sa Sobrang Sabay-sabay na Kuryente (Peak Overload)',
           description:
-            'Basahin ang mga advisory tungkol sa kung paano gumagana ang generation charge sa Pilipinas bilang automatic pass-through cost na ina-adjust bawat billing cycle base sa presyo ng fuel at WESM spot market rates.',
+            'Natutukoy ang mga oras kung kailan maaaring magkasabay-sabay ang mabibigat na gamit (tulad ng Shower Heater, Aircon, at Induction Cooker) na maaaring magdulot ng pag-trip ng circuit breaker.',
         },
-        taglish: {
-          title: '🛡️ Tariff Pass-Through Advisory',
+      },
+    },
+    {
+      id: 'forecasting-budget-alarm',
+      placement: 'top',
+      copy: {
+        en: {
+          title: '🎯 Budget Cap Limit & Early Warning Thresholds',
           description:
-            'Dito mo mababasa ang mga advisory tungkol sa kung paano gumagana ang Philippine generation charge bilang automatic pass-through cost na ina-adjust bawat billing cycle base sa fuel costs at WESM spot market rates.',
+            'Set your monthly spending ceiling (e.g. ₱5,000). The system alerts you if your current pacing threatens to breach your budget before the billing cycle concludes.',
+        },
+        tl: {
+          title: '🎯 Limitasyon sa Badyet at Maagang Alerto',
+          description:
+            'Magtakda ng pinakamataas na nais mong bayaran (hal. ₱5,000). Magbibigay ng babala ang system kung ang kasalukuyang bilis ng paggamit ay maaaring lumampas sa iyong itinakdang badyet.',
+        },
+      },
+    },
+    {
+      id: 'forecasting-ai-recommendations',
+      placement: 'top',
+      copy: {
+        en: {
+          title: '💡 AI-Driven Actionable Energy Saving Insights',
+          description:
+            'Customized energy-saving advice tailored to your specific appliances — such as shifting thermostat settings by 1°C to save up to ₱450/month without sacrificing comfort.',
+        },
+        tl: {
+          title: '💡 Mga Mungkahi ng AI para sa Pagtitipid ng Kuryente',
+          description:
+            'Mga praktikal na payo sa pagtitipid na nakabatay sa iyong mga gamit — tulad ng pag-adjust ng thermostat ng aircon nang 1°C upang makatipid ng hanggang ₱450 bawat buwan.',
         },
       },
     },
   ],
 };
 
-// ─── EXPORT ALL TOURS ───────────────────────────────────────
+// ─── Export Registry ─────────────────────────────────────────
+export const ALL_PAGE_TOURS: Record<string, PageTour> = {
+  dashboard: dashboardTour,
+  calculator: calculatorTour,
+  appliances: appliancesTour,
+  calendar: calendarTour,
+  analytics: analyticsTour,
+  forecasting: forecastingTour,
+};
 
-export const ALL_TOURS: PageTour[] = [
-  dashboardTour,
-  calculatorTour,
-  appliancesTour,
-  calendarTour,
-  analyticsTour,
-  forecastingTour,
-];
-
-/**
- * Get tour steps for a specific page.
- * Matches by route path suffix: /dashboard → 'dashboard', /calculator → 'calculator', etc.
- */
-export function getTourForPage(pathname: string): PageTour | null {
-  const segment = pathname.replace(/^\//, '').split('/')[0] || 'dashboard';
-  return ALL_TOURS.find((t) => t.pageName === segment) || null;
-}
-
-/**
- * Map route pathnames to tour page names.
- */
 export const ROUTE_TO_TOUR_PAGE: Record<string, string> = {
+  '/': 'dashboard',
   '/dashboard': 'dashboard',
   '/calculator': 'calculator',
   '/appliances': 'appliances',
@@ -753,3 +601,7 @@ export const ROUTE_TO_TOUR_PAGE: Record<string, string> = {
   '/analytics': 'analytics',
   '/forecasting': 'forecasting',
 };
+
+export function getTourForPage(pageName: string): PageTour | null {
+  return ALL_PAGE_TOURS[pageName] || null;
+}

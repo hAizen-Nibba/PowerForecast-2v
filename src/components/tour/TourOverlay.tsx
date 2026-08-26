@@ -383,7 +383,6 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({
                 >
                   <ToggleButton value="en">English</ToggleButton>
                   <ToggleButton value="tl">Tagalog</ToggleButton>
-                  <ToggleButton value="taglish">Taglish</ToggleButton>
                 </ToggleButtonGroup>
               </Box>
             )}
