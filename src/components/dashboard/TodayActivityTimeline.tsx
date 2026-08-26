@@ -7,20 +7,36 @@ import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Paper from "@mui/material/Paper";
 import Tooltip from "@mui/material/Tooltip";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import TextField from "@mui/material/TextField";
+import IconButton from "@mui/material/IconButton";
 import {
   Timeline as TimelineIcon,
   FlashOn as FlashOnIcon,
   ArrowForward as ArrowForwardIcon,
+  Close as CloseIcon,
+  Timer as TimerIcon,
+  Tune as TuneIcon,
+  Delete as TrashIcon,
 } from "@mui/icons-material";
-import { useList } from "@refinedev/core";
+import { useList, useDelete } from "@refinedev/core";
 import { UserAppliance, ApplianceUsageLog, DailyApplianceUsage } from "../../types";
 import {
   formatDateToKey,
+  parseKeyToDate,
   calculateKwh,
   calculateCost,
   DEFAULT_EFFECTIVE_RATE,
   splitSessionAcrossDays,
+  allocateNonOverlappingSlots,
+  deductSessionDailyUsage,
+  accumulateLiveSessionDailyUsage,
 } from "../../lib/dailyUsageService";
+import { supabaseClient } from "../../lib/supabaseClient";
+import { useToast } from "../common/ToastProvider";
 
 interface TodayActivityTimelineProps {
   appliances: UserAppliance[];
@@ -28,6 +44,8 @@ interface TodayActivityTimelineProps {
 
 interface TimelineSessionBlock {
   id: string;
+  logId?: string;
+  rawLog?: ApplianceUsageLog;
   type: "live_stopwatch" | "logged_session" | "daily_routine";
   startHour: number;
   endHour: number;
@@ -40,6 +58,18 @@ interface TimelineSessionBlock {
 
 export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ appliances }) => {
   const [, setLiveTick] = useState(0);
+  const { showSuccess, showInfo, showError } = useToast();
+  const { mutate: deleteLog } = useDelete();
+
+  // Block Inspector State
+  const [selectedBlockForAction, setSelectedBlockForAction] = useState<{
+    block: TimelineSessionBlock;
+    appliance: UserAppliance;
+  } | null>(null);
+  const [isEditingBlockRange, setIsEditingBlockRange] = useState(false);
+  const [blockEditStartDateTime, setBlockEditStartDateTime] = useState("");
+  const [blockEditEndDateTime, setBlockEditEndDateTime] = useState("");
+  const [isSavingBlockAction, setIsSavingBlockAction] = useState(false);
 
   const todayKey = formatDateToKey(new Date());
 
@@ -67,6 +97,166 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
     return () => clearInterval(interval);
   }, [hasActiveStopwatch]);
 
+  const handleBlockClick = (block: TimelineSessionBlock, appliance: UserAppliance) => {
+    setSelectedBlockForAction({ block, appliance });
+    setIsEditingBlockRange(false);
+
+    if (block.rawLog) {
+      const s = new Date(block.rawLog.started_at);
+      const e = block.rawLog.ended_at
+        ? new Date(block.rawLog.ended_at)
+        : new Date(s.getTime() + (block.rawLog.duration_minutes || 60) * 60000);
+
+      const sIso = `${formatDateToKey(s)}T${String(s.getHours()).padStart(2, "0")}:${String(s.getMinutes()).padStart(2, "0")}`;
+      const eIso = `${formatDateToKey(e)}T${String(e.getHours()).padStart(2, "0")}:${String(e.getMinutes()).padStart(2, "0")}`;
+
+      setBlockEditStartDateTime(sIso);
+      setBlockEditEndDateTime(eIso);
+    } else {
+      const sDate = parseKeyToDate(todayKey);
+      sDate.setHours(Math.floor(block.startHour), Math.round((block.startHour % 1) * 60));
+      const eDate = parseKeyToDate(todayKey);
+      eDate.setHours(Math.floor(block.endHour), Math.round((block.endHour % 1) * 60));
+
+      const sIso = `${formatDateToKey(sDate)}T${String(sDate.getHours()).padStart(2, "0")}:${String(sDate.getMinutes()).padStart(2, "0")}`;
+      const eIso = `${formatDateToKey(eDate)}T${String(eDate.getHours()).padStart(2, "0")}:${String(eDate.getMinutes()).padStart(2, "0")}`;
+
+      setBlockEditStartDateTime(sIso);
+      setBlockEditEndDateTime(eIso);
+    }
+  };
+
+  const handleDeleteBlockSession = async () => {
+    if (!selectedBlockForAction) return;
+    const { block, appliance } = selectedBlockForAction;
+    if (block.logId && block.rawLog) {
+      const oldMinutes = block.rawLog.duration_minutes || 60;
+      const oldStart = new Date(block.rawLog.started_at);
+      const oldEnd = block.rawLog.ended_at
+        ? new Date(block.rawLog.ended_at)
+        : new Date(oldStart.getTime() + oldMinutes * 60000);
+
+      await deductSessionDailyUsage({
+        appliance_id: appliance.id,
+        durationMinutes: oldMinutes,
+        watts: appliance.watts,
+        quantity: appliance.quantity || 1,
+        effectiveRate: DEFAULT_EFFECTIVE_RATE,
+        user_id: appliance.user_id || null,
+        startTime: oldStart,
+        endTime: oldEnd,
+      });
+
+      deleteLog(
+        {
+          resource: "appliance_usage_logs",
+          id: block.logId,
+        },
+        {
+          onSuccess: () => {
+            showInfo("Session log removed and daily usage reconciled.");
+            if (logsRes?.refetch) logsRes.refetch();
+            if (dailyUsageRes?.refetch) dailyUsageRes.refetch();
+            setSelectedBlockForAction(null);
+          },
+        }
+      );
+    }
+  };
+
+  const handleSaveBlockEdit = async () => {
+    if (!selectedBlockForAction) return;
+    const { block, appliance } = selectedBlockForAction;
+    const start = new Date(blockEditStartDateTime);
+    const end = new Date(blockEditEndDateTime);
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
+      showError("Please enter a valid start and end time (end must be after start).");
+      return;
+    }
+
+    const durationMinutes = Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000));
+    const kwh = calculateKwh(appliance.watts, durationMinutes / 60, appliance.quantity || 1);
+    const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
+
+    setIsSavingBlockAction(true);
+    try {
+      if (block.logId && block.rawLog) {
+        const oldMinutes = block.rawLog.duration_minutes || 60;
+        const oldStart = new Date(block.rawLog.started_at);
+        const oldEnd = block.rawLog.ended_at
+          ? new Date(block.rawLog.ended_at)
+          : new Date(oldStart.getTime() + oldMinutes * 60000);
+
+        await deductSessionDailyUsage({
+          appliance_id: appliance.id,
+          durationMinutes: oldMinutes,
+          watts: appliance.watts,
+          quantity: appliance.quantity || 1,
+          effectiveRate: DEFAULT_EFFECTIVE_RATE,
+          user_id: appliance.user_id || null,
+          startTime: oldStart,
+          endTime: oldEnd,
+        });
+
+        await supabaseClient
+          .from("appliance_usage_logs")
+          .update({
+            started_at: start.toISOString(),
+            ended_at: end.toISOString(),
+            duration_minutes: durationMinutes,
+            kwh_consumed: kwh,
+            estimated_cost: cost,
+          })
+          .eq("id", block.logId);
+
+        await accumulateLiveSessionDailyUsage({
+          appliance_id: appliance.id,
+          durationMinutes,
+          watts: appliance.watts,
+          quantity: appliance.quantity || 1,
+          effectiveRate: DEFAULT_EFFECTIVE_RATE,
+          user_id: appliance.user_id || null,
+          startTime: start,
+          endTime: end,
+        });
+
+        showSuccess(`Updated session for ${appliance.name} (${(durationMinutes / 60).toFixed(1)} hrs)!`);
+      } else {
+        await supabaseClient.from("appliance_usage_logs").insert({
+          appliance_id: appliance.id,
+          user_id: appliance.user_id || null,
+          started_at: start.toISOString(),
+          ended_at: end.toISOString(),
+          duration_minutes: durationMinutes,
+          kwh_consumed: kwh,
+          estimated_cost: cost,
+          source: "converted_routine",
+        });
+
+        await accumulateLiveSessionDailyUsage({
+          appliance_id: appliance.id,
+          durationMinutes,
+          watts: appliance.watts,
+          quantity: appliance.quantity || 1,
+          effectiveRate: DEFAULT_EFFECTIVE_RATE,
+          user_id: appliance.user_id || null,
+          startTime: start,
+          endTime: end,
+        });
+
+        showSuccess(`Logged timestamped session for ${appliance.name} (${(durationMinutes / 60).toFixed(1)} hrs)!`);
+      }
+
+      if (logsRes?.refetch) logsRes.refetch();
+      if (dailyUsageRes?.refetch) dailyUsageRes.refetch();
+      setSelectedBlockForAction(null);
+    } catch (err: any) {
+      showError(`Failed to save session edit: ${err?.message}`);
+    } finally {
+      setIsSavingBlockAction(false);
+    }
+  };
+
   // Compute 24-hour session blocks for each appliance today
   const timelineData = useMemo(() => {
     return appliances.map((app) => {
@@ -86,6 +276,8 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
 
           sessionBlocks.push({
             id: `${log.id}-${matchingSlice.dateKey}`,
+            logId: log.id,
+            rawLog: log,
             type: "logged_session",
             startHour: matchingSlice.startHourFrac,
             endHour: matchingSlice.endHourFrac,
@@ -123,50 +315,75 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
         }
       }
 
-      // 3. Daily Routine / Manual Logged Hours
+      // 3. Daily Routine / Manual Logged Hours (Allocated to non-overlapping idle slots)
       const dayRecord = dailyUsage.find((d) => d.appliance_id === app.id);
-      const manualHours = Number(dayRecord?.hours_used) || 0;
+      const recordedDayHours = Math.max(0, Math.min(24, Number(dayRecord?.hours_used) || 0));
       const stopwatchHoursSum = sessionBlocks.reduce((acc, curr) => acc + curr.durationHours, 0);
 
-      if (manualHours > stopwatchHoursSum) {
-        const extraManualHours = manualHours - stopwatchHoursSum;
-        const startH = app.start_hour !== undefined ? app.start_hour : 8;
-        const endH = Math.min(24, startH + extraManualHours);
-        const routineKwh = calculateKwh(app.watts, extraManualHours, app.quantity || 1);
-        const routineCost = calculateCost(routineKwh, DEFAULT_EFFECTIVE_RATE);
+      const occupiedIntervals = sessionBlocks.map((s) => ({
+        startHour: s.startHour,
+        endHour: s.endHour,
+      }));
 
-        sessionBlocks.push({
-          id: `routine-${app.id}`,
-          type: "daily_routine",
-          startHour: startH,
-          endHour: endH,
-          durationHours: extraManualHours,
-          kwh: routineKwh,
-          cost: routineCost,
-          startTimeStr: `${String(startH).padStart(2, "0")}:00`,
-          endTimeStr: `${String(Math.floor(endH)).padStart(2, "0")}:${String(Math.round((endH % 1) * 60)).padStart(2, "0")}`,
+      const preferredStartHour = app.start_hour !== undefined ? app.start_hour : 8;
+
+      if (recordedDayHours > stopwatchHoursSum + 0.05) {
+        const extraHours = Math.min(24 - stopwatchHoursSum, recordedDayHours - stopwatchHoursSum);
+        const freeSlots = allocateNonOverlappingSlots(occupiedIntervals, extraHours, preferredStartHour);
+
+        freeSlots.forEach((slot, idx) => {
+          const duration = Math.max(0.001, slot.endHour - slot.startHour);
+          const routineKwh = calculateKwh(app.watts, duration, app.quantity || 1);
+          const routineCost = calculateCost(routineKwh, DEFAULT_EFFECTIVE_RATE);
+          const startH = Math.floor(slot.startHour);
+          const startM = Math.round((slot.startHour % 1) * 60);
+          const endH = Math.floor(slot.endHour);
+          const endM = Math.round((slot.endHour % 1) * 60);
+
+          sessionBlocks.push({
+            id: `routine-extra-${app.id}-${idx}`,
+            type: "daily_routine",
+            startHour: slot.startHour,
+            endHour: slot.endHour,
+            durationHours: duration,
+            kwh: routineKwh,
+            cost: routineCost,
+            startTimeStr: `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")}`,
+            endTimeStr: `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`,
+          });
         });
       } else if (sessionBlocks.length === 0 && app.hours_per_day > 0) {
         // Routine Baseline placeholder
-        const startH = app.start_hour !== undefined ? app.start_hour : 8;
-        const endH = Math.min(24, startH + app.hours_per_day);
-        const routineKwh = calculateKwh(app.watts, app.hours_per_day, app.quantity || 1);
-        const routineCost = calculateCost(routineKwh, DEFAULT_EFFECTIVE_RATE);
+        const baselineHours = Math.min(24, app.hours_per_day);
+        const freeSlots = allocateNonOverlappingSlots([], baselineHours, preferredStartHour);
 
-        sessionBlocks.push({
-          id: `baseline-${app.id}`,
-          type: "daily_routine",
-          startHour: startH,
-          endHour: endH,
-          durationHours: app.hours_per_day,
-          kwh: routineKwh,
-          cost: routineCost,
-          startTimeStr: `${String(startH).padStart(2, "0")}:00 (Scheduled)`,
-          endTimeStr: `${String(Math.floor(endH)).padStart(2, "0")}:${String(Math.round((endH % 1) * 60)).padStart(2, "0")}`,
+        freeSlots.forEach((slot, idx) => {
+          const duration = Math.max(0.001, slot.endHour - slot.startHour);
+          const routineKwh = calculateKwh(app.watts, duration, app.quantity || 1);
+          const routineCost = calculateCost(routineKwh, DEFAULT_EFFECTIVE_RATE);
+          const startH = Math.floor(slot.startHour);
+          const startM = Math.round((slot.startHour % 1) * 60);
+          const endH = Math.floor(slot.endHour);
+          const endM = Math.round((slot.endHour % 1) * 60);
+
+          sessionBlocks.push({
+            id: `baseline-${app.id}-${idx}`,
+            type: "daily_routine",
+            startHour: slot.startHour,
+            endHour: slot.endHour,
+            durationHours: duration,
+            kwh: routineKwh,
+            cost: routineCost,
+            startTimeStr: `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")} (Scheduled)`,
+            endTimeStr: `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`,
+          });
         });
       }
 
-      const totalDayHours = sessionBlocks.reduce((acc, curr) => acc + curr.durationHours, 0);
+      const totalDayHours = Math.min(
+        24,
+        sessionBlocks.reduce((acc, curr) => acc + curr.durationHours, 0)
+      );
 
       return {
         app,
@@ -389,7 +606,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                       title={
                         <Box sx={{ p: 0.5 }}>
                           <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#fff" }}>
-                            {app.name} ({block.type === "live_stopwatch" ? "🟢 Live Active" : block.type === "logged_session" ? "🔵 Logged Session" : "🟣 Daily Routine"})
+                            {app.name} ({block.type === "live_stopwatch" ? "🟢 Live Active" : block.type === "logged_session" ? "🔵 Logged Session (Click to Edit / Delete)" : "🟣 Daily Routine (Click to Edit)"})
                           </Typography>
                           <Typography variant="caption" sx={{ display: "block", color: "text.secondary" }}>
                             ⏰ {block.startTimeStr} – {block.endTimeStr} ({block.durationHours.toFixed(2)} hrs)
@@ -397,10 +614,14 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                           <Typography variant="caption" sx={{ display: "block", color: "#ffd54f", fontWeight: 800, mt: 0.5 }}>
                             ⚡ {block.kwh.toFixed(3)} kWh • ₱{block.cost.toFixed(2)}
                           </Typography>
+                          <Typography variant="caption" sx={{ display: "block", color: "primary.light", fontWeight: 800, mt: 0.5 }}>
+                            👉 Click block to inspect / edit / delete
+                          </Typography>
                         </Box>
                       }
                     >
                       <Box
+                        onClick={() => handleBlockClick(block, app)}
                         sx={{
                           position: "absolute",
                           left: `${leftPct}%`,
@@ -434,9 +655,218 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
           Peak Today Demand: <strong style={{ color: "#ffd54f" }}>{peakDemand} W</strong> (₱{((peakDemand / 1000) * 14.8261).toFixed(2)}/hr rate)
         </Typography>
         <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
-          💡 Hover over any block to inspect exact duration, metered kWh, and incurred peso cost.
+          💡 Click any block to view telemetry, edit start/end timestamps, or delete the log.
         </Typography>
       </Box>
+
+      {/* Interactive Timeline Block Inspector & Editor Dialog */}
+      {selectedBlockForAction && (
+        <Dialog
+          open={Boolean(selectedBlockForAction)}
+          onClose={() => {
+            setSelectedBlockForAction(null);
+            setIsEditingBlockRange(false);
+          }}
+          fullWidth
+          maxWidth="sm"
+          slotProps={{
+            paper: {
+              sx: {
+                borderRadius: 3.5,
+                bgcolor: "#0f0e3a",
+                border: "1px solid rgba(108, 122, 224, 0.4)",
+                boxShadow: "0 24px 64px rgba(0, 0, 0, 0.6)",
+                color: "#ffffff",
+                p: 1,
+              },
+            },
+          }}
+        >
+          <DialogTitle sx={{ pb: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+              <Box
+                sx={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 2,
+                  bgcolor: selectedBlockForAction.block.type === "live_stopwatch" ? "rgba(16, 185, 129, 0.2)" : selectedBlockForAction.block.type === "logged_session" ? "rgba(99, 102, 241, 0.2)" : "rgba(168, 85, 247, 0.2)",
+                  color: selectedBlockForAction.block.type === "live_stopwatch" ? "#34d399" : selectedBlockForAction.block.type === "logged_session" ? "#818cf8" : "#c084fc",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <TimerIcon />
+              </Box>
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 900, lineHeight: 1.2 }}>
+                  {selectedBlockForAction.appliance.name}
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  {selectedBlockForAction.appliance.watts}W • {selectedBlockForAction.block.type === "live_stopwatch" ? "Live Running Stopwatch" : selectedBlockForAction.block.type === "logged_session" ? "Timestamped Session Log" : "Daily Routine Slot"}
+                </Typography>
+              </Box>
+            </Box>
+            <IconButton size="small" onClick={() => setSelectedBlockForAction(null)}>
+              <CloseIcon sx={{ color: "text.secondary" }} />
+            </IconButton>
+          </DialogTitle>
+
+          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1.5 }}>
+            {/* Metrics Card */}
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2,
+                borderRadius: 2.5,
+                bgcolor: "rgba(255, 255, 255, 0.03)",
+                borderColor: "rgba(255, 255, 255, 0.08)",
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: 1.5,
+                textAlign: "center",
+              }}
+            >
+              <Box>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>DURATION</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.light" }}>
+                  {selectedBlockForAction.block.durationHours >= 1 ? `${selectedBlockForAction.block.durationHours.toFixed(1)} hrs` : `${Math.round(selectedBlockForAction.block.durationHours * 60)} mins`}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>ENERGY</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f" }}>
+                  {selectedBlockForAction.block.kwh.toFixed(3)} kWh
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>EST. COST</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#34d399" }}>
+                  ₱{selectedBlockForAction.block.cost.toFixed(2)}
+                </Typography>
+              </Box>
+            </Paper>
+
+            {/* Time Range Info or Edit Form */}
+            {!isEditingBlockRange ? (
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  borderRadius: 2.5,
+                  bgcolor: "rgba(99, 102, 241, 0.06)",
+                  borderColor: "rgba(99, 102, 241, 0.2)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1,
+                }}
+              >
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800 }}>ACTIVE TIME WINDOW</Typography>
+                  {selectedBlockForAction.block.type !== "live_stopwatch" && (
+                    <Button
+                      size="small"
+                      startIcon={<TuneIcon sx={{ fontSize: 15 }} />}
+                      onClick={() => setIsEditingBlockRange(true)}
+                      sx={{ textTransform: "none", fontWeight: 700, fontSize: "0.75rem" }}
+                    >
+                      Edit Time Range
+                    </Button>
+                  )}
+                </Box>
+                <Typography variant="body1" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
+                  ⏰ {selectedBlockForAction.block.startTimeStr} ➔ {selectedBlockForAction.block.endTimeStr}
+                </Typography>
+              </Paper>
+            ) : (
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  borderRadius: 2.5,
+                  bgcolor: "rgba(99, 102, 241, 0.08)",
+                  borderColor: "rgba(99, 102, 241, 0.3)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.light" }}>
+                  Adjust Start & End Timestamps
+                </Typography>
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
+                  <TextField
+                    type="datetime-local"
+                    label="Session Start Time"
+                    value={blockEditStartDateTime}
+                    onChange={(e) => setBlockEditStartDateTime(e.target.value)}
+                    size="small"
+                    fullWidth
+                    slotProps={{ inputLabel: { shrink: true } }}
+                  />
+                  <TextField
+                    type="datetime-local"
+                    label="Session End Time"
+                    value={blockEditEndDateTime}
+                    onChange={(e) => setBlockEditEndDateTime(e.target.value)}
+                    size="small"
+                    fullWidth
+                    slotProps={{ inputLabel: { shrink: true } }}
+                  />
+                </Box>
+                <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+                  <Button size="small" onClick={() => setIsEditingBlockRange(false)} disabled={isSavingBlockAction}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={handleSaveBlockEdit}
+                    disabled={isSavingBlockAction}
+                    sx={{ fontWeight: 800 }}
+                  >
+                    {isSavingBlockAction ? "Saving..." : "Save Time Window"}
+                  </Button>
+                </Box>
+              </Paper>
+            )}
+          </DialogContent>
+
+          <DialogActions sx={{ px: 3, pb: 2, pt: 1, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+            {selectedBlockForAction.block.type === "logged_session" && selectedBlockForAction.block.logId ? (
+              <Button
+                color="error"
+                variant="outlined"
+                startIcon={<TrashIcon />}
+                onClick={handleDeleteBlockSession}
+                disabled={isSavingBlockAction}
+                sx={{ borderRadius: 2, fontWeight: 800 }}
+              >
+                Delete Session Log
+              </Button>
+            ) : selectedBlockForAction.block.type === "daily_routine" ? (
+              <Button
+                color="primary"
+                variant="outlined"
+                startIcon={<TuneIcon />}
+                onClick={() => setIsEditingBlockRange(true)}
+                disabled={isSavingBlockAction}
+                sx={{ borderRadius: 2, fontWeight: 800 }}
+              >
+                Convert to Exact Session
+              </Button>
+            ) : <Box />}
+
+            <Button
+              variant="outlined"
+              onClick={() => setSelectedBlockForAction(null)}
+              sx={{ borderRadius: 2, fontWeight: 700 }}
+            >
+              Done
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </Card>
   );
 };

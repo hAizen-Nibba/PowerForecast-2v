@@ -22,3 +22,15 @@
   - [Sidebar.tsx](file:///c:/Users/AJUmali/Documents/PowerForecast-2v/src/components/layout/Sidebar.tsx)
   - [LandingPage.tsx](file:///c:/Users/AJUmali/Documents/PowerForecast-2v/src/pages/LandingPage.tsx)
 - **package.json**: Keep the `version` field in [package.json](file:///c:/Users/AJUmali/Documents/PowerForecast-2v/package.json) updated with the base SemVer string (e.g., `"2.6.0"`).
+
+---
+
+## 🧠 Reasoning & Analysis Standard: Sequential Thinking
+For all:
+1. **Bug checking & debugging**
+2. **Making and approving implementation plans**
+3. **Security checking & vulnerability audits**
+4. **System improvements and architectural refactoring**
+
+Always utilize the **`sequential-thinking`** tool (`sequentialthinking`) to dynamically break down problems, analyze edge cases, hypothesize, verify, and course-correct before committing changes or finalizing decisions.
+

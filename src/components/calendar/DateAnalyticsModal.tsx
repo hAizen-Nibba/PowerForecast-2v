@@ -41,11 +41,13 @@ import {
   AccessTime as ClockIcon,
   ChevronRight as ChevronRightIcon,
   Tune as TuneIcon,
+  Edit as EditIcon,
 } from "@mui/icons-material";
 import { UserAppliance, UserCalendarEvent, DailyApplianceUsage, ApplianceList, ApplianceUsageLog } from "../../types";
-import { useCreate, useDelete } from "@refinedev/core";
+import { useCreate, useUpdate, useDelete } from "@refinedev/core";
 import {
   formatDateToKey,
+  parseKeyToDate,
   batchSaveDailyUsage,
   calculateKwh,
   calculateCost,
@@ -55,6 +57,7 @@ import {
   splitSessionAcrossDays,
   accumulateLiveSessionDailyUsage,
   deductSessionDailyUsage,
+  allocateNonOverlappingSlots,
 } from "../../lib/dailyUsageService";
 import { supabaseClient } from "../../lib/supabaseClient";
 import { useToast } from "../common/ToastProvider";
@@ -104,9 +107,27 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
   const { showSuccess, showInfo, showError } = useToast();
   const { mutate: createEvent, isLoading: isCreatingEvent } = useCreate();
+  const { mutate: updateEvent, isLoading: isUpdatingEvent } = useUpdate();
   const { mutate: deleteEvent } = useDelete();
   const { mutate: createLog } = useCreate();
   const { mutate: deleteLog } = useDelete();
+
+  // Timeline Block Action Modal State
+  const [selectedBlockForAction, setSelectedBlockForAction] = useState<{
+    block: any;
+    appliance: UserAppliance;
+  } | null>(null);
+  const [isEditingBlockRange, setIsEditingBlockRange] = useState(false);
+  const [blockEditStartDateTime, setBlockEditStartDateTime] = useState("");
+  const [blockEditEndDateTime, setBlockEditEndDateTime] = useState("");
+  const [isSavingBlockAction, setIsSavingBlockAction] = useState(false);
+
+  // Scheduled Task Editing State (Tab 2)
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [editEventTitle, setEditEventTitle] = useState("");
+  const [editEventApplianceId, setEditEventApplianceId] = useState("");
+  const [editEventHour, setEditEventHour] = useState(14);
+  const [editEventDuration, setEditEventDuration] = useState(2);
 
   // Past Time Range Logger State
   const [isPastSessionModalOpen, setIsPastSessionModalOpen] = useState(false);
@@ -499,15 +520,184 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         });
       }
     }
-    deleteLog(
+      deleteLog(
+        {
+          resource: "appliance_usage_logs",
+          id: logId,
+        },
+        {
+          onSuccess: () => {
+            showInfo("Session log removed and daily usage reconciled.");
+            if (onUsageSaved) onUsageSaved();
+          },
+        }
+      );
+    };
+
+  // Block Click Action Handlers
+  const handleBlockClick = (block: TimelineSessionBlock, appliance: UserAppliance) => {
+    setSelectedBlockForAction({ block, appliance });
+    setIsEditingBlockRange(false);
+
+    if (block.rawLog) {
+      const s = new Date(block.rawLog.started_at);
+      const e = block.rawLog.ended_at
+        ? new Date(block.rawLog.ended_at)
+        : new Date(s.getTime() + (block.rawLog.duration_minutes || 60) * 60000);
+
+      const sIso = `${formatDateToKey(s)}T${String(s.getHours()).padStart(2, "0")}:${String(s.getMinutes()).padStart(2, "0")}`;
+      const eIso = `${formatDateToKey(e)}T${String(e.getHours()).padStart(2, "0")}:${String(e.getMinutes()).padStart(2, "0")}`;
+
+      setBlockEditStartDateTime(sIso);
+      setBlockEditEndDateTime(eIso);
+    } else {
+      const sDate = parseKeyToDate(dateKey);
+      sDate.setHours(Math.floor(block.startHour), Math.round((block.startHour % 1) * 60));
+      const eDate = parseKeyToDate(dateKey);
+      eDate.setHours(Math.floor(block.endHour), Math.round((block.endHour % 1) * 60));
+
+      const sIso = `${formatDateToKey(sDate)}T${String(sDate.getHours()).padStart(2, "0")}:${String(sDate.getMinutes()).padStart(2, "0")}`;
+      const eIso = `${formatDateToKey(eDate)}T${String(eDate.getHours()).padStart(2, "0")}:${String(eDate.getMinutes()).padStart(2, "0")}`;
+
+      setBlockEditStartDateTime(sIso);
+      setBlockEditEndDateTime(eIso);
+    }
+  };
+
+  const handleDeleteBlockSession = async () => {
+    if (!selectedBlockForAction) return;
+    const { block, appliance } = selectedBlockForAction;
+    if (block.logId) {
+      await handleDeleteSessionLog(block.logId);
+      setSelectedBlockForAction(null);
+    } else if (block.type === "manual_routine") {
+      handleHoursChange(appliance.id, 0);
+      setSelectedBlockForAction(null);
+      showInfo(`Cleared daily routine hours for ${appliance.name}`);
+    }
+  };
+
+  const handleSaveBlockEdit = async () => {
+    if (!selectedBlockForAction) return;
+    const { block, appliance } = selectedBlockForAction;
+    const start = new Date(blockEditStartDateTime);
+    const end = new Date(blockEditEndDateTime);
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
+      showError("Please enter a valid start and end time (end must be after start).");
+      return;
+    }
+
+    const durationMinutes = Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000));
+    const kwh = calculateKwh(appliance.watts, durationMinutes / 60, appliance.quantity || 1);
+    const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
+
+    setIsSavingBlockAction(true);
+    try {
+      if (block.logId && block.rawLog) {
+        const oldMinutes = block.rawLog.duration_minutes || 60;
+        const oldStart = new Date(block.rawLog.started_at);
+        const oldEnd = block.rawLog.ended_at
+          ? new Date(block.rawLog.ended_at)
+          : new Date(oldStart.getTime() + oldMinutes * 60000);
+
+        await deductSessionDailyUsage({
+          appliance_id: appliance.id,
+          durationMinutes: oldMinutes,
+          watts: appliance.watts,
+          quantity: appliance.quantity || 1,
+          effectiveRate: DEFAULT_EFFECTIVE_RATE,
+          user_id: appliance.user_id || null,
+          startTime: oldStart,
+          endTime: oldEnd,
+        });
+
+        await supabaseClient
+          .from("appliance_usage_logs")
+          .update({
+            started_at: start.toISOString(),
+            ended_at: end.toISOString(),
+            duration_minutes: durationMinutes,
+            kwh_consumed: kwh,
+            estimated_cost: cost,
+          })
+          .eq("id", block.logId);
+
+        await accumulateLiveSessionDailyUsage({
+          appliance_id: appliance.id,
+          durationMinutes,
+          watts: appliance.watts,
+          quantity: appliance.quantity || 1,
+          effectiveRate: DEFAULT_EFFECTIVE_RATE,
+          user_id: appliance.user_id || null,
+          startTime: start,
+          endTime: end,
+        });
+
+        showSuccess(`Updated session for ${appliance.name} (${(durationMinutes / 60).toFixed(1)} hrs)!`);
+      } else {
+        await supabaseClient.from("appliance_usage_logs").insert({
+          appliance_id: appliance.id,
+          user_id: appliance.user_id || null,
+          started_at: start.toISOString(),
+          ended_at: end.toISOString(),
+          duration_minutes: durationMinutes,
+          kwh_consumed: kwh,
+          estimated_cost: cost,
+          source: "converted_routine",
+        });
+
+        await accumulateLiveSessionDailyUsage({
+          appliance_id: appliance.id,
+          durationMinutes,
+          watts: appliance.watts,
+          quantity: appliance.quantity || 1,
+          effectiveRate: DEFAULT_EFFECTIVE_RATE,
+          user_id: appliance.user_id || null,
+          startTime: start,
+          endTime: end,
+        });
+
+        showSuccess(`Logged timestamped session for ${appliance.name} (${(durationMinutes / 60).toFixed(1)} hrs)!`);
+      }
+
+      setSelectedBlockForAction(null);
+      if (onUsageSaved) onUsageSaved();
+    } catch (err: any) {
+      showError(`Failed to save session edit: ${err?.message}`);
+    } finally {
+      setIsSavingBlockAction(false);
+    }
+  };
+
+  // Scheduled Task (Tab 2) Edit Handlers
+  const handleStartEditEvent = (ev: UserCalendarEvent) => {
+    setEditingEventId(ev.id);
+    setEditEventTitle(ev.title || "");
+    setEditEventApplianceId(ev.appliance_id || "");
+    setEditEventHour(ev.hour || 8);
+    setEditEventDuration(ev.duration_hours || 1);
+  };
+
+  const handleCancelEditEvent = () => {
+    setEditingEventId(null);
+  };
+
+  const handleSaveEventEdit = (eventId: string) => {
+    updateEvent(
       {
-        resource: "appliance_usage_logs",
-        id: logId,
+        resource: "user_calendar_events",
+        id: eventId,
+        values: {
+          title: editEventTitle,
+          appliance_id: editEventApplianceId || null,
+          hour: editEventHour,
+          duration_hours: editEventDuration,
+        },
       },
       {
         onSuccess: () => {
-          showInfo("Session log removed and daily usage reconciled.");
-          if (onUsageSaved) onUsageSaved();
+          setEditingEventId(null);
+          showSuccess("Updated scheduled task!");
         },
       }
     );
@@ -594,6 +784,8 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
   interface TimelineSessionBlock {
     id: string;
+    logId?: string;
+    rawLog?: ApplianceUsageLog;
     type: "logged_session" | "live_stopwatch" | "manual_routine";
     startHour: number;
     endHour: number;
@@ -623,6 +815,8 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
           sessionBlocks.push({
             id: `${log.id}-${matchingSlice.dateKey}`,
+            logId: log.id,
+            rawLog: log,
             type: "logged_session",
             startHour: matchingSlice.startHourFrac,
             endHour: matchingSlice.endHourFrac,
@@ -660,48 +854,72 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         }
       }
 
-      // 3. Additive Hybrid: If user logged extra manual hours in addition to session logs
-      const manualHours = usageState[app.id]?.hours || 0;
+      // 3. Routine / Extra Manual hours allocation into non-overlapping free time slots
+      const recordedDayHours = Math.max(0, Math.min(24, usageState[app.id]?.hours || 0));
       const stopwatchHoursSum = sessionBlocks.reduce((acc, curr) => acc + curr.durationHours, 0);
 
-      if (manualHours > stopwatchHoursSum + 0.05) {
-        const extraManualHours = manualHours - stopwatchHoursSum;
-        const startH = app.start_hour !== undefined ? app.start_hour : 8;
-        const endH = Math.min(24, startH + extraManualHours);
-        const kwh = calculateKwh(app.watts, extraManualHours, app.quantity || 1);
-        const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
+      const occupiedIntervals = sessionBlocks.map((s) => ({
+        startHour: s.startHour,
+        endHour: s.endHour,
+      }));
 
-        sessionBlocks.push({
-          id: `manual-extra-${app.id}`,
-          type: "manual_routine" as const,
-          startHour: startH,
-          endHour: endH,
-          durationHours: extraManualHours,
-          kwh,
-          cost,
-          startTimeStr: `${String(startH).padStart(2, "0")}:00 (Manual)`,
-          endTimeStr: `${String(Math.floor(endH)).padStart(2, "0")}:${String(Math.round((endH % 1) * 60)).padStart(2, "0")}`,
+      const preferredStartHour = app.start_hour !== undefined ? app.start_hour : 8;
+
+      if (recordedDayHours > stopwatchHoursSum + 0.05) {
+        const extraHours = Math.min(24 - stopwatchHoursSum, recordedDayHours - stopwatchHoursSum);
+        const freeSlots = allocateNonOverlappingSlots(occupiedIntervals, extraHours, preferredStartHour);
+
+        freeSlots.forEach((slot, idx) => {
+          const duration = Math.max(0.001, slot.endHour - slot.startHour);
+          const kwh = calculateKwh(app.watts, duration, app.quantity || 1);
+          const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
+          const startH = Math.floor(slot.startHour);
+          const startM = Math.round((slot.startHour % 1) * 60);
+          const endH = Math.floor(slot.endHour);
+          const endM = Math.round((slot.endHour % 1) * 60);
+
+          sessionBlocks.push({
+            id: `manual-extra-${app.id}-${idx}`,
+            type: "manual_routine" as const,
+            startHour: slot.startHour,
+            endHour: slot.endHour,
+            durationHours: duration,
+            kwh,
+            cost,
+            startTimeStr: `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")} (Manual)`,
+            endTimeStr: `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`,
+          });
         });
-      } else if (sessionBlocks.length === 0 && manualHours > 0) {
-        const startH = app.start_hour !== undefined ? app.start_hour : 8;
-        const endH = Math.min(24, startH + manualHours);
-        const kwh = calculateKwh(app.watts, manualHours, app.quantity || 1);
-        const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
+      } else if (sessionBlocks.length === 0 && recordedDayHours > 0) {
+        const freeSlots = allocateNonOverlappingSlots([], recordedDayHours, preferredStartHour);
 
-        sessionBlocks.push({
-          id: `manual-${app.id}`,
-          type: "manual_routine" as const,
-          startHour: startH,
-          endHour: endH,
-          durationHours: manualHours,
-          kwh,
-          cost,
-          startTimeStr: `${String(startH).padStart(2, "0")}:00 (Manual)`,
-          endTimeStr: `${String(Math.floor(endH)).padStart(2, "0")}:${String(Math.round((endH % 1) * 60)).padStart(2, "0")}`,
+        freeSlots.forEach((slot, idx) => {
+          const duration = Math.max(0.001, slot.endHour - slot.startHour);
+          const kwh = calculateKwh(app.watts, duration, app.quantity || 1);
+          const cost = calculateCost(kwh, DEFAULT_EFFECTIVE_RATE);
+          const startH = Math.floor(slot.startHour);
+          const startM = Math.round((slot.startHour % 1) * 60);
+          const endH = Math.floor(slot.endHour);
+          const endM = Math.round((slot.endHour % 1) * 60);
+
+          sessionBlocks.push({
+            id: `manual-${app.id}-${idx}`,
+            type: "manual_routine" as const,
+            startHour: slot.startHour,
+            endHour: slot.endHour,
+            durationHours: duration,
+            kwh,
+            cost,
+            startTimeStr: `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")} (Manual)`,
+            endTimeStr: `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`,
+          });
         });
       }
 
-      const totalAppHours = sessionBlocks.reduce((acc, curr) => acc + curr.durationHours, 0);
+      const totalAppHours = Math.min(
+        24,
+        sessionBlocks.reduce((acc, curr) => acc + curr.durationHours, 0)
+      );
 
       return {
         appliance: app,
@@ -1605,7 +1823,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                   title={
                                     <Box sx={{ p: 0.5 }}>
                                       <Typography variant="caption" sx={{ fontWeight: 800, color: isLiveBlock ? "#34d399" : "#a5b4fc", display: "block" }}>
-                                        {isLiveBlock ? "⏱️ LIVE RUNNING STOPWATCH" : isManual ? "🟣 Routine Log" : "🔵 Logged Session"}
+                                        {isLiveBlock ? "⏱️ LIVE RUNNING STOPWATCH" : isManual ? "🟣 Routine Log (Click to Edit)" : "🔵 Logged Session (Click to Edit / Delete)"}
                                       </Typography>
                                       <Typography variant="caption" sx={{ display: "block" }}>
                                         Time: {session.startTimeStr} ➔ {session.endTimeStr}
@@ -1616,10 +1834,14 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                       <Typography variant="caption" sx={{ display: "block", color: "#ffd54f", fontWeight: 800, fontFamily: "monospace" }}>
                                         {session.kwh.toFixed(3)} kWh • ₱{session.cost.toFixed(2)}
                                       </Typography>
+                                      <Typography variant="caption" sx={{ display: "block", color: "primary.light", fontWeight: 800, mt: 0.5 }}>
+                                        👉 Click block to inspect / edit / delete
+                                      </Typography>
                                     </Box>
                                   }
                                 >
                                   <Box
+                                    onClick={() => handleBlockClick(session, appliance)}
                                     sx={{
                                       position: "absolute",
                                       left: `${left}%`,
@@ -1656,9 +1878,15 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                           fontSize: "0.5625rem",
                                           fontWeight: 800,
                                           fontFamily: "monospace",
+                                          maxWidth: "100%",
+                                          overflow: "hidden",
+                                          textOverflow: "ellipsis",
+                                          px: 0.25,
                                         }}
                                       >
-                                        {session.startTimeStr}
+                                        {width > 16
+                                          ? session.startTimeStr
+                                          : `${String(Math.floor(session.startHour)).padStart(2, "0")}:${String(Math.round((session.startHour % 1) * 60)).padStart(2, "0")}`}
                                       </Typography>
                                     )}
                                   </Box>
@@ -1769,35 +1997,123 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                 </Typography>
               ) : (
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  {dayEvents.map((ev) => (
-                    <Paper
-                      key={ev.id}
-                      variant="outlined"
-                      sx={{ p: 1.5, borderRadius: 2.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}
-                    >
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                          {ev.title}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                          {ev.hour % 12 === 0 ? 12 : ev.hour % 12} {ev.hour >= 12 ? "PM" : "AM"} • {ev.duration_hours}h duration
-                        </Typography>
-                      </Box>
+                  {dayEvents.map((ev) => {
+                    const isEditingThis = editingEventId === ev.id;
+                    if (isEditingThis) {
+                      return (
+                        <Paper
+                          key={ev.id}
+                          variant="outlined"
+                          sx={{ p: 2, borderRadius: 2.5, bgcolor: "rgba(99, 102, 241, 0.08)", borderColor: "primary.main", display: "flex", flexDirection: "column", gap: 1.5 }}
+                        >
+                          <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.light" }}>
+                            Edit Scheduled Task
+                          </Typography>
+                          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
+                            <TextField
+                              size="small"
+                              label="Task Title"
+                              value={editEventTitle}
+                              onChange={(e) => setEditEventTitle(e.target.value)}
+                              fullWidth
+                            />
+                            <TextField
+                              select
+                              size="small"
+                              label="Associated Appliance"
+                              value={editEventApplianceId}
+                              onChange={(e) => setEditEventApplianceId(e.target.value)}
+                              fullWidth
+                            >
+                              <MenuItem value="">Custom / Manual Draw</MenuItem>
+                              {appliances.map((app) => (
+                                <MenuItem key={app.id} value={app.id}>
+                                  {app.name} ({app.watts}W)
+                                </MenuItem>
+                              ))}
+                            </TextField>
+                            <TextField
+                              select
+                              size="small"
+                              label="Start Hour"
+                              value={editEventHour}
+                              onChange={(e) => setEditEventHour(Number(e.target.value))}
+                              fullWidth
+                            >
+                              {Array.from({ length: 24 }).map((_, h) => (
+                                <MenuItem key={h} value={h}>
+                                  {h % 12 === 0 ? 12 : h % 12} {h >= 12 ? "PM" : "AM"}
+                                </MenuItem>
+                              ))}
+                            </TextField>
+                            <TextField
+                              type="number"
+                              size="small"
+                              label="Duration (Hours)"
+                              value={editEventDuration}
+                              onChange={(e) => setEditEventDuration(Math.max(0.5, Number(e.target.value) || 1))}
+                              fullWidth
+                            />
+                          </Box>
+                          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+                            <Button size="small" onClick={handleCancelEditEvent}>
+                              Cancel
+                            </Button>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              onClick={() => handleSaveEventEdit(ev.id)}
+                              disabled={isUpdatingEvent}
+                              sx={{ fontWeight: 800 }}
+                            >
+                              {isUpdatingEvent ? "Saving..." : "Save Changes"}
+                            </Button>
+                          </Box>
+                        </Paper>
+                      );
+                    }
 
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => {
-                          deleteEvent({
-                            resource: "user_calendar_events",
-                            id: ev.id,
-                          });
-                        }}
+                    return (
+                      <Paper
+                        key={ev.id}
+                        variant="outlined"
+                        sx={{ p: 1.5, borderRadius: 2.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}
                       >
-                        <TrashIcon fontSize="small" />
-                      </IconButton>
-                    </Paper>
-                  ))}
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {ev.title}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                            {ev.hour % 12 === 0 ? 12 : ev.hour % 12} {ev.hour >= 12 ? "PM" : "AM"} • {ev.duration_hours}h duration
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => handleStartEditEvent(ev)}
+                            title="Edit Task"
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => {
+                              deleteEvent({
+                                resource: "user_calendar_events",
+                                id: ev.id,
+                              });
+                            }}
+                            title="Delete Task"
+                          >
+                            <TrashIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </Paper>
+                    );
+                  })}
                 </Box>
               )}
             </Box>
@@ -1967,6 +2283,229 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
           if (onUsageSaved) onUsageSaved();
         }}
       />
+
+      {/* Interactive Timeline Block Inspector & Editor Dialog */}
+      {selectedBlockForAction && (
+        <Dialog
+          open={Boolean(selectedBlockForAction)}
+          onClose={() => {
+            setSelectedBlockForAction(null);
+            setIsEditingBlockRange(false);
+          }}
+          fullWidth
+          maxWidth="sm"
+          slotProps={{
+            paper: {
+              sx: {
+                borderRadius: 3.5,
+                bgcolor: "#0f0e3a",
+                border: "1px solid rgba(108, 122, 224, 0.4)",
+                boxShadow: "0 24px 64px rgba(0, 0, 0, 0.6)",
+                color: "#ffffff",
+                p: 1,
+              },
+            },
+          }}
+        >
+          <DialogTitle sx={{ pb: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+              <Box
+                sx={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 2,
+                  bgcolor: selectedBlockForAction.block.type === "live_stopwatch" ? "rgba(16, 185, 129, 0.2)" : selectedBlockForAction.block.type === "logged_session" ? "rgba(99, 102, 241, 0.2)" : "rgba(168, 85, 247, 0.2)",
+                  color: selectedBlockForAction.block.type === "live_stopwatch" ? "#34d399" : selectedBlockForAction.block.type === "logged_session" ? "#818cf8" : "#c084fc",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <TimerIcon />
+              </Box>
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 900, lineHeight: 1.2 }}>
+                  {selectedBlockForAction.appliance.name}
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  {selectedBlockForAction.appliance.watts}W • {selectedBlockForAction.block.type === "live_stopwatch" ? "Live Running Stopwatch" : selectedBlockForAction.block.type === "logged_session" ? "Timestamped Session Log" : "Daily Routine Slot"}
+                </Typography>
+              </Box>
+            </Box>
+            <IconButton size="small" onClick={() => setSelectedBlockForAction(null)}>
+              <CloseIcon sx={{ color: "text.secondary" }} />
+            </IconButton>
+          </DialogTitle>
+
+          <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1.5 }}>
+            {/* Metrics Card */}
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2,
+                borderRadius: 2.5,
+                bgcolor: "rgba(255, 255, 255, 0.03)",
+                borderColor: "rgba(255, 255, 255, 0.08)",
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: 1.5,
+                textAlign: "center",
+              }}
+            >
+              <Box>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>DURATION</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.light" }}>
+                  {selectedBlockForAction.block.durationHours >= 1 ? `${selectedBlockForAction.block.durationHours.toFixed(1)} hrs` : `${Math.round(selectedBlockForAction.block.durationHours * 60)} mins`}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>ENERGY</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f" }}>
+                  {selectedBlockForAction.block.kwh.toFixed(3)} kWh
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>EST. COST</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#34d399" }}>
+                  ₱{selectedBlockForAction.block.cost.toFixed(2)}
+                </Typography>
+              </Box>
+            </Paper>
+
+            {/* Time Range Info or Edit Form */}
+            {!isEditingBlockRange ? (
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  borderRadius: 2.5,
+                  bgcolor: "rgba(99, 102, 241, 0.06)",
+                  borderColor: "rgba(99, 102, 241, 0.2)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1,
+                }}
+              >
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800 }}>ACTIVE TIME WINDOW</Typography>
+                  {selectedBlockForAction.block.type !== "live_stopwatch" && (
+                    <Button
+                      size="small"
+                      startIcon={<TuneIcon sx={{ fontSize: 15 }} />}
+                      onClick={() => setIsEditingBlockRange(true)}
+                      sx={{ textTransform: "none", fontWeight: 700, fontSize: "0.75rem" }}
+                    >
+                      Edit Time Range
+                    </Button>
+                  )}
+                </Box>
+                <Typography variant="body1" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
+                  ⏰ {selectedBlockForAction.block.startTimeStr} ➔ {selectedBlockForAction.block.endTimeStr}
+                </Typography>
+              </Paper>
+            ) : (
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  borderRadius: 2.5,
+                  bgcolor: "rgba(99, 102, 241, 0.08)",
+                  borderColor: "rgba(99, 102, 241, 0.3)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.light" }}>
+                  Adjust Start & End Timestamps
+                </Typography>
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
+                  <TextField
+                    type="datetime-local"
+                    label="Session Start Time"
+                    value={blockEditStartDateTime}
+                    onChange={(e) => setBlockEditStartDateTime(e.target.value)}
+                    size="small"
+                    fullWidth
+                    slotProps={{ inputLabel: { shrink: true } }}
+                  />
+                  <TextField
+                    type="datetime-local"
+                    label="Session End Time"
+                    value={blockEditEndDateTime}
+                    onChange={(e) => setBlockEditEndDateTime(e.target.value)}
+                    size="small"
+                    fullWidth
+                    slotProps={{ inputLabel: { shrink: true } }}
+                  />
+                </Box>
+                <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+                  <Button size="small" onClick={() => setIsEditingBlockRange(false)} disabled={isSavingBlockAction}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={handleSaveBlockEdit}
+                    disabled={isSavingBlockAction}
+                    sx={{ fontWeight: 800 }}
+                  >
+                    {isSavingBlockAction ? "Saving..." : "Save Time Window"}
+                  </Button>
+                </Box>
+              </Paper>
+            )}
+          </DialogContent>
+
+          <DialogActions sx={{ px: 3, pb: 2, pt: 1, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+            {selectedBlockForAction.block.type === "logged_session" && selectedBlockForAction.block.logId ? (
+              <Button
+                color="error"
+                variant="outlined"
+                startIcon={<TrashIcon />}
+                onClick={handleDeleteBlockSession}
+                disabled={isSavingBlockAction}
+                sx={{ borderRadius: 2, fontWeight: 800 }}
+              >
+                Delete Session Log
+              </Button>
+            ) : selectedBlockForAction.block.type === "manual_routine" ? (
+              <Button
+                color="error"
+                variant="outlined"
+                startIcon={<TrashIcon />}
+                onClick={handleDeleteBlockSession}
+                disabled={isSavingBlockAction}
+                sx={{ borderRadius: 2, fontWeight: 800 }}
+              >
+                Clear Routine Hours
+              </Button>
+            ) : selectedBlockForAction.block.type === "live_stopwatch" ? (
+              <Button
+                color="warning"
+                variant="contained"
+                startIcon={<TimerIcon />}
+                onClick={() => {
+                  setSelectedBlockForAction(null);
+                  setSelectedApplianceForPastSession(null);
+                  if (onUsageSaved) onUsageSaved();
+                }}
+                sx={{ borderRadius: 2, fontWeight: 800 }}
+              >
+                Live Stopwatch Active
+              </Button>
+            ) : <Box />}
+
+            <Button
+              variant="outlined"
+              onClick={() => setSelectedBlockForAction(null)}
+              sx={{ borderRadius: 2, fontWeight: 700 }}
+            >
+              Done
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </>
   );
 };
