@@ -239,14 +239,19 @@ export async function batchSaveDailyUsageAcrossRange(params: {
   }
 
   const allRows: any[] = [];
+  const sessionLogRows: any[] = [];
+  const todayKey = formatDateToKey(new Date());
 
   dateKeys.forEach((dKey) => {
+    const isPastOrToday = dKey <= todayKey;
+    const [y, m, d] = dKey.split("-").map(Number);
+
     appliances.forEach((app) => {
       if (!overwriteExisting && existingKeys.has(`${dKey}_${app.id}`)) {
         return; // skip existing
       }
 
-      const hours = Number(app.hours_per_day) || 0;
+      const hours = Math.max(0, Math.min(24, Number(app.hours_per_day) || 0));
       const qty = app.quantity || 1;
       const kwh = calculateKwh(app.watts, hours, qty);
       const cost = calculateCost(kwh, effectiveRate);
@@ -262,6 +267,25 @@ export async function batchSaveDailyUsageAcrossRange(params: {
         user_id: app.user_id || userId,
         updated_at: new Date().toISOString(),
       });
+
+      // If date is in the past, also log a tangible timestamped session in appliance_usage_logs
+      if (isPastOrToday && hours > 0) {
+        const startHour = app.start_hour !== undefined ? app.start_hour : 8;
+        const startTime = new Date(y, m - 1, d, startHour, 0, 0);
+        const durationMinutes = Math.round(hours * 60);
+        const endTime = new Date(startTime.getTime() + durationMinutes * 60000);
+
+        sessionLogRows.push({
+          appliance_id: app.id,
+          user_id: app.user_id || userId,
+          started_at: startTime.toISOString(),
+          ended_at: endTime.toISOString(),
+          duration_minutes: durationMinutes,
+          kwh_consumed: kwh,
+          estimated_cost: cost,
+          source: "routine_autofill",
+        });
+      }
     });
   });
 
@@ -270,7 +294,7 @@ export async function batchSaveDailyUsageAcrossRange(params: {
   }
 
   try {
-    // Chunk inserts in batches of 200 rows for safety
+    // 1. Chunk inserts for daily_appliance_usage in batches of 200 rows
     const chunkSize = 200;
     for (let i = 0; i < allRows.length; i += chunkSize) {
       const chunk = allRows.slice(i, i + chunkSize);
@@ -286,7 +310,21 @@ export async function batchSaveDailyUsageAcrossRange(params: {
       }
     }
 
-    devLog.info("DailyUsageService", `Successfully batch saved ${allRows.length} rows across ${dateKeys.length} days.`);
+    // 2. Also insert corresponding timestamped session logs into appliance_usage_logs
+    if (sessionLogRows.length > 0) {
+      for (let i = 0; i < sessionLogRows.length; i += chunkSize) {
+        const logChunk = sessionLogRows.slice(i, i + chunkSize);
+        const { error: logErr } = await supabaseClient
+          .from("appliance_usage_logs")
+          .insert(logChunk);
+
+        if (logErr) {
+          devLog.warn("DailyUsageService", `Non-fatal: could not write session logs batch: ${logErr.message}`);
+        }
+      }
+    }
+
+    devLog.info("DailyUsageService", `Successfully batch saved ${allRows.length} rows across ${dateKeys.length} days (${sessionLogRows.length} session logs created).`);
     return { success: true, totalDays: dateKeys.length, totalRows: allRows.length };
   } catch (err: any) {
     devLog.error("DailyUsageService", `Exception in batchSaveDailyUsageAcrossRange: ${err?.message}`, err);

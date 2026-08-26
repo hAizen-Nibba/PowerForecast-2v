@@ -377,6 +377,22 @@ export const SmartCalendar: React.FC = () => {
     showSuccess("Schedule slot created!");
   };
 
+  const handleUpdateEvent = async (id: string, updates: Partial<UserCalendarEvent>) => {
+    updateAppliance(
+      {
+        resource: "user_calendar_events",
+        id,
+        values: updates,
+      },
+      {
+        onSuccess: () => {
+          if (eventsRes?.refetch) eventsRes.refetch();
+          showSuccess("Schedule slot updated!");
+        },
+      }
+    );
+  };
+
   const handleDeleteEvent = async (id: string) => {
     await deleteEventAsync({ resource: "user_calendar_events", id });
     if (eventsRes?.refetch) eventsRes.refetch();
@@ -851,6 +867,7 @@ export const SmartCalendar: React.FC = () => {
           appliance={selectedApplianceForQueue}
           events={events}
           onCreateEvent={handleCreateEvent}
+          onUpdateEvent={handleUpdateEvent}
           onDeleteEvent={handleDeleteEvent}
           onBulkDeleteEvents={handleBulkDeleteEvents}
         />

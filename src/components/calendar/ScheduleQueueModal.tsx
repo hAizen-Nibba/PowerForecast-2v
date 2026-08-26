@@ -13,9 +13,12 @@ import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import {
   DeleteOutlined as DeleteIcon,
+  EditOutlined as EditIcon,
   Add as AddIcon,
   Bolt as BoltIcon,
   AccessTime as ClockIcon,
+  Check as CheckIcon,
+  Close as CancelIcon,
 } from "@mui/icons-material";
 import { Modal } from "../common/Modal";
 import { UserAppliance, UserCalendarEvent } from "../../types";
@@ -26,6 +29,7 @@ interface ScheduleQueueModalProps {
   appliance: UserAppliance | null;
   events: UserCalendarEvent[];
   onCreateEvent: (event: Partial<UserCalendarEvent>) => Promise<void>;
+  onUpdateEvent?: (id: string, updates: Partial<UserCalendarEvent>) => Promise<void>;
   onDeleteEvent: (id: string) => Promise<void>;
   onBulkDeleteEvents: (ids: string[]) => Promise<void>;
 }
@@ -36,6 +40,7 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
   appliance,
   events,
   onCreateEvent,
+  onUpdateEvent,
   onDeleteEvent,
   onBulkDeleteEvents,
 }) => {
@@ -45,6 +50,12 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
   const [hour, setHour] = useState<number>(8);
   const [duration, setDuration] = useState<number>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Inline editing state
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [editDay, setEditDay] = useState<"mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun">("mon");
+  const [editHour, setEditHour] = useState<number>(8);
+  const [editDuration, setEditDuration] = useState<number>(1);
 
   if (!appliance) return null;
 
@@ -89,6 +100,32 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
         is_recurring: true,
       });
       setShowAddForm(false);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleStartEdit = (event: UserCalendarEvent) => {
+    setEditingEventId(event.id);
+    setEditDay((event.day as any) || "mon");
+    setEditHour(event.hour || 8);
+    setEditDuration(event.duration_hours || 1);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEventId(null);
+  };
+
+  const handleSaveEdit = async (eventId: string) => {
+    if (!onUpdateEvent) return;
+    setIsSubmitting(true);
+    try {
+      await onUpdateEvent(eventId, {
+        day: editDay,
+        hour: editHour,
+        duration_hours: editDuration,
+      });
+      setEditingEventId(null);
     } finally {
       setIsSubmitting(false);
     }
@@ -254,7 +291,93 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
               const dayLabel = DAYS.find((d) => d.key === event.day)?.label || event.day;
               const period = event.hour >= 12 ? "PM" : "AM";
               const displayH = event.hour === 0 ? 12 : event.hour > 12 ? event.hour - 12 : event.hour;
-              const isPeak = (event.hour >= 11 && event.hour < 16) || (event.hour >= 18 && event.hour < 21);
+              const isEditingThis = editingEventId === event.id;
+
+              if (isEditingThis) {
+                return (
+                  <Paper
+                    key={event.id}
+                    sx={{
+                      p: 2,
+                      borderRadius: 2.5,
+                      border: "1px solid",
+                      borderColor: "primary.main",
+                      bgcolor: "rgba(99, 102, 241, 0.08)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1.5,
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.light" }}>
+                      Edit Scheduled Operating Slot
+                    </Typography>
+                    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" }, gap: 1.5 }}>
+                      <FormControl size="small" fullWidth>
+                        <InputLabel>Day</InputLabel>
+                        <Select
+                          value={editDay}
+                          label="Day"
+                          onChange={(e) => setEditDay(e.target.value as any)}
+                        >
+                          {DAYS.map((d) => (
+                            <MenuItem key={d.key} value={d.key}>{d.label}</MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+
+                      <FormControl size="small" fullWidth>
+                        <InputLabel>Start Hour</InputLabel>
+                        <Select
+                          value={editHour}
+                          label="Start Hour"
+                          onChange={(e) => setEditHour(Number(e.target.value))}
+                        >
+                          {Array.from({ length: 24 }).map((_, h) => {
+                            const p = h >= 12 ? "PM" : "AM";
+                            const dh = h === 0 ? 12 : h > 12 ? h - 12 : h;
+                            return (
+                              <MenuItem key={h} value={h}>
+                                {dh}:00 {p}
+                              </MenuItem>
+                            );
+                          })}
+                        </Select>
+                      </FormControl>
+
+                      <TextField
+                        size="small"
+                        type="number"
+                        label="Duration (Hours)"
+                        value={editDuration}
+                        onChange={(e) => setEditDuration(Math.max(0.5, Math.min(24, parseFloat(e.target.value) || 1)))}
+                        slotProps={{
+                          htmlInput: { step: 0.5, min: 0.5, max: 24 }
+                        }}
+                      />
+                    </Box>
+
+                    <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 0.5 }}>
+                      <Button
+                        size="small"
+                        startIcon={<CancelIcon />}
+                        onClick={handleCancelEdit}
+                        disabled={isSubmitting}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        startIcon={<CheckIcon />}
+                        onClick={() => handleSaveEdit(event.id)}
+                        disabled={isSubmitting}
+                      >
+                        Update Slot
+                      </Button>
+                    </Box>
+                  </Paper>
+                );
+              }
 
               return (
                 <Paper
@@ -287,12 +410,24 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
                     </Box>
                   </Box>
 
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    {onUpdateEvent && (
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={() => handleStartEdit(event)}
+                        disabled={isSubmitting}
+                        title="Edit Slot"
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    )}
                     <IconButton
                       size="small"
                       color="error"
                       onClick={() => onDeleteEvent(event.id)}
                       disabled={isSubmitting}
+                      title="Delete Slot"
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
