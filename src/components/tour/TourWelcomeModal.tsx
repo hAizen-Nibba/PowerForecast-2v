@@ -72,14 +72,14 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
             width: '92vw',
             mx: 2,
             p: { xs: 3, sm: 4 },
-            borderRadius: 4,
+            borderRadius: 1.5,
             bgcolor: (theme) =>
               theme.palette.mode === 'dark'
-                ? 'rgba(15, 14, 58, 0.95)'
+                ? 'rgba(23, 26, 31, 0.98)'
                 : 'rgba(255, 255, 255, 0.97)',
             border: '1px solid',
-            borderColor: 'rgba(99, 102, 241, 0.35)',
-            boxShadow: '0 24px 80px rgba(99, 102, 241, 0.25), 0 0 0 1px rgba(99, 102, 241, 0.1)',
+            borderColor: 'rgba(0, 229, 201, 0.35)',
+            boxShadow: '0 24px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 229, 201, 0.1)',
             backdropFilter: 'blur(24px)',
             textAlign: 'center',
             overflow: 'hidden',
@@ -122,7 +122,7 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
             sx={{
               width: 64,
               height: 64,
-              borderRadius: 3,
+              borderRadius: 1.25,
               bgcolor: 'rgba(99, 102, 241, 0.15)',
               border: '1px solid rgba(99, 102, 241, 0.3)',
               display: 'flex',
@@ -134,31 +134,16 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
               zIndex: 1,
             }}
           >
-            <ExploreIcon sx={{ color: 'primary.main', fontSize: 32 }} />
+            <ExploreIcon sx={{ fontSize: 32, color: 'primary.main' }} />
           </Box>
 
-          {/* Active Grid Badge */}
-          <Chip
-            icon={<BoltIcon sx={{ color: '#ffd54f !important', fontSize: '14px !important' }} />}
-            label="Interactive Guided Tour"
-            size="small"
-            sx={{
-              mb: 2,
-              fontWeight: 700,
-              fontSize: '0.75rem',
-              bgcolor: 'rgba(99, 102, 241, 0.12)',
-              color: 'primary.light',
-              border: '1px solid rgba(99, 102, 241, 0.25)',
-            }}
-          />
-
-          {/* Heading */}
+          {/* Title & Desc */}
           <Typography
             variant="h5"
             sx={{
               fontWeight: 800,
+              mb: 1,
               letterSpacing: '-0.02em',
-              mb: 1.5,
               position: 'relative',
               zIndex: 1,
             }}
@@ -166,15 +151,12 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
             {copy.heading}
           </Typography>
 
-          {/* Body */}
           <Typography
             variant="body2"
             sx={{
               color: 'text.secondary',
-              lineHeight: 1.7,
               mb: 3,
-              maxWidth: 380,
-              mx: 'auto',
+              lineHeight: 1.6,
               position: 'relative',
               zIndex: 1,
             }}
@@ -184,17 +166,24 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
 
           {/* Language Selector */}
           <Box sx={{ mb: 3, position: 'relative', zIndex: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 1.5 }}>
-              <TranslateIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-              <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', letterSpacing: '0.03em' }}>
-                TOUR LANGUAGE
-              </Typography>
-            </Box>
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 700,
+                color: 'text.secondary',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                display: 'block',
+                mb: 1,
+              }}
+            >
+              {language === 'tl' ? 'Pumili ng Wika' : 'Select Language'}
+            </Typography>
             <ToggleButtonGroup
               value={language}
               exclusive
-              onChange={(_, val) => {
-                if (val) onChangeLanguage(val as TourLanguage);
+              onChange={(_, newLang) => {
+                if (newLang) onChangeLanguage(newLang);
               }}
               size="small"
               sx={{
@@ -233,7 +222,7 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
               startIcon={<ExploreIcon />}
               sx={{
                 fontWeight: 800,
-                borderRadius: 2.5,
+                borderRadius: 1,
                 py: 1.25,
                 textTransform: 'none',
                 fontSize: '0.9375rem',

@@ -262,7 +262,7 @@ export const SmartCalendar: React.FC = () => {
       dailyUsageRes.refetch();
     }
 
-    showSuccess(`Stopwatch stopped for ${app.name}. Log saved (₱${cost.toFixed(2)})!`, "⏹️ Stopwatch Stopped");
+    showSuccess(`Stopwatch stopped for ${app.name}. Log saved (₱${cost.toFixed(2)})!`, "Stopwatch Stopped");
   };
 
   const handleOpenLiveModal = (app: UserAppliance) => {
@@ -405,7 +405,7 @@ export const SmartCalendar: React.FC = () => {
     showInfo(`Removed ${ids.length} scheduled slots.`);
   };
 
-  return (
+return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3 } }}>
       {/* 1. Header Banner & Quick Modals Triggers */}
       <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "flex-start", sm: "center" }, justifyContent: "space-between", gap: 2 }}>
@@ -415,7 +415,7 @@ export const SmartCalendar: React.FC = () => {
               sx={{
                 width: 40,
                 height: 40,
-                borderRadius: 2.5,
+                borderRadius: 1.25,
                 bgcolor: "primary.main",
                 color: "#ffffff",
                 display: "inline-flex",
@@ -439,7 +439,7 @@ export const SmartCalendar: React.FC = () => {
             size="small"
             startIcon={<ReceiptIcon />}
             onClick={() => setIsLogsModalOpen(true)}
-            sx={{ borderRadius: 2, fontWeight: 700 }}
+            sx={{ borderRadius: 1, fontWeight: 700 }}
           >
             Session Logs ({logs.length})
           </Button>
@@ -454,7 +454,7 @@ export const SmartCalendar: React.FC = () => {
                 setSelectedApplianceForQueue(appliances[0]);
                 setIsQueueModalOpen(true);
               }}
-              sx={{ borderRadius: 2, fontWeight: 700 }}
+              sx={{ borderRadius: 1, fontWeight: 700 }}
             >
               Schedule Queue
             </Button>
@@ -464,7 +464,7 @@ export const SmartCalendar: React.FC = () => {
 
       {/* 1.5. Space Switcher Tabs */}
       {spaces.length > 1 && (
-        <Card sx={{ borderRadius: 3, overflow: "hidden" }}>
+        <Card sx={{ borderRadius: 1.5, overflow: "hidden" }}>
           <Tabs
             value={selectedSpaceId}
             onChange={(_, v) => setSelectedSpaceId(v)}
@@ -472,7 +472,7 @@ export const SmartCalendar: React.FC = () => {
             scrollButtons="auto"
             sx={{
               minHeight: 44,
-              bgcolor: "rgba(15, 14, 58, 0.4)",
+              bgcolor: "rgba(24, 27, 32, 0.65)",
               "& .MuiTab-root": {
                 fontWeight: 700,
                 fontSize: "0.8125rem",
@@ -514,11 +514,11 @@ export const SmartCalendar: React.FC = () => {
       {/* 2. MONTH SUMMARY & PROJECTED CONSUMPTION DIAGNOSTIC BANNER */}
       <Grid container spacing={{ xs: 1.5, sm: 2 }}>
         <Grid size={{ xs: 6, sm: 3 }}>
-          <Paper sx={{ p: 2, borderRadius: 3, bgcolor: "rgba(15, 14, 58, 0.6)", border: "1px solid rgba(108, 122, 224, 0.25)" }}>
+          <Paper sx={{ p: 2, borderRadius: 1.25, bgcolor: "rgba(24, 27, 32, 0.75)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
             <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 0.75 }}>
-              <CheckCircleIcon sx={{ fontSize: 16, color: "#34d399" }} /> Audited Actuals
+              <CheckCircleIcon sx={{ fontSize: 16, color: "#00e5c9" }} /> Audited Actuals
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 900, color: "#34d399", mt: 0.5, fontFamily: "monospace" }}>
+            <Typography variant="h6" sx={{ fontWeight: 900, color: "#00e5c9", mt: 0.5, fontFamily: "monospace" }}>
               ₱{monthSummary.actualCost.toFixed(2)}
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
@@ -528,11 +528,11 @@ export const SmartCalendar: React.FC = () => {
         </Grid>
 
         <Grid size={{ xs: 6, sm: 3 }}>
-          <Paper sx={{ p: 2, borderRadius: 3, bgcolor: "rgba(15, 14, 58, 0.6)", border: "1px solid rgba(108, 122, 224, 0.25)" }}>
+          <Paper sx={{ p: 2, borderRadius: 1.25, bgcolor: "rgba(24, 27, 32, 0.75)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
             <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 0.75 }}>
-              <ClockIcon sx={{ fontSize: 16, color: "#818cf8" }} /> Remaining Projected
+              <ClockIcon sx={{ fontSize: 16, color: "#26c6da" }} /> Remaining Projected
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 900, color: "#818cf8", mt: 0.5, fontFamily: "monospace" }}>
+            <Typography variant="h6" sx={{ fontWeight: 900, color: "#26c6da", mt: 0.5, fontFamily: "monospace" }}>
               ~₱{monthSummary.projectedCost.toFixed(2)}
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
@@ -542,7 +542,7 @@ export const SmartCalendar: React.FC = () => {
         </Grid>
 
         <Grid size={{ xs: 6, sm: 3 }}>
-          <Paper sx={{ p: 2, borderRadius: 3, bgcolor: "rgba(15, 14, 58, 0.6)", border: "1px solid rgba(108, 122, 224, 0.25)" }}>
+          <Paper sx={{ p: 2, borderRadius: 1.25, bgcolor: "rgba(24, 27, 32, 0.75)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
             <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 0.75 }}>
               <InsightsIcon sx={{ fontSize: 16, color: "#ffd54f" }} /> Projected Month Bill
             </Typography>
@@ -556,12 +556,12 @@ export const SmartCalendar: React.FC = () => {
         </Grid>
 
         <Grid size={{ xs: 6, sm: 3 }}>
-          <Paper sx={{ p: 2, borderRadius: 3, bgcolor: "rgba(15, 14, 58, 0.6)", border: "1px solid rgba(108, 122, 224, 0.25)" }}>
+          <Paper sx={{ p: 2, borderRadius: 1.25, bgcolor: "rgba(24, 27, 32, 0.75)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
             <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 0.75 }}>
-              ⏱️ Live Power Load
+              Live Power Load
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 900, color: activeWattage > 2000 ? "#f87171" : "#34d399", mt: 0.5, fontFamily: "monospace" }}>
-              {activeWattage} W ({activeAppliances.length} ⏱️ Running)
+            <Typography variant="h6" sx={{ fontWeight: 900, color: activeWattage > 2000 ? "#f87171" : "#00e5c9", mt: 0.5, fontFamily: "monospace" }}>
+              {activeWattage} W ({activeAppliances.length} Running)
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
               {appliances.length} Registered Circuits
@@ -572,11 +572,11 @@ export const SmartCalendar: React.FC = () => {
 
       {/* 3. Active Stopwatch Sessions Quick Bar (if any running) */}
       {activeAppliances.length > 0 && (
-        <Card data-tour="calendar-live-sessions" sx={{ p: 2.5, borderRadius: 3.5, bgcolor: "rgba(6, 78, 59, 0.2)", border: "1px solid rgba(52, 211, 153, 0.4)" }}>
+        <Card data-tour="calendar-live-sessions" sx={{ p: 2.5, borderRadius: 1.5, bgcolor: "rgba(6, 78, 59, 0.2)", border: "1px solid rgba(52, 211, 153, 0.4)" }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5, flexWrap: "wrap", gap: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#34d399", display: "flex", alignItems: "center", gap: 1 }}>
               <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#34d399" }} />
-              ⏱️ Active Stopwatch Sessions ({activeAppliances.length})
+              Active Stopwatch Sessions ({activeAppliances.length})
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
               Click to view live stopwatch & meter
@@ -599,7 +599,7 @@ export const SmartCalendar: React.FC = () => {
       )}
 
       {/* 4. Calendar Controls & Month Navigator Card */}
-      <Card sx={{ p: 2.5, borderRadius: 3.5 }}>
+      <Card sx={{ p: 2.5, borderRadius: 1.5 }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <IconButton onClick={handlePrevMonth} size="small" sx={{ border: "1px solid", borderColor: "divider" }}>
@@ -624,7 +624,7 @@ export const SmartCalendar: React.FC = () => {
               color="primary"
               startIcon={<SparklesIcon sx={{ color: "#ffd54f" }} />}
               onClick={() => setIsRoutineAutofillOpen(true)}
-              sx={{ borderRadius: 2, fontWeight: 700, fontSize: "0.75rem", textTransform: "none" }}
+              sx={{ borderRadius: 1, fontWeight: 700, fontSize: "0.75rem", textTransform: "none" }}
             >
               Autofill Routine Defaults
             </Button>
@@ -654,7 +654,7 @@ export const SmartCalendar: React.FC = () => {
       </Card>
 
       {/* 5. Monthly Grid View */}
-      <Card data-tour="calendar-grid" sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: 3.5 }}>
+      <Card data-tour="calendar-grid" sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: 1.5 }}>
         {/* Day of week headers */}
         <Grid container columns={7} spacing={1} sx={{ mb: 1, textAlign: "center" }}>
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, idx) => (
@@ -709,7 +709,7 @@ export const SmartCalendar: React.FC = () => {
                   sx={{
                     minHeight: { xs: 85, sm: 100 },
                     p: 1.25,
-                    borderRadius: 2.5,
+                    borderRadius: 1,
                     cursor: "pointer",
                     display: "flex",
                     flexDirection: "column",

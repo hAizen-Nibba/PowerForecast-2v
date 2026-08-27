@@ -1,14 +1,14 @@
 export const brand = {
-  50: '#eef2ff',
-  100: '#e0e7ff',
-  200: '#c7d2fe',
-  300: '#a5b4fc',
-  400: '#818cf8',
-  500: '#6366f1',
-  600: '#4f46e5',
-  700: '#4338ca',
-  800: '#3730a3',
-  900: '#312e81',
+  50: '#e6fffa',
+  100: '#b2f5ea',
+  200: '#81e6d9',
+  300: '#4fd1c5',
+  400: '#26c6da',
+  500: '#00e5c9',
+  600: '#00c4aa',
+  700: '#009e88',
+  800: '#007564',
+  900: '#004d40',
 };
 
 export const secondaryBrand = {
@@ -33,17 +33,17 @@ export const gray = {
   500: '#64748b',
   600: '#475569',
   700: '#334155',
-  800: '#1e293b',
-  900: '#0f172a',
+  800: '#1e232a',
+  900: '#14171c',
 };
 
 export const colorSchemes = {
   light: {
     palette: {
       primary: {
-        light: brand[300],
-        main: brand[600],
-        dark: brand[800],
+        light: '#26c6da',
+        main: '#009e88',
+        dark: '#007564',
         contrastText: '#ffffff',
       },
       secondary: {
@@ -74,19 +74,19 @@ export const colorSchemes = {
         dark: '#047857',
       },
       grey: gray,
-      divider: 'rgba(99, 102, 241, 0.15)',
+      divider: 'rgba(0, 158, 136, 0.15)',
       background: {
-        default: '#f8faff',
+        default: '#f4f6f8',
         paper: '#ffffff',
       },
       text: {
-        primary: '#100b46',
+        primary: '#111827',
         secondary: '#4b5563',
         disabled: '#9ca3af',
       },
       action: {
-        hover: 'rgba(99, 102, 241, 0.06)',
-        selected: 'rgba(99, 102, 241, 0.12)',
+        hover: 'rgba(0, 158, 136, 0.06)',
+        selected: 'rgba(0, 158, 136, 0.12)',
       },
     },
   },
@@ -94,9 +94,9 @@ export const colorSchemes = {
     palette: {
       primary: {
         light: brand[300],
-        main: brand[400],
+        main: brand[500],
         dark: brand[700],
-        contrastText: '#ffffff',
+        contrastText: '#0c1b18',
       },
       secondary: {
         light: secondaryBrand[300],
@@ -120,24 +120,24 @@ export const colorSchemes = {
         dark: '#dc2626',
       },
       success: {
-        light: '#34d399',
-        main: '#10b981',
-        dark: '#059669',
+        light: '#5df2d6',
+        main: '#00e5c9',
+        dark: '#00b39b',
       },
       grey: gray,
-      divider: 'rgba(129, 140, 248, 0.16)',
+      divider: 'rgba(255, 255, 255, 0.08)',
       background: {
-        default: '#090938',
-        paper: '#0f0e3a',
+        default: '#17191d',
+        paper: '#202328',
       },
       text: {
-        primary: '#ffffff',
-        secondary: '#94a3b8',
-        disabled: '#64748b',
+        primary: '#f1f5f9',
+        secondary: '#8b949e',
+        disabled: '#555d69',
       },
       action: {
-        hover: 'rgba(129, 140, 248, 0.12)',
-        selected: 'rgba(129, 140, 248, 0.2)',
+        hover: 'rgba(0, 229, 201, 0.08)',
+        selected: 'rgba(0, 229, 201, 0.16)',
       },
     },
   },
@@ -203,5 +203,5 @@ export const typography = {
 };
 
 export const shape = {
-  borderRadius: 12,
+  borderRadius: 8,
 };

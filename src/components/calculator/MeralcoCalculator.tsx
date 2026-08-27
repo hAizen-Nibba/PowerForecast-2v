@@ -99,7 +99,7 @@ export const MeralcoCalculator: React.FC = () => {
               sx={{
                 width: 40,
                 height: 40,
-                borderRadius: 2.5,
+                borderRadius: 1,
                 bgcolor: "primary.main",
                 color: "#ffffff",
                 display: "inline-flex",
@@ -155,33 +155,24 @@ export const MeralcoCalculator: React.FC = () => {
               <Card
                 sx={{
                   p: { xs: 2.5, sm: 3 },
-                  borderRadius: 3.5,
+                  borderRadius: 1.5,
                   display: "flex",
                   flexDirection: "column",
                   gap: 2.5,
-                  bgcolor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(13, 12, 45, 0.88)" : "rgba(255, 255, 255, 0.92)",
-                  backdropFilter: "blur(16px)",
                 }}
               >
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                      Tariff & Volume Settings
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                      Adjust your monthly kWh and base utility tariffs
-                    </Typography>
-                  </Box>
-                  <Chip label="ERC TARIFFS" size="small" color="primary" sx={{ fontWeight: 700 }} />
+                <Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 0.5 }}>
+                    1. Tariff Classification
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2 }}>
+                    Meralco tariff schedule determines distribution rates and lifeline subsidies
+                  </Typography>
                 </Box>
 
-                <Divider />
-
-                {/* Tariff Classification Selection */}
-                <Box data-tour="calc-tariff-selector">
-                  <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 1 }}>
-                    ACCOUNT TARIFF CLASSIFICATION
+                <Box>
+                  <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: "block" }}>
+                    Select Space Tariff
                   </Typography>
                   <Grid container spacing={1.5}>
                     <Grid size={6}>
@@ -190,7 +181,7 @@ export const MeralcoCalculator: React.FC = () => {
                         onClick={() => setTariffType("residential")}
                         sx={{
                           p: 1.5,
-                          borderRadius: 2.5,
+                          borderRadius: 1.25,
                           cursor: "pointer",
                           textAlign: "center",
                           border: "2px solid",
@@ -216,7 +207,7 @@ export const MeralcoCalculator: React.FC = () => {
                         onClick={() => setTariffType("commercial")}
                         sx={{
                           p: 1.5,
-                          borderRadius: 2.5,
+                          borderRadius: 1.25,
                           cursor: "pointer",
                           textAlign: "center",
                           border: "2px solid",
@@ -381,7 +372,7 @@ export const MeralcoCalculator: React.FC = () => {
                 data-tour="calc-whatif"
                 sx={{
                   p: { xs: 2.5, sm: 3 },
-                  borderRadius: 3.5,
+                  borderRadius: 1.5,
                   display: "flex",
                   flexDirection: "column",
                   gap: 2.5,
@@ -431,7 +422,7 @@ export const MeralcoCalculator: React.FC = () => {
                 <Paper
                   sx={{
                     p: 2.5,
-                    borderRadius: 2.5,
+                    borderRadius: 1.25,
                     bgcolor: (theme) =>
                       theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.12)" : "rgba(16, 185, 129, 0.08)",
                     border: "1px solid",
@@ -471,7 +462,7 @@ export const MeralcoCalculator: React.FC = () => {
               sx={{
                 p: { xs: 3, sm: 4 },
                 textAlign: "center",
-                borderRadius: 3.5,
+                borderRadius: 1.5,
                 bgcolor: (theme) =>
                   theme.palette.mode === "dark" ? "rgba(13, 12, 45, 0.88)" : "rgba(255, 255, 255, 0.92)",
                 backdropFilter: "blur(16px)",
@@ -524,7 +515,7 @@ export const MeralcoCalculator: React.FC = () => {
               data-tour="calc-unbundled"
               sx={{
                 p: { xs: 2.5, sm: 3 },
-                borderRadius: 3.5,
+                borderRadius: 1.5,
                 bgcolor: (theme) =>
                   theme.palette.mode === "dark" ? "rgba(13, 12, 45, 0.88)" : "rgba(255, 255, 255, 0.92)",
                 backdropFilter: "blur(16px)",
@@ -541,7 +532,7 @@ export const MeralcoCalculator: React.FC = () => {
                 sx={{
                   height: 14,
                   width: "100%",
-                  borderRadius: 9999,
+                  borderRadius: 1,
                   display: "flex",
                   overflow: "hidden",
                   bgcolor: "action.hover",
@@ -549,10 +540,10 @@ export const MeralcoCalculator: React.FC = () => {
                   mb: 2,
                 }}
               >
-                <Box sx={{ width: `${genPct}%`, bgcolor: "primary.main", borderRadius: "9999px 0 0 9999px" }} title={`Generation: ${genPct.toFixed(1)}%`} />
+                <Box sx={{ width: `${genPct}%`, bgcolor: "primary.main", borderRadius: "6px 0 0 6px" }} title={`Generation: ${genPct.toFixed(1)}%`} />
                 <Box sx={{ width: `${transPct}%`, bgcolor: "info.main" }} title={`Transmission: ${transPct.toFixed(1)}%`} />
                 <Box sx={{ width: `${distPct}%`, bgcolor: "success.main" }} title={`Distribution: ${distPct.toFixed(1)}%`} />
-                <Box sx={{ width: `${taxPct}%`, bgcolor: "error.main", borderRadius: "0 9999px 9999px 0" }} title={`Taxes: ${taxPct.toFixed(1)}%`} />
+                <Box sx={{ width: `${taxPct}%`, bgcolor: "error.main", borderRadius: "0 6px 6px 0" }} title={`Taxes: ${taxPct.toFixed(1)}%`} />
               </Box>
 
               <Grid container spacing={1}>

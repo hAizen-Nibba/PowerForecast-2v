@@ -51,10 +51,10 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
     return () => clearInterval(interval);
   }, []);
 
-  // ⚡ Memoize demand calculation to avoid running on every second tick
+  // Memoize demand calculation to avoid running on every second tick
   const demand = useMemo(() => calculateSimultaneousDemand(appliances, 9.2), [appliances]);
 
-  // ⚡ Replace O(N*M) space lookup with O(N) map building and O(1) lookup
+  // Replace O(N*M) space lookup with O(N) map building and O(1) lookup
   const spacesMap = useMemo(() => {
     const map: Record<string, ApplianceList> = {};
     spaces.forEach((s) => {
@@ -84,7 +84,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
     const newState = !app.is_currently_on;
     const nowIso = newState ? new Date().toISOString() : null;
 
-    devLog.telemetry("Telemetry", `Stopwatch ${newState ? "started ⏱️ [TIMING]" : "stopped ⏹️ [STOPPED]"}: "${app.name}" (${app.watts}W @ 230V)`, {
+    devLog.telemetry("Telemetry", `Stopwatch ${newState ? "started [TIMING]" : "stopped [STOPPED]"}: "${app.name}" (${app.watts}W @ 230V)`, {
       applianceId: app.id,
       name: app.name,
       category: app.category,
@@ -125,7 +125,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
   };
 
   return (
-    <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+    <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 1.5, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
       <Box>
         {/* Header */}
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2, flexWrap: "wrap", gap: 1.5 }}>
@@ -134,7 +134,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
               sx={{
                 width: 36,
                 height: 36,
-                borderRadius: 2,
+                borderRadius: 1,
                 bgcolor: "primary.main",
                 color: "#ffffff",
                 display: "flex",
@@ -147,7 +147,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
             </Box>
             <Box>
               <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                ⏱️ Live Stopwatch Power Board
+                Live Stopwatch Power Board
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
                 Real-time demand gauge and individual appliance stopwatch timers
@@ -172,33 +172,41 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
           sx={{
             p: { xs: 1.75, sm: 2 },
             mb: 2.5,
-            borderRadius: 2.5,
+            borderRadius: 1.25,
             bgcolor: demand.isOverloaded
               ? "rgba(239, 68, 68, 0.1)"
               : demand.loadPercentage > 75
               ? "rgba(245, 158, 11, 0.1)"
               : "action.hover",
-            borderColor: demand.isOverloaded ? "error.main" : "divider",
-            transition: "all 0.2s ease",
+            borderColor: demand.isOverloaded
+              ? "error.main"
+              : demand.loadPercentage > 75
+              ? "warning.main"
+              : "divider",
           }}
         >
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1, gap: 1 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <SpeedIcon sx={{ fontSize: 18, color: demand.isOverloaded ? "error.main" : "primary.main" }} />
-              <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                Simultaneous Circuit Load
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1, flexWrap: "wrap", gap: 1 }}>
+            <Box>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                Real-Time Household Demand
+              </Typography>
+              <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: demand.isOverloaded ? "error.main" : "text.primary" }}>
+                {demand.simultaneousWatts.toLocaleString()} W <Typography component="span" variant="caption" sx={{ color: "text.secondary" }}>({(demand.simultaneousWatts / 230).toFixed(1)}A / 40A)</Typography>
               </Typography>
             </Box>
-            <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
-              {demand.simultaneousKw} kW / 9.2 kW ({demand.loadPercentage}%)
-            </Typography>
+            <Chip
+              label={`${demand.loadPercentage.toFixed(1)}% Capacity`}
+              color={demand.isOverloaded ? "error" : demand.loadPercentage > 75 ? "warning" : "success"}
+              size="small"
+              sx={{ fontWeight: 800, fontFamily: "monospace" }}
+            />
           </Box>
 
           <LinearProgress
             variant="determinate"
             value={Math.min(100, demand.loadPercentage)}
             color={demand.isOverloaded ? "error" : demand.loadPercentage > 75 ? "warning" : "primary"}
-            sx={{ height: 8, borderRadius: 4, mb: 1 }}
+            sx={{ height: 8, borderRadius: 1, mb: 1 }}
           />
 
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
@@ -249,7 +257,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
                     variant="outlined"
                     sx={{
                       p: { xs: 1.75, sm: 2 },
-                      borderRadius: 2.5,
+                      borderRadius: 1.5,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
@@ -269,7 +277,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
                       <Box
                         sx={{
                           p: 1,
-                          borderRadius: 2,
+                          borderRadius: 1,
                           bgcolor: "action.hover",
                           display: "flex",
                           alignItems: "center",
@@ -306,7 +314,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
                         sx={{ fontWeight: 700, fontFamily: "monospace", height: 20, fontSize: "0.6875rem" }}
                       />
 
-                      <Tooltip title={isOn ? "⏹️ Stop Stopwatch" : "⏱️ Start Stopwatch"}>
+                      <Tooltip title={isOn ? "Stop Stopwatch" : "Start Stopwatch"}>
                         <IconButton
                           size="small"
                           onClick={() => togglePower(app)}

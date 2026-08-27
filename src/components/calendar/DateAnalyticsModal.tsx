@@ -467,7 +467,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         },
       });
 
-      showSuccess(`⏱️ Live stopwatch started for ${app.name}! Elapsed runtime is now tracking in real time.`, "Stopwatch Active");
+      showSuccess(`Live stopwatch started for ${app.name}! Elapsed runtime is now tracking in real time.`, "Stopwatch Active");
       if (onUsageSaved) onUsageSaved();
     }
   };
@@ -855,10 +855,10 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
           paper: {
             sx: {
               borderRadius: { xs: 3, sm: 4 },
-              bgcolor: "#0b0a26",
-              backgroundImage: "radial-gradient(ellipse at top, rgba(99, 102, 241, 0.15) 0%, rgba(11, 10, 38, 0.98) 70%)",
+              bgcolor: "#17191d",
+              backgroundImage: "radial-gradient(ellipse at top, rgba(0, 229, 201, 0.12) 0%, rgba(23, 25, 29, 0.98) 70%)",
               boxShadow: "0 32px 80px rgba(0, 0, 0, 0.8)",
-              border: "1px solid rgba(108, 122, 224, 0.3)",
+              border: "1px solid rgba(0, 229, 201, 0.25)",
               color: "#ffffff",
               overflow: "hidden",
               maxHeight: "92vh",
@@ -874,12 +874,12 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                 width: 44,
                 height: 44,
                 borderRadius: 2.5,
-                bgcolor: "rgba(99, 102, 241, 0.2)",
-                color: "primary.light",
+                bgcolor: "rgba(0, 229, 201, 0.12)",
+                color: "#00e5c9",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                border: "1px solid rgba(99, 102, 241, 0.4)",
+                border: "1px solid rgba(0, 229, 201, 0.3)",
               }}
             >
               <CalendarIcon sx={{ fontSize: 24 }} />
@@ -891,14 +891,14 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                 </Typography>
                 {isSelectedToday ? (
                   <Chip
-                    label={hasActiveStopwatch ? "🟢 Today • Live Active" : "🟢 Today • Live Ready"}
+                    label={hasActiveStopwatch ? "Today • Live Active" : "Today • Live Ready"}
                     size="small"
                     color="success"
                     sx={{ height: 22, fontSize: "0.7rem", fontWeight: 800 }}
                   />
                 ) : isPastDate ? (
                   <Chip
-                    label={hasLoggedData ? "📅 Past Historical Log" : "📅 Unlogged Past Day"}
+                    label={hasLoggedData ? "Past Historical Log" : "Unlogged Past Day"}
                     size="small"
                     color={hasLoggedData ? "primary" : "default"}
                     variant={hasLoggedData ? "filled" : "outlined"}
@@ -906,7 +906,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                   />
                 ) : (
                   <Chip
-                    label="🔮 Projected Target / Future Budget"
+                    label="Projected Target / Future Budget"
                     size="small"
                     color="secondary"
                     variant="outlined"
@@ -965,10 +965,10 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
               variant="outlined"
               sx={{
                 p: 1.75,
-                borderRadius: 3,
+                borderRadius: 1.25,
                 textAlign: "center",
-                bgcolor: isSelectedToday && hasActiveStopwatch ? "rgba(6, 78, 59, 0.3)" : "rgba(15, 14, 58, 0.5)",
-                borderColor: isSelectedToday && hasActiveStopwatch ? "rgba(52, 211, 153, 0.4)" : "rgba(108, 122, 224, 0.2)",
+                bgcolor: isSelectedToday && hasActiveStopwatch ? "rgba(0, 229, 201, 0.12)" : "rgba(24, 27, 32, 0.7)",
+                borderColor: isSelectedToday && hasActiveStopwatch ? "rgba(0, 229, 201, 0.4)" : "rgba(255, 255, 255, 0.08)",
                 transition: "all 0.2s ease",
               }}
             >
@@ -998,10 +998,10 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
               variant="outlined"
               sx={{
                 p: 1.75,
-                borderRadius: 3,
+                borderRadius: 1.25,
                 textAlign: "center",
-                bgcolor: isSelectedToday && hasActiveStopwatch ? "rgba(6, 78, 59, 0.3)" : "rgba(15, 14, 58, 0.5)",
-                borderColor: isSelectedToday && hasActiveStopwatch ? "rgba(52, 211, 153, 0.4)" : "rgba(108, 122, 224, 0.2)",
+                bgcolor: isSelectedToday && hasActiveStopwatch ? "rgba(0, 229, 201, 0.12)" : "rgba(24, 27, 32, 0.7)",
+                borderColor: isSelectedToday && hasActiveStopwatch ? "rgba(0, 229, 201, 0.4)" : "rgba(255, 255, 255, 0.08)",
                 transition: "all 0.2s ease",
               }}
             >
@@ -1031,10 +1031,10 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
               variant="outlined"
               sx={{
                 p: 1.75,
-                borderRadius: 3,
+                borderRadius: 1.25,
                 textAlign: "center",
-                bgcolor: "rgba(15, 14, 58, 0.5)",
-                borderColor: "rgba(108, 122, 224, 0.2)",
+                bgcolor: "rgba(24, 27, 32, 0.7)",
+                borderColor: "rgba(255, 255, 255, 0.08)",
               }}
             >
               <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800, letterSpacing: "0.04em", fontSize: "0.6875rem", display: "block" }}>
@@ -1094,9 +1094,9 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                   variant="outlined"
                   sx={{
                     p: { xs: 2, sm: 2.5 },
-                    borderRadius: 3.5,
-                    borderColor: isOverBudget ? "rgba(239, 68, 68, 0.4)" : "rgba(108, 122, 224, 0.35)",
-                    bgcolor: "rgba(15, 14, 58, 0.65)",
+                    borderRadius: 1.25,
+                    borderColor: isOverBudget ? "rgba(239, 68, 68, 0.4)" : "rgba(0, 229, 201, 0.25)",
+                    bgcolor: "rgba(24, 27, 32, 0.78)",
                     backdropFilter: "blur(12px)",
                     display: "flex",
                     flexDirection: "column",
@@ -1116,7 +1116,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                         )}
                         {isLive && (
                           <Chip
-                            label="🟢 Live Active"
+                            label="Live Active"
                             size="small"
                             color="success"
                             sx={{ height: 20, fontSize: "0.6875rem", fontWeight: 800 }}
@@ -1179,7 +1179,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                   >
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
                       <Typography variant="caption" sx={{ fontWeight: 800, color: "text.primary", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: 0.5 }}>
-                        🎯 Daily Target Quota: <strong>{targetHours > 0 ? `${targetHours.toFixed(1)} hrs` : "On-Demand"}</strong>
+                        Daily Target Quota: <strong>{targetHours > 0 ? `${targetHours.toFixed(1)} hrs` : "On-Demand"}</strong>
                         {targetHours > 0 && <span style={{ opacity: 0.7 }}>(₱{targetCost.toFixed(2)} budget)</span>}
                       </Typography>
                       <Typography
@@ -1220,17 +1220,17 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
                       <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.7rem", fontWeight: 700 }}>
                         {isSelectedToday ? (
-                          <>⏱️ Logged Today: <strong style={{ color: "#ffffff" }}>{hours.toFixed(1)} hrs</strong> ({kwh.toFixed(2)} kWh)</>
+                          <>Logged Today: <strong style={{ color: "#ffffff" }}>{hours.toFixed(1)} hrs</strong> ({kwh.toFixed(2)} kWh)</>
                         ) : isPastDate ? (
-                          <>📋 Historical Record: <strong style={{ color: "#ffffff" }}>{hours.toFixed(1)} hrs</strong> ({kwh.toFixed(2)} kWh)</>
+                          <>Historical Record: <strong style={{ color: "#ffffff" }}>{hours.toFixed(1)} hrs</strong> ({kwh.toFixed(2)} kWh)</>
                         ) : (
-                          <>🔮 Planned Target Quota: <strong style={{ color: "#ffffff" }}>{targetHours.toFixed(1)} hrs</strong> ({targetKwh.toFixed(2)} kWh)</>
+                          <>Planned Target Quota: <strong style={{ color: "#ffffff" }}>{targetHours.toFixed(1)} hrs</strong> ({targetKwh.toFixed(2)} kWh)</>
                         )}
                       </Typography>
 
                       {isContinuous ? (
                         <Chip
-                          label="🔄 24/7 Steady Background Load"
+                          label="24/7 Steady Background Load"
                           size="small"
                           sx={{ height: 20, fontSize: "0.625rem", fontWeight: 800, bgcolor: "rgba(59, 130, 246, 0.2)", color: "#93c5fd" }}
                         />
@@ -1240,7 +1240,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                         </Typography>
                       ) : targetHours > 0 ? (
                         <Typography variant="caption" sx={{ color: "#34d399", fontWeight: 800, fontSize: "0.72rem" }}>
-                          ⏳ Remaining: {remainingHours.toFixed(1)} hrs (₱{remainingCost.toFixed(2)} budget left)
+                          Remaining: {remainingHours.toFixed(1)} hrs (₱{remainingCost.toFixed(2)} budget left)
                         </Typography>
                       ) : null}
                     </Box>
@@ -1284,7 +1284,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                         {isLive && (
                           <Chip
                             size="small"
-                            label="🟢 Live Stopwatch Active"
+                            label="Live Stopwatch Active"
                             color="success"
                             sx={{ height: 26, fontSize: "0.6875rem", fontWeight: 800 }}
                           />
@@ -1319,7 +1319,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                               boxShadow: isLive ? "0 0 12px rgba(239, 68, 68, 0.5)" : "0 0 12px rgba(16, 185, 129, 0.4)",
                             }}
                           >
-                            {isLive ? "⏹️ Stop Stopwatch" : "⏱️ Start Stopwatch Now"}
+                            {isLive ? "Stop Stopwatch" : "Start Stopwatch Now"}
                           </Button>
                         )}
 
@@ -1496,9 +1496,9 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                     variant="outlined"
                     sx={{
                       p: 1.5,
-                      borderRadius: 3,
-                      bgcolor: "rgba(15, 14, 58, 0.4)",
-                      borderColor: "rgba(108, 122, 224, 0.2)",
+                      borderRadius: 1.25,
+                      bgcolor: "rgba(24, 27, 32, 0.65)",
+                      borderColor: "rgba(255, 255, 255, 0.08)",
                       display: "flex",
                       flexDirection: "column",
                       gap: 1,
@@ -1553,7 +1553,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                             onClick={() => setSelectedApplianceId(app.id)}
                             sx={{
                               p: 1.25,
-                              borderRadius: 2.5,
+                              borderRadius: 1.25,
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
@@ -1578,7 +1578,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                 sx={{
                                   width: 32,
                                   height: 32,
-                                  borderRadius: 2,
+                                  borderRadius: 1,
                                   bgcolor: hours > 0 ? "rgba(99, 102, 241, 0.2)" : "rgba(255, 255, 255, 0.05)",
                                   color: hours > 0 ? "primary.light" : "text.secondary",
                                   display: "flex",
@@ -1623,7 +1623,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                     {selectedAppliance ? (
                       renderTimeLoggingStudio(selectedAppliance)
                     ) : (
-                      <Paper variant="outlined" sx={{ p: 4, textAlign: "center", borderRadius: 3.5, bgcolor: "rgba(15, 14, 58, 0.4)" }}>
+                      <Paper variant="outlined" sx={{ p: 4, textAlign: "center", borderRadius: 1.25, bgcolor: "rgba(24, 27, 32, 0.65)", borderColor: "rgba(255, 255, 255, 0.08)" }}>
                         <Typography variant="body2" sx={{ color: "text.secondary" }}>
                           Select an appliance from the list to adjust its operating hours.
                         </Typography>
@@ -1638,7 +1638,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
           {/* TAB 1: 24-HOUR PURE STOPWATCH ACTIVITY TIMELINE */}
           {activeTab === 1 && (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Card sx={{ p: 2.5, borderRadius: 3 }}>
+              <Card sx={{ p: 2.5, borderRadius: 1.5 }}>
                 {/* Header & Legend */}
                 <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "flex-start", sm: "center" }, justifyContent: "space-between", gap: 1.5, mb: 2 }}>
                   <Box>
@@ -1804,7 +1804,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                   title={
                                     <Box sx={{ p: 0.5 }}>
                                       <Typography variant="caption" sx={{ fontWeight: 800, color: isLiveBlock ? "#34d399" : "#a5b4fc", display: "block" }}>
-                                        {isLiveBlock ? "⏱️ LIVE RUNNING STOPWATCH" : "🔵 Logged Stopwatch Session (Click to Edit / Delete)"}
+                                        {isLiveBlock ? "LIVE RUNNING STOPWATCH" : "Logged Stopwatch Session (Click to Edit / Delete)"}
                                       </Typography>
                                       <Typography variant="caption" sx={{ display: "block" }}>
                                         Time: {session.startTimeStr} ➔ {session.endTimeStr}
@@ -1817,7 +1817,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                       </Typography>
                                       {!isLiveBlock && (
                                         <Typography variant="caption" sx={{ display: "block", color: "primary.light", fontWeight: 800, mt: 0.5 }}>
-                                          👉 Click block to inspect / edit / delete
+                                          Click block to inspect / edit / delete
                                         </Typography>
                                       )}
                                     </Box>
@@ -1885,7 +1885,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                     Peak Simultaneous Demand: <strong>{peakWatts} W</strong> ({((peakWatts / 1000) * DEFAULT_EFFECTIVE_RATE).toFixed(2)} ₱/hr)
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                    💡 Hover over any session block to inspect metered kWh and peso cost.
+                    Hover over any session block to inspect metered kWh and peso cost.
                   </Typography>
                 </Box>
               </Card>
@@ -1947,9 +1947,9 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
           slotProps={{
             paper: {
               sx: {
-                borderRadius: 3.5,
-                bgcolor: "#0f0e3a",
-                border: "1px solid rgba(108, 122, 224, 0.4)",
+                borderRadius: 1.5,
+                bgcolor: "#17191d",
+                border: "1px solid rgba(0, 229, 201, 0.35)",
                 boxShadow: "0 24px 64px rgba(0, 0, 0, 0.6)",
                 color: "#ffffff",
                 p: 1,
@@ -1991,7 +1991,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
             />
 
             {pastSessionSlices.length > 0 && (
-              <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: "rgba(99, 102, 241, 0.1)" }}>
+              <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 1.25, bgcolor: "rgba(0, 229, 201, 0.08)", borderColor: "rgba(0, 229, 201, 0.2)" }}>
                 <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.light", display: "block" }}>
                   Summary:
                 </Typography>
@@ -2038,9 +2038,9 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
           slotProps={{
             paper: {
               sx: {
-                borderRadius: 3.5,
-                bgcolor: "#0f0e3a",
-                border: "1px solid rgba(108, 122, 224, 0.4)",
+                borderRadius: 1.5,
+                bgcolor: "#17191d",
+                border: "1px solid rgba(0, 229, 201, 0.35)",
                 boxShadow: "0 24px 64px rgba(0, 0, 0, 0.6)",
                 color: "#ffffff",
                 p: 1,
@@ -2054,7 +2054,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                 sx={{
                   width: 38,
                   height: 38,
-                  borderRadius: 2,
+                  borderRadius: 1,
                   bgcolor: selectedBlockForAction.block.type === "live_stopwatch" ? "rgba(16, 185, 129, 0.2)" : "rgba(99, 102, 241, 0.2)",
                   color: selectedBlockForAction.block.type === "live_stopwatch" ? "#34d399" : "#818cf8",
                   display: "flex",
@@ -2084,7 +2084,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
               variant="outlined"
               sx={{
                 p: 2,
-                borderRadius: 2.5,
+                borderRadius: 1.25,
                 bgcolor: "rgba(255, 255, 255, 0.03)",
                 borderColor: "rgba(255, 255, 255, 0.08)",
                 display: "grid",
@@ -2119,7 +2119,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                 variant="outlined"
                 sx={{
                   p: 2,
-                  borderRadius: 2.5,
+                  borderRadius: 1.25,
                   bgcolor: "rgba(99, 102, 241, 0.06)",
                   borderColor: "rgba(99, 102, 241, 0.2)",
                   display: "flex",
@@ -2141,7 +2141,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                   )}
                 </Box>
                 <Typography variant="body1" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
-                  ⏰ {selectedBlockForAction.block.startTimeStr} ➔ {selectedBlockForAction.block.endTimeStr}
+                  {selectedBlockForAction.block.startTimeStr} ➔ {selectedBlockForAction.block.endTimeStr}
                 </Typography>
               </Paper>
             ) : (
@@ -2149,7 +2149,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                 variant="outlined"
                 sx={{
                   p: 2,
-                  borderRadius: 2.5,
+                  borderRadius: 1.25,
                   bgcolor: "rgba(99, 102, 241, 0.08)",
                   borderColor: "rgba(99, 102, 241, 0.3)",
                   display: "flex",
@@ -2206,7 +2206,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                 startIcon={<TrashIcon />}
                 onClick={handleDeleteBlockSession}
                 disabled={isSavingBlockAction}
-                sx={{ borderRadius: 2, fontWeight: 800 }}
+                sx={{ borderRadius: 1, fontWeight: 800 }}
               >
                 Delete Session Log
               </Button>
@@ -2220,7 +2220,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                   setSelectedApplianceForPastSession(null);
                   if (onUsageSaved) onUsageSaved();
                 }}
-                sx={{ borderRadius: 2, fontWeight: 800 }}
+                sx={{ borderRadius: 1, fontWeight: 800 }}
               >
                 Live Stopwatch Active
               </Button>
@@ -2229,7 +2229,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
             <Button
               variant="outlined"
               onClick={() => setSelectedBlockForAction(null)}
-              sx={{ borderRadius: 2, fontWeight: 700 }}
+              sx={{ borderRadius: 1, fontWeight: 700 }}
             >
               Done
             </Button>
@@ -2246,7 +2246,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
           slotProps={{
             paper: {
               sx: {
-                borderRadius: 3.5,
+                borderRadius: 1.5,
                 bgcolor: "#0b0a26",
                 backgroundImage: "radial-gradient(ellipse at top, rgba(99, 102, 241, 0.2) 0%, rgba(11, 10, 38, 0.98) 70%)",
                 border: "1px solid rgba(129, 140, 248, 0.35)",
@@ -2314,7 +2314,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                 }}
               >
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.light" }}>
-                  🗓️ Everyday (7 Days / Week)
+                  Everyday (7 Days / Week)
                 </Typography>
                 <Typography variant="caption" sx={{ color: "text.secondary" }}>
                   Applies {progressiveRoutinePrompt.durationHours}h/day quota across 30 days/month
@@ -2347,7 +2347,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                 }}
               >
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "text.primary" }}>
-                  📆 Custom Frequency (Weekdays / 22 Days)
+                  Custom Frequency (Weekdays / 22 Days)
                 </Typography>
                 <Typography variant="caption" sx={{ color: "text.secondary" }}>
                   Applies {progressiveRoutinePrompt.durationHours}h/day quota on active days

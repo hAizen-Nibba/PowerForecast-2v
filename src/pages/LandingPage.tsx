@@ -459,7 +459,7 @@ export const LandingPage: React.FC = () => {
                 variant="contained"
                 size="large"
                 endIcon={<ArrowForwardIcon />}
-                sx={{ px: 4, py: 1.4, fontSize: "1.025rem", borderRadius: 2.5, fontWeight: 800 }}
+                sx={{ px: 4, py: 1.4, fontSize: "1.025rem", borderRadius: 1, fontWeight: 800 }}
               >
                 Get Started Free
               </Button>
@@ -469,7 +469,7 @@ export const LandingPage: React.FC = () => {
                 variant="outlined"
                 size="large"
                 startIcon={<CalculateIcon />}
-                sx={{ px: 3.5, py: 1.4, fontSize: "1.025rem", borderRadius: 2.5, fontWeight: 800 }}
+                sx={{ px: 3.5, py: 1.4, fontSize: "1.025rem", borderRadius: 1, fontWeight: 800 }}
               >
                 Unbundled Calculator
               </Button>
@@ -478,7 +478,7 @@ export const LandingPage: React.FC = () => {
                 variant="text"
                 size="large"
                 startIcon={<SpeedIcon />}
-                sx={{ px: 2.5, py: 1.4, fontSize: "1.025rem", borderRadius: 2.5, fontWeight: 700 }}
+                sx={{ px: 2.5, py: 1.4, fontSize: "1.025rem", borderRadius: 1, fontWeight: 700 }}
               >
                 Interactive Tour
               </Button>
@@ -523,7 +523,7 @@ export const LandingPage: React.FC = () => {
             sx={{
               scrollMarginTop: { xs: "72px", sm: "84px" },
               p: { xs: 2.5, sm: 4 },
-              borderRadius: 4,
+              borderRadius: 1.5,
               border: "1px solid",
               borderColor: "divider",
               boxShadow: (theme) =>
@@ -644,7 +644,7 @@ export const LandingPage: React.FC = () => {
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
-                    borderRadius: 3.5,
+                    borderRadius: 1.25,
                     bgcolor: (theme) =>
                       theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.12)" : "rgba(99, 102, 241, 0.06)",
                     border: "1px solid",
@@ -804,7 +804,7 @@ export const LandingPage: React.FC = () => {
 
           <Paper
             sx={{
-              borderRadius: 4,
+              borderRadius: 1.5,
               border: "1px solid",
               borderColor: "divider",
               overflow: "hidden",
@@ -871,14 +871,14 @@ export const LandingPage: React.FC = () => {
 
                   <Grid size={{ xs: 12, md: 6 }}>
                     {/* Simulated 24h Timeline Widget Mock */}
-                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
+                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1.5 }}>
                       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                          ⚡ Today's Live Power Ticker
+                          Today's Live Power Ticker
                         </Typography>
                         <Chip label="LIVE MONITOR" color="error" size="small" sx={{ fontWeight: 800, height: 20 }} />
                       </Box>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", bgcolor: "action.hover", p: 2, borderRadius: 2, mb: 2.5 }}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", bgcolor: "action.hover", p: 2, borderRadius: 1.25, mb: 2.5 }}>
                         <Box>
                           <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>ACTIVE RUNNING RATE</Typography>
                           <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "success.light" }}>
@@ -892,28 +892,12 @@ export const LandingPage: React.FC = () => {
                           </Typography>
                         </Box>
                       </Box>
-                      <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 1 }}>
-                        24-HOUR TELEMETRY TIMELINE (00:00 - 23:59)
-                      </Typography>
-                      {/* Timeline Bar visualization */}
-                      <Box sx={{ display: "flex", gap: 0.5, height: 40, alignItems: "flex-end", mb: 1 }}>
-                        {[15, 10, 10, 10, 20, 35, 60, 45, 30, 25, 30, 40, 50, 45, 35, 55, 75, 90, 85, 80, 70, 50, 30, 20].map((h, i) => (
-                          <Box
-                            key={i}
-                            sx={{
-                              flex: 1,
-                              height: `${h}%`,
-                              bgcolor: h > 60 ? "primary.main" : "action.selected",
-                              borderRadius: 0.5,
-                              transition: "all 0.3s ease",
-                            }}
-                          />
-                        ))}
-                      </Box>
-                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                        <Typography variant="caption" sx={{ color: "text.secondary" }}>00:00</Typography>
-                        <Typography variant="caption" sx={{ color: "text.secondary" }}>12:00 PM</Typography>
-                        <Typography variant="caption" sx={{ color: "text.secondary" }}>23:59</Typography>
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700 }}>Circuit Breaker Load (30A Limit)</Typography>
+                          <Typography variant="caption" sx={{ fontWeight: 800, color: "success.main" }}>15.2% Safe</Typography>
+                        </Box>
+                        <LinearProgress variant="determinate" value={15.2} color="success" sx={{ height: 8, borderRadius: 1 }} />
                       </Box>
                     </Card>
                   </Grid>
@@ -957,11 +941,11 @@ export const LandingPage: React.FC = () => {
                   </Grid>
 
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
+                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1.5 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2 }}>
-                        🌙 Auto-Midnight Crossing Split Visualizer
+                        Auto-Midnight Crossing Split Visualizer
                       </Typography>
-                      <Box sx={{ p: 2, bgcolor: "action.hover", borderRadius: 2, mb: 2 }}>
+                      <Box sx={{ p: 2, bgcolor: "action.hover", borderRadius: 1.25, mb: 2 }}>
                         <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>LOGGED SESSION</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 800, color: "primary.light" }}>
                           Master Bedroom AC: 10:00 PM → 02:00 AM (4.0 hrs Total)
@@ -969,14 +953,14 @@ export const LandingPage: React.FC = () => {
                       </Box>
                       <Grid container spacing={1.5}>
                         <Grid size={{ xs: 6 }}>
-                          <Paper sx={{ p: 2, border: "1px solid", borderColor: "primary.main", borderRadius: 2 }}>
+                          <Paper sx={{ p: 2, border: "1px solid", borderColor: "primary.main", borderRadius: 1.25 }}>
                             <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.main" }}>DAY 1 LOG (Aug 23)</Typography>
                             <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace" }}>2.0 hrs</Typography>
                             <Typography variant="caption" sx={{ color: "text.secondary" }}>22:00 - 23:59 (2.10 kWh)</Typography>
                           </Paper>
                         </Grid>
                         <Grid size={{ xs: 6 }}>
-                          <Paper sx={{ p: 2, border: "1px solid", borderColor: "secondary.main", borderRadius: 2 }}>
+                          <Paper sx={{ p: 2, border: "1px solid", borderColor: "secondary.main", borderRadius: 1.25 }}>
                             <Typography variant="caption" sx={{ fontWeight: 800, color: "secondary.main" }}>DAY 2 LOG (Aug 24)</Typography>
                             <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace" }}>2.0 hrs</Typography>
                             <Typography variant="caption" sx={{ color: "text.secondary" }}>00:00 - 02:00 (2.10 kWh)</Typography>
@@ -1025,24 +1009,24 @@ export const LandingPage: React.FC = () => {
                   </Grid>
 
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
+                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1.5 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2 }}>
-                        ⚡ 3 Selectable Autofill Range Modes
+                        3 Selectable Autofill Range Modes
                       </Typography>
                       <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                        <Paper sx={{ p: 2, border: "1px solid", borderColor: "primary.main", bgcolor: "rgba(99,102,241,0.08)", borderRadius: 2 }}>
+                        <Paper sx={{ p: 2, border: "1px solid", borderColor: "primary.main", bgcolor: "rgba(99,102,241,0.08)", borderRadius: 1.25 }}>
                           <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>Mode 1: 1st of Month to Today</Typography>
                           <Typography variant="caption" sx={{ color: "text.secondary" }}>
                             Fills Days 1 to Current Date based on your refrigerator (24h), AC (8h), and lights (5h).
                           </Typography>
                         </Paper>
-                        <Paper sx={{ p: 2, border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+                        <Paper sx={{ p: 2, border: "1px solid", borderColor: "divider", borderRadius: 1.25 }}>
                           <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>Mode 2: Full Month (1st to Month-End)</Typography>
                           <Typography variant="caption" sx={{ color: "text.secondary" }}>
                             Populates all 30/31 days to immediately compute full month projected electricity cost.
                           </Typography>
                         </Paper>
-                        <Paper sx={{ p: 2, border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+                        <Paper sx={{ p: 2, border: "1px solid", borderColor: "divider", borderRadius: 1.25 }}>
                           <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>Mode 3: Custom Date Range</Typography>
                           <Typography variant="caption" sx={{ color: "text.secondary" }}>
                             Match exact Meralco billing cutoff dates (e.g. 15th to 14th of next month).
@@ -1092,9 +1076,9 @@ export const LandingPage: React.FC = () => {
                   </Grid>
 
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
+                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1.5 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2 }}>
-                        📊 Unbundled Cost Component Breakdown (200 kWh)
+                        Unbundled Cost Component Breakdown (200 kWh)
                       </Typography>
                       <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                         {[
@@ -1114,7 +1098,7 @@ export const LandingPage: React.FC = () => {
                               value={c.pct}
                               sx={{
                                 height: 8,
-                                borderRadius: 4,
+                                borderRadius: 1,
                                 bgcolor: "action.selected",
                                 "& .MuiLinearProgress-bar": { bgcolor: c.color },
                               }}
@@ -1164,9 +1148,9 @@ export const LandingPage: React.FC = () => {
                   </Grid>
 
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
+                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1.5 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2 }}>
-                        ⭐ Verified Inverter Efficiency Ratings
+                        Verified Inverter Efficiency Ratings
                       </Typography>
                       <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                         {[
@@ -1175,7 +1159,7 @@ export const LandingPage: React.FC = () => {
                           { brand: "Daikin D-Smart King 1.5HP", cspf: "CSPF 5.92", stars: "★★★★★ (5-Star)", watts: "980W Avg" },
                           { brand: "Standard Window Non-Inverter", cspf: "EER 9.80", stars: "★★☆☆☆ (2-Star)", watts: "1,150W Peak" },
                         ].map((m, i) => (
-                          <Paper key={i} sx={{ p: 1.5, border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+                          <Paper key={i} sx={{ p: 1.5, border: "1px solid", borderColor: "divider", borderRadius: 1.25 }}>
                             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                               <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{m.brand}</Typography>
                               <Typography variant="caption" sx={{ color: "#ffd54f", fontWeight: 800 }}>{m.stars}</Typography>
@@ -1229,11 +1213,11 @@ export const LandingPage: React.FC = () => {
                   </Grid>
 
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
+                    <Card sx={{ p: 3, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1.5 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2 }}>
-                        📸 AI OCR Plate Extraction Preview
+                        AI OCR Plate Extraction Preview
                       </Typography>
-                      <Paper sx={{ p: 2, bgcolor: "action.hover", border: "1px dashed", borderColor: "primary.main", borderRadius: 2, mb: 2 }}>
+                      <Paper sx={{ p: 2, bgcolor: "action.hover", border: "1px dashed", borderColor: "primary.main", borderRadius: 1.25, mb: 2 }}>
                         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                           <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.light" }}>NAMEPLATE OCR DETECTED</Typography>
                           <Chip label="98.4% Confidence" color="success" size="small" sx={{ height: 18, fontSize: "0.625rem", fontWeight: 700 }} />
@@ -1244,19 +1228,19 @@ export const LandingPage: React.FC = () => {
                       </Paper>
                       <Grid container spacing={1.5}>
                         <Grid size={{ xs: 4 }}>
-                          <Paper sx={{ p: 1.5, textAlign: "center", borderRadius: 2 }}>
+                          <Paper sx={{ p: 1.5, textAlign: "center", borderRadius: 1.25 }}>
                             <Typography variant="caption" sx={{ color: "text.secondary" }}>Power</Typography>
                             <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "#ffd54f" }}>1,050 W</Typography>
                           </Paper>
                         </Grid>
                         <Grid size={{ xs: 4 }}>
-                          <Paper sx={{ p: 1.5, textAlign: "center", borderRadius: 2 }}>
+                          <Paper sx={{ p: 1.5, textAlign: "center", borderRadius: 1.25 }}>
                             <Typography variant="caption" sx={{ color: "text.secondary" }}>Current</Typography>
                             <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "primary.light" }}>4.75 A</Typography>
                           </Paper>
                         </Grid>
                         <Grid size={{ xs: 4 }}>
-                          <Paper sx={{ p: 1.5, textAlign: "center", borderRadius: 2 }}>
+                          <Paper sx={{ p: 1.5, textAlign: "center", borderRadius: 1.25 }}>
                             <Typography variant="caption" sx={{ color: "text.secondary" }}>Type</Typography>
                             <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "success.light" }}>Inverter</Typography>
                           </Paper>
@@ -1333,7 +1317,7 @@ export const LandingPage: React.FC = () => {
                     p: 3,
                     display: "flex",
                     flexDirection: "column",
-                    borderRadius: 3.5,
+                    borderRadius: 1.5,
                     border: "1px solid",
                     borderColor: "divider",
                     transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -1348,7 +1332,7 @@ export const LandingPage: React.FC = () => {
                     sx={{
                       width: 48,
                       height: 48,
-                      borderRadius: 2.5,
+                      borderRadius: 1,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -1429,7 +1413,7 @@ export const LandingPage: React.FC = () => {
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
-                    borderRadius: 3.5,
+                    borderRadius: 1.5,
                     position: "relative",
                     border: "1px solid",
                     borderColor: tier.popular ? "primary.main" : "divider",
@@ -1505,7 +1489,7 @@ export const LandingPage: React.FC = () => {
                 variant="contained"
                 size="large"
                 startIcon={<DocsIcon />}
-                sx={{ fontWeight: 800, borderRadius: 2.5 }}
+                sx={{ fontWeight: 800, borderRadius: 1 }}
               >
                 Open API Docs
               </Button>
@@ -1552,7 +1536,7 @@ export const LandingPage: React.FC = () => {
                 a: "Yes. All appliance inventories and schedule records are stored securely in Supabase Cloud DB with automatic fallback to offline browser storage.",
               },
             ].map((faq, idx) => (
-              <Accordion key={idx} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, "&:before": { display: "none" } }}>
+              <Accordion key={idx} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1.25, "&:before": { display: "none" } }}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
                     {faq.q}
@@ -1591,7 +1575,7 @@ export const LandingPage: React.FC = () => {
                   fontWeight: 900,
                   px: 4,
                   py: 1.4,
-                  borderRadius: 2.5,
+                  borderRadius: 1,
                   "&:hover": { bgcolor: "#f1f5f9" },
                 }}
               >
@@ -1608,7 +1592,7 @@ export const LandingPage: React.FC = () => {
                   fontWeight: 800,
                   px: 3.5,
                   py: 1.4,
-                  borderRadius: 2.5,
+                  borderRadius: 1,
                   "&:hover": { borderColor: "#ffffff", bgcolor: "rgba(255,255,255,0.1)" },
                 }}
               >

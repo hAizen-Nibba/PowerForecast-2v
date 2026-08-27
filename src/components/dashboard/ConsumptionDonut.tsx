@@ -16,16 +16,16 @@ interface ConsumptionDonutProps {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  "Air Conditioners": "#6366f1",
-  "Refrigerators & Freezers": "#818cf8",
+  "Air Conditioners": "#00e5c9",
+  "Refrigerators & Freezers": "#26c6da",
   "Television Sets": "#06b6d4",
   "Electric Fans": "#10b981",
-  "Washing Machines": "#f59e0b",
-  "Lighting Products": "#c084fc",
-  "Other": "#94a3b8",
+  "Washing Machines": "#fbbf24",
+  "Lighting Products": "#38bdf8",
+  "Other": "#64748b",
 };
 
-const SPACE_COLORS = ["#6366f1", "#f43f5e", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4"];
+const SPACE_COLORS = ["#00e5c9", "#009e88", "#26c6da", "#fbbf24", "#38bdf8", "#f43f5e"];
 
 export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }) => {
   const [viewBy, setViewBy] = useState<"category" | "space">("category");
@@ -52,7 +52,7 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
   const categoryData = Object.keys(categoryTotals).map((cat) => ({
     name: cat,
     value: Math.round(categoryTotals[cat] * 10) / 10,
-    color: CATEGORY_COLORS[cat] || "#6366f1",
+    color: CATEGORY_COLORS[cat] || "#00e5c9",
   })).sort((a, b) => b.value - a.value);
 
   const spaceData = Object.keys(spaceTotals).map((sp, idx) => ({
@@ -61,72 +61,48 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
     color: SPACE_COLORS[idx % SPACE_COLORS.length],
   })).sort((a, b) => b.value - a.value);
 
-  const data = viewBy === "space" && spaces.length > 1 ? spaceData : categoryData;
+  const data = viewBy === "category" ? categoryData : spaceData;
   const totalKwh = data.reduce((acc, curr) => acc + curr.value, 0);
 
   return (
-    <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+    <Card sx={{ p: { xs: 2.25, sm: 2.5 }, borderRadius: 1.5, height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
       <Box>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1, gap: 1 }}>
-          <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1 }}>
-              <PieIcon sx={{ color: "primary.light" }} />
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <PieIcon sx={{ color: "primary.main", fontSize: 20 }} />
+            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
               Energy Distribution
             </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Monthly load by {viewBy === "space" ? "space / location" : "appliance category"}
-            </Typography>
           </Box>
-          <Chip
-            label={`${totalKwh.toFixed(1)} kWh Total`}
+          <ToggleButtonGroup
+            value={viewBy}
+            exclusive
+            onChange={(_, val) => val && setViewBy(val)}
             size="small"
-            color="primary"
-            sx={{ fontWeight: 700, fontFamily: "monospace", height: 24 }}
-          />
+            sx={{
+              height: 26,
+              "& .MuiToggleButton-root": {
+                px: 1,
+                py: 0,
+                fontSize: "0.6875rem",
+                fontWeight: 700,
+                textTransform: "none",
+              },
+            }}
+          >
+            <ToggleButton value="category">Category</ToggleButton>
+            <ToggleButton value="space">Space</ToggleButton>
+          </ToggleButtonGroup>
         </Box>
 
-        {spaces.length > 1 && (
-          <Box sx={{ display: "flex", justifyContent: "center", my: 1 }}>
-            <ToggleButtonGroup
-              size="small"
-              value={viewBy}
-              exclusive
-              onChange={(_, next) => next && setViewBy(next)}
-              sx={{ height: 28 }}
-            >
-              <ToggleButton value="category" sx={{ px: 1.5, fontSize: "0.6875rem", fontWeight: 700, textTransform: "none" }}>
-                By Category
-              </ToggleButton>
-              <ToggleButton value="space" sx={{ px: 1.5, fontSize: "0.6875rem", fontWeight: 700, textTransform: "none" }}>
-                By Space ({spaces.length})
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
-        )}
+        <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 1.5 }}>
+          {viewBy === "category" ? "Monthly consumption breakdown by appliance category" : "Monthly energy split between spaces"}
+        </Typography>
 
-        <Divider sx={{ my: 1.5 }} />
-
-        {appliances.length === 0 ? (
+        {data.length === 0 ? (
           <Box sx={{ py: 6, textAlign: "center" }}>
-            <Box
-              sx={{
-                width: 48,
-                height: 48,
-                borderRadius: "50%",
-                bgcolor: "action.hover",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                mb: 1.5,
-              }}
-            >
-              <PieIcon sx={{ color: "primary.light" }} />
-            </Box>
-            <Typography variant="body2" sx={{ fontWeight: 700 }}>
-              No Consumption Data
-            </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", maxWidth: 200, mx: "auto", mt: 0.5 }}>
-              Add custom appliances to visualize your power breakdown.
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+              No consumption data available yet.
             </Typography>
           </Box>
         ) : (
@@ -144,16 +120,15 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
                               p: 1.5,
                               borderRadius: 2,
                               bgcolor: (theme) =>
-                                theme.palette.mode === "dark" ? "rgba(15, 16, 56, 0.95)" : "#ffffff",
-                              border: "1px solid",
-                              borderColor: "divider",
-                              boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+                                theme.palette.mode === "dark" ? "rgba(23, 26, 31, 0.95)" : "#ffffff",
+                              border: "1px solid rgba(0, 229, 201, 0.3)",
+                              boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
                             }}
                           >
                             <Typography variant="caption" sx={{ fontWeight: 700, display: "block" }}>
                               {item.name}
                             </Typography>
-                            <Typography variant="caption" sx={{ fontWeight: 800, color: "#f59e0b", fontFamily: "monospace" }}>
+                            <Typography variant="caption" sx={{ fontWeight: 800, color: "#00e5c9", fontFamily: "monospace" }}>
                               {item.value} kWh ({((Number(item.value) / (totalKwh || 1)) * 100).toFixed(1)}%)
                             </Typography>
                           </Box>

@@ -177,7 +177,7 @@ export const LoginPage: React.FC = () => {
             width: "100%",
             maxWidth: 480,
             p: { xs: 3, sm: 4.5 },
-            borderRadius: 3.5,
+            borderRadius: 1.5,
             boxShadow: isDark
               ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(99, 102, 241, 0.15)"
               : "0 20px 60px rgba(99, 102, 241, 0.12)",
@@ -195,7 +195,7 @@ export const LoginPage: React.FC = () => {
               sx={{
                 width: 52,
                 height: 52,
-                borderRadius: 3,
+                borderRadius: 1.25,
                 objectFit: "contain",
                 filter: "drop-shadow(0 4px 16px rgba(99, 102, 241, 0.5))",
                 mb: 1.5,
@@ -210,7 +210,7 @@ export const LoginPage: React.FC = () => {
           </Box>
 
               {errorMessage && (
-                <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+                <Alert severity="error" sx={{ mb: 3, borderRadius: 1 }}>
                   {errorMessage}
                 </Alert>
               )}
@@ -291,7 +291,7 @@ export const LoginPage: React.FC = () => {
                   fullWidth
                   size="large"
                   disabled={isLoading}
-                  sx={{ py: 1.25, borderRadius: 2.5, mt: 1, fontWeight: 700 }}
+                  sx={{ py: 1.25, borderRadius: 1, mt: 1, fontWeight: 700 }}
                 >
                   {isLoading ? "Signing in..." : "Sign In to PowerForecast"}
                 </Button>

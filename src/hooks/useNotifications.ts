@@ -55,7 +55,7 @@ export function useNotifications({
 
   const handleTestNotification = useCallback(() => {
     sendNotification({
-      title: "⚡ PowerForecast Notification Test",
+      title: "PowerForecast Notification Test",
       body: "Smart Energy Notifications are active and working smoothly!",
       tag: `test-${Date.now()}`,
     });
@@ -84,7 +84,7 @@ export function useNotifications({
             const cost = (parseFloat(kwh) * 14.8261).toFixed(2);
 
             sendNotification({
-              title: `⏱️ Stopwatch Alert: ${app.name}`,
+              title: `Stopwatch Alert: ${app.name}`,
               body: `Running for ${hours} hrs (${kwh} kWh / ~₱${cost}). Did you leave it on?`,
               tag: `stopwatch-${app.id}`,
             });
@@ -117,7 +117,7 @@ export function useNotifications({
               sentAlertsRef.current.add(alertKey);
 
               sendNotification({
-                title: `📅 Scheduled Task Reminder: ${ev.title}`,
+                title: `Scheduled Task Reminder: ${ev.title}`,
                 body: `Starts in 5 minutes (${ev.hour}:00). Duration: ${ev.duration_hours}h.`,
                 tag: `sched-${ev.id}`,
               });
@@ -143,7 +143,7 @@ export function useNotifications({
         sentAlertsRef.current.add(monthKey);
 
         sendNotification({
-          title: `💰 Meralco Budget Warning (${percentage.toFixed(0)}%)`,
+          title: `Meralco Budget Warning (${percentage.toFixed(0)}%)`,
           body: `Projected bill ₱${projectedBill.toFixed(2)} reached ${percentage.toFixed(0)}% of your ₱${monthlyBudget} budget!`,
           tag: "budget-alert",
         });
@@ -168,7 +168,7 @@ export function useNotifications({
           sentAlertsRef.current.add(peakKey);
 
           sendNotification({
-            title: "⚡ Meralco Peak Demand Period Started",
+            title: "Meralco Peak Demand Period Started",
             body: `Grid demand is currently elevated (${hour}:00 - ${hour + 3}:00). Consider pausing high-wattage appliances to optimize your bill.`,
             tag: `peak-${hour}`,
           });

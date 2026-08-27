@@ -111,7 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               height: 38,
               borderRadius: 2,
               objectFit: "contain",
-              filter: "drop-shadow(0 2px 8px rgba(99, 102, 241, 0.4))",
+              filter: "drop-shadow(0 2px 8px rgba(0, 229, 201, 0.4))",
             }}
           />
           <Box>
@@ -150,7 +150,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         bottom: "18%",
                         width: 3,
                         borderRadius: "0 4px 4px 0",
-                        bgcolor: "#ffd54f",
+                        bgcolor: "#00e5c9",
                       },
                     },
                   }}
@@ -158,7 +158,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <ListItemIcon
                     sx={{
                       minWidth: 34,
-                      color: isActive ? "#ffd54f" : "primary.light",
+                      color: isActive ? "#00e5c9" : "text.secondary",
                       transition: "color 0.2s ease",
                     }}
                   >
@@ -190,9 +190,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           elevation={0}
           sx={{
             p: 1.75,
-            borderRadius: 2.5,
+            borderRadius: 1.25,
             bgcolor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(15, 16, 56, 0.85)" : "rgba(255, 255, 255, 0.08)",
+              theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.88)" : "rgba(255, 255, 255, 0.08)",
             border: "1px solid",
             borderColor: "divider",
             mb: 1.5,
@@ -206,7 +206,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   height: 8,
                   borderRadius: "50%",
                   bgcolor: runningCount > 0 ? "success.main" : "text.disabled",
-                  boxShadow: runningCount > 0 ? "0 0 8px #10b981" : "none",
+                  boxShadow: runningCount > 0 ? "0 0 8px #00e5c9" : "none",
                   transition: "all 0.3s ease",
                 }}
               />
@@ -221,9 +221,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 height: 20,
                 fontSize: "0.6875rem",
                 fontWeight: 700,
-                bgcolor: "rgba(99, 102, 241, 0.2)",
-                color: "primary.light",
-                border: "1px solid rgba(99, 102, 241, 0.3)",
+                bgcolor: "rgba(0, 229, 201, 0.12)",
+                color: "#00e5c9",
+                border: "1px solid rgba(0, 229, 201, 0.3)",
               }}
             />
           </Box>
@@ -232,7 +232,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Typography variant="h6" sx={{ fontWeight: 800, fontFamily: "monospace", color: "#ffffff" }}>
               {activeWattage} <Typography component="span" variant="caption" sx={{ color: "text.secondary" }}>W</Typography>
             </Typography>
-            <Typography variant="caption" sx={{ color: "#ffd54f", fontFamily: "monospace", fontWeight: 700 }}>
+            <Typography variant="caption" sx={{ color: "#00e5c9", fontFamily: "monospace", fontWeight: 700 }}>
               ₱{((activeWattage / 1000) * 14.8261).toFixed(2)}/hr
             </Typography>
           </Box>
@@ -242,7 +242,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Divider sx={{ my: 1, borderColor: "divider" }} />
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  <CoinsIcon sx={{ fontSize: 13, color: "#ffd54f" }} />
+                  <CoinsIcon sx={{ fontSize: 13, color: "#00e5c9" }} />
                   <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
                     Session:
                   </Typography>

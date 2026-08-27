@@ -320,12 +320,12 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
     <Card
       sx={{
         p: { xs: 2.5, sm: 3 },
-        borderRadius: 3.5,
+        borderRadius: 1.5,
         border: "1px solid",
-        borderColor: activeLiveCount > 0 ? "rgba(52, 211, 153, 0.4)" : "rgba(108, 122, 224, 0.25)",
+        borderColor: activeLiveCount > 0 ? "rgba(0, 229, 201, 0.4)" : "rgba(255, 255, 255, 0.08)",
         bgcolor: (theme) =>
-          theme.palette.mode === "dark" ? "rgba(10, 10, 36, 0.65)" : "rgba(255, 255, 255, 0.9)",
-        boxShadow: activeLiveCount > 0 ? "0 0 24px rgba(52, 211, 153, 0.08)" : "none",
+          theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.82)" : "rgba(255, 255, 255, 0.9)",
+        boxShadow: activeLiveCount > 0 ? "0 0 24px rgba(0, 229, 201, 0.12)" : "none",
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
@@ -335,9 +335,9 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
           <Box
             sx={{
               p: 1,
-              borderRadius: 2,
-              bgcolor: activeLiveCount > 0 ? "rgba(16, 185, 129, 0.15)" : "rgba(99, 102, 241, 0.15)",
-              color: activeLiveCount > 0 ? "#34d399" : "primary.light",
+              borderRadius: 1,
+              bgcolor: activeLiveCount > 0 ? "rgba(0, 229, 201, 0.15)" : "rgba(0, 229, 201, 0.1)",
+              color: "#00e5c9",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -353,11 +353,10 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
               </Typography>
               {activeLiveCount > 0 && (
                 <Chip
-                  icon={<FlashOnIcon sx={{ fontSize: "13px !important", color: "#34d399 !important" }} />}
+                  icon={<FlashOnIcon sx={{ fontSize: "13px !important", color: "#0c1b18 !important" }} />}
                   label={`${activeLiveCount} Live Active`}
                   size="small"
-                  color="success"
-                  sx={{ height: 20, fontSize: "0.6875rem", fontWeight: 800 }}
+                  sx={{ height: 20, fontSize: "0.6875rem", fontWeight: 800, bgcolor: "#00e5c9", color: "#0c1b18" }}
                 />
               )}
             </Box>
@@ -371,13 +370,13 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
           <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#10b981", boxShadow: "0 0 6px #34d399" }} />
+              <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#00e5c9", boxShadow: "0 0 6px #00e5c9" }} />
               <Typography variant="caption" sx={{ fontSize: "0.6875rem", color: "text.secondary", fontWeight: 700 }}>
                 Live Running Stopwatch
               </Typography>
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#6366f1" }} />
+              <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#009e88" }} />
               <Typography variant="caption" sx={{ fontSize: "0.6875rem", color: "text.secondary", fontWeight: 700 }}>
                 Logged Stopwatch Session
               </Typography>
@@ -390,7 +389,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
             size="small"
             variant="outlined"
             endIcon={<ArrowForwardIcon fontSize="small" />}
-            sx={{ borderRadius: 2, fontWeight: 700, fontSize: "0.75rem", py: 0.5 }}
+            sx={{ borderRadius: 1, fontWeight: 700, fontSize: "0.75rem", py: 0.5 }}
           >
             Calendar Details
           </Button>
@@ -408,7 +407,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
 
       {/* Appliances Gantt Rows */}
       {timelineData.length === 0 ? (
-        <Paper variant="outlined" sx={{ p: 4, textAlign: "center", borderRadius: 3 }}>
+        <Paper variant="outlined" sx={{ p: 4, textAlign: "center", borderRadius: 1.25 }}>
           <Typography variant="body2" sx={{ color: "text.secondary" }}>
             No appliances configured yet. Add your appliances in the Appliance Inventory!
           </Typography>
@@ -426,7 +425,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                   alignItems: "center",
                   gap: 1.5,
                   p: 1.25,
-                  borderRadius: 2.5,
+                  borderRadius: 1.25,
                   bgcolor: (theme) =>
                     theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "rgba(0, 0, 0, 0.02)",
                   border: "1px solid",
@@ -460,7 +459,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                   sx={{
                     flexGrow: 1,
                     height: 26,
-                    borderRadius: 2,
+                    borderRadius: 1,
                     bgcolor: "rgba(0, 0, 0, 0.25)",
                     border: "1px solid rgba(255, 255, 255, 0.06)",
                     position: "relative",
@@ -498,13 +497,13 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
 
                     const bgGradient =
                       block.type === "live_stopwatch"
-                        ? "linear-gradient(90deg, #10b981 0%, #34d399 100%)"
-                        : "linear-gradient(90deg, #6366f1 0%, #818cf8 100%)";
+                        ? "linear-gradient(90deg, #00e5c9 0%, #26c6da 100%)"
+                        : "linear-gradient(90deg, #009e88 0%, #00e5c9 100%)";
 
                     const glowColor =
                       block.type === "live_stopwatch"
-                        ? "0 0 10px rgba(52, 211, 153, 0.6)"
-                        : "0 0 8px rgba(99, 102, 241, 0.4)";
+                        ? "0 0 10px rgba(0, 229, 201, 0.6)"
+                        : "0 0 8px rgba(0, 158, 136, 0.4)";
 
                     return (
                       <Tooltip
@@ -513,17 +512,17 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                         title={
                           <Box sx={{ p: 0.5 }}>
                             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#fff" }}>
-                              {app.name} ({block.type === "live_stopwatch" ? "🟢 Live Active" : "🔵 Logged Stopwatch Session (Click to Edit / Delete)"})
+                              {app.name} ({block.type === "live_stopwatch" ? "Live Active" : "Logged Stopwatch Session (Click to Edit / Delete)"})
                             </Typography>
                             <Typography variant="caption" sx={{ display: "block", color: "text.secondary" }}>
-                              ⏰ {block.startTimeStr} – {block.endTimeStr} ({block.durationHours.toFixed(2)} hrs)
+                              {block.startTimeStr} – {block.endTimeStr} ({block.durationHours.toFixed(2)} hrs)
                             </Typography>
                             <Typography variant="caption" sx={{ display: "block", color: "#ffd54f", fontWeight: 800, mt: 0.5 }}>
-                              ⚡ {block.kwh.toFixed(3)} kWh • ₱{block.cost.toFixed(2)}
+                              {block.kwh.toFixed(3)} kWh • ₱{block.cost.toFixed(2)}
                             </Typography>
                             {block.type === "logged_session" && (
                               <Typography variant="caption" sx={{ display: "block", color: "primary.light", fontWeight: 800, mt: 0.5 }}>
-                                👉 Click block to inspect / edit / delete
+                                Click block to inspect / edit / delete
                               </Typography>
                             )}
                           </Box>
@@ -565,7 +564,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
           Peak Live Demand: <strong style={{ color: "#ffd54f" }}>{peakDemand} W</strong> (₱{((peakDemand / 1000) * DEFAULT_EFFECTIVE_RATE).toFixed(2)}/hr rate)
         </Typography>
         <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
-          💡 Stopwatch sessions automatically update live energy costs and calculate real-time concurrency.
+          Stopwatch sessions automatically update live energy costs and calculate real-time concurrency.
         </Typography>
       </Box>
 
@@ -582,9 +581,9 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
           slotProps={{
             paper: {
               sx: {
-                borderRadius: 3.5,
-                bgcolor: "#0f0e3a",
-                border: "1px solid rgba(108, 122, 224, 0.4)",
+                borderRadius: 1.5,
+                bgcolor: "#17191d",
+                border: "1px solid rgba(0, 229, 201, 0.35)",
                 boxShadow: "0 24px 64px rgba(0, 0, 0, 0.6)",
                 color: "#ffffff",
                 p: 1,
@@ -598,7 +597,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                 sx={{
                   width: 38,
                   height: 38,
-                  borderRadius: 2,
+                  borderRadius: 1,
                   bgcolor: selectedBlockForAction.block.type === "live_stopwatch" ? "rgba(16, 185, 129, 0.2)" : "rgba(99, 102, 241, 0.2)",
                   color: selectedBlockForAction.block.type === "live_stopwatch" ? "#34d399" : "#818cf8",
                   display: "flex",
@@ -628,7 +627,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
               variant="outlined"
               sx={{
                 p: 2,
-                borderRadius: 2.5,
+                borderRadius: 1.25,
                 bgcolor: "rgba(255, 255, 255, 0.03)",
                 borderColor: "rgba(255, 255, 255, 0.08)",
                 display: "grid",
@@ -663,7 +662,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                 variant="outlined"
                 sx={{
                   p: 2,
-                  borderRadius: 2.5,
+                  borderRadius: 1.25,
                   bgcolor: "rgba(99, 102, 241, 0.06)",
                   borderColor: "rgba(99, 102, 241, 0.2)",
                   display: "flex",
@@ -685,7 +684,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                   )}
                 </Box>
                 <Typography variant="body1" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
-                  ⏰ {selectedBlockForAction.block.startTimeStr} ➔ {selectedBlockForAction.block.endTimeStr}
+                  {selectedBlockForAction.block.startTimeStr} ➔ {selectedBlockForAction.block.endTimeStr}
                 </Typography>
               </Paper>
             ) : (
@@ -693,7 +692,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                 variant="outlined"
                 sx={{
                   p: 2,
-                  borderRadius: 2.5,
+                  borderRadius: 1.25,
                   bgcolor: "rgba(99, 102, 241, 0.08)",
                   borderColor: "rgba(99, 102, 241, 0.3)",
                   display: "flex",
@@ -750,7 +749,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                 startIcon={<TrashIcon />}
                 onClick={handleDeleteBlockSession}
                 disabled={isSavingBlockAction}
-                sx={{ borderRadius: 2, fontWeight: 800 }}
+                sx={{ borderRadius: 1, fontWeight: 800 }}
               >
                 Delete Session Log
               </Button>
@@ -759,7 +758,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
             <Button
               variant="outlined"
               onClick={() => setSelectedBlockForAction(null)}
-              sx={{ borderRadius: 2, fontWeight: 700 }}
+              sx={{ borderRadius: 1, fontWeight: 700 }}
             >
               Done
             </Button>

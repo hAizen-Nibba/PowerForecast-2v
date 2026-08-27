@@ -168,7 +168,7 @@ export const VerifyEmailPage: React.FC = () => {
           <Card
             sx={{
               p: { xs: 4, sm: 6 },
-              borderRadius: 4,
+              borderRadius: 1.5,
               textAlign: "center",
               boxShadow: isDark
                 ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(99, 102, 241, 0.15)"
@@ -234,7 +234,7 @@ export const VerifyEmailPage: React.FC = () => {
         <Card
           sx={{
             p: { xs: 4, sm: 6 },
-            borderRadius: 4,
+            borderRadius: 1.5,
             textAlign: "center",
             boxShadow: isDark
               ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(99, 102, 241, 0.15)"
@@ -293,7 +293,7 @@ export const VerifyEmailPage: React.FC = () => {
               disabled={isResending || email === "your email address"}
               sx={{
                 py: 1.25,
-                borderRadius: 2.5,
+                borderRadius: 1,
                 fontWeight: 600,
               }}
             >

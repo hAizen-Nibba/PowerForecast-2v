@@ -17,6 +17,10 @@ import Alert from "@mui/material/Alert";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import {
@@ -54,6 +58,7 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
   const [stagedImages, setStagedImages] = useState<ImageItem[]>([]);
   const [apiKey, setApiKey] = useState<string>("");
   const [showApiKeyInput, setShowApiKeyInput] = useState<boolean>(false);
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string>(defaultListId || "");
 
   // Editable fields before saving
   const [editName, setEditName] = useState("");
@@ -259,7 +264,7 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
             sx={{
               width: 36,
               height: 36,
-              borderRadius: 2,
+              borderRadius: 1,
               bgcolor: "primary.main",
               color: "#ffffff",
               display: "flex",
@@ -274,69 +279,53 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
               <Typography variant="h6" sx={{ fontWeight: 800 }}>
                 Google Gemini AI Energy Auditor
               </Typography>
-              <Chip
-                icon={<SmartToyIcon sx={{ fontSize: "14px !important", color: "#6366f1" }} />}
-                label="100% Genuine AI"
-                size="small"
-                sx={{
-                  height: 20,
-                  fontSize: "0.6875rem",
-                  fontWeight: 700,
-                  bgcolor: "rgba(99, 102, 241, 0.12)",
-                  color: "primary.light",
-                  border: "1px solid rgba(99, 102, 241, 0.3)",
-                }}
-              />
+              <Chip label="Multimodal Vision" size="small" color="primary" sx={{ fontWeight: 700, height: 20 }} />
             </Box>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Upload appliance rating plates or DOE energy labels for multimodal vision extraction
+              Upload nameplate or appliance rating label photos to automatically infer wattage & specs
             </Typography>
           </Box>
         </Box>
-        <IconButton onClick={onClose} size="small">
-          <CloseIcon fontSize="small" />
+        <IconButton size="small" onClick={onClose}>
+          <CloseIcon sx={{ color: "text.secondary" }} />
         </IconButton>
       </DialogTitle>
 
       <Divider />
 
-      <DialogContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+      <DialogContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
         {/* Error Alert Display */}
         {scanError && (
-          <Alert severity="error" onClose={() => setScanError(null)} sx={{ borderRadius: 2 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-              AI Vision Analysis Unsuccessful
-            </Typography>
-            <Typography variant="body2" sx={{ fontSize: "0.8125rem", mt: 0.5 }}>
-              {scanError}
-            </Typography>
+          <Alert severity="error" onClose={() => setScanError(null)} sx={{ borderRadius: 1 }}>
+            {scanError}
           </Alert>
         )}
 
-        {/* Preset Selector & API Key Toggle */}
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
-          <Box sx={{ display: "flex", gap: 1 }}>
-            {[
-              { id: "energy_guide", label: "DOE Yellow Energy Guide" },
-              { id: "nameplate", label: "Specification Nameplate" },
-            ].map((p) => (
-              <Chip
-                key={p.id}
-                label={p.label}
-                clickable
-                onClick={() => setPreset(p.id as any)}
-                color={preset === p.id ? "primary" : "default"}
-                variant={preset === p.id ? "filled" : "outlined"}
-                sx={{ fontWeight: 700 }}
-              />
-            ))}
-          </Box>
+        {/* Space Selector & Gemini Key trigger */}
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
+          {spaces.length > 1 && (
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <InputLabel>Target Space</InputLabel>
+              <Select
+                value={selectedSpaceId}
+                label="Target Space"
+                onChange={(e) => setSelectedSpaceId(e.target.value)}
+              >
+                {spaces.map((sp) => (
+                  <MenuItem key={sp.id} value={sp.id}>
+                    {sp.name} ({sp.tariff_type === "commercial" ? "Commercial" : "Residential"})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
 
           <Button
             size="small"
             variant="text"
-            onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-            startIcon={<KeyIcon />}
+            color="inherit"
+            startIcon={<KeyIcon fontSize="small" />}
+            onClick={() => setShowApiKeyInput((prev) => !prev)}
             sx={{ fontSize: "0.75rem" }}
           >
             {apiKey ? "Custom Key Configured" : "Enter API Key"}
@@ -344,7 +333,7 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
         </Box>
 
         {showApiKeyInput && (
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+          <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.25 }}>
             <Typography variant="caption" sx={{ fontWeight: 700, display: "block", mb: 1 }}>
               Google Gemini API Key (Optional Override)
             </Typography>
@@ -364,7 +353,7 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
           variant="outlined"
           sx={{
             p: 4,
-            borderRadius: 3,
+            borderRadius: 1.5,
             textAlign: "center",
             borderStyle: "dashed",
             borderWidth: 2,
@@ -403,7 +392,7 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
                   <Paper
                     sx={{
                       p: 1,
-                      borderRadius: 2,
+                      borderRadius: 1.25,
                       position: "relative",
                       display: "flex",
                       flexDirection: "column",
@@ -414,7 +403,7 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
                       component="img"
                       src={img.base64}
                       alt={img.name}
-                      sx={{ width: "100%", height: 100, objectFit: "cover", borderRadius: 1.5 }}
+                      sx={{ width: "100%", height: 100, objectFit: "cover", borderRadius: 1 }}
                     />
                     <IconButton
                       size="small"
@@ -436,7 +425,7 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
           <Box sx={{ py: 2 }}>
             <LinearProgress />
             <Typography variant="caption" sx={{ color: "primary.light", fontWeight: 600, display: "block", textAlign: "center", mt: 1 }}>
-              ⚡ Google Gemini Multimodal AI is inspecting photos, recognizing circuits, and verifying specs...
+              Google Gemini Multimodal AI is inspecting photos, recognizing circuits, and verifying specs...
             </Typography>
           </Box>
         )}
@@ -444,7 +433,7 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
         {/* Parsed Result & Editable Form */}
         {scanResult && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2.5, bgcolor: "action.hover" }}>
+            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 1.25, bgcolor: "action.hover" }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "success.main", display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
                 <CheckCircleIcon fontSize="small" />
                 Gemini AI Specs Extracted
@@ -503,7 +492,7 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
 
             {/* Expandable Direct AI Diagnostic Notes */}
             {scanResult.raw_markdown && (
-              <Accordion sx={{ borderRadius: 2, "&:before": { display: "none" } }} defaultExpanded={false}>
+              <Accordion sx={{ borderRadius: 1.25, "&:before": { display: "none" } }} defaultExpanded={false}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <SmartToyIcon sx={{ fontSize: 18, color: "primary.main" }} />
@@ -518,7 +507,7 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
                     sx={{
                       p: 2,
                       bgcolor: "background.default",
-                      borderRadius: 1.5,
+                      borderRadius: 1,
                       fontFamily: "monospace",
                       fontSize: "0.8125rem",
                       whiteSpace: "pre-wrap",

@@ -63,7 +63,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           sx={{
             minWidth: 280,
             maxWidth: 420,
-            borderRadius: 3,
+            borderRadius: 1,
             boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
             fontWeight: 600,
             fontSize: "0.875rem",

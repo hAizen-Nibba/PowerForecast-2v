@@ -220,7 +220,7 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 3.5,
+            borderRadius: 1.5,
             border: "1px solid",
             borderColor: "rgba(129, 140, 248, 0.25)",
             backdropFilter: "blur(24px)",
@@ -235,7 +235,7 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
             sx={{
               width: 40,
               height: 40,
-              borderRadius: 2.5,
+              borderRadius: 1,
               bgcolor: "primary.main",
               color: "#ffffff",
               display: "flex",
@@ -244,19 +244,19 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
               flexShrink: 0,
             }}
           >
-            <SparklesIcon sx={{ color: "#ffd54f", fontSize: 22 }} />
+            <SparklesIcon sx={{ color: "#ffd54f" }} />
           </Box>
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-              Autofill Routine Defaults
+              Smart Routine Autofill & Batch Logger
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Batch apply inventory baseline hours across multiple calendar dates
+              Quickly populate daily usage based on your registered appliance operating hours
             </Typography>
           </Box>
         </Box>
-        <IconButton onClick={onClose} size="small" sx={{ border: "1px solid", borderColor: "divider" }}>
-          <CloseIcon fontSize="small" />
+        <IconButton size="small" onClick={onClose}>
+          <CloseIcon sx={{ color: "text.secondary" }} />
         </IconButton>
       </DialogTitle>
 
@@ -264,11 +264,10 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
 
       <DialogContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
         {/* 1. Range Preset Options */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", letterSpacing: "0.04em" }}>
-            SELECT DATE RANGE TARGET:
+        <Box>
+          <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, mb: 1, display: "block" }}>
+            1. Select Target Date Range:
           </Typography>
-
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.25 }}>
             {/* Option 1: 1st to Today / Yesterday */}
             <Paper
@@ -276,11 +275,11 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
               onClick={() => setRangeType("month_to_today")}
               sx={{
                 p: 1.5,
-                borderRadius: 2.5,
+                borderRadius: 1,
                 cursor: "pointer",
                 border: "1px solid",
                 borderColor: rangeType === "month_to_today" ? "primary.main" : "divider",
-                bgcolor: rangeType === "month_to_today" ? "rgba(99, 102, 241, 0.12)" : "rgba(15, 14, 58, 0.4)",
+                bgcolor: rangeType === "month_to_today" ? "rgba(0, 229, 201, 0.12)" : "rgba(24, 27, 32, 0.65)",
                 transition: "all 0.15s ease",
                 "&:hover": { borderColor: "primary.light" },
               }}
@@ -304,11 +303,11 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
               onClick={() => setRangeType("full_month")}
               sx={{
                 p: 1.5,
-                borderRadius: 2.5,
+                borderRadius: 1,
                 cursor: "pointer",
                 border: "1px solid",
                 borderColor: rangeType === "full_month" ? "primary.main" : "divider",
-                bgcolor: rangeType === "full_month" ? "rgba(99, 102, 241, 0.12)" : "rgba(15, 14, 58, 0.4)",
+                bgcolor: rangeType === "full_month" ? "rgba(0, 229, 201, 0.12)" : "rgba(24, 27, 32, 0.65)",
                 transition: "all 0.15s ease",
                 "&:hover": { borderColor: "primary.light" },
               }}
@@ -330,11 +329,11 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
               onClick={() => setRangeType("custom")}
               sx={{
                 p: 1.5,
-                borderRadius: 2.5,
+                borderRadius: 1,
                 cursor: "pointer",
                 border: "1px solid",
                 borderColor: rangeType === "custom" ? "primary.main" : "divider",
-                bgcolor: rangeType === "custom" ? "rgba(99, 102, 241, 0.12)" : "rgba(15, 14, 58, 0.4)",
+                bgcolor: rangeType === "custom" ? "rgba(0, 229, 201, 0.12)" : "rgba(24, 27, 32, 0.65)",
                 transition: "all 0.15s ease",
                 "&:hover": { borderColor: "primary.light" },
               }}
@@ -356,11 +355,11 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
               onClick={() => setRangeType("single_day")}
               sx={{
                 p: 1.5,
-                borderRadius: 2.5,
+                borderRadius: 1,
                 cursor: "pointer",
                 border: "1px solid",
                 borderColor: rangeType === "single_day" ? "primary.main" : "divider",
-                bgcolor: rangeType === "single_day" ? "rgba(99, 102, 241, 0.12)" : "rgba(15, 14, 58, 0.4)",
+                bgcolor: rangeType === "single_day" ? "rgba(0, 229, 201, 0.12)" : "rgba(24, 27, 32, 0.65)",
                 transition: "all 0.15s ease",
                 "&:hover": { borderColor: "primary.light" },
               }}
@@ -445,9 +444,9 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
           variant="outlined"
           sx={{
             p: 2,
-            borderRadius: 3,
-            bgcolor: "rgba(15, 14, 58, 0.6)",
-            borderColor: "rgba(129, 140, 248, 0.3)",
+            borderRadius: 1.25,
+            bgcolor: "rgba(24, 27, 32, 0.75)",
+            borderColor: "rgba(0, 229, 201, 0.25)",
             display: "flex",
             flexDirection: "column",
             gap: 1.25,
@@ -464,7 +463,7 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
           </Box>
 
           <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1.5, textAlign: "center" }}>
-            <Box sx={{ p: 1, borderRadius: 2, bgcolor: "rgba(0, 0, 0, 0.25)" }}>
+            <Box sx={{ p: 1, borderRadius: 1, bgcolor: "rgba(0, 0, 0, 0.25)" }}>
               <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
                 Active Devices
               </Typography>
@@ -473,7 +472,7 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
               </Typography>
             </Box>
 
-            <Box sx={{ p: 1, borderRadius: 2, bgcolor: "rgba(0, 0, 0, 0.25)" }}>
+            <Box sx={{ p: 1, borderRadius: 1, bgcolor: "rgba(0, 0, 0, 0.25)" }}>
               <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
                 Daily Estimate
               </Typography>
@@ -482,7 +481,7 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
               </Typography>
             </Box>
 
-            <Box sx={{ p: 1, borderRadius: 2, bgcolor: "rgba(0, 0, 0, 0.25)" }}>
+            <Box sx={{ p: 1, borderRadius: 1, bgcolor: "rgba(0, 0, 0, 0.25)" }}>
               <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
                 Total Range Cost
               </Typography>
@@ -507,7 +506,7 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
                   <Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                       <Typography variant="caption" sx={{ fontWeight: 800, color: "text.primary" }}>
-                        ⏱️ Exclude Today (Keep Today empty for live stopwatch tracking)
+                        Exclude Today (Keep Today empty for live stopwatch tracking)
                       </Typography>
                       <Chip label="Recommended" size="small" color="primary" sx={{ height: 18, fontSize: "0.625rem", fontWeight: 800 }} />
                     </Box>
@@ -542,7 +541,7 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
       <Divider />
 
       <DialogActions sx={{ p: 2, px: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Button variant="outlined" onClick={onClose} sx={{ borderRadius: 2, fontWeight: 700 }}>
+        <Button variant="outlined" onClick={onClose} sx={{ borderRadius: 1, fontWeight: 700 }}>
           Cancel
         </Button>
 
@@ -555,7 +554,7 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
                 onApplyToCurrentDay();
                 onClose();
               }}
-              sx={{ borderRadius: 2, fontWeight: 700 }}
+              sx={{ borderRadius: 1, fontWeight: 700 }}
             >
               Apply to Today Only
             </Button>
@@ -567,13 +566,13 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
             startIcon={isSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
             onClick={handleBatchSave}
             disabled={isSaving}
-            sx={{ borderRadius: 2, fontWeight: 800, px: 3 }}
+            sx={{ borderRadius: 1, fontWeight: 800, px: 3 }}
           >
             {isSaving
               ? "Batch Saving Logs..."
               : rangeType === "single_day"
               ? "Apply Routine Defaults"
-              : `⚡ Batch Save & Log (${dateCount} Days)`}
+              : `Batch Save & Log (${dateCount} Days)`}
           </Button>
         </Box>
       </DialogActions>

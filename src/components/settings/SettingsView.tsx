@@ -255,10 +255,10 @@ export const SettingsView: React.FC = () => {
       <Card
         sx={{
           p: { xs: 2.5, sm: 3 },
-          borderRadius: 3.5,
+          borderRadius: 1.5,
           border: "1px solid",
-          borderColor: "rgba(108, 122, 224, 0.25)",
-          bgcolor: "rgba(15, 14, 58, 0.5)",
+          borderColor: "rgba(255, 255, 255, 0.08)",
+          bgcolor: "rgba(24, 27, 32, 0.7)",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
@@ -278,7 +278,7 @@ export const SettingsView: React.FC = () => {
             label={
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                  🇺🇸 English (US)
+                  English (US)
                 </Typography>
               </Box>
             }
@@ -290,7 +290,7 @@ export const SettingsView: React.FC = () => {
             label={
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                  🇵🇭 Tagalog (Filipino)
+                  Tagalog (Filipino)
                 </Typography>
               </Box>
             }
@@ -302,10 +302,10 @@ export const SettingsView: React.FC = () => {
       <Card
         sx={{
           p: { xs: 2.5, sm: 3 },
-          borderRadius: 3.5,
+          borderRadius: 1.5,
           border: "1px solid",
-          borderColor: "rgba(108, 122, 224, 0.25)",
-          bgcolor: "rgba(15, 14, 58, 0.5)",
+          borderColor: "rgba(255, 255, 255, 0.08)",
+          bgcolor: "rgba(24, 27, 32, 0.7)",
         }}
       >
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5, flexWrap: "wrap", gap: 1.5 }}>
@@ -367,14 +367,14 @@ export const SettingsView: React.FC = () => {
                     {m.role === "owner" ? (
                       <Chip
                         icon={<ShieldIcon sx={{ fontSize: "14px !important", color: "#ffd54f !important" }} />}
-                        label={language === "tl" ? "👑 May-ari ng Bahay (Full Access)" : "👑 Household Owner (Full Access)"}
+                        label={language === "tl" ? "May-ari ng Bahay (Full Access)" : "Household Owner (Full Access)"}
                         size="small"
                         sx={{ fontWeight: 800, fontSize: "0.6875rem", bgcolor: "rgba(255, 213, 79, 0.15)", color: "#ffd54f", border: "1px solid rgba(255, 213, 79, 0.3)" }}
                       />
                     ) : (
                       <Chip
                         icon={<BoltIcon sx={{ fontSize: "14px !important", color: "#60a5fa !important" }} />}
-                        label={language === "tl" ? "👥 Miyembro ng Pamilya (Usage Logging)" : "👥 Family Member (Usage Logging)"}
+                        label={language === "tl" ? "Miyembro ng Pamilya (Usage Logging)" : "Family Member (Usage Logging)"}
                         size="small"
                         sx={{ fontWeight: 800, fontSize: "0.6875rem", bgcolor: "rgba(96, 165, 250, 0.15)", color: "#60a5fa", border: "1px solid rgba(96, 165, 250, 0.3)" }}
                       />
@@ -382,7 +382,7 @@ export const SettingsView: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={m.status === "active" ? t("settings.active", "🟢 Active") : `${t("settings.pending", "⏳ Pending")} (${m.inviteCode || "Invite"})`}
+                      label={m.status === "active" ? t("settings.active", "Active") : `${t("settings.pending", "Pending")} (${m.inviteCode || "Invite"})`}
                       size="small"
                       color={m.status === "active" ? "success" : "warning"}
                       variant="outlined"
@@ -412,9 +412,9 @@ export const SettingsView: React.FC = () => {
         </TableContainer>
 
         {/* Hierarchy Explanation Matrix */}
-        <Box sx={{ mt: 3, p: 2, borderRadius: 2.5, bgcolor: "rgba(108, 122, 224, 0.06)", border: "1px solid rgba(108, 122, 224, 0.15)" }}>
+        <Box sx={{ mt: 3, p: 2, borderRadius: 2.5, bgcolor: "rgba(0, 229, 201, 0.08)", border: "1px solid rgba(0, 229, 201, 0.15)" }}>
           <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.light", display: "block", mb: 1 }}>
-            {t("settings.permMatrix", "🛡️ HOUSEHOLD PERMISSION MATRIX")}
+            {t("settings.permMatrix", "HOUSEHOLD PERMISSION MATRIX")}
           </Typography>
           <Grid container spacing={1.5}>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -422,7 +422,7 @@ export const SettingsView: React.FC = () => {
                 <CheckIcon sx={{ fontSize: 16, color: "#34d399", mt: 0.2 }} />
                 <Box>
                   <Typography variant="caption" sx={{ fontWeight: 700, color: "text.primary", display: "block" }}>
-                    {language === "tl" ? "👑 May-ari ng Bahay (Admin)" : "👑 Household Owner (Admin)"}
+                    {language === "tl" ? "May-ari ng Bahay (Admin)" : "Household Owner (Admin)"}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     {t("settings.ownerDesc", "Complete access to ALL features: inventory, billing rates, spaces, AI Scanner, CSV exports, invite members, and account settings.")}
@@ -435,7 +435,7 @@ export const SettingsView: React.FC = () => {
                 <CheckIcon sx={{ fontSize: 16, color: "#60a5fa", mt: 0.2 }} />
                 <Box>
                   <Typography variant="caption" sx={{ fontWeight: 700, color: "text.primary", display: "block" }}>
-                    {language === "tl" ? "👥 Miyembro ng Pamilya (Usage Logging)" : "👥 Family Member (Usage Logging)"}
+                    {language === "tl" ? "Miyembro ng Pamilya (Usage Logging)" : "Family Member (Usage Logging)"}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     {t("settings.memberDesc", "Can control live stopwatches, log daily hours on Smart Calendar, and view load curves. Restricted from master rate changes and account deletion.")}
@@ -451,7 +451,7 @@ export const SettingsView: React.FC = () => {
       <Card
         sx={{
           p: { xs: 2.5, sm: 3 },
-          borderRadius: 3.5,
+          borderRadius: 1.5,
           border: "1px solid",
           borderColor: "rgba(248, 113, 113, 0.3)",
           bgcolor: "rgba(127, 29, 29, 0.12)",
@@ -475,7 +475,7 @@ export const SettingsView: React.FC = () => {
             startIcon={<DeleteIcon />}
             onClick={handleOpenDeleteModal}
             sx={{
-              borderRadius: 2.5,
+              borderRadius: 1,
               fontWeight: 800,
               px: 2.5,
               fontSize: "0.8125rem",
@@ -497,9 +497,9 @@ export const SettingsView: React.FC = () => {
         slotProps={{
           paper: {
             sx: {
-              borderRadius: 3.5,
-              border: "1px solid rgba(129, 140, 248, 0.3)",
-              bgcolor: "rgba(15, 14, 58, 0.95)",
+              borderRadius: 1.5,
+              border: "1px solid rgba(0, 229, 201, 0.3)",
+              bgcolor: "rgba(23, 26, 31, 0.98)",
               backdropFilter: "blur(20px)",
               p: 1,
             },
@@ -539,18 +539,18 @@ export const SettingsView: React.FC = () => {
                 <Button onClick={() => setIsInviteModalOpen(false)} sx={{ fontWeight: 700 }}>
                   {t("header.cancel", "Cancel")}
                 </Button>
-                <Button type="submit" variant="contained" color="primary" sx={{ fontWeight: 800, borderRadius: 2 }}>
+                <Button type="submit" variant="contained" color="primary" sx={{ fontWeight: 800, borderRadius: 1 }}>
                   {t("settings.generateInvite", "Generate Invitation")}
                 </Button>
               </DialogActions>
             </Box>
           ) : (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2, py: 1 }}>
-              <Alert severity="success" sx={{ borderRadius: 2.5 }}>
+              <Alert severity="success" sx={{ borderRadius: 1 }}>
                 {language === "tl" ? `Matagumpay na nagawa ang imbitasyon para kay ${inviteName}!` : `Invitation successfully created for ${inviteName}!`}
               </Alert>
 
-              <Box sx={{ p: 2, borderRadius: 2.5, bgcolor: "rgba(0, 0, 0, 0.4)", border: "1px solid rgba(99, 102, 241, 0.3)" }}>
+              <Box sx={{ p: 2, borderRadius: 1, bgcolor: "rgba(0, 0, 0, 0.4)", border: "1px solid rgba(99, 102, 241, 0.3)" }}>
                 <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800, display: "block", mb: 0.5 }}>
                   {t("settings.inviteCodeLabel", "HOUSEHOLD INVITE CODE:")}
                 </Typography>
@@ -571,7 +571,7 @@ export const SettingsView: React.FC = () => {
                   color={copiedLink ? "success" : "primary"}
                   startIcon={copiedLink ? <CheckIcon /> : <CopyIcon />}
                   onClick={handleCopyLink}
-                  sx={{ borderRadius: 2, fontWeight: 800, flexShrink: 0, height: 40 }}
+                  sx={{ borderRadius: 1, fontWeight: 800, flexShrink: 0, height: 40 }}
                 >
                   {copiedLink ? t("settings.linkCopied", "Copied") : t("settings.copyLink", "Copy Link")}
                 </Button>
@@ -582,7 +582,7 @@ export const SettingsView: React.FC = () => {
               </Typography>
 
               <DialogActions sx={{ px: 0, pt: 1 }}>
-                <Button onClick={() => setIsInviteModalOpen(false)} variant="outlined" sx={{ fontWeight: 700, borderRadius: 2 }}>
+                <Button onClick={() => setIsInviteModalOpen(false)} variant="outlined" sx={{ fontWeight: 700, borderRadius: 1 }}>
                   {t("settings.done", "Done")}
                 </Button>
               </DialogActions>
@@ -600,7 +600,7 @@ export const SettingsView: React.FC = () => {
         slotProps={{
           paper: {
             sx: {
-              borderRadius: 3.5,
+              borderRadius: 1.5,
               border: "1px solid rgba(248, 113, 113, 0.5)",
               bgcolor: "rgba(20, 10, 25, 0.96)",
               backdropFilter: "blur(24px)",
@@ -614,7 +614,7 @@ export const SettingsView: React.FC = () => {
           {t("settings.deleteModalTitle", "Confirm Permanent Account Deletion")}
         </DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
-          <Alert severity="error" sx={{ borderRadius: 2.5, fontWeight: 600 }}>
+          <Alert severity="error" sx={{ borderRadius: 1, fontWeight: 600 }}>
             {t("settings.deleteWarning", "This action is permanent and cannot be undone. All your appliances, daily logs, stopwatch records, and analytics telemetry will be deleted.")}
           </Alert>
 

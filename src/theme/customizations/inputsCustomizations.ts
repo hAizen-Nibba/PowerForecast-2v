@@ -22,14 +22,14 @@ export const inputsCustomizations: Components<Theme> = {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
         boxShadow: 'none',
-        borderRadius: 10,
+        borderRadius: 8,
         textTransform: 'none',
         fontWeight: 600,
         letterSpacing: 0,
         padding: '8px 16px',
         transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
         '&:hover': {
-          boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)',
+          boxShadow: '0 4px 14px rgba(0, 229, 201, 0.35)',
           transform: 'translateY(-1px)',
         },
         '&:active': {
@@ -38,13 +38,14 @@ export const inputsCustomizations: Components<Theme> = {
       }),
       contained: ({ theme }: { theme: Theme }) => ({
         backgroundColor: theme.palette.primary.main,
-        color: '#ffffff',
+        color: theme.palette.mode === 'dark' ? '#0c1b18' : '#ffffff',
+        fontWeight: 700,
         '&:hover': {
-          backgroundColor: theme.palette.primary.dark,
+          backgroundColor: theme.palette.mode === 'dark' ? '#1de9b6' : theme.palette.primary.dark,
         },
       }),
       outlined: ({ theme }: { theme: Theme }) => ({
-        borderColor: alpha(theme.palette.primary.main, 0.3),
+        borderColor: alpha(theme.palette.primary.main, 0.35),
         color: theme.palette.text.primary,
         '&:hover': {
           borderColor: theme.palette.primary.main,
@@ -54,7 +55,7 @@ export const inputsCustomizations: Components<Theme> = {
       sizeSmall: {
         padding: '6px 12px',
         fontSize: '0.8125rem',
-        borderRadius: 8,
+        borderRadius: 6,
       },
       sizeMedium: {
         padding: '8px 16px',
@@ -70,7 +71,7 @@ export const inputsCustomizations: Components<Theme> = {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
         boxShadow: 'none',
-        borderRadius: 10,
+        borderRadius: 8,
         color: theme.palette.text.secondary,
         transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
         '&:hover': {
@@ -87,16 +88,16 @@ export const inputsCustomizations: Components<Theme> = {
   MuiOutlinedInput: {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
-        borderRadius: 10,
-        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(15, 14, 58, 0.6)' : 'rgba(255, 255, 255, 0.9)',
+        borderRadius: 8,
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(24, 27, 32, 0.75)' : 'rgba(255, 255, 255, 0.9)',
         borderColor: alpha(theme.palette.primary.main, 0.25),
         transition: 'border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease',
         '& .MuiOutlinedInput-notchedOutline': {
-          borderColor: alpha(theme.palette.primary.main, 0.2),
+          borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : alpha(theme.palette.primary.main, 0.2),
           transition: 'border-color 180ms ease',
         },
         '&:hover .MuiOutlinedInput-notchedOutline': {
-          borderColor: alpha(theme.palette.primary.main, 0.45),
+          borderColor: alpha(theme.palette.primary.main, 0.5),
         },
         '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
           borderColor: theme.palette.primary.main,
@@ -157,7 +158,7 @@ export const inputsCustomizations: Components<Theme> = {
         border: '2px solid currentColor',
         transition: 'box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1), transform 150ms cubic-bezier(0.4, 0, 0.2, 1)',
         '&:focus, &:hover, &.Mui-active, &.Mui-focusVisible': {
-          boxShadow: '0 0 0 8px rgba(99, 102, 241, 0.16)',
+          boxShadow: '0 0 0 8px rgba(0, 229, 201, 0.2)',
           transform: 'scale(1.15)',
         },
       },

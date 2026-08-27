@@ -10,6 +10,7 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import TextField from "@mui/material/TextField";
 import IconButton from "@mui/material/IconButton";
+import Divider from "@mui/material/Divider";
 import {
   Code as CodeIcon,
   PlayArrow as PlayIcon,
@@ -191,7 +192,7 @@ export const ApiDocsPage: React.FC = () => {
               sx={{
                 width: 40,
                 height: 40,
-                borderRadius: 2.5,
+                borderRadius: 1,
                 bgcolor: "primary.main",
                 color: "#ffffff",
                 display: "inline-flex",
@@ -221,7 +222,7 @@ export const ApiDocsPage: React.FC = () => {
       <Grid container spacing={3}>
         {/* Left Column: Endpoint Navigation */}
         <Grid size={{ xs: 12, md: 4 }}>
-          <Card sx={{ p: 2.5, borderRadius: 3.5, display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Card sx={{ p: 2.5, borderRadius: 1.5, display: "flex", flexDirection: "column", gap: 1.5 }}>
             <Typography variant="overline" sx={{ fontWeight: 800, color: "text.secondary", letterSpacing: 1 }}>
               AVAILABLE ENDPOINTS
             </Typography>
@@ -235,12 +236,12 @@ export const ApiDocsPage: React.FC = () => {
                   onClick={() => handleSelectEndpoint(idx)}
                   sx={{
                     p: 2,
-                    borderRadius: 2.5,
+                    borderRadius: 1.25,
                     cursor: "pointer",
                     transition: "all 0.2s ease",
                     border: "1px solid",
                     borderColor: isSelected ? "primary.main" : "divider",
-                    bgcolor: isSelected ? "rgba(108, 122, 224, 0.12)" : "background.paper",
+                    bgcolor: isSelected ? "rgba(0, 229, 201, 0.12)" : "background.paper",
                     "&:hover": {
                       borderColor: "primary.light",
                       transform: "translateX(3px)",
@@ -258,7 +259,7 @@ export const ApiDocsPage: React.FC = () => {
                       {ep.path}
                     </Typography>
                   </Box>
-                  <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     {ep.description}
                   </Typography>
                 </Paper>
@@ -267,47 +268,51 @@ export const ApiDocsPage: React.FC = () => {
           </Card>
         </Grid>
 
-        {/* Right Column: Code Generator & Playground Tester */}
+        {/* Right Column: Interactive Playground & Code Viewer */}
         <Grid size={{ xs: 12, md: 8 }}>
-          <Card sx={{ p: 3, borderRadius: 3.5, display: "flex", flexDirection: "column", gap: 2.5 }}>
-            {/* Endpoint Summary Header */}
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 2, borderBottom: "1px solid", borderColor: "divider" }}>
+          <Card sx={{ p: { xs: 2.5, sm: 3.5 }, borderRadius: 1.5, display: "flex", flexDirection: "column", gap: 3 }}>
+            {/* Header / Path */}
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                 <Chip
                   label={currentEndpoint.method}
                   color={currentEndpoint.method === "GET" ? "success" : "primary"}
-                  sx={{ fontWeight: 800 }}
+                  sx={{ fontWeight: 900, px: 0.5 }}
                 />
                 <Typography variant="h6" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
                   {currentEndpoint.path}
                 </Typography>
               </Box>
-
               <Button
                 variant="contained"
-                size="small"
+                color="primary"
                 startIcon={<PlayIcon />}
                 onClick={handleExecute}
                 disabled={isLoading}
-                sx={{ borderRadius: 2, fontWeight: 800 }}
+                sx={{ borderRadius: 1, fontWeight: 800, px: 3 }}
               >
                 {isLoading ? "Executing..." : "Send Request"}
               </Button>
             </Box>
 
-            {/* Code Snippets Tabs */}
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+              {currentEndpoint.description}
+            </Typography>
+
+            <Divider />
+
+            {/* Code Snippet Box */}
             <Box>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                 <Tabs
                   value={codeTab}
                   onChange={(_, val) => setCodeTab(val)}
-                  sx={{ minHeight: 32 }}
+                  sx={{ minHeight: 32, "& .MuiTab-root": { minHeight: 32, py: 0, fontSize: "0.75rem", fontWeight: 700 } }}
                 >
-                  <Tab label="JavaScript" value="javascript" sx={{ minHeight: 32, fontWeight: 700 }} />
-                  <Tab label="cURL" value="curl" sx={{ minHeight: 32, fontWeight: 700 }} />
-                  <Tab label="Python" value="python" sx={{ minHeight: 32, fontWeight: 700 }} />
+                  <Tab label="cURL" value="curl" />
+                  <Tab label="JavaScript (Fetch)" value="javascript" />
+                  <Tab label="Python (Requests)" value="python" />
                 </Tabs>
-
                 <IconButton size="small" onClick={() => handleCopyCode(getActiveCode())}>
                   <CopyIcon fontSize="small" />
                 </IconButton>
@@ -316,12 +321,12 @@ export const ApiDocsPage: React.FC = () => {
               <Paper
                 sx={{
                   p: 2,
-                  borderRadius: 2.5,
-                  bgcolor: "#0d0a33",
-                  border: "1px solid rgba(108, 122, 224, 0.3)",
+                  borderRadius: 1.25,
+                  bgcolor: "#141619",
+                  border: "1px solid rgba(0, 229, 201, 0.25)",
                   fontFamily: "monospace",
                   fontSize: "0.85rem",
-                  color: "#a2a5ff",
+                  color: "#26c6da",
                   overflowX: "auto",
                   whiteSpace: "pre",
                 }}
@@ -347,7 +352,7 @@ export const ApiDocsPage: React.FC = () => {
                       sx: {
                         fontFamily: "monospace",
                         fontSize: "0.85rem",
-                        bgcolor: "rgba(15, 14, 58, 0.5)",
+                        bgcolor: "rgba(24, 27, 32, 0.75)",
                       },
                     },
                   }}
@@ -364,7 +369,7 @@ export const ApiDocsPage: React.FC = () => {
                 <Paper
                   sx={{
                     p: 2,
-                    borderRadius: 2.5,
+                    borderRadius: 1.25,
                     bgcolor: "#07072e",
                     border: "1px solid rgba(52, 211, 153, 0.4)",
                     fontFamily: "monospace",

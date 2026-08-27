@@ -112,7 +112,7 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
               sx={{
                 width: 36,
                 height: 36,
-                borderRadius: 2,
+                borderRadius: 1,
                 bgcolor: tariffType === "commercial" ? "secondary.main" : "primary.main",
                 color: "#ffffff",
                 display: "flex",
@@ -139,10 +139,10 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
             required
             fullWidth
             size="small"
-            label="Space / List Name"
+            label="Space Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Burat's House or Burat's Sari-Sari Store"
+            placeholder="e.g. Master Bedroom, Bakery Shop"
           />
 
           <Box>
@@ -156,7 +156,7 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
                   onClick={() => setTariffType("residential")}
                   sx={{
                     p: 1.5,
-                    borderRadius: 2.5,
+                    borderRadius: 1.25,
                     cursor: "pointer",
                     textAlign: "center",
                     border: "2px solid",
@@ -182,7 +182,7 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
                   onClick={() => setTariffType("commercial")}
                   sx={{
                     p: 1.5,
-                    borderRadius: 2.5,
+                    borderRadius: 1.25,
                     cursor: "pointer",
                     textAlign: "center",
                     border: "2px solid",
@@ -214,8 +214,8 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
           >
             <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
               {tariffType === "residential"
-                ? "🏠 Residential rates include stepped distribution tiers (0–200, 201–300, 301–400, 401+ kWh) and Lifeline subsidies."
-                : "💼 Commercial rates use General Power unbundled distribution and fixed commercial metering charges."}
+                ? "Residential rates include stepped distribution tiers (0–200, 201–300, 301–400, 401+ kWh) and Lifeline subsidies."
+                : "Commercial rates use General Power unbundled distribution and fixed commercial metering charges."}
             </Typography>
           </Paper>
         </DialogContent>

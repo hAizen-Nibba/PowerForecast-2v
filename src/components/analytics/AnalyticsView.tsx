@@ -11,6 +11,7 @@ import LinearProgress from "@mui/material/LinearProgress";
 import TooltipMui from "@mui/material/Tooltip";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import Paper from "@mui/material/Paper";
+import Divider from "@mui/material/Divider";
 import {
   BarChart as AnalyticsIcon,
   TrendingUp as TrendingUpIcon,
@@ -313,12 +314,12 @@ export const AnalyticsView: React.FC = () => {
   // Unbundled Rate Components breakdown
   const rateComponents = useMemo(() => {
     return [
-      { name: "Generation Charge", amount: bill.generationTotal, color: "#6366f1", desc: "Cost of producing electricity by generation power plants" },
-      { name: "Transmission Charge", amount: bill.transmissionTotal, color: "#a855f7", desc: "High-voltage transmission grid wheeling fee (NGCP)" },
+      { name: "Generation Charge", amount: bill.generationTotal, color: "#00e5c9", desc: "Cost of producing electricity by generation power plants" },
+      { name: "Transmission Charge", amount: bill.transmissionTotal, color: "#26c6da", desc: "High-voltage transmission grid wheeling fee (NGCP)" },
       { name: "System Loss Charge", amount: bill.systemLossTotal, color: "#38bdf8", desc: "Technical & non-technical line losses allowed by ERC" },
-      { name: "Distribution Network", amount: bill.distributionTotal, color: "#34d399", desc: "Meralco poles, wires, meters, customer billing & supply" },
+      { name: "Distribution Network", amount: bill.distributionTotal, color: "#009e88", desc: "Meralco poles, wires, meters, customer billing & supply" },
       { name: "Government Taxes & VAT", amount: bill.totalVat + bill.localFranchiseTax, color: "#fbbf24", desc: "12% National Value Added Tax & Local Franchise Tax" },
-      { name: "Universal & FIT-All Charges", amount: bill.universalCharges.total + bill.fitAll + bill.lifelineSubsidy, color: "#94a3b8", desc: "Missionary electrification, stranded debts, and RE Feed-in Tariff" },
+      { name: "Universal & FIT-All Charges", amount: bill.universalCharges.total + bill.fitAll + bill.lifelineSubsidy, color: "#8b949e", desc: "Missionary electrification, stranded debts, and RE Feed-in Tariff" },
     ];
   }, [bill]);
 
@@ -349,47 +350,45 @@ export const AnalyticsView: React.FC = () => {
 
   // Pure Appliance Baseline Multi-Month Trend & Predictions (No fake past months, No weather multipliers)
   const MONTHLY_TREND_DATA = useMemo(() => {
+    const points = [];
     const now = new Date();
     const currentYear = now.getFullYear();
-    const currentMonthIdx = now.getMonth(); // 0 to 11
+    const currentMonthIdx = now.getMonth();
     const currentDay = now.getDate();
     const daysInCurrentMonth = new Date(currentYear, currentMonthIdx + 1, 0).getDate();
 
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-    // 1. Group real recorded dailyUsageRecords by YYYY-MM
-    const usageByMonthKey: Record<string, { kwh: number; cost: number }> = {};
-    dailyUsageRecords.forEach((rec) => {
-      if (rec.usage_date && rec.kwh_consumed > 0) {
-        const mKey = rec.usage_date.substring(0, 7); // "YYYY-MM"
-        if (!usageByMonthKey[mKey]) {
-          usageByMonthKey[mKey] = { kwh: 0, cost: 0 };
-        }
-        usageByMonthKey[mKey].kwh += Number(rec.kwh_consumed) || 0;
-        usageByMonthKey[mKey].cost += Number(rec.estimated_cost) || 0;
+    // 1. Group daily_appliance_usage records by YYYY-MM
+    const usageByMonthKey: Record<string, { kwh: number; cost: number; daysCount: number }> = {};
+    dailyUsageRecords.forEach((r) => {
+      if (!r.usage_date) return;
+      const monthKey = r.usage_date.substring(0, 7);
+      if (!usageByMonthKey[monthKey]) {
+        usageByMonthKey[monthKey] = { kwh: 0, cost: 0, daysCount: 0 };
       }
+      usageByMonthKey[monthKey].kwh += Number(r.kwh_consumed) || 0;
+      usageByMonthKey[monthKey].cost += Number(r.estimated_cost) || 0;
+      usageByMonthKey[monthKey].daysCount += 1;
     });
 
-    const points = [];
-
-    // 2. Only include past months that HAVE GENUINE RECORDED LOGS in the database (e.g. check up to 6 months back)
-    for (let offset = -6; offset < 0; offset++) {
-      const targetDate = new Date(currentYear, currentMonthIdx + offset, 1);
+    // 2. Prior Months (Past 6 Months)
+    for (let offset = 6; offset >= 1; offset--) {
+      const targetDate = new Date(currentYear, currentMonthIdx - offset, 1);
       const tYear = targetDate.getFullYear();
       const tMonthIdx = targetDate.getMonth();
+      const monthKey = `${tYear}-${String(tMonthIdx + 1).padStart(2, "0")}`;
       const monthStr = monthNames[tMonthIdx];
-      const mKey = `${tYear}-${String(tMonthIdx + 1).padStart(2, "0")}`;
 
-      const recorded = usageByMonthKey[mKey];
-      // ONLY push if genuine recorded data exists for this past month
+      const recorded = usageByMonthKey[monthKey];
       if (recorded && recorded.kwh > 0) {
         points.push({
-          month: `${monthStr} ${tYear !== currentYear ? "'" + String(tYear).slice(2) : ""}`.trim(),
+          month: monthStr,
           kwh: Math.round(recorded.kwh),
           cost: Math.round(recorded.cost),
           status: "Recorded Actuals",
           type: "recorded",
-          fillColor: "#38bdf8",
+          fillColor: "#009e88",
         });
       }
     }
@@ -410,13 +409,12 @@ export const AnalyticsView: React.FC = () => {
       cost: Math.round(totalActiveCost),
       status: `Active Cycle • Day ${currentDay} of ${daysInCurrentMonth} (MTD + Projected)`,
       type: "active",
-      fillColor: "#6366f1",
+      fillColor: "#00e5c9",
     });
 
     // 4. Future Months (Next 5 Months): Pure Baseline Prediction from registered appliance routines
     for (let offset = 1; offset <= 5; offset++) {
       const targetDate = new Date(currentYear, currentMonthIdx + offset, 1);
-      const tYear = targetDate.getFullYear();
       const tMonthIdx = targetDate.getMonth();
       const monthStr = monthNames[tMonthIdx];
 
@@ -426,7 +424,7 @@ export const AnalyticsView: React.FC = () => {
         cost: Math.round(totalCost),
         status: "Predicted Cycle • Based on active appliance baseline routine",
         type: "predicted",
-        fillColor: "#818cf8",
+        fillColor: "#2a2f38",
       });
     }
 
@@ -745,7 +743,7 @@ export const AnalyticsView: React.FC = () => {
             data-tour="analytics-category-bars"
             sx={{
               p: { xs: 2.5, sm: 3 },
-              borderRadius: 3.5,
+              borderRadius: 1.5,
               height: "100%",
               display: "flex",
               flexDirection: "column",
@@ -802,11 +800,11 @@ export const AnalyticsView: React.FC = () => {
                       value={item.percentage}
                       sx={{
                         height: 8,
-                        borderRadius: 4,
-                        bgcolor: "rgba(108, 122, 224, 0.15)",
+                        borderRadius: 1,
+                        bgcolor: "rgba(0, 229, 201, 0.1)",
                         "& .MuiLinearProgress-bar": {
-                          borderRadius: 4,
-                          background: "linear-gradient(90deg, #6366f1, #fbbf24)",
+                          borderRadius: 1,
+                          background: "linear-gradient(90deg, #00e5c9, #26c6da)",
                         },
                       }}
                     />
@@ -834,11 +832,11 @@ export const AnalyticsView: React.FC = () => {
                       value={app.percentage}
                       sx={{
                         height: 8,
-                        borderRadius: 4,
-                        bgcolor: "rgba(108, 122, 224, 0.15)",
+                        borderRadius: 1,
+                        bgcolor: "rgba(255, 255, 255, 0.08)",
                         "& .MuiLinearProgress-bar": {
-                          borderRadius: 4,
-                          background: "linear-gradient(90deg, #a855f7, #38bdf8)",
+                          borderRadius: 1,
+                          background: "linear-gradient(90deg, #00e5c9, #26c6da)",
                         },
                       }}
                     />
@@ -854,95 +852,70 @@ export const AnalyticsView: React.FC = () => {
           <Card
             sx={{
               p: { xs: 2.5, sm: 3 },
-              borderRadius: 3.5,
+              borderRadius: 1.5,
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              gap: 2,
+              justifyContent: "space-between",
             }}
           >
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <ReceiptIcon sx={{ color: "primary.main" }} />
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
-                  ERC Unbundled Cost Allocation
-                </Typography>
-              </Box>
-              <Chip
-                label={isCommercialSelected ? "Commercial GP" : "Residential ERC"}
-                size="small"
-                variant="outlined"
-                sx={{ fontWeight: 700, fontSize: "0.75rem" }}
-              />
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 0.5 }}>
+                Unbundled Tariff Split
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2 }}>
+                ERC regulated breakdown of your projected monthly bill
+              </Typography>
             </Box>
 
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25, flex: 1, justifyContent: "center" }}>
-              {rateComponents.map((item) => {
-                const pct = totalCost > 0 ? Math.round((item.amount / totalCost) * 100) : 0;
-                return (
-                  <TooltipMui key={item.name} title={item.desc} arrow placement="left">
-                    <Box
-                      sx={{
-                        p: 1.5,
-                        borderRadius: 2,
-                        bgcolor: "rgba(15, 14, 58, 0.4)",
-                        border: "1px solid rgba(108, 122, 224, 0.15)",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: 1.5,
-                        transition: "all 0.2s ease",
-                        "&:hover": {
-                          borderColor: item.color,
-                          transform: "translateX(2px)",
-                        },
-                      }}
-                    >
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                        <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: item.color, flexShrink: 0 }} />
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: "text.secondary", fontSize: "0.8rem" }}>
-                          {item.name}
-                        </Typography>
-                      </Box>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: 800,
-                          color: "text.primary",
-                          fontSize: "0.85rem",
-                          fontFamily: "monospace",
-                          flexShrink: 0,
-                        }}
-                      >
-                        ₱{item.amount.toFixed(2)} <span style={{ color: item.color, fontSize: "0.75rem" }}>({pct}%)</span>
-                      </Typography>
-                    </Box>
-                  </TooltipMui>
-                );
-              })}
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+              {rateComponents.map((c) => (
+                <Box key={c.name} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box sx={{ width: 10, height: 10, borderRadius: 1, bgcolor: c.color }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: "text.primary" }}>
+                      {c.name}
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
+                    ₱{c.amount.toFixed(2)}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+
+            <Divider sx={{ my: 2 }} />
+
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                Total Projected Bill
+              </Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#00e5c9" }}>
+                ₱{totalCost.toFixed(2)}
+              </Typography>
             </Box>
           </Card>
         </Grid>
       </Grid>
 
-      {/* 5. 24-Hour Diurnal Continuous Load Curve */}
-      <Card data-tour="analytics-load-curve" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5 }}>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2, mb: 2.5 }}>
+      {/* 5. 24-Hour Load Curve Simulation */}
+      <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 1.5 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5, mb: 2.5 }}>
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-              24-Hour Continuous Load Curve
+              24-Hour Daily Load Curve Simulation
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Diurnal power demand profile with Meralco Peak windows (11 AM - 4 PM & 6 PM - 9 PM)
+              Appliance hourly draw and peak pricing stress test
             </Typography>
           </Box>
 
-          <ButtonGroup data-tour="analytics-time-presets" size="small" variant="outlined">
+          <ButtonGroup size="small" variant="outlined">
             {[
-              { label: "24 Hours", val: "24h" },
+              { label: "All 24h", val: "24h" },
               { label: "Morning", val: "morning" },
-              { label: "Day", val: "day" },
-              { label: "Evening", val: "evening" },
+              { label: "Daytime", val: "day" },
+              { label: "Night", val: "evening" },
             ].map((b) => (
               <Button
                 key={b.val}
@@ -961,11 +934,11 @@ export const AnalyticsView: React.FC = () => {
             <AreaChart data={HOURLY_LOAD_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorLoadCurve" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.5} />
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
+                  <stop offset="5%" stopColor="#00e5c9" stopOpacity={0.45} />
+                  <stop offset="95%" stopColor="#00e5c9" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+              <CartesianGrid strokeDasharray="3 3" opacity={0.12} />
               <XAxis dataKey="time" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} unit=" W" />
               <Tooltip
@@ -976,11 +949,11 @@ export const AnalyticsView: React.FC = () => {
                       <Box
                         sx={{
                           p: 1.5,
-                          borderRadius: 2.5,
-                          bgcolor: "#0f0e3a",
-                          border: "1px solid rgba(99, 102, 241, 0.4)",
+                          borderRadius: 1.25,
+                          bgcolor: "#17191d",
+                          border: "1px solid rgba(0, 229, 201, 0.35)",
                           color: "#ffffff",
-                          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                          boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
                           maxWidth: 260,
                         }}
                       >
@@ -994,7 +967,7 @@ export const AnalyticsView: React.FC = () => {
                         </Box>
                         <Typography
                           variant="caption"
-                          sx={{ display: "block", color: "#ffd54f", fontWeight: 800, fontFamily: "monospace", fontSize: "0.95rem" }}
+                          sx={{ display: "block", color: "#00e5c9", fontWeight: 800, fontFamily: "monospace", fontSize: "0.95rem" }}
                         >
                           {d.watts} Watts
                         </Typography>
@@ -1003,12 +976,12 @@ export const AnalyticsView: React.FC = () => {
                         </Typography>
 
                         {d.activeDevices && d.activeDevices.length > 0 && (
-                          <Box sx={{ mt: 1, pt: 1, borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-                            <Typography variant="caption" sx={{ display: "block", fontWeight: 700, color: "#818cf8", mb: 0.5 }}>
+                          <Box sx={{ mt: 1, pt: 1, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                            <Typography variant="caption" sx={{ display: "block", fontWeight: 700, color: "primary.light", mb: 0.5 }}>
                               Active Devices ({d.activeDevices.length}):
                             </Typography>
                             {d.activeDevices.slice(0, 4).map((dev: any, idx: number) => (
-                              <Typography key={idx} variant="caption" sx={{ display: "block", fontSize: "0.7rem", color: "#e0e7ff" }}>
+                              <Typography key={idx} variant="caption" sx={{ display: "block", fontSize: "0.7rem", color: "#f1f5f9" }}>
                                 • {dev.name} ({dev.watts}W)
                               </Typography>
                             ))}
@@ -1025,14 +998,14 @@ export const AnalyticsView: React.FC = () => {
                   return null;
                 }}
               />
-              <Area type="monotone" dataKey="watts" stroke="#6366f1" strokeWidth={2.5} fillOpacity={1} fill="url(#colorLoadCurve)" />
+              <Area type="monotone" dataKey="watts" stroke="#00e5c9" strokeWidth={2.5} fillOpacity={1} fill="url(#colorLoadCurve)" />
             </AreaChart>
           </ResponsiveContainer>
         </Box>
       </Card>
 
       {/* 6. Multi-Month Trend & Predictive Baseline Forecast */}
-      <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5 }}>
+      <Card sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 1.5 }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5, mb: 2.5 }}>
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
@@ -1046,16 +1019,16 @@ export const AnalyticsView: React.FC = () => {
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
             {MONTHLY_TREND_DATA.some((d) => d.type === "recorded") && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#38bdf8" }} />
+                <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#009e88" }} />
                 <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>Recorded History</Typography>
               </Box>
             )}
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#6366f1" }} />
+              <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#00e5c9" }} />
               <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>Active Billing Cycle</Typography>
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#818cf8" }} />
+              <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#2a2f38" }} />
               <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>Predicted (Appliance Baseline)</Typography>
             </Box>
           </Box>
@@ -1064,7 +1037,7 @@ export const AnalyticsView: React.FC = () => {
         <Box sx={{ height: 260, width: "100%" }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={MONTHLY_TREND_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+              <CartesianGrid strokeDasharray="3 3" opacity={0.12} />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} unit=" kWh" />
               <Tooltip
@@ -1075,11 +1048,11 @@ export const AnalyticsView: React.FC = () => {
                       <Box
                         sx={{
                           p: 1.5,
-                          borderRadius: 2,
-                          bgcolor: "#0f0e3a",
-                          border: "1px solid rgba(99, 102, 241, 0.4)",
+                          borderRadius: 1.25,
+                          bgcolor: "#17191d",
+                          border: "1px solid rgba(0, 229, 201, 0.35)",
                           color: "#ffffff",
-                          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                          boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
                         }}
                       >
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
@@ -1087,15 +1060,15 @@ export const AnalyticsView: React.FC = () => {
                             {d.month}
                           </Typography>
                           {d.type === "predicted" && (
-                            <Chip label="PREDICTED" size="small" sx={{ height: 16, fontSize: "0.6rem", fontWeight: 800, bgcolor: "rgba(129, 140, 248, 0.2)", color: "#818cf8" }} />
+                            <Chip label="PREDICTED" size="small" sx={{ height: 16, fontSize: "0.6rem", fontWeight: 800, bgcolor: "rgba(255, 255, 255, 0.08)", color: "text.secondary" }} />
                           )}
                           {d.type === "active" && (
-                            <Chip label="ACTIVE" size="small" color="primary" sx={{ height: 16, fontSize: "0.6rem", fontWeight: 800 }} />
+                            <Chip label="ACTIVE" size="small" sx={{ height: 16, fontSize: "0.6rem", fontWeight: 800, bgcolor: "#00e5c9", color: "#0c1b18" }} />
                           )}
                         </Box>
                         <Typography
                           variant="caption"
-                          sx={{ display: "block", color: "#ffd54f", fontWeight: 800, fontFamily: "monospace", fontSize: "0.95rem" }}
+                          sx={{ display: "block", color: "#00e5c9", fontWeight: 800, fontFamily: "monospace", fontSize: "0.95rem" }}
                         >
                           {d.kwh} kWh (~₱{d.cost.toLocaleString()})
                         </Typography>
@@ -1119,7 +1092,7 @@ export const AnalyticsView: React.FC = () => {
       </Card>
 
       {/* 7. Actionable AI Energy Recommendations */}
-      <Card data-tour="analytics-insights" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5 }}>
+      <Card data-tour="analytics-insights" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 1.5 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
           <SparklesIcon sx={{ color: "#ffd54f" }} />
           <Box>
@@ -1145,9 +1118,9 @@ export const AnalyticsView: React.FC = () => {
                 <Box
                   sx={{
                     p: 2,
-                    borderRadius: 3,
-                    bgcolor: "rgba(15, 14, 58, 0.4)",
-                    border: "1px solid rgba(108, 122, 224, 0.2)",
+                    borderRadius: 1.25,
+                    bgcolor: "rgba(24, 27, 32, 0.65)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",

@@ -347,10 +347,10 @@ export const Header: React.FC<HeaderProps> = ({
                 sx: {
                   minWidth: 230,
                   p: 0.75,
-                  borderRadius: 3,
+                  borderRadius: 1.25,
                   boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
-                  border: "1px solid rgba(129, 140, 248, 0.2)",
-                  bgcolor: "rgba(15, 14, 58, 0.95)",
+                  border: "1px solid rgba(0, 229, 201, 0.25)",
+                  bgcolor: "rgba(23, 26, 31, 0.98)",
                   backdropFilter: "blur(20px)",
                 },
               },
@@ -365,7 +365,7 @@ export const Header: React.FC<HeaderProps> = ({
               </Typography>
               <Chip
                 icon={<ShieldIcon sx={{ fontSize: "12px !important", color: "#ffd54f !important" }} />}
-                label={t("header.ownerBadge", "👑 Household Owner")}
+                label={t("header.ownerBadge", "Household Owner")}
                 size="small"
                 sx={{
                   height: 20,
@@ -385,7 +385,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setAnchorEl(null);
                 navigate("/settings");
               }}
-              sx={{ gap: 1.25, fontSize: "0.8125rem", fontWeight: 700, borderRadius: 1.5, py: 0.75 }}
+              sx={{ gap: 1.25, fontSize: "0.8125rem", fontWeight: 700, borderRadius: 1, py: 0.75 }}
             >
               <SettingsIcon fontSize="small" sx={{ color: "primary.light" }} />
               {t("header.settings", "Settings")}
@@ -396,7 +396,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setAnchorEl(null);
                 setIsLogoutConfirmOpen(true);
               }}
-              sx={{ gap: 1.25, color: "error.main", fontSize: "0.8125rem", fontWeight: 700, borderRadius: 1.5, py: 0.75 }}
+              sx={{ gap: 1.25, color: "error.main", fontSize: "0.8125rem", fontWeight: 700, borderRadius: 1, py: 0.75 }}
             >
               <LogoutIcon fontSize="small" />
               {t("header.signOut", "Sign Out")}
@@ -412,9 +412,9 @@ export const Header: React.FC<HeaderProps> = ({
             slotProps={{
               paper: {
                 sx: {
-                  borderRadius: 3.5,
-                  border: "1px solid rgba(129, 140, 248, 0.25)",
-                  bgcolor: "rgba(15, 14, 58, 0.95)",
+                  borderRadius: 1.5,
+                  border: "1px solid rgba(0, 229, 201, 0.25)",
+                  bgcolor: "rgba(23, 26, 31, 0.98)",
                   backdropFilter: "blur(20px)",
                   p: 1,
                 },

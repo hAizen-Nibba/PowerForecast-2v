@@ -7,6 +7,7 @@ import IconButton from "@mui/material/IconButton";
 import Chip from "@mui/material/Chip";
 import Paper from "@mui/material/Paper";
 import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
@@ -165,7 +166,7 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
             size="small"
             startIcon={<AddIcon />}
             onClick={() => setShowAddForm((prev) => !prev)}
-            sx={{ borderRadius: 2, fontWeight: 700 }}
+            sx={{ borderRadius: 1, fontWeight: 700 }}
           >
             {showAddForm ? "Cancel" : "Add Time Slot"}
           </Button>
@@ -178,9 +179,9 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
             onSubmit={handleAddSlot}
             sx={{
               p: 2.5,
-              borderRadius: 3,
-              bgcolor: "rgba(108, 122, 224, 0.08)",
-              border: "1px solid rgba(108, 122, 224, 0.3)",
+              borderRadius: 1.25,
+              bgcolor: "rgba(0, 229, 201, 0.08)",
+              border: "1px solid rgba(0, 229, 201, 0.25)",
               display: "flex",
               flexDirection: "column",
               gap: 2,
@@ -211,11 +212,11 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
                   onChange={(e) => setHour(Number(e.target.value))}
                 >
                   {Array.from({ length: 24 }).map((_, h) => {
-                    const period = h >= 12 ? "PM" : "AM";
-                    const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
+                    const p = h >= 12 ? "PM" : "AM";
+                    const dh = h === 0 ? 12 : h > 12 ? h - 12 : h;
                     return (
                       <MenuItem key={h} value={h}>
-                        {displayH}:00 {period}
+                        {dh}:00 {p}
                       </MenuItem>
                     );
                   })}
@@ -235,28 +236,38 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
             </Box>
 
             <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
-              <Button size="small" onClick={() => setShowAddForm(false)}>Cancel</Button>
-              <Button type="submit" variant="contained" size="small" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                variant="contained"
+                size="small"
+                startIcon={<AddIcon />}
+                disabled={isSubmitting}
+                sx={{ borderRadius: 1, fontWeight: 700 }}
+              >
                 Save Slot
               </Button>
             </Box>
           </Paper>
         )}
 
-        {/* Selection Bar */}
+        {/* Bulk Action bar */}
         {applianceEvents.length > 0 && (
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", px: 1 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Checkbox
-                checked={selectedIds.length === applianceEvents.length && applianceEvents.length > 0}
-                indeterminate={selectedIds.length > 0 && selectedIds.length < applianceEvents.length}
-                onChange={(e) => handleSelectAll(e.target.checked)}
-                size="small"
-              />
-              <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
-                Select All ({selectedIds.length} of {applianceEvents.length})
-              </Typography>
-            </Box>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 0.5 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={selectedIds.length === applianceEvents.length && applianceEvents.length > 0}
+                  indeterminate={selectedIds.length > 0 && selectedIds.length < applianceEvents.length}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  size="small"
+                />
+              }
+              label={
+                <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
+                  Select All ({applianceEvents.length} slots)
+                </Typography>
+              }
+            />
 
             {selectedIds.length > 0 && (
               <Button
@@ -266,7 +277,7 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
                 startIcon={<DeleteIcon />}
                 onClick={handleBulkDelete}
                 disabled={isSubmitting}
-                sx={{ borderRadius: 2, fontWeight: 700 }}
+                sx={{ borderRadius: 1, fontWeight: 700 }}
               >
                 Delete Selected ({selectedIds.length})
               </Button>
@@ -299,7 +310,7 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
                     key={event.id}
                     sx={{
                       p: 2,
-                      borderRadius: 2.5,
+                      borderRadius: 1.25,
                       border: "1px solid",
                       borderColor: "primary.main",
                       bgcolor: "rgba(99, 102, 241, 0.08)",
@@ -359,9 +370,12 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
                     <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 0.5 }}>
                       <Button
                         size="small"
+                        variant="outlined"
+                        color="inherit"
                         startIcon={<CancelIcon />}
                         onClick={handleCancelEdit}
                         disabled={isSubmitting}
+                        sx={{ borderRadius: 1 }}
                       >
                         Cancel
                       </Button>
@@ -371,63 +385,56 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
                         startIcon={<CheckIcon />}
                         onClick={() => handleSaveEdit(event.id)}
                         disabled={isSubmitting}
+                        sx={{ borderRadius: 1, fontWeight: 700 }}
                       >
-                        Update Slot
+                        Save
                       </Button>
                     </Box>
                   </Paper>
                 );
               }
 
+              const isSelected = selectedIds.includes(event.id);
+
               return (
                 <Paper
                   key={event.id}
+                  variant="outlined"
                   sx={{
-                    p: 2,
-                    borderRadius: 2.5,
-                    border: "1px solid",
-                    borderColor: selectedIds.includes(event.id) ? "primary.main" : "divider",
-                    bgcolor: selectedIds.includes(event.id) ? "rgba(108, 122, 224, 0.1)" : "background.paper",
+                    p: 1.5,
+                    borderRadius: 1.25,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    gap: 2,
+                    borderColor: isSelected ? "primary.main" : "divider",
+                    bgcolor: isSelected ? "rgba(99, 102, 241, 0.05)" : "transparent",
+                    transition: "all 0.15s ease",
                   }}
                 >
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     <Checkbox
-                      checked={selectedIds.includes(event.id)}
+                      checked={isSelected}
                       onChange={() => handleToggleSelect(event.id)}
                       size="small"
                     />
                     <Box>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "text.primary" }}>
-                        {dayLabel} • {displayH}:00 {period} ({event.duration_hours}h)
+                      <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                        {dayLabel} @ {displayH}:00 {period}
                       </Typography>
                       <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                        Recurring weekly routine
+                        Runs for {event.duration_hours} {event.duration_hours === 1 ? "hour" : "hours"} • Est. {((appliance.watts * event.duration_hours) / 1000).toFixed(2)} kWh
                       </Typography>
                     </Box>
                   </Box>
 
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    {onUpdateEvent && (
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() => handleStartEdit(event)}
-                        disabled={isSubmitting}
-                        title="Edit Slot"
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    )}
+                    <IconButton size="small" onClick={() => handleStartEdit(event)}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
                     <IconButton
                       size="small"
                       color="error"
                       onClick={() => onDeleteEvent(event.id)}
-                      disabled={isSubmitting}
-                      title="Delete Slot"
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
@@ -436,12 +443,6 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
               );
             })
           )}
-        </Box>
-
-        <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-          <Button onClick={onClose} variant="outlined" sx={{ borderRadius: 2.5, fontWeight: 700 }}>
-            Close
-          </Button>
         </Box>
       </Box>
     </Modal>

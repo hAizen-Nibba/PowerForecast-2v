@@ -50,7 +50,7 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchor
           sx: {
             width: 360,
             p: 2.5,
-            borderRadius: 3,
+            borderRadius: 1.25,
             bgcolor: (theme) => (theme.palette.mode === "dark" ? "#0f0e3a" : "#ffffff"),
             border: "1px solid",
             borderColor: "divider",
@@ -242,7 +242,7 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchor
           disabled={permission !== "granted"}
           sx={{ borderRadius: 2, fontSize: "0.75rem", textTransform: "none", fontWeight: 700 }}
         >
-          🔔 Test Alert
+          Test Alert
         </Button>
         <Button
           size="small"

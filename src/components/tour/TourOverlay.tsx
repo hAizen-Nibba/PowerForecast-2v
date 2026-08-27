@@ -266,7 +266,7 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({
             left: targetRect.left - SPOTLIGHT_PADDING,
             width: targetRect.width + SPOTLIGHT_PADDING * 2,
             height: targetRect.height + SPOTLIGHT_PADDING * 2,
-            borderRadius: '12px',
+            borderRadius: '10px',
             border: '2px solid',
             borderColor: 'primary.main',
             boxShadow: '0 0 24px rgba(99, 102, 241, 0.5), inset 0 0 24px rgba(99, 102, 241, 0.08)',
@@ -299,14 +299,14 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({
             elevation={0}
             sx={{
               p: 2.5,
-              borderRadius: 3,
+              borderRadius: 1.5,
               bgcolor: (theme) =>
                 theme.palette.mode === 'dark'
-                  ? 'rgba(15, 14, 58, 0.96)'
+                  ? 'rgba(23, 26, 31, 0.98)'
                   : 'rgba(255, 255, 255, 0.98)',
               border: '1px solid',
-              borderColor: 'rgba(99, 102, 241, 0.35)',
-              boxShadow: '0 16px 48px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(99, 102, 241, 0.08)',
+              borderColor: 'rgba(0, 229, 201, 0.35)',
+              boxShadow: '0 16px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 229, 201, 0.1)',
               backdropFilter: 'blur(20px)',
               position: 'relative',
               overflow: 'visible',
@@ -464,7 +464,7 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({
                   textTransform: 'none',
                   fontWeight: 800,
                   fontSize: '0.8125rem',
-                  borderRadius: 2,
+                  borderRadius: 1,
                   px: 2.5,
                   py: 0.75,
                   boxShadow: '0 2px 12px rgba(99, 102, 241, 0.35)',

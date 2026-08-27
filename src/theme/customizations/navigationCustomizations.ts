@@ -7,8 +7,8 @@ export const navigationCustomizations: Components<Theme> = {
         boxShadow: 'none',
         backgroundImage: 'none',
         backgroundColor: theme.palette.mode === 'dark' 
-          ? 'rgba(9, 9, 56, 0.88)' 
-          : 'rgba(255, 255, 255, 0.88)',
+          ? 'rgba(23, 25, 29, 0.92)' 
+          : 'rgba(255, 255, 255, 0.92)',
         backdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${theme.palette.divider}`,
         color: theme.palette.text.primary,
@@ -20,12 +20,12 @@ export const navigationCustomizations: Components<Theme> = {
     styleOverrides: {
       paper: ({ theme }: { theme: Theme }) => ({
         backgroundColor: theme.palette.mode === 'dark' 
-          ? '#050524' 
-          : '#121350',
+          ? '#141619' 
+          : '#1a222c',
         color: '#ffffff',
         borderRight: `1px solid ${
           theme.palette.mode === 'dark' 
-            ? 'rgba(129, 140, 248, 0.15)' 
+            ? 'rgba(255, 255, 255, 0.08)' 
             : 'rgba(255, 255, 255, 0.1)'
         }`,
         transition: 'width 240ms cubic-bezier(0.4, 0, 0.2, 1)',
@@ -35,24 +35,24 @@ export const navigationCustomizations: Components<Theme> = {
   MuiListItemButton: {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
-        borderRadius: 10,
+        borderRadius: 8,
         margin: '3px 8px',
         padding: '8px 12px',
         transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
         '&.Mui-selected': {
           backgroundColor: theme.palette.mode === 'dark' 
-            ? 'rgba(99, 102, 241, 0.25)' 
+            ? 'rgba(0, 229, 201, 0.15)' 
             : 'rgba(255, 255, 255, 0.16)',
-          color: '#ffffff',
+          color: theme.palette.mode === 'dark' ? '#00e5c9' : '#ffffff',
           fontWeight: 600,
           '&:hover': {
             backgroundColor: theme.palette.mode === 'dark' 
-              ? 'rgba(99, 102, 241, 0.35)' 
+              ? 'rgba(0, 229, 201, 0.22)' 
               : 'rgba(255, 255, 255, 0.22)',
           },
         },
         '&:hover': {
-          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+          backgroundColor: 'rgba(255, 255, 255, 0.06)',
           transform: 'translateX(2px)',
         },
       }),

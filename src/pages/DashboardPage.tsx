@@ -127,23 +127,23 @@ export const DashboardPage: React.FC = () => {
           alignItems: { xs: "flex-start", md: "center" },
           justifyContent: "space-between",
           gap: { xs: 2.5, md: 3.5 },
-          borderRadius: 3.5,
+          borderRadius: 1.5,
           position: "relative",
           overflow: "hidden",
         }}
       >
         <Box sx={{ maxWidth: 660 }}>
           <Chip
-            icon={<BoltIcon sx={{ color: "#ffd54f !important", fontSize: "14px !important" }} />}
+            icon={<BoltIcon sx={{ color: "#00e5c9 !important", fontSize: "14px !important" }} />}
             label={t("dash.gridTelemetry", "Active Grid Telemetry")}
             size="small"
             sx={{
               mb: 1.5,
               fontWeight: 700,
               fontSize: "0.75rem",
-              bgcolor: "rgba(99, 102, 241, 0.15)",
-              color: "primary.light",
-              border: "1px solid rgba(99, 102, 241, 0.3)",
+              bgcolor: "rgba(0, 229, 201, 0.12)",
+              color: "#00e5c9",
+              border: "1px solid rgba(0, 229, 201, 0.3)",
               height: 24,
             }}
           />
@@ -190,7 +190,7 @@ export const DashboardPage: React.FC = () => {
                   variant="outlined"
                   size="small"
                   onClick={() => setIsAiScannerOpen(true)}
-                  startIcon={<SparklesIcon sx={{ color: "#ffd54f" }} />}
+                  startIcon={<SparklesIcon sx={{ color: "#00e5c9" }} />}
                 >
                   {t("dash.aiScanner", "AI Scanner")}
                 </Button>
@@ -204,9 +204,9 @@ export const DashboardPage: React.FC = () => {
           elevation={0}
           sx={{
             p: { xs: 2, sm: 2.5 },
-            borderRadius: 3,
+            borderRadius: 1.25,
             bgcolor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(9, 9, 56, 0.75)" : "rgba(240, 243, 255, 0.8)",
+              theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.88)" : "rgba(240, 243, 246, 0.8)",
             border: "1px solid",
             borderColor: "divider",
             minWidth: { xs: "100%", md: 240 },
@@ -214,13 +214,13 @@ export const DashboardPage: React.FC = () => {
             boxSizing: "border-box",
           }}
         >
-          <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.light", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>
+          <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>
             {t("dash.currentDraw", "CURRENT DRAW LOAD")}
           </Typography>
           <Typography variant="h3" sx={{ fontWeight: 900, fontFamily: "monospace", my: 0.5, letterSpacing: "-0.02em" }}>
             {activeWattage} <Typography component="span" variant="body2" sx={{ color: "text.secondary", fontWeight: 600 }}>Watts</Typography>
           </Typography>
-          <Typography variant="caption" sx={{ color: "#f59e0b", fontWeight: 700, fontFamily: "monospace", display: "block" }}>
+          <Typography variant="caption" sx={{ color: "#00e5c9", fontWeight: 700, fontFamily: "monospace", display: "block" }}>
             ₱{((activeWattage / 1000) * 14.8261).toFixed(2)}/hr {t("dash.runningRate", "running rate")}
           </Typography>
         </Paper>
@@ -233,8 +233,9 @@ export const DashboardPage: React.FC = () => {
             title={t("dash.consolidatedBill", "Consolidated Monthly Bill")}
             value={`₱${spaceAnalytics.consolidatedTotalBill.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             subtitle={spaces.length > 1 ? `${t("dash.combinedAcross", "Combined across")} ${spaces.length} ${t("dash.spaces", "spaces")}` : "Household projected bill"}
-            icon={<BoltIcon sx={{ color: "#ffd54f" }} />}
+            icon={<BoltIcon sx={{ color: "#00e5c9" }} />}
             trend={{ value: `${spaces.length} Spaces`, direction: "neutral" }}
+            highlight
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -268,10 +269,10 @@ export const DashboardPage: React.FC = () => {
 
       {/* 3. Sub-Metering & Space Cost Allocation (When Multiple Spaces Exist) */}
       {spaces.length > 1 && (
-        <Card data-tour="dashboard-space-split" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3.5, border: "1px solid", borderColor: "rgba(108, 122, 224, 0.25)" }}>
+        <Card data-tour="dashboard-space-split" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 1.5, border: "1px solid", borderColor: "rgba(0, 229, 201, 0.25)" }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1.5 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-              <Box sx={{ p: 1, borderRadius: 2, bgcolor: "primary.main", color: "#ffffff", display: "flex" }}>
+              <Box sx={{ p: 1, borderRadius: 1, bgcolor: "primary.main", color: "#0c1b18", display: "flex" }}>
                 <WalletIcon fontSize="small" />
               </Box>
               <Box>
@@ -309,7 +310,7 @@ export const DashboardPage: React.FC = () => {
             value={spaceAnalytics.resPercent}
             sx={{
               height: 10,
-              borderRadius: 5,
+              borderRadius: 1,
               bgcolor: "secondary.main",
               "& .MuiLinearProgress-bar": {
                 bgcolor: "primary.main",
@@ -325,7 +326,7 @@ export const DashboardPage: React.FC = () => {
                   variant="outlined"
                   sx={{
                     p: 2,
-                    borderRadius: 2.5,
+                    borderRadius: 1.25,
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
@@ -414,7 +415,7 @@ export const DashboardPage: React.FC = () => {
                 justifyContent: "space-between",
                 textDecoration: "none",
                 color: "inherit",
-                borderRadius: 3.5,
+                borderRadius: 1.5,
                 "&:hover": {
                   borderColor: "primary.main",
                   transform: "translateY(-2px)",

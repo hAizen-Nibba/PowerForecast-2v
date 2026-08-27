@@ -68,12 +68,12 @@ export const VersionBadge: React.FC = () => {
             display: isOpen ? "block" : "none",
             p: 2,
             width: 290,
-            borderRadius: 2.5,
+            borderRadius: 1.25,
             bgcolor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(9, 11, 36, 0.96)" : "rgba(255, 255, 255, 0.98)",
+              theme.palette.mode === "dark" ? "rgba(23, 26, 31, 0.98)" : "rgba(255, 255, 255, 0.98)",
             border: "1px solid",
             borderColor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.35)" : "rgba(99, 102, 241, 0.25)",
+              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.35)" : "rgba(0, 229, 201, 0.25)",
             backdropFilter: "blur(16px)",
             boxShadow: "0 12px 36px rgba(0,0,0,0.4)",
           }}
@@ -92,9 +92,9 @@ export const VersionBadge: React.FC = () => {
                 fontFamily: "monospace",
                 fontWeight: 700,
                 fontSize: "0.6875rem",
-                bgcolor: "rgba(234, 179, 8, 0.15)",
-                color: "#eab308",
-                border: "1px solid rgba(234, 179, 8, 0.3)",
+                bgcolor: "rgba(0, 229, 201, 0.12)",
+                color: "#00e5c9",
+                border: "1px solid rgba(0, 229, 201, 0.3)",
               }}
             />
           </Box>
@@ -177,13 +177,13 @@ export const VersionBadge: React.FC = () => {
           gap: 1,
           px: 1.5,
           py: 0.75,
-          borderRadius: 9999,
+          borderRadius: 1,
           bgcolor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(10, 12, 44, 0.92)" : "rgba(255, 255, 255, 0.95)",
+            theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.92)" : "rgba(255, 255, 255, 0.95)",
           color: "text.primary",
           border: "1px solid",
           borderColor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.45)" : "rgba(99, 102, 241, 0.3)",
+            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.45)" : "rgba(0, 229, 201, 0.3)",
           boxShadow: "0 4px 16px rgba(0, 0, 0, 0.25)",
           backdropFilter: "blur(12px)",
           cursor: "pointer",
@@ -191,7 +191,7 @@ export const VersionBadge: React.FC = () => {
           "&:hover": {
             borderColor: "primary.main",
             transform: "translateY(-1px)",
-            boxShadow: "0 6px 20px rgba(99, 102, 241, 0.25)",
+            boxShadow: "0 6px 20px rgba(0, 229, 201, 0.25)",
           },
         }}
         title="Click to view version & database connection telemetry"
@@ -220,16 +220,16 @@ export const VersionBadge: React.FC = () => {
         </Typography>
 
         <Chip
-          icon={<WifiIcon sx={{ fontSize: "12px !important", color: "success.main" }} />}
+          icon={<WifiIcon sx={{ fontSize: "12px !important", color: "#00e5c9 !important" }} />}
           label="MUI"
           size="small"
           sx={{
             height: 18,
             fontSize: "0.625rem",
             fontWeight: 700,
-            bgcolor: "rgba(99, 102, 241, 0.15)",
+            bgcolor: "rgba(0, 229, 201, 0.12)",
             color: "primary.light",
-            border: "1px solid rgba(99, 102, 241, 0.25)",
+            border: "1px solid rgba(0, 229, 201, 0.25)",
             "& .MuiChip-icon": { ml: "4px" },
           }}
         />

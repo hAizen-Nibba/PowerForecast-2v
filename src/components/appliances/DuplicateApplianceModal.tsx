@@ -144,7 +144,7 @@ export const DuplicateApplianceModal: React.FC<DuplicateApplianceModalProps> = (
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 3.5,
+            borderRadius: 1.5,
             bgcolor: (theme) => (theme.palette.mode === "dark" ? "#0a0a20" : "#ffffff"),
             border: "1px solid",
             borderColor: "warning.main",
@@ -159,7 +159,7 @@ export const DuplicateApplianceModal: React.FC<DuplicateApplianceModalProps> = (
             sx={{
               width: 38,
               height: 38,
-              borderRadius: 2.5,
+              borderRadius: 1,
               bgcolor: "warning.main",
               color: "#000000",
               display: "flex",
@@ -186,7 +186,7 @@ export const DuplicateApplianceModal: React.FC<DuplicateApplianceModalProps> = (
       <DialogContent sx={{ px: 3, py: 1 }}>
         <Stack spacing={2.5}>
           {/* Existing Appliance Summary Alert */}
-          <Alert severity="warning" sx={{ borderRadius: 2.5 }}>
+          <Alert severity="warning" sx={{ borderRadius: 1 }}>
             <Typography variant="body2" sx={{ fontWeight: 700 }}>
               "{existingAppliance.name}" ({existingAppliance.watts}W)
             </Typography>
@@ -207,7 +207,7 @@ export const DuplicateApplianceModal: React.FC<DuplicateApplianceModalProps> = (
               sx={{
                 p: 2,
                 mb: 1.5,
-                borderRadius: 2.5,
+                borderRadius: 1.25,
                 cursor: "pointer",
                 borderColor: choice === "combine" ? "primary.main" : "divider",
                 bgcolor: choice === "combine" ? "rgba(99, 102, 241, 0.08)" : "transparent",
@@ -238,7 +238,7 @@ export const DuplicateApplianceModal: React.FC<DuplicateApplianceModalProps> = (
               onClick={() => setChoice("separate")}
               sx={{
                 p: 2,
-                borderRadius: 2.5,
+                borderRadius: 1.25,
                 cursor: "pointer",
                 borderColor: choice === "separate" ? "primary.main" : "divider",
                 bgcolor: choice === "separate" ? "rgba(99, 102, 241, 0.08)" : "transparent",

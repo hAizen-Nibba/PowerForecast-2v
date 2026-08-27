@@ -260,11 +260,11 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 3.5,
-            bgcolor: "#0b0a26",
-            backgroundImage: "radial-gradient(ellipse at top, rgba(99, 102, 241, 0.15) 0%, rgba(11, 10, 38, 0.98) 70%)",
+            borderRadius: 1.5,
+            bgcolor: "#17191d",
+            backgroundImage: "radial-gradient(ellipse at top, rgba(0, 229, 201, 0.12) 0%, rgba(23, 25, 29, 0.98) 70%)",
             boxShadow: "0 32px 80px rgba(0, 0, 0, 0.8)",
-            border: "1px solid rgba(108, 122, 224, 0.3)",
+            border: "1px solid rgba(0, 229, 201, 0.25)",
             color: "#ffffff",
           },
         },
@@ -276,7 +276,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
             sx={{
               width: 38,
               height: 38,
-              borderRadius: 2.5,
+              borderRadius: 1,
               bgcolor: "primary.main",
               color: "#ffffff",
               display: "flex",
@@ -318,8 +318,8 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
             },
           }}
         >
-          <Tab icon={<SparklesIcon fontSize="small" />} iconPosition="start" label="⚡ Quick Target Quota" />
-          <Tab icon={<CalendarIcon fontSize="small" />} iconPosition="start" label="🗓️ Elaborated Past Dates (Backfill)" />
+          <Tab icon={<SparklesIcon fontSize="small" />} iconPosition="start" label="Quick Target Quota" />
+          <Tab icon={<CalendarIcon fontSize="small" />} iconPosition="start" label="Elaborated Past Dates (Backfill)" />
         </Tabs>
       </Box>
 
@@ -329,9 +329,9 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
           variant="outlined"
           sx={{
             p: 1.5,
-            borderRadius: 2.5,
-            bgcolor: "rgba(0, 0, 0, 0.35)",
-            borderColor: "rgba(108, 122, 224, 0.2)",
+            borderRadius: 1.25,
+            bgcolor: "rgba(24, 27, 32, 0.6)",
+            borderColor: "rgba(255, 255, 255, 0.08)",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
@@ -383,7 +383,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", letterSpacing: "0.04em" }}>
-                🎯 HOW MANY HOURS DO YOU PLAN TO USE THIS PER DAY?
+                HOW MANY HOURS DO YOU PLAN TO USE THIS PER DAY?
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem" }}>
                 Serves as your baseline budget quota. Your live stopwatch or past logging will track actual usage against this.
@@ -398,7 +398,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                 { label: "4h (Standard)", value: 4 },
                 { label: "8h (Typical)", value: 8 },
                 { label: "12h (Heavy)", value: 12 },
-                { label: "🔄 24h Steady", value: 24 },
+                { label: "24h Steady", value: 24 },
               ].map((preset) => {
                 const isSelected = Math.abs(hoursPerDay - preset.value) < 0.02;
                 return (
@@ -423,7 +423,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
             </Box>
 
             {/* Custom Input */}
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5, p: 1.5, borderRadius: 2.5, bgcolor: "rgba(0, 0, 0, 0.25)", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5, p: 1.5, borderRadius: 1, bgcolor: "rgba(0, 0, 0, 0.25)", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
               <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
                 Custom Runtime:
               </Typography>
@@ -470,7 +470,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
             <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
               <Box>
                 <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", letterSpacing: "0.04em" }}>
-                  📅 SELECT PAST DATES TO BACKFILL USAGE ({monthName.toUpperCase()}):
+                  SELECT PAST DATES TO BACKFILL USAGE ({monthName.toUpperCase()}):
                 </Typography>
                 <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem" }}>
                   Click days you operated this appliance before today. Future dates are strictly locked.
@@ -484,25 +484,25 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                 size="small"
                 variant="outlined"
                 onClick={handleSelectAllPast}
-                sx={{ fontSize: "0.6875rem", py: 0.4, px: 1, borderRadius: 1.5, fontWeight: 800 }}
+                sx={{ fontSize: "0.6875rem", py: 0.4, px: 1, borderRadius: 1, fontWeight: 800 }}
               >
-                ⚡ All Past (1–{todayDateNumber - 1})
+                All Past (1–{todayDateNumber - 1})
               </Button>
               <Button
                 size="small"
                 variant="outlined"
                 onClick={handleSelectWeekdays}
-                sx={{ fontSize: "0.6875rem", py: 0.4, px: 1, borderRadius: 1.5, fontWeight: 800 }}
+                sx={{ fontSize: "0.6875rem", py: 0.4, px: 1, borderRadius: 1, fontWeight: 800 }}
               >
-                💼 Weekdays Only
+                Weekdays Only
               </Button>
               <Button
                 size="small"
                 variant="outlined"
                 onClick={handleSelectWeekends}
-                sx={{ fontSize: "0.6875rem", py: 0.4, px: 1, borderRadius: 1.5, fontWeight: 800 }}
+                sx={{ fontSize: "0.6875rem", py: 0.4, px: 1, borderRadius: 1, fontWeight: 800 }}
               >
-                🏖️ Weekends Only
+                Weekends Only
               </Button>
               <Button
                 size="small"
@@ -510,7 +510,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                 color="inherit"
                 onClick={handleClearSelection}
                 startIcon={<ClearIcon sx={{ fontSize: 13 }} />}
-                sx={{ fontSize: "0.6875rem", py: 0.4, px: 1, borderRadius: 1.5, fontWeight: 700, opacity: 0.75 }}
+                sx={{ fontSize: "0.6875rem", py: 0.4, px: 1, borderRadius: 1, fontWeight: 700, opacity: 0.75 }}
               >
                 Clear
               </Button>
@@ -518,12 +518,11 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
 
             {/* Mini Calendar Grid */}
             <Paper
-              variant="outlined"
               sx={{
                 p: 1.5,
-                borderRadius: 2.5,
-                bgcolor: "rgba(0, 0, 0, 0.4)",
-                borderColor: "rgba(108, 122, 224, 0.25)",
+                borderRadius: 1.25,
+                bgcolor: "rgba(24, 27, 32, 0.6)",
+                borderColor: "rgba(255, 255, 255, 0.08)",
               }}
             >
               {/* Month Header Label */}
@@ -540,7 +539,8 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                     sx={{
                       fontSize: "0.625rem",
                       fontWeight: 800,
-                      color: idx === 0 || idx === 6 ? "#ffd54f" : "text.secondary",
+                      color: idx === 0 || idx === 6 ? "text.secondary" : "text.primary",
+                      opacity: 0.65,
                     }}
                   >
                     {dName}
@@ -706,9 +706,9 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
           variant="outlined"
           sx={{
             p: 2,
-            borderRadius: 3,
-            bgcolor: "rgba(15, 14, 58, 0.6)",
-            borderColor: "rgba(129, 140, 248, 0.3)",
+            borderRadius: 1.25,
+            bgcolor: "rgba(24, 27, 32, 0.75)",
+            borderColor: "rgba(0, 229, 201, 0.25)",
             display: "flex",
             flexDirection: "column",
             gap: 1.25,
@@ -764,7 +764,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
           disabled={isSaving}
           sx={{ borderRadius: 2, fontWeight: 800, px: 3 }}
         >
-          {isSaving ? "Saving to Inventory..." : "💾 Save & Add to Inventory"}
+          {isSaving ? "Saving to Inventory..." : "Save & Add to Inventory"}
         </Button>
       </DialogActions>
     </Dialog>

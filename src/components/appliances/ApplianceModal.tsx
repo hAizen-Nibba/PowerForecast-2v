@@ -250,7 +250,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
                 size="small"
                 value={selectedListId}
                 onChange={(e) => setSelectedListId(e.target.value)}
-                helperText={`Tariff Applied: ${tariffType === "commercial" ? "💼 Commercial (General Power)" : "🏠 Residential (230V Stepped)"}`}
+                helperText={`Tariff Applied: ${tariffType === "commercial" ? "Commercial (General Power)" : "Residential (230V Stepped)"}`}
               >
                 {spaces.map((space) => (
                   <MenuItem key={space.id} value={space.id}>

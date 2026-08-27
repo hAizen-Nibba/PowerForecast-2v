@@ -8,25 +8,25 @@ export const surfacesCustomizations: Components<Theme> = {
         gap: 16,
         transition: 'all 240ms cubic-bezier(0.4, 0, 0.2, 1)',
         backgroundColor: theme.palette.mode === 'dark' 
-          ? 'rgba(15, 14, 58, 0.82)' 
+          ? 'rgba(32, 35, 40, 0.88)' 
           : 'rgba(255, 255, 255, 0.95)',
-        borderRadius: 16,
+        borderRadius: 12,
         border: `1px solid ${
           theme.palette.mode === 'dark' 
-            ? 'rgba(129, 140, 248, 0.18)' 
-            : 'rgba(99, 102, 241, 0.16)'
+            ? 'rgba(255, 255, 255, 0.08)' 
+            : 'rgba(0, 158, 136, 0.16)'
         }`,
         backdropFilter: 'blur(16px)',
         boxShadow: theme.palette.mode === 'dark'
-          ? '0 4px 24px rgba(0, 0, 0, 0.35)'
-          : '0 4px 20px rgba(99, 102, 241, 0.08)',
+          ? '0 4px 24px rgba(0, 0, 0, 0.45)'
+          : '0 4px 20px rgba(0, 158, 136, 0.08)',
         '&:hover': {
           borderColor: theme.palette.mode === 'dark' 
-            ? 'rgba(129, 140, 248, 0.38)' 
-            : 'rgba(99, 102, 241, 0.32)',
+            ? 'rgba(0, 229, 201, 0.35)' 
+            : 'rgba(0, 158, 136, 0.32)',
           boxShadow: theme.palette.mode === 'dark'
-            ? '0 8px 32px rgba(0, 0, 0, 0.45)'
-            : '0 8px 28px rgba(99, 102, 241, 0.12)',
+            ? '0 8px 32px rgba(0, 0, 0, 0.55), 0 0 16px rgba(0, 229, 201, 0.06)'
+            : '0 8px 28px rgba(0, 158, 136, 0.12)',
         },
       }),
     },
@@ -36,9 +36,9 @@ export const surfacesCustomizations: Components<Theme> = {
       root: ({ theme }: { theme: Theme }) => ({
         backgroundImage: 'none',
         backgroundColor: theme.palette.mode === 'dark' 
-          ? 'rgba(15, 14, 58, 0.9)' 
+          ? 'rgba(32, 35, 40, 0.92)' 
           : '#ffffff',
-        borderRadius: 14,
+        borderRadius: 10,
         transition: 'background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease',
       }),
     },
@@ -47,14 +47,14 @@ export const surfacesCustomizations: Components<Theme> = {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
         backgroundColor: theme.palette.mode === 'dark' 
-          ? 'rgba(15, 14, 58, 0.72)' 
+          ? 'rgba(32, 35, 40, 0.75)' 
           : 'rgba(255, 255, 255, 0.92)',
         border: `1px solid ${
           theme.palette.mode === 'dark' 
-            ? 'rgba(129, 140, 248, 0.16)' 
-            : 'rgba(99, 102, 241, 0.15)'
+            ? 'rgba(255, 255, 255, 0.08)' 
+            : 'rgba(0, 158, 136, 0.15)'
         }`,
-        borderRadius: '14px !important',
+        borderRadius: '10px !important',
         marginBottom: 10,
         transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
         '&:before': {
@@ -62,7 +62,7 @@ export const surfacesCustomizations: Components<Theme> = {
         },
         '&.Mui-expanded': {
           margin: '0 0 10px 0',
-          borderColor: theme.palette.mode === 'dark' ? 'rgba(129, 140, 248, 0.35)' : 'rgba(99, 102, 241, 0.3)',
+          borderColor: theme.palette.mode === 'dark' ? 'rgba(0, 229, 201, 0.4)' : 'rgba(0, 158, 136, 0.3)',
         },
       }),
     },
@@ -79,16 +79,16 @@ export const surfacesCustomizations: Components<Theme> = {
   MuiDialog: {
     styleOverrides: {
       paper: ({ theme }: { theme: Theme }) => ({
-        borderRadius: 20,
+        borderRadius: 14,
         backgroundColor: theme.palette.mode === 'dark' 
-          ? '#0c0a33' 
+          ? '#1b1e22' 
           : '#ffffff',
         border: `1px solid ${
           theme.palette.mode === 'dark' 
-            ? 'rgba(129, 140, 248, 0.25)' 
-            : 'rgba(99, 102, 241, 0.2)'
+            ? 'rgba(255, 255, 255, 0.12)' 
+            : 'rgba(0, 158, 136, 0.2)'
         }`,
-        boxShadow: '0 24px 64px rgba(0, 0, 0, 0.55)',
+        boxShadow: '0 24px 64px rgba(0, 0, 0, 0.65)',
         backdropFilter: 'blur(20px)',
       }),
     },

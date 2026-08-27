@@ -82,6 +82,16 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
 
   const totalCost = filteredLogs.reduce((acc, curr) => acc + (curr.estimated_cost || 0), 0);
   const totalKwh = filteredLogs.reduce((acc, curr) => acc + (curr.kwh_consumed || 0), 0);
+  const totalMinutes = filteredLogs.reduce((acc, curr) => acc + (curr.duration_minutes || 0), 0);
+  const totalHours = totalMinutes / 60;
+
+  const formatDuration = (mins: number) => {
+    const h = Math.floor(mins / 60);
+    const m = Math.round(mins % 60);
+    if (h > 0 && m > 0) return `${h}h ${m}m`;
+    if (h > 0) return `${h}h`;
+    return `${m}m`;
+  };
 
   const handleClearAll = async () => {
     if (!window.confirm("Are you sure you want to clear all historical session logs?")) return;
@@ -105,9 +115,9 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
         <Paper
           sx={{
             p: 2.5,
-            borderRadius: 3,
-            bgcolor: "rgba(108, 122, 224, 0.08)",
-            border: "1px solid rgba(108, 122, 224, 0.25)",
+            borderRadius: 1.25,
+            bgcolor: "rgba(0, 229, 201, 0.08)",
+            border: "1px solid rgba(0, 229, 201, 0.25)",
             display: "flex",
             flexDirection: { xs: "column", sm: "row" },
             justifyContent: "space-between",
@@ -118,43 +128,45 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
           <Box sx={{ display: "flex", gap: 3 }}>
             <Box>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>Total Incurred Cost</Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 900, color: "#34d399" }}>
+              <Typography variant="h5" sx={{ fontWeight: 900, color: "#00e5c9", fontFamily: "monospace" }}>
                 ₱{totalCost.toFixed(2)}
               </Typography>
             </Box>
             <Box>
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>Total Energy Tracked</Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 900, color: "#fbbf24" }}>
-                {totalKwh.toFixed(3)} kWh
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>Total Metered Energy</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 900, color: "#ffd54f", fontFamily: "monospace" }}>
+                {totalKwh.toFixed(3)} <Typography component="span" variant="caption">kWh</Typography>
               </Typography>
             </Box>
             <Box>
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>Total Sessions</Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 900, color: "text.primary" }}>
-                {logs.length} Recorded
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>Total Hours Metered</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 900, color: "text.primary", fontFamily: "monospace" }}>
+                {totalHours.toFixed(1)} <Typography component="span" variant="caption">hrs</Typography>
               </Typography>
             </Box>
           </Box>
 
-          {logs.length > 0 && (
-            <Button
-              variant="outlined"
-              color="error"
-              size="small"
-              startIcon={<DeleteSweepIcon />}
-              onClick={handleClearAll}
-              disabled={isDeleting}
-              sx={{ borderRadius: 2, fontWeight: 700 }}
-            >
-              Clear All Logs
-            </Button>
-          )}
+          <Box sx={{ display: "flex", gap: 1 }}>
+            {logs.length > 0 && (
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
+                startIcon={<DeleteSweepIcon />}
+                onClick={handleClearAll}
+                disabled={isDeleting}
+                sx={{ borderRadius: 1, fontWeight: 700 }}
+              >
+                Clear All Logs
+              </Button>
+            )}
+          </Box>
         </Paper>
 
-        {/* Search Filter */}
+        {/* Search & Filter bar */}
         <TextField
+          placeholder="Filter logs by appliance name or space..."
           size="small"
-          placeholder="Search logs by appliance name or keyword..."
           value={filterText}
           onChange={(e) => setFilterText(e.target.value)}
           slotProps={{
@@ -169,41 +181,31 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
           fullWidth
         />
 
-        {/* Logs Feed Container */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, maxHeight: 380, overflowY: "auto", pr: 0.5 }}>
+        {/* Logs List */}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25, maxHeight: 420, overflowY: "auto", pr: 0.5 }}>
           {filteredLogs.length === 0 ? (
-            <Box sx={{ p: 4, textAlign: "center", color: "text.secondary" }}>
-              <HistoryIcon sx={{ fontSize: 40, opacity: 0.4, mb: 1 }} />
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            <Paper variant="outlined" sx={{ p: 4, textAlign: "center", borderRadius: 1.25 }}>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
                 {filterText ? "No matching session logs found." : "No historical session logs recorded yet."}
               </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                When appliances finish running or are powered OFF, audited energy consumption receipts are recorded here automatically.
-              </Typography>
-            </Box>
+            </Paper>
           ) : (
             filteredLogs.map((log) => {
               const app = getAppliance(log.appliance_id);
-              const startDt = log.started_at ? new Date(log.started_at) : new Date();
-              const dateStr = startDt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-              const timeStr = startDt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
-
-              let durText = "";
-              const mins = log.duration_minutes || 0;
-              if (mins >= 60) {
-                const h = Math.floor(mins / 60);
-                const m = Math.round(mins % 60);
-                durText = m > 0 ? `${h}h ${m}m` : `${h}h`;
-              } else {
-                durText = `${Math.round(mins)} mins`;
-              }
+              const durText = formatDuration(log.duration_minutes || 0);
+              const dateStr = new Date(log.started_at).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              });
+              const timeStr = new Date(log.started_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
               return (
                 <Paper
                   key={log.id}
                   sx={{
                     p: 2,
-                    borderRadius: 2.5,
+                    borderRadius: 1.25,
                     border: "1px solid",
                     borderColor: "divider",
                     bgcolor: "background.paper",
@@ -219,8 +221,8 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
                       sx={{
                         width: 36,
                         height: 36,
-                        borderRadius: 2,
-                        bgcolor: "rgba(108, 122, 224, 0.15)",
+                        borderRadius: 1,
+                        bgcolor: "rgba(0, 229, 201, 0.12)",
                         color: "primary.main",
                         display: "flex",
                         alignItems: "center",
@@ -257,7 +259,7 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
                         variant="outlined"
                         startIcon={<EditIcon />}
                         onClick={() => handleStartEdit(log)}
-                        sx={{ borderRadius: 1.5, fontWeight: 700, fontSize: "0.75rem", py: 0.5 }}
+                        sx={{ borderRadius: 1, fontWeight: 700, fontSize: "0.75rem", py: 0.5 }}
                       >
                         Edit
                       </Button>
@@ -266,7 +268,7 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
                         variant="contained"
                         startIcon={<ReceiptIcon />}
                         onClick={() => onViewReceipt(log, app)}
-                        sx={{ borderRadius: 1.5, fontWeight: 700, fontSize: "0.75rem", py: 0.5 }}
+                        sx={{ borderRadius: 1, fontWeight: 700, fontSize: "0.75rem", py: 0.5 }}
                       >
                         Receipt
                       </Button>
@@ -287,7 +289,7 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
         </Box>
 
         <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-          <Button onClick={onClose} variant="outlined" sx={{ borderRadius: 2.5, fontWeight: 700 }}>
+          <Button onClick={onClose} variant="outlined" sx={{ borderRadius: 1, fontWeight: 700 }}>
             Close
           </Button>
         </Box>
@@ -300,7 +302,7 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
           onClose={() => setEditingLog(null)}
           maxWidth="xs"
           fullWidth
-          slotProps={{ paper: { sx: { borderRadius: 3, p: 1 } } }}
+          slotProps={{ paper: { sx: { borderRadius: 1.5, p: 1 } } }}
         >
           <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, fontWeight: 800 }}>
             <EditIcon sx={{ color: "primary.main" }} />
@@ -346,7 +348,7 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
               const kwh = (watts * totalH) / 1000;
               const cost = kwh * 14.8261;
               return (
-                <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, bgcolor: "rgba(0,0,0,0.2)" }}>
+                <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 1, bgcolor: "rgba(0,0,0,0.2)" }}>
                   <Typography variant="caption" sx={{ display: "block", color: "#ffd54f", fontWeight: 800 }}>
                     Preview: {totalH.toFixed(2)} hrs • {kwh.toFixed(3)} kWh • ₱{cost.toFixed(2)}
                   </Typography>
@@ -363,7 +365,7 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
               onClick={handleSaveEdit}
               disabled={isUpdating || (editHours === 0 && editMinutes === 0)}
               startIcon={<CheckCircleIcon />}
-              sx={{ fontWeight: 800, borderRadius: 2 }}
+              sx={{ fontWeight: 800, borderRadius: 1 }}
             >
               {isUpdating ? "Saving..." : "Save Changes"}
             </Button>

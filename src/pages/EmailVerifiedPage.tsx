@@ -76,7 +76,7 @@ export const EmailVerifiedPage: React.FC = () => {
           <Card
             sx={{
               p: { xs: 4, sm: 6 },
-              borderRadius: 4,
+              borderRadius: 1.5,
               textAlign: "center",
               boxShadow: isDark
                 ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(99, 102, 241, 0.15)"
@@ -136,7 +136,7 @@ export const EmailVerifiedPage: React.FC = () => {
         <Card
           sx={{
             p: { xs: 4, sm: 6 },
-            borderRadius: 4,
+            borderRadius: 1.5,
             textAlign: "center",
             boxShadow: isDark
               ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(99, 102, 241, 0.15)"
@@ -184,7 +184,7 @@ export const EmailVerifiedPage: React.FC = () => {
               fullWidth
               sx={{
                 py: 1.5,
-                borderRadius: 2.5,
+                borderRadius: 1,
                 fontWeight: 700,
                 fontSize: "1.1rem",
               }}
@@ -198,7 +198,7 @@ export const EmailVerifiedPage: React.FC = () => {
               onClick={handleManualLogin}
               sx={{
                 py: 1.5,
-                borderRadius: 2.5,
+                borderRadius: 1,
                 fontWeight: 700,
                 fontSize: "1.1rem",
               }}

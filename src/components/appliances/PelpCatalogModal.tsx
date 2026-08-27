@@ -326,7 +326,7 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
                     variant="outlined"
                     sx={{
                       p: 2,
-                      borderRadius: 2.5,
+                      borderRadius: 1.25,
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",

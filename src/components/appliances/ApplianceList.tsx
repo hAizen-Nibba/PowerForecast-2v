@@ -185,7 +185,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
     const newState = !app.is_currently_on;
     const nowIso = newState ? new Date().toISOString() : null;
 
-    devLog.telemetry("Telemetry", `Stopwatch ${newState ? "started ⏱️ [TIMING]" : "stopped ⏹️ [STOPPED]"}: "${app.name}" (${app.watts}W @ 230V)`, {
+    devLog.telemetry("Telemetry", `Stopwatch ${newState ? "started [TIMING]" : "stopped [STOPPED]"}: "${app.name}" (${app.watts}W @ 230V)`, {
       applianceId: app.id,
       name: app.name,
       category: app.category,
@@ -204,7 +204,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
       },
     });
 
-    showInfo(`${app.name} stopwatch ${newState ? "started ⏱️" : "stopped ⏹️"}.`);
+    showInfo(`${app.name} stopwatch ${newState ? "started" : "stopped"}.`);
   };
 
   const getRunningDuration = (turnedOnAt?: string | null) => {
@@ -250,7 +250,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
   if (spaces.length === 0) {
     return (
       <Box sx={{ maxWidth: 640, mx: "auto", py: { xs: 4, sm: 6 } }}>
-        <Card sx={{ p: { xs: 3, sm: 4.5 }, borderRadius: 4, textAlign: "center", border: "1px solid", borderColor: "primary.main" }}>
+        <Card sx={{ p: { xs: 3, sm: 4.5 }, borderRadius: 1.5, textAlign: "center", border: "1px solid", borderColor: "primary.main" }}>
           <Box
             sx={{
               width: 64,
@@ -295,7 +295,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                       onClick={() => setInitialTariffType("residential")}
                       sx={{
                         p: 2,
-                        borderRadius: 3,
+                        borderRadius: 1.25,
                         cursor: "pointer",
                         textAlign: "center",
                         border: "2px solid",
@@ -321,7 +321,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                       onClick={() => setInitialTariffType("commercial")}
                       sx={{
                         p: 2,
-                        borderRadius: 3,
+                        borderRadius: 1.25,
                         cursor: "pointer",
                         textAlign: "center",
                         border: "2px solid",
@@ -427,13 +427,13 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
       <Card
         sx={{
           p: { xs: 2.5, sm: 3.5 },
-          borderRadius: 3.5,
+          borderRadius: 1.5,
           background: (theme) =>
             theme.palette.mode === "dark"
-              ? "linear-gradient(135deg, rgba(15, 14, 58, 0.9) 0%, rgba(20, 18, 80, 0.8) 100%)"
+              ? "linear-gradient(135deg, rgba(23, 25, 29, 0.95) 0%, rgba(32, 35, 40, 0.9) 100%)"
               : "linear-gradient(135deg, #ffffff 0%, #f4f6ff 100%)",
           border: "1px solid",
-          borderColor: "rgba(108, 122, 224, 0.3)",
+          borderColor: "rgba(0, 229, 201, 0.25)",
           display: "flex",
           flexDirection: { xs: "column", md: "row" },
           justifyContent: "space-between",
@@ -447,17 +447,17 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               sx={{
                 width: 46,
                 height: 46,
-                borderRadius: 2.5,
+                borderRadius: 1.25,
                 bgcolor: spaceTariffType === "commercial" ? "secondary.main" : "primary.main",
-                color: "#ffffff",
+                color: spaceTariffType === "commercial" ? "#ffffff" : "#0c1b18",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 4px 14px rgba(108, 122, 224, 0.4)",
+                boxShadow: "0 4px 14px rgba(0, 229, 201, 0.3)",
                 flexShrink: 0,
               }}
             >
-              {spaceTariffType === "commercial" ? <StoreIcon sx={{ color: "#ffffff" }} /> : <HomeIcon sx={{ color: "#ffd54f" }} />}
+              {spaceTariffType === "commercial" ? <StoreIcon sx={{ color: "#ffffff" }} /> : <HomeIcon sx={{ color: "#0c1b18" }} />}
             </Box>
             <Box>
               <Typography variant="h5" sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}>
@@ -465,8 +465,8 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
                 {spaceTariffType === "commercial"
-                  ? "💼 Commercial General Power Tariff • Flat distribution & commercial metering"
-                  : "🏠 Residential 230V Tariff • Stepped distribution tiers & Lifeline subsidy"}
+                  ? "Commercial General Power Tariff • Flat distribution & commercial metering"
+                  : "Residential 230V Tariff • Stepped distribution tiers & Lifeline subsidy"}
               </Typography>
             </Box>
           </Box>
@@ -474,9 +474,9 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexWrap: "wrap" }}>
           <Chip
-            icon={<SpeedIcon sx={{ color: "#ffd54f !important" }} />}
+            icon={<SpeedIcon sx={{ color: "#00e5c9 !important" }} />}
             label={`Load: ${spaceTotalWatts} W`}
-            sx={{ fontWeight: 800, bgcolor: "rgba(15, 14, 58, 0.5)", border: "1px solid rgba(108, 122, 224, 0.3)" }}
+            sx={{ fontWeight: 800, bgcolor: "rgba(0, 229, 201, 0.08)", border: "1px solid rgba(0, 229, 201, 0.25)", color: "#00e5c9" }}
           />
           <Chip
             label={`${currentSpaceAppliances.length} Appliances`}
@@ -498,7 +498,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               setSpaceToEdit(activeSpace);
               setIsSpaceModalOpen(true);
             }}
-            sx={{ borderRadius: 2, fontWeight: 700 }}
+            sx={{ borderRadius: 1, fontWeight: 700 }}
           >
             Configure
           </Button>
@@ -507,7 +507,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             size="small"
             startIcon={<FileDownloadIcon />}
             onClick={exportLoadListJson}
-            sx={{ borderRadius: 2, fontWeight: 700 }}
+            sx={{ borderRadius: 1, fontWeight: 700 }}
           >
             Export
           </Button>
@@ -518,7 +518,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               size="small"
               startIcon={<DeleteSweepIcon />}
               onClick={handleClearAll}
-              sx={{ borderRadius: 2, fontWeight: 700 }}
+              sx={{ borderRadius: 1, fontWeight: 700 }}
             >
               Clear All
             </Button>
@@ -537,7 +537,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             }}
             sx={{
               p: 2.25,
-              borderRadius: 3,
+              borderRadius: 1.25,
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
@@ -559,7 +559,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               sx={{
                 width: 44,
                 height: 44,
-                borderRadius: 2,
+                borderRadius: 1,
                 bgcolor: "primary.main",
                 color: "#ffffff",
                 display: "flex",
@@ -587,7 +587,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             onClick={() => setIsPelpModalOpen(true)}
             sx={{
               p: 2.25,
-              borderRadius: 3,
+              borderRadius: 1.25,
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
@@ -609,7 +609,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               sx={{
                 width: 44,
                 height: 44,
-                borderRadius: 2,
+                borderRadius: 1,
                 bgcolor: "secondary.main",
                 color: "#ffffff",
                 display: "flex",
@@ -637,7 +637,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             onClick={() => setIsAiScannerOpen(true)}
             sx={{
               p: 2.25,
-              borderRadius: 3,
+              borderRadius: 1.25,
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
@@ -659,7 +659,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               sx={{
                 width: 44,
                 height: 44,
-                borderRadius: 2,
+                borderRadius: 1,
                 bgcolor: "warning.main",
                 color: "#080720",
                 display: "flex",
@@ -726,7 +726,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
       <Grid container spacing={{ xs: 2, sm: 2.5 }}>
         {filteredAppliances.length === 0 ? (
           <Grid size={12}>
-            <Paper sx={{ p: 6, textAlign: "center", borderRadius: 3.5, border: "1px dashed", borderColor: "divider" }}>
+            <Paper sx={{ p: 6, textAlign: "center", borderRadius: 1.25, border: "1px dashed", borderColor: "divider" }}>
               <BoltIcon sx={{ fontSize: 48, opacity: 0.3, mb: 1 }} />
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                 No appliances in "{activeSpace?.name}" yet.
@@ -753,10 +753,10 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                   data-tour={appIdx === 0 ? "appliance-card" : undefined}
                   sx={{
                     p: { xs: 2.25, sm: 2.5 },
-                    borderRadius: 3.5,
+                    borderRadius: 1.5,
                     border: "1px solid",
-                    borderColor: isOn ? "success.main" : "rgba(108, 122, 224, 0.2)",
-                    bgcolor: isOn ? "rgba(6, 78, 59, 0.15)" : "background.paper",
+                    borderColor: isOn ? "#00e5c9" : "rgba(255, 255, 255, 0.08)",
+                    bgcolor: isOn ? "rgba(0, 229, 201, 0.08)" : "background.paper",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
@@ -765,7 +765,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                     "&:hover": {
                       borderColor: "primary.main",
                       transform: "translateY(-3px)",
-                      boxShadow: "0 8px 24px rgba(108, 122, 224, 0.15)",
+                      boxShadow: "0 8px 24px rgba(0, 229, 201, 0.15)",
                     },
                   }}
                 >
@@ -775,16 +775,16 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                       <Chip
                         label={app.category}
                         size="small"
-                        sx={{ fontWeight: 700, fontSize: "0.7rem", bgcolor: "rgba(108, 122, 224, 0.15)" }}
+                        sx={{ fontWeight: 700, fontSize: "0.7rem", bgcolor: "rgba(0, 229, 201, 0.1)", color: "text.primary" }}
                       />
                       <IconButton
                         size="small"
                         onClick={() => togglePower(app)}
                         sx={{
-                          bgcolor: isOn ? "success.main" : "rgba(108, 122, 224, 0.15)",
-                          color: isOn ? "#ffffff" : "text.secondary",
+                          bgcolor: isOn ? "primary.main" : "rgba(255, 255, 255, 0.06)",
+                          color: isOn ? "#0c1b18" : "text.secondary",
                           "&:hover": {
-                            bgcolor: isOn ? "success.dark" : "rgba(108, 122, 224, 0.3)",
+                            bgcolor: isOn ? "primary.dark" : "rgba(0, 229, 201, 0.2)",
                             transform: "scale(1.08)",
                           },
                           transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",

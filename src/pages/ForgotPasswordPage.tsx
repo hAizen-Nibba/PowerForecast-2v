@@ -274,7 +274,7 @@ export const ForgotPasswordPage: React.FC = () => {
             width: "100%",
             maxWidth: 480,
             p: { xs: 3, sm: 4.5 },
-            borderRadius: 3.5,
+            borderRadius: 1.5,
             boxShadow: isDark
               ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(99, 102, 241, 0.15)"
               : "0 20px 60px rgba(99, 102, 241, 0.12)",
@@ -293,7 +293,7 @@ export const ForgotPasswordPage: React.FC = () => {
               sx={{
                 width: 52,
                 height: 52,
-                borderRadius: 3,
+                borderRadius: 1.25,
                 objectFit: "contain",
                 filter: "drop-shadow(0 4px 16px rgba(99, 102, 241, 0.5))",
                 mb: 1.5,
@@ -309,8 +309,8 @@ export const ForgotPasswordPage: React.FC = () => {
             </Typography>
           </Box>
 
-              {errorMessage && (
-            <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+          {errorMessage && (
+            <Alert severity="error" sx={{ mb: 3, borderRadius: 1 }}>
               {errorMessage}
             </Alert>
           )}
@@ -343,7 +343,7 @@ export const ForgotPasswordPage: React.FC = () => {
                 fullWidth
                 size="large"
                 disabled={isLoading}
-                sx={{ py: 1.25, borderRadius: 2.5, fontWeight: 800 }}
+                sx={{ py: 1.25, borderRadius: 1, fontWeight: 800 }}
               >
                 {isLoading ? "Searching Account..." : "Continue to Security Question"}
               </Button>
@@ -374,7 +374,7 @@ export const ForgotPasswordPage: React.FC = () => {
               <Box
                 sx={{
                   p: 2,
-                  borderRadius: 2,
+                  borderRadius: 1.25,
                   bgcolor: (theme) =>
                     theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.12)" : "rgba(99, 102, 241, 0.06)",
                   border: "1px solid",
@@ -487,7 +487,7 @@ export const ForgotPasswordPage: React.FC = () => {
                 fullWidth
                 size="large"
                 disabled={isLoading || !passwordsMatch}
-                sx={{ py: 1.25, borderRadius: 2.5, fontWeight: 800, mt: 0.5 }}
+                sx={{ py: 1.25, borderRadius: 1, fontWeight: 800, mt: 0.5 }}
               >
                 {isLoading ? "Updating Password..." : "Confirm & Reset Password"}
               </Button>
@@ -507,7 +507,7 @@ export const ForgotPasswordPage: React.FC = () => {
           {step === "success" && (
             <Box sx={{ textAlign: "center", py: 2, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
               <SuccessIcon sx={{ color: "success.main", fontSize: 56 }} />
-              <Alert severity="success" sx={{ width: "100%", borderRadius: 2 }}>
+              <Alert severity="success" sx={{ width: "100%", borderRadius: 1 }}>
                 Your password has been successfully reset. You may now sign in with your new credentials.
               </Alert>
               <Button
@@ -515,7 +515,7 @@ export const ForgotPasswordPage: React.FC = () => {
                 to="/login"
                 variant="contained"
                 fullWidth
-                sx={{ mt: 2, py: 1.2, borderRadius: 2.5, fontWeight: 700 }}
+                sx={{ mt: 2, py: 1.2, borderRadius: 1, fontWeight: 700 }}
               >
                 Sign In Now
               </Button>

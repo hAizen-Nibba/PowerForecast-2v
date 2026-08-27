@@ -1,4 +1,4 @@
-﻿/** @type {import('tailwindcss').Config} */
+/** @type {import('tailwindcss').Config} */
 export default {
   content: [
     "./index.html",
@@ -12,17 +12,17 @@ export default {
       },
       colors: {
         pf: {
-          50: '#eef0ff',
-          100: '#dfe3ff',
-          200: '#c5caff',
-          300: '#a2a5ff',
-          400: '#8183fc',
-          500: '#6c7ae0',
-          600: '#5a5cc7',
-          700: '#4a49a2',
-          800: '#1a1072',
-          900: '#0d0d5e',
-          950: '#090938',
+          50: '#e6fffa',
+          100: '#b2f5ea',
+          200: '#81e6d9',
+          300: '#4fd1c5',
+          400: '#26c6da',
+          500: '#00e5c9',
+          600: '#00c4aa',
+          700: '#009e88',
+          800: '#202328',
+          900: '#17191d',
+          950: '#141619',
         },
         accent: {
           400: '#ffd54f',

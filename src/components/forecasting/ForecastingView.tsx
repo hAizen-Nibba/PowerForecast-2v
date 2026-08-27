@@ -33,6 +33,7 @@ import {
   TrendingDown as TrendingDownIcon,
   CheckCircle as CheckIcon,
   WarningAmber as WarningIcon,
+  Timeline as TimelineIcon,
 } from "@mui/icons-material";
 import { UserAppliance, ApplianceList, DailyApplianceUsage, ApplianceUsageLog } from "../../types";
 import { useList } from "@refinedev/core";
@@ -298,10 +299,10 @@ export const ForecastingView: React.FC = () => {
           </Typography>
         </Box>
         <Chip
-          icon={<BoltIcon sx={{ fontSize: "16px !important", color: "#ffd54f !important" }} />}
+          icon={<BoltIcon sx={{ fontSize: "16px !important", color: "#00e5c9 !important" }} />}
           label={`Forecast Load: ${trajectoryForecast.forecastedKwh.toFixed(1)} kWh/mo`}
           variant="outlined"
-          sx={{ fontWeight: 700, borderColor: "rgba(108, 122, 224, 0.4)", bgcolor: "rgba(15, 14, 58, 0.4)" }}
+          sx={{ fontWeight: 700, borderColor: "rgba(0, 229, 201, 0.4)", bgcolor: "rgba(0, 229, 201, 0.08)", color: "#00e5c9" }}
         />
       </Box>
 
@@ -320,7 +321,7 @@ export const ForecastingView: React.FC = () => {
               minHeight: 40,
               "& .MuiTab-root": {
                 minHeight: 40,
-                borderRadius: 2.5,
+                borderRadius: 1,
                 textTransform: "none",
                 fontWeight: 700,
                 px: 2,
@@ -348,10 +349,10 @@ export const ForecastingView: React.FC = () => {
           variant="outlined"
           sx={{
             p: { xs: 4, sm: 6 },
-            borderRadius: 4,
+            borderRadius: 1.5,
             textAlign: "center",
-            bgcolor: "rgba(15, 14, 58, 0.45)",
-            borderColor: "rgba(108, 122, 224, 0.25)",
+            bgcolor: "rgba(24, 27, 32, 0.6)",
+            borderColor: "rgba(255, 255, 255, 0.08)",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -373,7 +374,7 @@ export const ForecastingView: React.FC = () => {
             variant="contained"
             color="primary"
             startIcon={<BoltIcon />}
-            sx={{ borderRadius: 2.5, fontWeight: 800, px: 3, py: 1, mt: 1 }}
+            sx={{ borderRadius: 1, fontWeight: 800, px: 3, py: 1, mt: 1 }}
           >
             {language === "tl" ? "Pumunta sa Sentro ng Kagamitan" : "Go to Appliances Hub"}
           </Button>
@@ -384,103 +385,93 @@ export const ForecastingView: React.FC = () => {
           <Card
             sx={{
               p: { xs: 2.5, sm: 3 },
-              borderRadius: 3.5,
+              borderRadius: 1.5,
               border: "1px solid",
-              borderColor: "rgba(108, 122, 224, 0.3)",
-              bgcolor: "rgba(15, 14, 58, 0.55)",
+              borderColor: "rgba(0, 229, 201, 0.25)",
+              bgcolor: "rgba(24, 27, 32, 0.78)",
               backdropFilter: "blur(12px)",
             }}
           >
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <CalendarIcon sx={{ color: "primary.main", fontSize: 20 }} />
+                <TimelineIcon sx={{ color: "primary.main" }} />
                 <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
-                  {t("fc.activeCycle", "Active Billing Cycle")}: {activeMonthName}
+                  {t("fc.activeCycleTitle", "Active Billing Cycle Run-Rate Telemetry")}
                 </Typography>
               </Box>
               <Chip
-                icon={<SpeedIcon sx={{ fontSize: "14px !important", color: "#34d399 !important" }} />}
-                label={
-                  mtdActuals.hasLoggedRecords
-                    ? `${mtdActuals.loggedDaysCount} Days Logged • ${remainingDays} Days Projected`
-                    : `Pure Routine Projection (${daysInActiveMonth} Days)`
-                }
-                color={mtdActuals.hasLoggedRecords ? "success" : "primary"}
-                variant="outlined"
+                label={`${mtdActuals.loggedDaysCount} Days In • ${remainingDays} Days Left`}
                 size="small"
-                sx={{ fontWeight: 800, fontSize: "0.75rem" }}
+                sx={{ fontWeight: 700, bgcolor: "rgba(0, 229, 201, 0.12)", color: "#00e5c9", border: "1px solid rgba(0, 229, 201, 0.3)" }}
               />
             </Box>
 
             <Grid container spacing={2}>
-              {/* Telemetry Tile 1: MTD Actual Logged */}
+              {/* MTD Actual */}
               <Grid size={{ xs: 12, sm: 4 }}>
                 <Paper
                   variant="outlined"
                   sx={{
                     p: 2,
-                    borderRadius: 2.5,
-                    bgcolor: "rgba(99, 102, 241, 0.08)",
-                    borderColor: "rgba(99, 102, 241, 0.25)",
-                    height: "100%",
+                    borderRadius: 1.25,
+                    bgcolor: "rgba(255, 255, 255, 0.02)",
+                    borderColor: "rgba(255, 255, 255, 0.06)",
                   }}
                 >
-                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800, letterSpacing: "0.02em" }}>
-                    {t("fc.mtdLogged", "MONTH-TO-DATE LOGGED (ACTUAL)")}
-                  </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f", my: 0.5 }}>
-                    ₱{mtdActuals.actualCost.toFixed(2)}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                    {mtdActuals.actualKwh.toFixed(3)} kWh consumed across {mtdActuals.loggedDaysCount} logged days
-                  </Typography>
-                </Paper>
-              </Grid>
-
-              {/* Telemetry Tile 2: Projected Month-End Total */}
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    borderRadius: 2.5,
-                    bgcolor: "rgba(16, 185, 129, 0.08)",
-                    borderColor: "rgba(16, 185, 129, 0.3)",
-                    height: "100%",
-                  }}
-                >
-                  <Typography variant="caption" sx={{ color: "success.light", fontWeight: 800, letterSpacing: "0.02em" }}>
-                    {t("fc.projectedMonthEnd", "PROJECTED MONTH-END BILL")}
-                  </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#34d399", my: 0.5 }}>
-                    ₱{trajectoryForecast.forecastedBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                    {trajectoryForecast.forecastedKwh.toFixed(1)} kWh total ({trajectoryForecast.projectedRemainingKwh.toFixed(1)} kWh remaining baseline)
-                  </Typography>
-                </Paper>
-              </Grid>
-
-              {/* Telemetry Tile 3: Daily Burn Rate & Pacing */}
-              <Grid size={{ xs: 12, sm: 4 }}>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    borderRadius: 2.5,
-                    bgcolor: "rgba(108, 122, 224, 0.08)",
-                    borderColor: "rgba(108, 122, 224, 0.2)",
-                    height: "100%",
-                  }}
-                >
-                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800, letterSpacing: "0.02em" }}>
-                    {t("fc.dailyBurnRate", "DAILY BURN RATE & PACING")}
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>
+                    {language === "tl" ? "NAITALANG MTD" : "RECORDED MTD ACTUAL"}
                   </Typography>
                   <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.light", my: 0.5 }}>
-                    {trajectoryForecast.effectiveBurnRate.toFixed(2)} <span style={{ fontSize: "0.875rem", fontWeight: 600 }}>kWh/day</span>
+                    {mtdActuals.actualKwh.toFixed(1)} <Typography component="span" variant="caption">kWh</Typography>
                   </Typography>
-                  <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                    Routine Baseline: {routineBaseline.dailyKwh.toFixed(2)} kWh/day
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    {mtdActuals.loggedDaysCount} {language === "tl" ? "araw na may log" : "days logged"} (₱{mtdActuals.actualCost.toFixed(2)})
+                  </Typography>
+                </Paper>
+              </Grid>
+
+              {/* Projected Remaining */}
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: 1.25,
+                    bgcolor: "rgba(255, 255, 255, 0.02)",
+                    borderColor: "rgba(255, 255, 255, 0.06)",
+                  }}
+                >
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>
+                    {language === "tl" ? "TINATAYANG NATITIRA" : "PROJECTED REMAINING"}
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f", my: 0.5 }}>
+                    {trajectoryForecast.projectedRemainingKwh.toFixed(1)} <Typography component="span" variant="caption">kWh</Typography>
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    {remainingDays} {language === "tl" ? "natitirang araw sa cycle" : "days remaining in cycle"}
+                  </Typography>
+                </Paper>
+              </Grid>
+
+              {/* Composite Forecast */}
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: 1.25,
+                    bgcolor: "rgba(0, 229, 201, 0.08)",
+                    borderColor: "rgba(0, 229, 201, 0.3)",
+                  }}
+                >
+                  <Typography variant="caption" sx={{ color: "primary.light", fontWeight: 800 }}>
+                    {language === "tl" ? "KABUUANG PREDIKSYON SA BILL" : "COMPOSITE FORECASTED BILL"}
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#00e5c9", my: 0.5 }}>
+                    ₱{trajectoryForecast.forecastedBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    {trajectoryForecast.forecastedKwh.toFixed(1)} kWh {language === "tl" ? "kabuuang buwan" : "month total"} ({trajectoryForecast.effectiveBurnRate} kWh/d)
                   </Typography>
                 </Paper>
               </Grid>
@@ -492,11 +483,11 @@ export const ForecastingView: React.FC = () => {
             data-tour="forecast-rate-slider"
             sx={{
               p: { xs: 2.5, sm: 3.5 },
-              borderRadius: 3.5,
+              borderRadius: 1.5,
               position: "relative",
               overflow: "hidden",
               border: "1px solid",
-              borderColor: "rgba(108, 122, 224, 0.25)",
+              borderColor: "rgba(0, 229, 201, 0.25)",
             }}
           >
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 1.5 }}>
@@ -537,13 +528,13 @@ export const ForecastingView: React.FC = () => {
                   "& .MuiSlider-thumb": {
                     width: 22,
                     height: 22,
-                    boxShadow: "0 0 15px rgba(108, 122, 224, 0.6)",
+                    boxShadow: "0 0 15px rgba(0, 229, 201, 0.6)",
                   },
                 }}
               />
             </Box>
 
-            <Box sx={{ mt: 3, p: 2, borderRadius: 2.5, bgcolor: "rgba(108, 122, 224, 0.08)", border: "1px solid rgba(108, 122, 224, 0.15)", display: "flex", alignItems: "center", gap: 2 }}>
+            <Box sx={{ mt: 3, p: 2, borderRadius: 1.25, bgcolor: "rgba(0, 229, 201, 0.08)", border: "1px solid rgba(0, 229, 201, 0.15)", display: "flex", alignItems: "center", gap: 2 }}>
               <InfoIcon sx={{ color: "primary.main", fontSize: 20, flexShrink: 0 }} />
               <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.5 }}>
                 Generation costs are adjusted monthly per ERC guidelines to reflect fuel pass-through and WESM spot market rates. Your forecasted bill dynamically recalculates across all ERC unbundled brackets.
@@ -564,16 +555,16 @@ export const ForecastingView: React.FC = () => {
                 <Card
                   sx={{
                     p: 2.5,
-                    borderRadius: 3.5,
+                    borderRadius: 1.5,
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
                     border: "1px solid",
                     borderColor: "primary.main",
-                    bgcolor: "rgba(15, 14, 58, 0.7)",
+                    bgcolor: "rgba(24, 27, 32, 0.85)",
                     transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                    "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(99, 102, 241, 0.2)" },
+                    "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(0, 229, 201, 0.2)" },
                   }}
                 >
                   <Box>
@@ -607,16 +598,16 @@ export const ForecastingView: React.FC = () => {
                 <Card
                   sx={{
                     p: 2.5,
-                    borderRadius: 3.5,
+                    borderRadius: 1.5,
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
                     border: "1px solid",
-                    borderColor: "rgba(108, 122, 224, 0.3)",
-                    bgcolor: "rgba(15, 14, 58, 0.4)",
+                    borderColor: "rgba(255, 255, 255, 0.08)",
+                    bgcolor: "rgba(24, 27, 32, 0.65)",
                     transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                    "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(108, 122, 224, 0.15)" },
+                    "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(0, 229, 201, 0.12)" },
                   }}
                 >
                   <Box>
@@ -648,7 +639,7 @@ export const ForecastingView: React.FC = () => {
                 <Card
                   sx={{
                     p: 2.5,
-                    borderRadius: 3.5,
+                    borderRadius: 1.5,
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",
@@ -691,7 +682,7 @@ export const ForecastingView: React.FC = () => {
                 <Card
                   sx={{
                     p: 2.5,
-                    borderRadius: 3.5,
+                    borderRadius: 1.5,
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",
@@ -735,10 +726,10 @@ export const ForecastingView: React.FC = () => {
           <Card
             sx={{
               p: { xs: 2.5, sm: 3 },
-              borderRadius: 3.5,
+              borderRadius: 1.5,
               border: "1px solid",
-              borderColor: "rgba(108, 122, 224, 0.3)",
-              bgcolor: "rgba(15, 14, 58, 0.5)",
+              borderColor: "rgba(0, 229, 201, 0.25)",
+              bgcolor: "rgba(24, 27, 32, 0.7)",
             }}
           >
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1.5 }}>
@@ -757,7 +748,7 @@ export const ForecastingView: React.FC = () => {
                   variant="outlined"
                   startIcon={<ResetIcon sx={{ fontSize: 16 }} />}
                   onClick={handleResetWhatIf}
-                  sx={{ borderRadius: 2, fontSize: "0.75rem", fontWeight: 700 }}
+                  sx={{ borderRadius: 1, fontSize: "0.75rem", fontWeight: 700 }}
                 >
                   {t("fc.resetDefaults", "Reset Defaults")}
                 </Button>
@@ -789,8 +780,8 @@ export const ForecastingView: React.FC = () => {
                       variant="outlined"
                       sx={{
                         p: 2,
-                        borderRadius: 2.5,
-                        bgcolor: isModified ? "rgba(99, 102, 241, 0.1)" : "rgba(255, 255, 255, 0.02)",
+                        borderRadius: 1.25,
+                        bgcolor: isModified ? "rgba(0, 229, 201, 0.12)" : "rgba(255, 255, 255, 0.02)",
                         borderColor: isModified ? "primary.main" : "rgba(255, 255, 255, 0.08)",
                         transition: "all 0.2s ease",
                       }}
@@ -835,10 +826,10 @@ export const ForecastingView: React.FC = () => {
           <Card
             sx={{
               p: { xs: 2.5, sm: 3 },
-              borderRadius: 3.5,
+              borderRadius: 1.5,
               border: "1px solid",
-              borderColor: "rgba(108, 122, 224, 0.25)",
-              bgcolor: "rgba(15, 14, 58, 0.4)",
+              borderColor: "rgba(255, 255, 255, 0.08)",
+              bgcolor: "rgba(24, 27, 32, 0.65)",
             }}
           >
             <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary", mb: 1 }}>
@@ -855,7 +846,7 @@ export const ForecastingView: React.FC = () => {
                   variant="outlined"
                   sx={{
                     p: 1.75,
-                    borderRadius: 2.5,
+                    borderRadius: 1.25,
                     bgcolor: "rgba(255, 255, 255, 0.02)",
                     borderColor: "rgba(255, 255, 255, 0.06)",
                     display: "flex",
@@ -871,7 +862,7 @@ export const ForecastingView: React.FC = () => {
                           height: 26,
                           borderRadius: "50%",
                           bgcolor: idx < 3 ? "primary.main" : "rgba(255, 255, 255, 0.1)",
-                          color: "#ffffff",
+                          color: idx < 3 ? "#0c1b18" : "#ffffff",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -906,10 +897,10 @@ export const ForecastingView: React.FC = () => {
                     value={sharePercent}
                     sx={{
                       height: 6,
-                      borderRadius: 3,
+                      borderRadius: 1,
                       bgcolor: "rgba(255, 255, 255, 0.08)",
                       "& .MuiLinearProgress-bar": {
-                        borderRadius: 3,
+                        borderRadius: 1,
                         bgcolor: idx === 0 ? "#ef4444" : idx === 1 ? "#f59e0b" : "primary.main",
                       },
                     }}
@@ -924,7 +915,7 @@ export const ForecastingView: React.FC = () => {
             data-tour="forecast-advisory"
             sx={{
               p: 3,
-              borderRadius: 3.5,
+              borderRadius: 1.5,
               bgcolor: "background.paper",
               border: "1px solid",
               borderColor: "divider",
@@ -934,7 +925,7 @@ export const ForecastingView: React.FC = () => {
               gap: 2.5,
             }}
           >
-            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: "rgba(108, 122, 224, 0.15)", color: "primary.main", flexShrink: 0 }}>
+            <Box sx={{ p: 1.5, borderRadius: 1, bgcolor: "rgba(0, 229, 201, 0.15)", color: "primary.main", flexShrink: 0 }}>
               <ShieldIcon sx={{ fontSize: 28 }} />
             </Box>
             <Box sx={{ flex: 1 }}>

@@ -15,6 +15,7 @@ export interface MetricCardProps {
     direction?: "up" | "down" | "neutral";
     label?: string;
   };
+  highlight?: boolean;
   onClick?: () => void;
 }
 
@@ -24,6 +25,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   subtitle,
   icon,
   trend,
+  highlight,
   onClick,
 }) => {
   const getTrendColor = () => {
@@ -48,12 +50,26 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         flexDirection: "column",
         justifyContent: "space-between",
         height: "100%",
+        position: "relative",
+        overflow: "hidden",
         cursor: onClick ? "pointer" : "default",
         p: { xs: 2.25, sm: 2.5 },
-        borderRadius: 3.5,
+        borderRadius: 1.5,
         transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+        "&::after": highlight ? {
+          content: '""',
+          position: "absolute",
+          bottom: 0,
+          left: "15%",
+          right: "15%",
+          height: 2.5,
+          bgcolor: "#00e5c9",
+          borderRadius: "3px 3px 0 0",
+          boxShadow: "0 -2px 10px rgba(0, 229, 201, 0.6)",
+        } : {},
         "&:hover": onClick ? {
           transform: "translateY(-2px)",
+          borderColor: "rgba(0, 229, 201, 0.4)",
         } : {},
       }}
     >
@@ -68,13 +84,13 @@ export const MetricCard: React.FC<MetricCardProps> = ({
             justifyContent: "center",
             width: 36,
             height: 36,
-            borderRadius: 2,
+            borderRadius: 1,
             bgcolor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.15)" : "rgba(99, 102, 241, 0.1)",
+              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(0, 158, 136, 0.1)",
             color: "primary.main",
             border: "1px solid",
             borderColor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.25)" : "rgba(99, 102, 241, 0.2)",
+              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(0, 158, 136, 0.2)",
             flexShrink: 0,
           }}
         >
