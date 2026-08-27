@@ -718,7 +718,7 @@ return (
                     overflow: "hidden",
                     transition: "all 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
                     bgcolor: isCurrentToday
-                      ? (theme) => (theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.18)" : "rgba(99, 102, 241, 0.08)")
+                      ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.15)" : "rgba(0, 158, 136, 0.08)")
                       : metrics.isLogged
                       ? "rgba(16, 185, 129, 0.05)"
                       : "transparent",
@@ -729,14 +729,14 @@ return (
                       ? "rgba(52, 211, 153, 0.4)"
                       : "divider",
                     boxShadow: isCurrentToday
-                      ? "0 0 16px rgba(99, 102, 241, 0.35), 0 0 4px rgba(99, 102, 241, 0.2)"
+                      ? "0 0 16px rgba(0, 229, 201, 0.35), 0 0 4px rgba(0, 229, 201, 0.2)"
                       : "none",
                     "&:hover": {
                       borderColor: "primary.light",
                       transform: "translateY(-2px)",
                       boxShadow: isCurrentToday
-                        ? "0 0 20px rgba(99, 102, 241, 0.45), 0 4px 12px rgba(99, 102, 241, 0.2)"
-                        : "0 4px 12px rgba(99, 102, 241, 0.2)",
+                        ? "0 0 20px rgba(0, 229, 201, 0.45), 0 4px 12px rgba(0, 229, 201, 0.2)"
+                        : "0 4px 12px rgba(0, 229, 201, 0.15)",
                     },
                   }}
                 >

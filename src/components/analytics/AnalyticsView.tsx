@@ -657,8 +657,8 @@ export const AnalyticsView: React.FC = () => {
                         height: 18,
                         fontSize: "0.68rem",
                         fontWeight: 800,
-                        bgcolor: isCommercial ? "rgba(56, 189, 248, 0.15)" : "rgba(99, 102, 241, 0.15)",
-                        color: isCommercial ? "#38bdf8" : "#818cf8",
+                        bgcolor: isCommercial ? "rgba(245, 158, 11, 0.15)" : "rgba(0, 229, 201, 0.15)",
+                        color: isCommercial ? "secondary.main" : "primary.main",
                       }}
                     />
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>

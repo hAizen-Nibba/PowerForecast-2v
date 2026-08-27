@@ -178,7 +178,7 @@ export const Header: React.FC<HeaderProps> = ({
               fontWeight: 700,
               fontFamily: "monospace",
               bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(99, 102, 241, 0.08)",
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 158, 136, 0.08)",
               border: "1px solid",
               borderColor: "divider",
               height: 26,
@@ -206,7 +206,7 @@ export const Header: React.FC<HeaderProps> = ({
               startIcon={<SparklesIcon sx={{ color: "#ffd54f" }} />}
               sx={{
                 display: { xs: "none", sm: "inline-flex" },
-                borderRadius: 2,
+                borderRadius: 1,
                 borderColor: "primary.main",
                 fontWeight: 700,
                 py: 0.5,
@@ -226,15 +226,16 @@ export const Header: React.FC<HeaderProps> = ({
                 disabled={isTourActive}
                 sx={{
                   bgcolor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.15)" : "rgba(99, 102, 241, 0.08)",
+                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(0, 158, 136, 0.08)",
                   border: "1px solid",
-                  borderColor: "rgba(99, 102, 241, 0.35)",
-                  color: "primary.light",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(0, 158, 136, 0.2)",
+                  color: "primary.main",
                   p: 0.75,
-                  borderRadius: 2,
+                  borderRadius: 1,
                   "&:hover": {
                     bgcolor: "primary.main",
-                    color: "#ffffff",
+                    color: "#0c1b18",
                     borderColor: "primary.main",
                   },
                   transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",

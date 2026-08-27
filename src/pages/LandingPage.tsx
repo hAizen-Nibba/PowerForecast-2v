@@ -211,9 +211,9 @@ export const LandingPage: React.FC = () => {
                     height: 22,
                     fontSize: "0.6875rem",
                     fontWeight: 800,
-                    bgcolor: "rgba(99, 102, 241, 0.15)",
+                    bgcolor: "rgba(0, 229, 201, 0.15)",
                     color: "primary.main",
-                    border: "1px solid rgba(99, 102, 241, 0.3)",
+                    border: "1px solid rgba(0, 229, 201, 0.3)",
                   }}
                 />
               </Box>
@@ -236,23 +236,23 @@ export const LandingPage: React.FC = () => {
                       textTransform: "none",
                       px: 1.5,
                       py: 0.6,
-                      borderRadius: 2,
+                      borderRadius: 1,
                       bgcolor: isActive
                         ? (theme) =>
                             theme.palette.mode === "dark"
-                              ? "rgba(99, 102, 241, 0.15)"
-                              : "rgba(99, 102, 241, 0.08)"
+                              ? "rgba(0, 229, 201, 0.12)"
+                              : "rgba(0, 158, 136, 0.08)"
                         : "transparent",
                       border: "1px solid",
-                      borderColor: isActive ? "rgba(99, 102, 241, 0.3)" : "transparent",
+                      borderColor: isActive ? "rgba(0, 229, 201, 0.3)" : "transparent",
                       transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                       "&:hover": {
                         color: "primary.main",
                         bgcolor: (theme) =>
                           theme.palette.mode === "dark"
-                            ? "rgba(255, 255, 255, 0.05)"
-                            : "rgba(99, 102, 241, 0.04)",
-                        borderColor: "rgba(99, 102, 241, 0.2)",
+                            ? "rgba(0, 229, 201, 0.08)"
+                            : "rgba(0, 158, 136, 0.04)",
+                        borderColor: "rgba(0, 229, 201, 0.2)",
                       },
                     }}
                   >
@@ -393,8 +393,8 @@ export const LandingPage: React.FC = () => {
           overflow: "hidden",
           background: (theme) =>
             theme.palette.mode === "dark"
-              ? "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.28), transparent)"
-              : "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.14), transparent)",
+              ? "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 229, 201, 0.2), transparent)"
+              : "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 158, 136, 0.12), transparent)",
         }}
       >
         <Container maxWidth="lg">
@@ -406,9 +406,9 @@ export const LandingPage: React.FC = () => {
                 mb: 2.5,
                 fontWeight: 700,
                 fontSize: "0.8125rem",
-                bgcolor: "rgba(99, 102, 241, 0.15)",
-                color: "primary.light",
-                border: "1px solid rgba(99, 102, 241, 0.3)",
+                bgcolor: "rgba(0, 229, 201, 0.12)",
+                color: "primary.main",
+                border: "1px solid rgba(0, 229, 201, 0.25)",
                 px: 1,
               }}
             />
@@ -529,7 +529,7 @@ export const LandingPage: React.FC = () => {
               boxShadow: (theme) =>
                 theme.palette.mode === "dark"
                   ? "0 20px 60px rgba(0, 0, 0, 0.45)"
-                  : "0 20px 60px rgba(99, 102, 241, 0.12)",
+                  : "0 20px 60px rgba(0, 158, 136, 0.1)",
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3, flexWrap: "wrap", gap: 1.5 }}>
@@ -646,7 +646,7 @@ export const LandingPage: React.FC = () => {
                     justifyContent: "space-between",
                     borderRadius: 1.25,
                     bgcolor: (theme) =>
-                      theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.12)" : "rgba(99, 102, 241, 0.06)",
+                      theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(0, 158, 136, 0.06)",
                     border: "1px solid",
                     borderColor: "primary.main",
                   }}
@@ -1324,7 +1324,7 @@ export const LandingPage: React.FC = () => {
                     "&:hover": {
                       transform: "translateY(-4px)",
                       borderColor: "primary.main",
-                      boxShadow: "0 10px 30px rgba(99, 102, 241, 0.15)",
+                      boxShadow: "0 10px 30px rgba(0, 229, 201, 0.15)",
                     },
                   }}
                 >
@@ -1417,7 +1417,7 @@ export const LandingPage: React.FC = () => {
                     position: "relative",
                     border: "1px solid",
                     borderColor: tier.popular ? "primary.main" : "divider",
-                    boxShadow: tier.popular ? "0 10px 30px rgba(99, 102, 241, 0.2)" : "none",
+                    boxShadow: tier.popular ? "0 10px 30px rgba(0, 229, 201, 0.2)" : "none",
                     transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                     "&:hover": {
                       transform: "translateY(-4px)",

@@ -313,7 +313,7 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
                       borderRadius: 1.25,
                       border: "1px solid",
                       borderColor: "primary.main",
-                      bgcolor: "rgba(99, 102, 241, 0.08)",
+                      bgcolor: "rgba(0, 229, 201, 0.08)",
                       display: "flex",
                       flexDirection: "column",
                       gap: 1.5,
@@ -407,7 +407,7 @@ export const ScheduleQueueModal: React.FC<ScheduleQueueModalProps> = ({
                     alignItems: "center",
                     justifyContent: "space-between",
                     borderColor: isSelected ? "primary.main" : "divider",
-                    bgcolor: isSelected ? "rgba(99, 102, 241, 0.05)" : "transparent",
+                    bgcolor: isSelected ? "rgba(0, 229, 201, 0.05)" : "transparent",
                     transition: "all 0.15s ease",
                   }}
                 >

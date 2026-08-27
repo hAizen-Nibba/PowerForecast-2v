@@ -186,7 +186,7 @@ export const MeralcoCalculator: React.FC = () => {
                           textAlign: "center",
                           border: "2px solid",
                           borderColor: tariffType === "residential" ? "primary.main" : "divider",
-                          bgcolor: tariffType === "residential" ? "rgba(99, 102, 241, 0.08)" : "transparent",
+                          bgcolor: tariffType === "residential" ? "rgba(0, 229, 201, 0.08)" : "transparent",
                           transition: "all 0.15s ease",
                           "&:hover": { borderColor: "primary.main" },
                         }}
@@ -376,9 +376,9 @@ export const MeralcoCalculator: React.FC = () => {
                   display: "flex",
                   flexDirection: "column",
                   gap: 2.5,
-                  bgcolor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(13, 12, 45, 0.88)" : "rgba(255, 255, 255, 0.92)",
-                  backdropFilter: "blur(16px)",
+                  bgcolor: "background.paper",
+                  border: "1px solid",
+                  borderColor: "divider",
                 }}
               >
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -424,19 +424,19 @@ export const MeralcoCalculator: React.FC = () => {
                     p: 2.5,
                     borderRadius: 1.25,
                     bgcolor: (theme) =>
-                      theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.12)" : "rgba(16, 185, 129, 0.08)",
+                      theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(0, 158, 136, 0.08)",
                     border: "1px solid",
-                    borderColor: "success.main",
+                    borderColor: "primary.main",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                   }}
                 >
                   <Box>
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: "success.main", textTransform: "uppercase" }}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.main", textTransform: "uppercase" }}>
                       Estimated Monthly Savings
                     </Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 900, fontFamily: "monospace", color: "success.main", letterSpacing: "-0.02em" }}>
+                    <Typography variant="h4" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.main", letterSpacing: "-0.02em" }}>
                       ₱{simMonthlyPesosSaved.toFixed(2)}
                     </Typography>
                   </Box>
@@ -464,12 +464,16 @@ export const MeralcoCalculator: React.FC = () => {
                 textAlign: "center",
                 borderRadius: 1.5,
                 bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(13, 12, 45, 0.88)" : "rgba(255, 255, 255, 0.92)",
-                backdropFilter: "blur(16px)",
+                  theme.palette.mode === "dark"
+                    ? "linear-gradient(135deg, rgba(32, 35, 40, 0.98) 0%, rgba(23, 25, 29, 0.98) 100%)"
+                    : "#ffffff",
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(0, 158, 136, 0.25)",
                 boxShadow: (theme) =>
                   theme.palette.mode === "dark"
-                    ? "0 0 32px rgba(99, 102, 241, 0.25)"
-                    : "0 8px 30px rgba(99, 102, 241, 0.15)",
+                    ? "0 12px 36px rgba(0, 0, 0, 0.45), 0 0 24px rgba(0, 229, 201, 0.1)"
+                    : "0 8px 30px rgba(0, 158, 136, 0.1)",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -486,7 +490,7 @@ export const MeralcoCalculator: React.FC = () => {
                   fontFamily: "monospace",
                   letterSpacing: "-0.03em",
                   my: 1,
-                  color: "#ffd54f",
+                  color: "primary.main",
                   fontSize: { xs: "2.25rem", sm: "3rem", md: "3.5rem" },
                 }}
               >
@@ -506,7 +510,7 @@ export const MeralcoCalculator: React.FC = () => {
               <Chip
                 label={`Calculated for ${kwh} kWh (Effective: ₱${bill.effectiveRatePerKwh.toFixed(4)}/kWh)`}
                 size="small"
-                sx={{ mt: 2, fontWeight: 700, fontFamily: "monospace", height: 26 }}
+                sx={{ mt: 2, fontWeight: 700, fontFamily: "monospace", height: 26, bgcolor: "rgba(0, 229, 201, 0.1)", color: "text.primary" }}
               />
             </Card>
 
@@ -516,9 +520,9 @@ export const MeralcoCalculator: React.FC = () => {
               sx={{
                 p: { xs: 2.5, sm: 3 },
                 borderRadius: 1.5,
-                bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(13, 12, 45, 0.88)" : "rgba(255, 255, 255, 0.92)",
-                backdropFilter: "blur(16px)",
+                bgcolor: "background.paper",
+                border: "1px solid",
+                borderColor: "divider",
               }}
             >
               <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 0.5 }}>

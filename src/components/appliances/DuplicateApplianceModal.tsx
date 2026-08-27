@@ -210,7 +210,7 @@ export const DuplicateApplianceModal: React.FC<DuplicateApplianceModalProps> = (
                 borderRadius: 1.25,
                 cursor: "pointer",
                 borderColor: choice === "combine" ? "primary.main" : "divider",
-                bgcolor: choice === "combine" ? "rgba(99, 102, 241, 0.08)" : "transparent",
+                bgcolor: choice === "combine" ? "rgba(0, 229, 201, 0.08)" : "transparent",
                 transition: "all 0.15s ease",
               }}
             >
@@ -241,7 +241,7 @@ export const DuplicateApplianceModal: React.FC<DuplicateApplianceModalProps> = (
                 borderRadius: 1.25,
                 cursor: "pointer",
                 borderColor: choice === "separate" ? "primary.main" : "divider",
-                bgcolor: choice === "separate" ? "rgba(99, 102, 241, 0.08)" : "transparent",
+                bgcolor: choice === "separate" ? "rgba(0, 229, 201, 0.08)" : "transparent",
                 transition: "all 0.15s ease",
               }}
             >

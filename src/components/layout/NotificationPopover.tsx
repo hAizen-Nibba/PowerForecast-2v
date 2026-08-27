@@ -51,10 +51,11 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchor
             width: 360,
             p: 2.5,
             borderRadius: 1.25,
-            bgcolor: (theme) => (theme.palette.mode === "dark" ? "#0f0e3a" : "#ffffff"),
+            bgcolor: "background.paper",
             border: "1px solid",
-            borderColor: "divider",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "divider",
+            boxShadow: "0 16px 40px rgba(0,0,0,0.5)",
           },
         },
       }}
@@ -75,13 +76,13 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchor
       </Box>
 
       {!isSupported && (
-        <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
+        <Alert severity="warning" sx={{ mb: 2, borderRadius: 1 }}>
           Web Notifications are not supported in this browser environment.
         </Alert>
       )}
 
       {isSupported && permission === "default" && (
-        <Box sx={{ mb: 2, p: 1.5, borderRadius: 2, bgcolor: "rgba(99, 102, 241, 0.1)", border: "1px solid rgba(99, 102, 241, 0.3)" }}>
+        <Box sx={{ mb: 2, p: 1.5, borderRadius: 1.25, bgcolor: "rgba(0, 229, 201, 0.08)", border: "1px solid rgba(0, 229, 201, 0.25)" }}>
           <Typography variant="caption" sx={{ color: "text.primary", display: "block", mb: 1 }}>
             Allow browser alerts to receive live stopwatch over-run warnings and schedule reminders.
           </Typography>
@@ -90,7 +91,7 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchor
             size="small"
             fullWidth
             onClick={requestPermission}
-            sx={{ fontWeight: 800, borderRadius: 1.5 }}
+            sx={{ fontWeight: 800, borderRadius: 1 }}
           >
             Enable Browser Alerts
           </Button>

@@ -61,7 +61,7 @@ export const LoginPage: React.FC = () => {
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        bgcolor: isDark ? "#080720" : "#f4f6fb",
+        bgcolor: isDark ? "#17191d" : "#f4f6f8",
         color: "text.primary",
         position: "relative",
         overflowX: "hidden",
@@ -91,9 +91,9 @@ export const LoginPage: React.FC = () => {
             sx={{
               width: 36,
               height: 36,
-              borderRadius: 2,
+              borderRadius: 1,
               objectFit: "contain",
-              filter: "drop-shadow(0 2px 8px rgba(99, 102, 241, 0.4))",
+              filter: "drop-shadow(0 2px 8px rgba(0, 229, 201, 0.4))",
             }}
           />
           <Typography variant="h6" sx={{ fontWeight: 800 }}>
@@ -104,7 +104,7 @@ export const LoginPage: React.FC = () => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Tooltip title={`Switch to ${isDark ? "Light" : "Dark"} mode`}>
             <IconButton onClick={toggleColorMode} size="small" sx={{ border: "1px solid", borderColor: "divider" }}>
-              {isDark ? <SunIcon sx={{ color: "#ffd54f", fontSize: 18 }} /> : <MoonIcon sx={{ color: "#4f46e5", fontSize: 18 }} />}
+              {isDark ? <SunIcon sx={{ color: "#ffd54f", fontSize: 18 }} /> : <MoonIcon sx={{ color: "primary.main", fontSize: 18 }} />}
             </IconButton>
           </Tooltip>
           <Button component={Link} to="/" size="small" variant="text">
@@ -135,7 +135,7 @@ export const LoginPage: React.FC = () => {
             height: { md: 450, lg: 550 },
             borderRadius: "50%",
             background: isDark
-              ? "radial-gradient(circle, rgba(99, 102, 241, 0.28) 0%, rgba(8, 7, 32, 0) 70%)"
+              ? "radial-gradient(circle, rgba(0, 229, 201, 0.2) 0%, rgba(23, 25, 29, 0) 70%)"
               : "radial-gradient(circle, rgba(255, 213, 79, 0.4) 0%, rgba(244, 246, 251, 0) 70%)",
             filter: "blur(50px)",
             pointerEvents: "none",
@@ -143,30 +143,23 @@ export const LoginPage: React.FC = () => {
         />
 
         <Box
-          component="img"
-          src={isDark ? "/Assets/Off.png" : "/Assets/On.png"}
-          alt="PowerForecast Energy Bulb"
           sx={{
-            height: { md: "calc(100vh - 100px)", lg: "calc(100vh - 110px)" },
-            maxHeight: { md: 640, lg: 750 },
-            width: "auto",
-            objectFit: "contain",
-            display: "block",
-            filter: isDark
-              ? "drop-shadow(0 25px 45px rgba(0, 0, 0, 0.95))"
-              : "drop-shadow(0 25px 60px rgba(255, 213, 79, 0.6))",
+            position: "relative",
+            width: 2,
+            height: { md: 100, lg: 130 },
+            bgcolor: isDark ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.15)",
+            mx: "auto",
           }}
         />
       </Box>
 
-      {/* Main Container: Bento Card positioned on the right */}
+      {/* Main Login Card */}
       <Container
-        maxWidth="lg"
+        maxWidth="sm"
         sx={{
-          flexGrow: 1,
           display: "flex",
+          justifyContent: "center",
           alignItems: "center",
-          justifyContent: { xs: "center", md: "flex-end" },
           py: { xs: 4, sm: 6 },
           position: "relative",
           zIndex: 1,
@@ -179,11 +172,11 @@ export const LoginPage: React.FC = () => {
             p: { xs: 3, sm: 4.5 },
             borderRadius: 1.5,
             boxShadow: isDark
-              ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(99, 102, 241, 0.15)"
-              : "0 20px 60px rgba(99, 102, 241, 0.12)",
+              ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(0, 229, 201, 0.1)"
+              : "0 20px 60px rgba(0, 158, 136, 0.1)",
             border: "1px solid",
-            borderColor: isDark ? "rgba(99, 102, 241, 0.25)" : "rgba(226, 232, 240, 0.8)",
-            bgcolor: isDark ? "rgba(13, 12, 45, 0.92)" : "rgba(255, 255, 255, 0.96)",
+            borderColor: isDark ? "rgba(0, 229, 201, 0.25)" : "rgba(226, 232, 240, 0.8)",
+            bgcolor: isDark ? "rgba(32, 35, 40, 0.95)" : "rgba(255, 255, 255, 0.96)",
             backdropFilter: "blur(16px)",
           }}
         >
@@ -197,7 +190,7 @@ export const LoginPage: React.FC = () => {
                 height: 52,
                 borderRadius: 1.25,
                 objectFit: "contain",
-                filter: "drop-shadow(0 4px 16px rgba(99, 102, 241, 0.5))",
+                filter: "drop-shadow(0 4px 16px rgba(0, 229, 201, 0.4))",
                 mb: 1.5,
               }}
             />

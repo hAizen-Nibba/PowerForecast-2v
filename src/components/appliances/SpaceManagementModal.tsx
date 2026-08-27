@@ -161,7 +161,7 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
                     textAlign: "center",
                     border: "2px solid",
                     borderColor: tariffType === "residential" ? "primary.main" : "divider",
-                    bgcolor: tariffType === "residential" ? "rgba(99, 102, 241, 0.08)" : "transparent",
+                    bgcolor: tariffType === "residential" ? "rgba(0, 229, 201, 0.08)" : "transparent",
                     transition: "all 0.15s ease",
                     "&:hover": { borderColor: "primary.main" },
                   }}

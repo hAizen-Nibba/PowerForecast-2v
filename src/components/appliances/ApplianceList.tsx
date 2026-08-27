@@ -256,7 +256,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               width: 64,
               height: 64,
               borderRadius: "50%",
-              bgcolor: "rgba(99, 102, 241, 0.15)",
+              bgcolor: "rgba(0, 229, 201, 0.15)",
               color: "primary.main",
               display: "inline-flex",
               alignItems: "center",
@@ -300,7 +300,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                         textAlign: "center",
                         border: "2px solid",
                         borderColor: initialTariffType === "residential" ? "primary.main" : "divider",
-                        bgcolor: initialTariffType === "residential" ? "rgba(99, 102, 241, 0.1)" : "transparent",
+                        bgcolor: initialTariffType === "residential" ? "rgba(0, 229, 201, 0.08)" : "transparent",
                         transition: "all 0.15s ease",
                         "&:hover": { borderColor: "primary.main" },
                       }}
@@ -545,13 +545,13 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               border: "1px solid",
               borderColor: "primary.main",
               bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.08)" : "rgba(99, 102, 241, 0.04)",
+                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(0, 158, 136, 0.04)",
               transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
               "&:hover": {
                 transform: "translateY(-3px)",
-                boxShadow: "0 8px 24px rgba(99, 102, 241, 0.2)",
+                boxShadow: "0 8px 24px rgba(0, 229, 201, 0.2)",
                 bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.15)" : "rgba(99, 102, 241, 0.08)",
+                  theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.14)" : "rgba(0, 158, 136, 0.08)",
               },
             }}
           >
@@ -561,7 +561,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                 height: 44,
                 borderRadius: 1,
                 bgcolor: "primary.main",
-                color: "#ffffff",
+                color: "#0c1b18",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -593,15 +593,15 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               alignItems: "center",
               gap: 2,
               border: "1px solid",
-              borderColor: "secondary.main",
+              borderColor: "info.main",
               bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(244, 63, 94, 0.08)" : "rgba(244, 63, 94, 0.04)",
+                theme.palette.mode === "dark" ? "rgba(6, 182, 212, 0.08)" : "rgba(6, 182, 212, 0.04)",
               transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
               "&:hover": {
                 transform: "translateY(-3px)",
-                boxShadow: "0 8px 24px rgba(244, 63, 94, 0.2)",
+                boxShadow: "0 8px 24px rgba(6, 182, 212, 0.2)",
                 bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(244, 63, 94, 0.15)" : "rgba(244, 63, 94, 0.08)",
+                  theme.palette.mode === "dark" ? "rgba(6, 182, 212, 0.14)" : "rgba(6, 182, 212, 0.08)",
               },
             }}
           >
@@ -610,7 +610,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                 width: 44,
                 height: 44,
                 borderRadius: 1,
-                bgcolor: "secondary.main",
+                bgcolor: "info.main",
                 color: "#ffffff",
                 display: "flex",
                 alignItems: "center",
@@ -643,7 +643,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               alignItems: "center",
               gap: 2,
               border: "1px solid",
-              borderColor: "warning.main",
+              borderColor: "secondary.main",
               bgcolor: (theme) =>
                 theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.04)",
               transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -651,7 +651,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                 transform: "translateY(-3px)",
                 boxShadow: "0 8px 24px rgba(245, 158, 11, 0.2)",
                 bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.15)" : "rgba(245, 158, 11, 0.08)",
+                  theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.14)" : "rgba(245, 158, 11, 0.08)",
               },
             }}
           >
@@ -660,8 +660,8 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                 width: 44,
                 height: 44,
                 borderRadius: 1,
-                bgcolor: "warning.main",
-                color: "#080720",
+                bgcolor: "secondary.main",
+                color: "#0c1b18",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -833,7 +833,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                         <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem" }}>
                           Monthly Cost ({spaceTariffType === "commercial" ? "Commercial" : "Residential"})
                         </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f", letterSpacing: "-0.01em" }}>
+                        <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.main", letterSpacing: "-0.01em" }}>
                           ₱{monthlyCost.toFixed(2)}
                         </Typography>
                       </Box>

@@ -18,8 +18,8 @@ export const GlassCard: React.FC<GlassCardProps> = ({
         ...(variantType === "glow" && {
           boxShadow: (theme) =>
             theme.palette.mode === "dark"
-              ? "0 0 32px rgba(99, 102, 241, 0.2)"
-              : "0 8px 30px rgba(99, 102, 241, 0.12)",
+              ? "0 0 32px rgba(0, 229, 201, 0.2)"
+              : "0 8px 30px rgba(0, 158, 136, 0.12)",
         }),
         ...(variantType === "interactive" && {
           cursor: "pointer",
@@ -29,8 +29,8 @@ export const GlassCard: React.FC<GlassCardProps> = ({
             borderColor: "primary.main",
             boxShadow: (theme) =>
               theme.palette.mode === "dark"
-                ? "0 8px 32px rgba(99, 102, 241, 0.3)"
-                : "0 8px 24px rgba(99, 102, 241, 0.15)",
+                ? "0 8px 32px rgba(0, 229, 201, 0.25)"
+                : "0 8px 24px rgba(0, 158, 136, 0.15)",
           },
         }),
         ...sx,

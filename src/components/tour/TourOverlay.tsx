@@ -269,7 +269,7 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({
             borderRadius: '10px',
             border: '2px solid',
             borderColor: 'primary.main',
-            boxShadow: '0 0 24px rgba(99, 102, 241, 0.5), inset 0 0 24px rgba(99, 102, 241, 0.08)',
+            boxShadow: '0 0 24px rgba(0, 229, 201, 0.45), inset 0 0 24px rgba(0, 229, 201, 0.08)',
             pointerEvents: 'none',
             zIndex: 99981,
             transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -467,7 +467,7 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({
                   borderRadius: 1,
                   px: 2.5,
                   py: 0.75,
-                  boxShadow: '0 2px 12px rgba(99, 102, 241, 0.35)',
+                  boxShadow: '0 2px 12px rgba(0, 229, 201, 0.3)',
                 }}
               >
                 {isLastStep ? 'Finish' : 'Next'}

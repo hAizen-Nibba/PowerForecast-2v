@@ -111,7 +111,7 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
               width: 200,
               height: 200,
               borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(0, 229, 201, 0.25) 0%, transparent 70%)',
               filter: 'blur(40px)',
               pointerEvents: 'none',
             }}
@@ -123,8 +123,8 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
               width: 64,
               height: 64,
               borderRadius: 1.25,
-              bgcolor: 'rgba(99, 102, 241, 0.15)',
-              border: '1px solid rgba(99, 102, 241, 0.3)',
+              bgcolor: 'rgba(0, 229, 201, 0.12)',
+              border: '1px solid rgba(0, 229, 201, 0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -226,7 +226,7 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
                 py: 1.25,
                 textTransform: 'none',
                 fontSize: '0.9375rem',
-                boxShadow: '0 4px 20px rgba(99, 102, 241, 0.4)',
+                boxShadow: '0 4px 20px rgba(0, 229, 201, 0.3)',
               }}
             >
               {copy.start}

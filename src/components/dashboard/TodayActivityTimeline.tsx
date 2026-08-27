@@ -446,7 +446,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                     <Chip
                       label={`${app.watts}W`}
                       size="small"
-                      sx={{ height: 16, fontSize: "0.5625rem", fontWeight: 800, bgcolor: "rgba(99, 102, 241, 0.15)" }}
+                      sx={{ height: 16, fontSize: "0.5625rem", fontWeight: 800, bgcolor: "rgba(0, 229, 201, 0.12)", color: "primary.main" }}
                     />
                     <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.625rem", fontWeight: 700 }}>
                       {totalDayHours > 0 ? `${totalDayHours.toFixed(1)}h metered` : targetHours > 0 ? `${targetHours}h target` : "On-Demand"}
@@ -598,8 +598,8 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                   width: 38,
                   height: 38,
                   borderRadius: 1,
-                  bgcolor: selectedBlockForAction.block.type === "live_stopwatch" ? "rgba(16, 185, 129, 0.2)" : "rgba(99, 102, 241, 0.2)",
-                  color: selectedBlockForAction.block.type === "live_stopwatch" ? "#34d399" : "#818cf8",
+                  bgcolor: selectedBlockForAction.block.type === "live_stopwatch" ? "rgba(0, 229, 201, 0.2)" : "rgba(0, 229, 201, 0.15)",
+                  color: "primary.main",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -644,13 +644,13 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
               </Box>
               <Box>
                 <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>ENERGY</Typography>
-                <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f" }}>
+                <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "secondary.main" }}>
                   {selectedBlockForAction.block.kwh.toFixed(3)} kWh
                 </Typography>
               </Box>
               <Box>
                 <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>EST. COST</Typography>
-                <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#34d399" }}>
+                <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.main" }}>
                   ₱{selectedBlockForAction.block.cost.toFixed(2)}
                 </Typography>
               </Box>
@@ -663,8 +663,8 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                 sx={{
                   p: 2,
                   borderRadius: 1.25,
-                  bgcolor: "rgba(99, 102, 241, 0.06)",
-                  borderColor: "rgba(99, 102, 241, 0.2)",
+                  bgcolor: "rgba(0, 229, 201, 0.06)",
+                  borderColor: "rgba(0, 229, 201, 0.2)",
                   display: "flex",
                   flexDirection: "column",
                   gap: 1,
@@ -693,8 +693,8 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                 sx={{
                   p: 2,
                   borderRadius: 1.25,
-                  bgcolor: "rgba(99, 102, 241, 0.08)",
-                  borderColor: "rgba(99, 102, 241, 0.3)",
+                  bgcolor: "rgba(0, 229, 201, 0.08)",
+                  borderColor: "rgba(0, 229, 201, 0.25)",
                   display: "flex",
                   flexDirection: "column",
                   gap: 2,

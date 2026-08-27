@@ -594,20 +594,20 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                         <Box
                           sx={{
                             height: 32,
-                            borderRadius: 1.5,
+                            borderRadius: 1,
                             display: "flex",
                             flexDirection: "column",
                             alignItems: "center",
                             justifyContent: "center",
-                            bgcolor: "rgba(99, 102, 241, 0.12)",
-                            border: "1px dashed rgba(99, 102, 241, 0.6)",
+                            bgcolor: "rgba(0, 229, 201, 0.12)",
+                            border: "1px dashed rgba(0, 229, 201, 0.6)",
                             cursor: "not-allowed",
                           }}
                         >
-                          <Typography variant="caption" sx={{ fontSize: "0.6875rem", fontWeight: 900, color: "primary.light", lineHeight: 1 }}>
+                          <Typography variant="caption" sx={{ fontSize: "0.6875rem", fontWeight: 900, color: "primary.main", lineHeight: 1 }}>
                             {dayNum}
                           </Typography>
-                          <Typography variant="caption" sx={{ fontSize: "0.5rem", fontWeight: 800, color: "#34d399", lineHeight: 1 }}>
+                          <Typography variant="caption" sx={{ fontSize: "0.5rem", fontWeight: 800, color: "primary.main", lineHeight: 1 }}>
                             TODAY
                           </Typography>
                         </Box>
@@ -622,18 +622,18 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                       onClick={() => handleToggleDay(dKey, isPast)}
                       sx={{
                         height: 32,
-                        borderRadius: 1.5,
+                        borderRadius: 1,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: "pointer",
                         bgcolor: isSelected ? "primary.main" : "rgba(255, 255, 255, 0.03)",
-                        border: isSelected ? "1px solid #818cf8" : "1px solid rgba(255, 255, 255, 0.08)",
-                        color: isSelected ? "#ffffff" : "text.primary",
-                        boxShadow: isSelected ? "0 0 10px rgba(99, 102, 241, 0.5)" : "none",
+                        border: isSelected ? "1px solid #00e5c9" : "1px solid rgba(255, 255, 255, 0.08)",
+                        color: isSelected ? "#0c1b18" : "text.primary",
+                        boxShadow: isSelected ? "0 0 10px rgba(0, 229, 201, 0.5)" : "none",
                         transition: "all 0.12s ease",
                         "&:hover": {
-                          bgcolor: isSelected ? "primary.dark" : "rgba(99, 102, 241, 0.2)",
+                          bgcolor: isSelected ? "primary.dark" : "rgba(0, 229, 201, 0.15)",
                           borderColor: "primary.main",
                         },
                       }}
@@ -642,7 +642,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                         <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: isSelected ? 900 : 600 }}>
                           {dayNum}
                         </Typography>
-                        {isSelected && <CheckIcon sx={{ fontSize: 11, color: "#ffd54f" }} />}
+                        {isSelected && <CheckIcon sx={{ fontSize: 11, color: "#0c1b18" }} />}
                       </Box>
                     </Box>
                   );
@@ -651,12 +651,12 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
             </Paper>
 
             {/* Daily Hours for Backfill */}
-            <Box sx={{ p: 1.5, borderRadius: 2.5, bgcolor: "rgba(0, 0, 0, 0.25)", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
+            <Box sx={{ p: 1.5, borderRadius: 1.25, bgcolor: "rgba(0, 0, 0, 0.25)", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
                   Daily Runtime for Backfill Days:
                 </Typography>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#ffd54f" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.main" }}>
                   {hoursPerDay} hrs / day
                 </Typography>
               </Box>
@@ -681,9 +681,9 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
               variant="outlined"
               sx={{
                 p: 1.5,
-                borderRadius: 2,
-                bgcolor: "rgba(99, 102, 241, 0.08)",
-                borderColor: "rgba(99, 102, 241, 0.25)",
+                borderRadius: 1.25,
+                bgcolor: "rgba(0, 229, 201, 0.08)",
+                borderColor: "rgba(0, 229, 201, 0.25)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",

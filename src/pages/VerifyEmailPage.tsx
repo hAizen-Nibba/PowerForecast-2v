@@ -157,7 +157,7 @@ export const VerifyEmailPage: React.FC = () => {
           minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
-          bgcolor: isDark ? "#080720" : "#f4f6fb",
+          bgcolor: isDark ? "#17191d" : "#f4f6f8",
           color: "text.primary",
           alignItems: "center",
           justifyContent: "center",
@@ -171,11 +171,11 @@ export const VerifyEmailPage: React.FC = () => {
               borderRadius: 1.5,
               textAlign: "center",
               boxShadow: isDark
-                ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(99, 102, 241, 0.15)"
-                : "0 20px 60px rgba(99, 102, 241, 0.12)",
+                ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(0, 229, 201, 0.1)"
+                : "0 20px 60px rgba(0, 158, 136, 0.1)",
               border: "1px solid",
-              borderColor: isDark ? "rgba(99, 102, 241, 0.25)" : "rgba(226, 232, 240, 0.8)",
-              bgcolor: isDark ? "rgba(13, 12, 45, 0.92)" : "rgba(255, 255, 255, 0.96)",
+              borderColor: isDark ? "rgba(0, 229, 201, 0.25)" : "rgba(226, 232, 240, 0.8)",
+              bgcolor: isDark ? "rgba(32, 35, 40, 0.95)" : "rgba(255, 255, 255, 0.96)",
               backdropFilter: "blur(16px)",
             }}
           >
@@ -184,7 +184,7 @@ export const VerifyEmailPage: React.FC = () => {
                 width: 80,
                 height: 80,
                 borderRadius: "50%",
-                bgcolor: "rgba(16, 185, 129, 0.1)",
+                bgcolor: "rgba(0, 229, 201, 0.1)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -198,7 +198,7 @@ export const VerifyEmailPage: React.FC = () => {
                 },
               }}
             >
-              <CheckCircleIcon sx={{ fontSize: 48, color: "#10b981" }} />
+              <CheckCircleIcon sx={{ fontSize: 48, color: "primary.main" }} />
             </Box>
 
             <Typography variant="h4" sx={{ fontWeight: 800, mb: 1 }}>
@@ -209,7 +209,7 @@ export const VerifyEmailPage: React.FC = () => {
               Your PowerForecast account is now active. Redirecting you to sign in...
             </Typography>
 
-            <CircularProgress size={24} sx={{ color: "#10b981" }} />
+            <CircularProgress size={24} sx={{ color: "primary.main" }} />
           </Card>
         </Container>
       </Box>
@@ -223,7 +223,7 @@ export const VerifyEmailPage: React.FC = () => {
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        bgcolor: isDark ? "#080720" : "#f4f6fb",
+        bgcolor: isDark ? "#17191d" : "#f4f6f8",
         color: "text.primary",
         alignItems: "center",
         justifyContent: "center",
@@ -237,11 +237,11 @@ export const VerifyEmailPage: React.FC = () => {
             borderRadius: 1.5,
             textAlign: "center",
             boxShadow: isDark
-              ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(99, 102, 241, 0.15)"
-              : "0 20px 60px rgba(99, 102, 241, 0.12)",
+              ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(0, 229, 201, 0.1)"
+              : "0 20px 60px rgba(0, 158, 136, 0.1)",
             border: "1px solid",
-            borderColor: isDark ? "rgba(99, 102, 241, 0.25)" : "rgba(226, 232, 240, 0.8)",
-            bgcolor: isDark ? "rgba(13, 12, 45, 0.92)" : "rgba(255, 255, 255, 0.96)",
+            borderColor: isDark ? "rgba(0, 229, 201, 0.25)" : "rgba(226, 232, 240, 0.8)",
+            bgcolor: isDark ? "rgba(32, 35, 40, 0.95)" : "rgba(255, 255, 255, 0.96)",
             backdropFilter: "blur(16px)",
           }}
         >
@@ -250,7 +250,7 @@ export const VerifyEmailPage: React.FC = () => {
               width: 80,
               height: 80,
               borderRadius: "50%",
-              bgcolor: isDark ? "rgba(99, 102, 241, 0.15)" : "rgba(99, 102, 241, 0.1)",
+              bgcolor: isDark ? "rgba(0, 229, 201, 0.12)" : "rgba(0, 158, 136, 0.08)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -258,7 +258,7 @@ export const VerifyEmailPage: React.FC = () => {
               mb: 3,
             }}
           >
-            <MailIcon sx={{ fontSize: 40, color: "#4f46e5" }} />
+            <MailIcon sx={{ fontSize: 40, color: "primary.main" }} />
           </Box>
 
           <Typography variant="h4" sx={{ fontWeight: 800, mb: 1 }}>
