@@ -666,6 +666,233 @@ export async function reconcileUpdatedSessionLog(params: {
   });
 }
 
+/**
+ * Saves an exact past session with anti-duplication allocation support (Option 1).
+ * If allocationMode is 'allocate_inside' and existing daily usage exists, it ensures the total daily hours
+ * is max(existingHours, sessionHours) rather than adding blindly on top, preventing data doubling.
+ */
+export async function savePastSessionWithAllocation(params: {
+  appliance_id: string;
+  startDate: Date;
+  endDate: Date;
+  watts: number;
+  quantity?: number;
+  effectiveRate?: number;
+  user_id?: string | null;
+  allocationMode?: "allocate_inside" | "add_additional";
+}): Promise<{ totalMinutes: number; totalKwh: number; totalCost: number }> {
+  const quantity = params.quantity || 1;
+  const rate = params.effectiveRate || DEFAULT_EFFECTIVE_RATE;
+  const allocationMode = params.allocationMode || "allocate_inside";
+
+  const totalMinutes = Math.max(1, Math.round((params.endDate.getTime() - params.startDate.getTime()) / 60000));
+  const totalKwh = calculateKwh(params.watts, totalMinutes / 60, quantity);
+  const totalCost = calculateCost(totalKwh, rate);
+
+  // 1. Insert log in appliance_usage_logs
+  try {
+    await supabaseClient.from("appliance_usage_logs").insert({
+      appliance_id: params.appliance_id,
+      user_id: params.user_id || null,
+      started_at: params.startDate.toISOString(),
+      ended_at: params.endDate.toISOString(),
+      duration_minutes: totalMinutes,
+      kwh_consumed: totalKwh,
+      estimated_cost: totalCost,
+      source: "past_time_range",
+    });
+  } catch (logErr: any) {
+    devLog.warn("DailyUsageService", `Failed to insert past session log: ${logErr?.message}`);
+  }
+
+  // 2. Distribute across daily_appliance_usage
+  const slices = splitSessionAcrossDays(params.startDate, params.endDate);
+
+  for (const slice of slices) {
+    try {
+      let query = supabaseClient
+        .from("daily_appliance_usage")
+        .select("*")
+        .eq("appliance_id", params.appliance_id)
+        .eq("usage_date", slice.dateKey);
+
+      if (params.user_id) {
+        query = query.eq("user_id", params.user_id);
+      }
+
+      const { data: existing } = await query.maybeSingle();
+      const existingHours = existing ? Number(existing.hours_used || 0) : 0;
+
+      let newHours: number;
+      if (allocationMode === "allocate_inside" && existingHours > 0) {
+        // Keep existing total unless session exceeds it
+        newHours = Math.max(existingHours, slice.hours);
+      } else {
+        // Additive
+        newHours = existingHours + slice.hours;
+      }
+
+      const clampedHours = Math.max(0, Math.min(24, Number(newHours.toFixed(2))));
+      const kwh = calculateKwh(params.watts, clampedHours, quantity);
+      const cost = calculateCost(kwh, rate);
+
+      await supabaseClient.from("daily_appliance_usage").upsert(
+        {
+          appliance_id: params.appliance_id,
+          user_id: params.user_id || null,
+          usage_date: slice.dateKey,
+          hours_used: clampedHours,
+          kwh_consumed: kwh,
+          estimated_cost: cost,
+          source: existingHours > 0 && allocationMode === "allocate_inside" ? existing?.source || "manual" : "live_session",
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "user_id,appliance_id,usage_date",
+        }
+      );
+
+      devLog.info(
+        "DailyUsageService",
+        `Saved past session slice (${allocationMode}) for ${params.appliance_id} on ${slice.dateKey}: ${clampedHours}h (₱${cost})`
+      );
+    } catch (err: any) {
+      devLog.warn("DailyUsageService", `Error writing daily usage slice for ${slice.dateKey}: ${err?.message}`);
+    }
+  }
+
+  return { totalMinutes, totalKwh, totalCost };
+}
+
+let isReconcilingStopwatches = false;
+
+/**
+ * Reconciles running stopwatches that crossed midnight (11:59:59 PM).
+ * Automatically finalizes yesterday's usage rows into appliance_usage_logs & daily_appliance_usage,
+ * and advances the appliance's last_turned_on_at to 00:00:00 of the new day.
+ */
+export async function reconcileOvernightRunningStopwatches(
+  appliances: UserAppliance[],
+  effectiveRate: number = DEFAULT_EFFECTIVE_RATE
+): Promise<{ rolledOverCount: number; affectedDates: string[] }> {
+  if (isReconcilingStopwatches) {
+    return { rolledOverCount: 0, affectedDates: [] };
+  }
+
+  const now = new Date();
+  const todayKey = formatDateToKey(now);
+  const affectedDatesSet = new Set<string>();
+  let rolledOverCount = 0;
+
+  // Filter running appliances started before today
+  const overnightAppliances = appliances.filter((app) => {
+    if (!app.is_currently_on || !app.last_turned_on_at) return false;
+    const start = new Date(app.last_turned_on_at);
+    if (isNaN(start.getTime())) return false;
+    return formatDateToKey(start) < todayKey;
+  });
+
+  if (overnightAppliances.length === 0) {
+    return { rolledOverCount: 0, affectedDates: [] };
+  }
+
+  isReconcilingStopwatches = true;
+  try {
+    for (const app of overnightAppliances) {
+      const start = new Date(app.last_turned_on_at!);
+      const slices = splitSessionAcrossDays(start, now);
+      const pastSlices = slices.filter((s) => s.dateKey < todayKey);
+
+      if (pastSlices.length === 0) continue;
+
+      for (const slice of pastSlices) {
+        const sliceMinutes = Math.max(1, Math.round(slice.hours * 60));
+        const sliceKwh = calculateKwh(app.watts, slice.hours, app.quantity || 1);
+        const sliceCost = calculateCost(sliceKwh, effectiveRate);
+
+        // 1. Insert completed log for yesterday/past day
+        await supabaseClient.from("appliance_usage_logs").insert({
+          appliance_id: app.id,
+          user_id: app.user_id || null,
+          started_at: slice.startTime.toISOString(),
+          ended_at: slice.endTime.toISOString(),
+          duration_minutes: sliceMinutes,
+          kwh_consumed: sliceKwh,
+          estimated_cost: sliceCost,
+          source: "stopwatch_midnight_rollover",
+        });
+
+        // 2. Accumulate/Upsert into daily_appliance_usage
+        const { data: existing } = await supabaseClient
+          .from("daily_appliance_usage")
+          .select("*")
+          .eq("appliance_id", app.id)
+          .eq("usage_date", slice.dateKey)
+          .maybeSingle();
+
+        const currentHours = existing ? Number(existing.hours_used || 0) : 0;
+        const totalHours = Math.max(0, Math.min(24, Number((currentHours + slice.hours).toFixed(2))));
+        const kwh = calculateKwh(app.watts, totalHours, app.quantity || 1);
+        const cost = calculateCost(kwh, effectiveRate);
+
+        await supabaseClient.from("daily_appliance_usage").upsert(
+          {
+            appliance_id: app.id,
+            user_id: app.user_id || null,
+            usage_date: slice.dateKey,
+            hours_used: totalHours,
+            kwh_consumed: kwh,
+            estimated_cost: cost,
+            source: "live_session",
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "user_id,appliance_id,usage_date",
+          }
+        );
+
+        affectedDatesSet.add(slice.dateKey);
+      }
+
+      // 3. Advance last_turned_on_at to today midnight 00:00:00.000
+      const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      await supabaseClient
+        .from("user_appliances")
+        .update({
+          last_turned_on_at: todayMidnight.toISOString(),
+          is_currently_on: true,
+        })
+        .eq("id", app.id);
+
+      rolledOverCount += 1;
+      devLog.info(
+        "DailyUsageService",
+        `Auto-rolled over stopwatch for ${app.name}: Finalized ${pastSlices.length} past slice(s), advanced timer to 00:00:00.`
+      );
+    }
+
+    if (rolledOverCount > 0 && typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("powerforecast_stopwatch_rollover", {
+          detail: {
+            rolledOverCount,
+            affectedDates: Array.from(affectedDatesSet),
+          },
+        })
+      );
+    }
+  } catch (err: any) {
+    devLog.error("DailyUsageService", `Exception during overnight stopwatch reconciliation: ${err?.message}`, err);
+  } finally {
+    isReconcilingStopwatches = false;
+  }
+
+  return {
+    rolledOverCount,
+    affectedDates: Array.from(affectedDatesSet),
+  };
+}
+
 export interface DayMetricSummary {
   kwh: number;
   cost: number;
@@ -677,7 +904,7 @@ export interface DayMetricSummary {
 
 /**
  * Calculates day metrics for a calendar cell.
- * If actual logged rows exist for this day -> returns Actual Logged sum.
+ * If actual logged rows exist or live stopwatches are active for this day -> returns Actual Logged sum.
  * Else -> returns Projected baseline from routine inventory defaults + scheduled tasks.
  */
 export function computeDayMetrics(
@@ -691,34 +918,52 @@ export function computeDayMetrics(
   const targetApplianceIds = new Set(appliances.map((a) => a.id));
   const filteredLogged = (loggedUsageForDay || []).filter((u) => targetApplianceIds.has(u.appliance_id));
 
-  const isToday = dateKey === formatDateToKey(new Date());
+  // Compute live active running stopwatches that have runtime on this specific dateKey
+  let liveRunningKwh = 0;
+  let liveRunningCost = 0;
+  let liveActiveCount = 0;
 
-  // 1. If we have logged usage records for this day's appliances
+  appliances.forEach((app) => {
+    if (app.is_currently_on && app.last_turned_on_at) {
+      const start = new Date(app.last_turned_on_at);
+      const now = new Date();
+      if (!isNaN(start.getTime())) {
+        const slices = splitSessionAcrossDays(start, now);
+        const daySlice = slices.find((s) => s.dateKey === dateKey);
+        if (daySlice && daySlice.hours > 0) {
+          const appKwh = calculateKwh(app.watts, daySlice.hours, app.quantity || 1);
+          liveRunningKwh += appKwh;
+          liveRunningCost += calculateCost(appKwh, effectiveRate);
+          liveActiveCount += 1;
+        }
+      }
+    }
+  });
+
+  // 1. If we have logged usage records in the database
   if (filteredLogged.length > 0) {
     let totalKwh = filteredLogged.reduce((acc, curr) => acc + (Number(curr.kwh_consumed) || 0), 0);
     let totalCost = filteredLogged.reduce((acc, curr) => acc + (Number(curr.estimated_cost) || 0), 0);
     let activeCount = filteredLogged.filter((u) => Number(u.hours_used) > 0).length;
 
-    // If today, also incorporate running stopwatches not yet accumulated into saved daily rows
-    if (isToday) {
-      appliances.forEach((app) => {
-        if (app.is_currently_on && app.last_turned_on_at) {
-          const alreadyLogged = filteredLogged.some((r) => r.appliance_id === app.id && Number(r.hours_used) > 0);
-          if (!alreadyLogged) {
-            const start = new Date(app.last_turned_on_at);
-            const now = new Date();
-            const slices = splitSessionAcrossDays(start, now);
-            const todaySlice = slices.find((s) => s.dateKey === dateKey);
-            if (todaySlice && todaySlice.hours > 0) {
-              const liveKwh = calculateKwh(app.watts, todaySlice.hours, app.quantity || 1);
-              totalKwh += liveKwh;
-              totalCost += calculateCost(liveKwh, effectiveRate);
-              activeCount += 1;
-            }
+    // Incorporate live running stopwatches for appliances that don't already have completed hours recorded today
+    appliances.forEach((app) => {
+      if (app.is_currently_on && app.last_turned_on_at) {
+        const alreadyHasSavedRow = filteredLogged.some((r) => r.appliance_id === app.id && Number(r.hours_used) > 0);
+        if (!alreadyHasSavedRow) {
+          const start = new Date(app.last_turned_on_at);
+          const now = new Date();
+          const slices = splitSessionAcrossDays(start, now);
+          const daySlice = slices.find((s) => s.dateKey === dateKey);
+          if (daySlice && daySlice.hours > 0) {
+            const appKwh = calculateKwh(app.watts, daySlice.hours, app.quantity || 1);
+            totalKwh += appKwh;
+            totalCost += calculateCost(appKwh, effectiveRate);
+            activeCount += 1;
           }
         }
-      });
-    }
+      }
+    });
 
     return {
       kwh: Number(totalKwh.toFixed(2)),
@@ -730,7 +975,19 @@ export function computeDayMetrics(
     };
   }
 
-  // 2. Otherwise calculate Projected Potential from routine defaults + scheduled events
+  // 2. If NO database rows yet, BUT live running stopwatches are actively metered on this date
+  if (liveRunningKwh > 0) {
+    return {
+      kwh: Number(liveRunningKwh.toFixed(2)),
+      cost: Number(liveRunningCost.toFixed(2)),
+      isLogged: true,
+      isPeak: liveRunningKwh > 18 || liveRunningCost > 270,
+      applianceCount: liveActiveCount,
+      source: "actual_logged",
+    };
+  }
+
+  // 3. Otherwise calculate Projected Potential from routine defaults + scheduled events
   const dayOfWeekMap: Record<number, "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat"> = {
     0: "sun",
     1: "mon",
@@ -747,7 +1004,6 @@ export function computeDayMetrics(
   let projectedKwh = appliances.reduce((acc, app) => {
     const qty = app.quantity || 1;
     const defaultHours = Number(app.hours_per_day) || 0;
-    // Slight weekend variation if applicable
     const hours = isWeekend ? Math.min(24, defaultHours * 1.15) : defaultHours;
     return acc + (app.watts * qty * hours) / 1000;
   }, 0);

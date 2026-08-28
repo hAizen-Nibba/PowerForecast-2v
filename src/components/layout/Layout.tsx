@@ -8,11 +8,15 @@ import { DevLogsFloatingWidget } from "../devlogs/DevLogsFloatingWidget";
 import { VersionBadge } from "../common/VersionBadge";
 import { useColorMode } from "../../theme/AppTheme";
 import { TourProvider } from "../tour/TourProvider";
+import { useStopwatchMidnightRollover } from "../../hooks/useStopwatchMidnightRollover";
 
 export const Layout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAiScannerOpen, setIsAiScannerOpen] = useState(false);
   const { mode, toggleColorMode } = useColorMode();
+
+  // Continuous background midnight auto-save & rollover for overnight stopwatches
+  useStopwatchMidnightRollover();
 
   return (
     <TourProvider>

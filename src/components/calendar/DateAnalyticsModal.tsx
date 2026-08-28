@@ -18,6 +18,9 @@ import Tooltip from "@mui/material/Tooltip";
 import InputAdornment from "@mui/material/InputAdornment";
 import LinearProgress from "@mui/material/LinearProgress";
 import CircularProgress from "@mui/material/CircularProgress";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import {
   Close as CloseIcon,
   Add as PlusIcon,
@@ -53,6 +56,8 @@ import {
   splitSessionAcrossDays,
   accumulateLiveSessionDailyUsage,
   deductSessionDailyUsage,
+  savePastSessionWithAllocation,
+  allocateNonOverlappingSlots,
 } from "../../lib/dailyUsageService";
 import { supabaseClient } from "../../lib/supabaseClient";
 import { useToast } from "../common/ToastProvider";
@@ -75,7 +80,7 @@ interface TimelineSessionBlock {
   id: string;
   logId?: string;
   rawLog?: ApplianceUsageLog;
-  type: "logged_session" | "live_stopwatch";
+  type: "logged_session" | "live_stopwatch" | "general_unplaced";
   startHour: number;
   endHour: number;
   durationHours: number;
@@ -150,14 +155,14 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
   const hasActiveStopwatch = appliances.some((a) => a.is_currently_on && a.last_turned_on_at);
   const [, setLiveTick] = useState(0);
 
-  // Live real-time 1-second ticker when viewing Today with active stopwatches
+  // Live real-time 1-second ticker when modal is open and has active stopwatches
   useEffect(() => {
-    if (!isOpen || !isSelectedToday || !hasActiveStopwatch) return;
+    if (!isOpen || !hasActiveStopwatch) return;
     const interval = setInterval(() => {
       setLiveTick((t) => t + 1);
     }, 1000);
     return () => clearInterval(interval);
-  }, [isOpen, isSelectedToday, hasActiveStopwatch]);
+  }, [isOpen, hasActiveStopwatch]);
 
   // Precompute stopwatch session runtime per appliance for this specific date
   const applianceStopwatchMap = useMemo(() => {
@@ -166,6 +171,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
     appliances.forEach((app) => {
       let totalHours = 0;
       let sessionCount = 0;
+      let hasLiveSlice = false;
 
       // 1. Logs for this appliance
       (logs || []).forEach((log) => {
@@ -180,28 +186,30 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         }
       });
 
-      // 2. If viewing today and live stopwatch running
-      const isLive = Boolean(isSelectedToday && app.is_currently_on && app.last_turned_on_at);
-      if (isLive && app.last_turned_on_at) {
+      // 2. If appliance has an active running stopwatch spanning onto this dateKey
+      if (app.is_currently_on && app.last_turned_on_at) {
         const start = new Date(app.last_turned_on_at);
         const now = new Date();
-        const slices = splitSessionAcrossDays(start, now);
-        const matchingSlice = slices.find((s) => s.dateKey === dateKey);
-        if (matchingSlice) {
-          totalHours += matchingSlice.hours;
-          sessionCount += 1;
+        if (!isNaN(start.getTime())) {
+          const slices = splitSessionAcrossDays(start, now);
+          const matchingSlice = slices.find((s) => s.dateKey === dateKey);
+          if (matchingSlice && matchingSlice.hours > 0) {
+            totalHours += matchingSlice.hours;
+            sessionCount += 1;
+            hasLiveSlice = true;
+          }
         }
       }
 
       map[app.id] = {
         totalHours: Number(totalHours.toFixed(3)),
         sessionCount,
-        isLive,
+        isLive: hasLiveSlice,
       };
     });
 
     return map;
-  }, [appliances, logs, dateKey, isSelectedToday]);
+  }, [appliances, logs, dateKey]);
 
   // Initialize usage state when modal opens or dateKey changes
   useEffect(() => {
@@ -472,6 +480,8 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
     }
   };
 
+  const [pastSessionAllocationMode, setPastSessionAllocationMode] = useState<"allocate_inside" | "add_additional">("allocate_inside");
+
   // Action: Open Past Time Range Modal
   const handleOpenPastSessionModal = (app: UserAppliance) => {
     setSelectedApplianceForPastSession(app);
@@ -479,6 +489,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
     const endIso = `${dateKey}T12:00`;
     setPastStartDateTime(startIso);
     setPastEndDateTime(endIso);
+    setPastSessionAllocationMode("allocate_inside");
     setIsPastSessionModalOpen(true);
   };
 
@@ -491,51 +502,42 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
     return splitSessionAcrossDays(start, end);
   }, [pastStartDateTime, pastEndDateTime]);
 
-  // Action: Save Past Session
+  // Action: Save Past Session (Option 1: Anti-duplication allocation support)
   const handleSavePastSession = async () => {
     if (!selectedApplianceForPastSession || pastSessionSlices.length === 0) return;
     const app = selectedApplianceForPastSession;
     const start = new Date(pastStartDateTime);
     const end = new Date(pastEndDateTime);
     const totalMinutes = Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000));
-    const totalKwh = (app.watts * (app.quantity || 1) * (totalMinutes / 60)) / 1000;
-    const totalCost = totalKwh * DEFAULT_EFFECTIVE_RATE;
 
     setIsSavingPastSession(true);
     try {
-      // 1. Create log record
-      await new Promise<void>((resolve, reject) => {
-        createLog(
-          {
-            resource: "appliance_usage_logs",
-            values: {
-              appliance_id: app.id,
-              user_id: app.user_id,
-              started_at: start.toISOString(),
-              ended_at: end.toISOString(),
-              duration_minutes: totalMinutes,
-              kwh_consumed: totalKwh,
-              estimated_cost: totalCost,
-              source: "past_time_range",
-            },
-          },
-          {
-            onSuccess: () => resolve(),
-            onError: (err: any) => reject(err),
-          }
-        );
-      });
-
-      // 2. Distribute into daily_appliance_usage across all spanned dates
-      await accumulateLiveSessionDailyUsage({
+      await savePastSessionWithAllocation({
         appliance_id: app.id,
-        durationMinutes: totalMinutes,
+        startDate: start,
+        endDate: end,
         watts: app.watts,
         quantity: app.quantity || 1,
         effectiveRate: DEFAULT_EFFECTIVE_RATE,
         user_id: app.user_id || null,
-        startTime: start,
-        endTime: end,
+        allocationMode: pastSessionAllocationMode,
+      });
+
+      // Update local usageState to reflect new allocation without double counting
+      const sessionDurationHours = totalMinutes / 60;
+      setUsageState((prev) => {
+        const currentH = prev[app.id]?.hours || 0;
+        const newH =
+          pastSessionAllocationMode === "allocate_inside" && currentH > 0
+            ? Math.max(currentH, sessionDurationHours)
+            : currentH + sessionDurationHours;
+        return {
+          ...prev,
+          [app.id]: {
+            hours: Number(newH.toFixed(2)),
+            notes: prev[app.id]?.notes || "",
+          },
+        };
       });
 
       showSuccess(
@@ -803,29 +805,63 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         }
       });
 
-      // 2. If viewing today and appliance is currently running a live stopwatch
-      if (isSelectedToday && app.is_currently_on && app.last_turned_on_at) {
+      // 2. If appliance has an active running stopwatch spanning onto this dateKey
+      if (app.is_currently_on && app.last_turned_on_at) {
         const start = new Date(app.last_turned_on_at);
         const now = new Date();
-        const slices = splitSessionAcrossDays(start, now);
-        const matchingSlice = slices.find((s) => s.dateKey === dateKey);
+        if (!isNaN(start.getTime())) {
+          const slices = splitSessionAcrossDays(start, now);
+          const matchingSlice = slices.find((s) => s.dateKey === dateKey);
 
-        if (matchingSlice) {
-          const liveKwh = calculateKwh(app.watts, matchingSlice.hours, app.quantity || 1);
-          const liveCost = calculateCost(liveKwh, DEFAULT_EFFECTIVE_RATE);
+          if (matchingSlice && matchingSlice.hours > 0) {
+            const liveKwh = calculateKwh(app.watts, matchingSlice.hours, app.quantity || 1);
+            const liveCost = calculateCost(liveKwh, DEFAULT_EFFECTIVE_RATE);
+
+            sessionBlocks.push({
+              id: `live-${app.id}-${dateKey}`,
+              type: "live_stopwatch",
+              startHour: matchingSlice.startHourFrac,
+              endHour: matchingSlice.endHourFrac,
+              durationHours: matchingSlice.hours,
+              kwh: liveKwh,
+              cost: liveCost,
+              startTimeStr: matchingSlice.startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              endTimeStr: isSelectedToday ? "LIVE ACTIVE" : "12:00 AM (Rolled Over)",
+            });
+          }
+        }
+      }
+
+      // 3. Option 1: If total daily manual hours exceed exact sessions, render general unplaced runtime bar
+      const loggedStateHours = usageState[app.id]?.hours || 0;
+      const exactHours = sessionBlocks.reduce((acc, curr) => acc + curr.durationHours, 0);
+      if (loggedStateHours > exactHours + 0.05) {
+        const unplacedHours = loggedStateHours - exactHours;
+        const occupied = sessionBlocks.map((b) => ({ startHour: b.startHour, endHour: b.endHour }));
+        const preferredStart = app.hours_per_day && app.hours_per_day > 0 ? 9 : 8;
+        const slots = allocateNonOverlappingSlots(occupied, unplacedHours, preferredStart);
+
+        slots.forEach((slot, idx) => {
+          const dur = slot.endHour - slot.startHour;
+          const unplacedKwh = calculateKwh(app.watts, dur, app.quantity || 1);
+          const unplacedCost = calculateCost(unplacedKwh, DEFAULT_EFFECTIVE_RATE);
+          const startH = Math.floor(slot.startHour);
+          const startM = Math.round((slot.startHour % 1) * 60);
+          const endH = Math.floor(slot.endHour);
+          const endM = Math.round((slot.endHour % 1) * 60);
 
           sessionBlocks.push({
-            id: `live-${app.id}`,
-            type: "live_stopwatch",
-            startHour: matchingSlice.startHourFrac,
-            endHour: matchingSlice.endHourFrac,
-            durationHours: matchingSlice.hours,
-            kwh: liveKwh,
-            cost: liveCost,
-            startTimeStr: matchingSlice.startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            endTimeStr: "LIVE ACTIVE",
+            id: `unplaced-${app.id}-${idx}`,
+            type: "general_unplaced",
+            startHour: slot.startHour,
+            endHour: slot.endHour,
+            durationHours: dur,
+            kwh: unplacedKwh,
+            cost: unplacedCost,
+            startTimeStr: `${String(startH % 24).padStart(2, "0")}:${String(startM).padStart(2, "0")}`,
+            endTimeStr: `${String(endH % 24).padStart(2, "0")}:${String(endM).padStart(2, "0")}`,
           });
-        }
+        });
       }
 
       // Sort session blocks chronologically by startHour
@@ -842,7 +878,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         totalHours: totalAppHours,
       };
     });
-  }, [filteredAppliances, logs, dateKey, isSelectedToday]);
+  }, [filteredAppliances, logs, dateKey, isSelectedToday, usageState]);
 
   return (
     <>
@@ -1289,6 +1325,28 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                             sx={{ height: 26, fontSize: "0.6875rem", fontWeight: 800 }}
                           />
                         )}
+                        {(() => {
+                          const appSwHours = applianceStopwatchMap[app.id]?.totalHours || 0;
+                          const sessionHoursSum = appLogsToday.reduce((a, b) => a + b.slice.hours, 0) + (isLive ? appSwHours : 0);
+                          if (hours > sessionHoursSum + 0.05 && sessionHoursSum > 0) {
+                            return (
+                              <Chip
+                                size="small"
+                                label={`⏱️ ${sessionHoursSum.toFixed(1)}h from Sessions • ${(hours - sessionHoursSum).toFixed(1)}h General`}
+                                sx={{
+                                  height: 26,
+                                  fontSize: "0.6875rem",
+                                  fontWeight: 800,
+                                  bgcolor: "rgba(6, 182, 212, 0.15)",
+                                  borderColor: "rgba(6, 182, 212, 0.4)",
+                                  border: "1px solid",
+                                  color: "#67e8f9",
+                                }}
+                              />
+                            );
+                          }
+                          return null;
+                        })()}
                       </Box>
                     </Box>
                   )}
@@ -1796,6 +1854,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                               const left = (session.startHour / 24) * 100;
                               const width = Math.max(1.5, (session.durationHours / 24) * 100);
                               const isLiveBlock = session.type === "live_stopwatch";
+                              const isUnplacedBlock = session.type === "general_unplaced";
 
                               return (
                                 <Tooltip
@@ -1803,8 +1862,19 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                   arrow
                                   title={
                                     <Box sx={{ p: 0.5 }}>
-                                      <Typography variant="caption" sx={{ fontWeight: 800, color: isLiveBlock ? "#34d399" : "#a5b4fc", display: "block" }}>
-                                        {isLiveBlock ? "LIVE RUNNING STOPWATCH" : "Logged Stopwatch Session (Click to Edit / Delete)"}
+                                      <Typography
+                                        variant="caption"
+                                        sx={{
+                                          fontWeight: 800,
+                                          color: isLiveBlock ? "#34d399" : isUnplacedBlock ? "#22d3ee" : "#a5b4fc",
+                                          display: "block",
+                                        }}
+                                      >
+                                        {isLiveBlock
+                                          ? "LIVE RUNNING STOPWATCH"
+                                          : isUnplacedBlock
+                                          ? "General Logged Runtime (Unplaced Hours)"
+                                          : "Logged Stopwatch Session (Click to Edit / Delete)"}
                                       </Typography>
                                       <Typography variant="caption" sx={{ display: "block" }}>
                                         Time: {session.startTimeStr} ➔ {session.endTimeStr}
@@ -1815,16 +1885,26 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                       <Typography variant="caption" sx={{ display: "block", color: "#ffd54f", fontWeight: 800, fontFamily: "monospace" }}>
                                         {session.kwh.toFixed(3)} kWh • ₱{session.cost.toFixed(2)}
                                       </Typography>
-                                      {!isLiveBlock && (
+                                      {isUnplacedBlock ? (
+                                        <Typography variant="caption" sx={{ display: "block", color: "#22d3ee", fontWeight: 800, mt: 0.5 }}>
+                                          👉 Click to assign exact start & end timestamps
+                                        </Typography>
+                                      ) : !isLiveBlock ? (
                                         <Typography variant="caption" sx={{ display: "block", color: "primary.light", fontWeight: 800, mt: 0.5 }}>
                                           Click block to inspect / edit / delete
                                         </Typography>
-                                      )}
+                                      ) : null}
                                     </Box>
                                   }
                                 >
                                   <Box
-                                    onClick={() => handleBlockClick(session, appliance)}
+                                    onClick={() => {
+                                      if (isUnplacedBlock) {
+                                        handleOpenPastSessionModal(appliance);
+                                      } else {
+                                        handleBlockClick(session, appliance);
+                                      }
+                                    }}
                                     sx={{
                                       position: "absolute",
                                       left: `${left}%`,
@@ -1833,9 +1913,21 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                       bottom: 3,
                                       borderRadius: 1.5,
                                       cursor: "pointer",
-                                      bgcolor: isLiveBlock ? "#10b981" : "#6366f1",
-                                      border: isLiveBlock ? "1px solid #34d399" : "1px solid rgba(255, 255, 255, 0.2)",
-                                      boxShadow: isLiveBlock ? "0 0 10px rgba(52, 211, 153, 0.6)" : "none",
+                                      bgcolor: isLiveBlock
+                                        ? "#10b981"
+                                        : isUnplacedBlock
+                                        ? "rgba(6, 182, 212, 0.2)"
+                                        : "#6366f1",
+                                      border: isLiveBlock
+                                        ? "1px solid #34d399"
+                                        : isUnplacedBlock
+                                        ? "1px dashed rgba(34, 211, 238, 0.75)"
+                                        : "1px solid rgba(255, 255, 255, 0.2)",
+                                      boxShadow: isLiveBlock
+                                        ? "0 0 10px rgba(52, 211, 153, 0.6)"
+                                        : isUnplacedBlock
+                                        ? "0 0 8px rgba(6, 182, 212, 0.25)"
+                                        : "none",
                                       display: "flex",
                                       alignItems: "center",
                                       justifyContent: "center",
@@ -1853,7 +1945,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                         noWrap
                                         variant="caption"
                                         sx={{
-                                          color: "#ffffff",
+                                          color: isUnplacedBlock ? "#22d3ee" : "#ffffff",
                                           fontSize: "0.5625rem",
                                           fontWeight: 800,
                                           fontFamily: "monospace",
@@ -1864,7 +1956,9 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                                         }}
                                       >
                                         {width > 16
-                                          ? session.startTimeStr
+                                          ? isUnplacedBlock
+                                            ? `~${session.durationHours.toFixed(1)}h General`
+                                            : session.startTimeStr
                                           : `${String(Math.floor(session.startHour)).padStart(2, "0")}:${String(Math.round((session.startHour % 1) * 60)).padStart(2, "0")}`}
                                       </Typography>
                                     )}
@@ -2003,6 +2097,57 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                     • {s.dateKey}: {s.hours.toFixed(2)}h ({calculateKwh(selectedApplianceForPastSession.watts, s.hours, selectedApplianceForPastSession.quantity || 1).toFixed(3)} kWh)
                   </Typography>
                 ))}
+              </Paper>
+            )}
+
+            {/* Option 1: Anti-duplication allocation selector if existing hours recorded */}
+            {selectedApplianceForPastSession && (usageState[selectedApplianceForPastSession.id]?.hours || 0) > 0 && (
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 1.5,
+                  borderRadius: 2.5,
+                  bgcolor: "rgba(255, 255, 255, 0.03)",
+                  borderColor: "rgba(255, 255, 255, 0.12)",
+                }}
+              >
+                <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.light", display: "block", mb: 1, letterSpacing: "0.02em" }}>
+                  📋 EXISTING LOG DETECTED ({(usageState[selectedApplianceForPastSession.id]?.hours || 0).toFixed(1)}h on this day):
+                </Typography>
+                <RadioGroup
+                  value={pastSessionAllocationMode}
+                  onChange={(e) => setPastSessionAllocationMode(e.target.value as "allocate_inside" | "add_additional")}
+                  sx={{ gap: 1 }}
+                >
+                  <FormControlLabel
+                    value="allocate_inside"
+                    control={<Radio size="small" sx={{ color: "primary.light", "&.Mui-checked": { color: "#34d399" } }} />}
+                    label={
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 800, fontSize: "0.82rem", color: "#ffffff" }}>
+                          🟢 Place inside existing {(usageState[selectedApplianceForPastSession.id]?.hours || 0).toFixed(1)}h log (Recommended)
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem", display: "block" }}>
+                          Assigns exact timestamps without inflating daily total. Day stays at {Math.max(usageState[selectedApplianceForPastSession.id]?.hours || 0, pastSessionSlices.reduce((a, b) => a + b.hours, 0)).toFixed(1)}h.
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                  <FormControlLabel
+                    value="add_additional"
+                    control={<Radio size="small" sx={{ color: "primary.light", "&.Mui-checked": { color: "#818cf8" } }} />}
+                    label={
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 800, fontSize: "0.82rem", color: "#ffffff" }}>
+                          🔵 Add as new additional session (+{pastSessionSlices.reduce((a, b) => a + b.hours, 0).toFixed(1)}h)
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem", display: "block" }}>
+                          Expands daily total to {((usageState[selectedApplianceForPastSession.id]?.hours || 0) + pastSessionSlices.reduce((a, b) => a + b.hours, 0)).toFixed(1)}h.
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </RadioGroup>
               </Paper>
             )}
           </DialogContent>

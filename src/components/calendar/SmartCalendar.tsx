@@ -148,6 +148,28 @@ export const SmartCalendar: React.FC = () => {
     0
   );
 
+  const [, setCalendarLiveTick] = useState(0);
+
+  // Live real-time 1-second ticker when appliances are actively metered
+  useEffect(() => {
+    if (activeAppliances.length === 0) return;
+    const interval = setInterval(() => {
+      setCalendarLiveTick((t) => t + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeAppliances.length]);
+
+  // Listen for midnight rollover events
+  useEffect(() => {
+    const handleRolloverEvent = () => {
+      if (dailyUsageRes?.refetch) dailyUsageRes.refetch();
+      if (logsRes?.refetch) logsRes.refetch();
+      if (appliancesRes?.refetch) appliancesRes.refetch();
+    };
+    window.addEventListener("powerforecast_stopwatch_rollover", handleRolloverEvent);
+    return () => window.removeEventListener("powerforecast_stopwatch_rollover", handleRolloverEvent);
+  }, [dailyUsageRes, logsRes, appliancesRes]);
+
   // Month aggregations: Audited Actuals vs Future Projections
   const monthSummary = useMemo(() => {
     let loggedDaysCount = 0;

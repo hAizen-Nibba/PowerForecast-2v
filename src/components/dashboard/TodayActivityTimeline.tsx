@@ -95,6 +95,16 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
     return () => clearInterval(interval);
   }, [hasActiveStopwatch]);
 
+  // Refetch on midnight rollover
+  useEffect(() => {
+    const handleRollover = () => {
+      if (logsRes?.refetch) logsRes.refetch();
+      if (dailyUsageRes?.refetch) dailyUsageRes.refetch();
+    };
+    window.addEventListener("powerforecast_stopwatch_rollover", handleRollover);
+    return () => window.removeEventListener("powerforecast_stopwatch_rollover", handleRollover);
+  }, [logsRes, dailyUsageRes]);
+
   const handleBlockClick = (block: TimelineSessionBlock, appliance: UserAppliance) => {
     setSelectedBlockForAction({ block, appliance });
     setIsEditingBlockRange(false);
