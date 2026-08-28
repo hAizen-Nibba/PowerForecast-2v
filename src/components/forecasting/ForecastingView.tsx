@@ -528,30 +528,37 @@ export const ForecastingView: React.FC = () => {
                 sx={{
                   height: 8,
                   "& .MuiSlider-track": {
-                    bgcolor: "#00e5c9",
-                    borderColor: "#00e5c9",
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
+                    borderColor: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
                   },
                   "& .MuiSlider-rail": {
-                    bgcolor: "#242a35",
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? "#242a35" : "#e2e8f0"),
                     opacity: 1,
                   },
                   "& .MuiSlider-thumb": {
                     width: 22,
                     height: 22,
                     bgcolor: "#ffffff",
-                    border: "3px solid #00e5c9",
-                    boxShadow: "0 0 16px rgba(0, 229, 201, 0.7)",
+                    border: (theme) =>
+                      `3px solid ${theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"}`,
+                    boxShadow: (theme) =>
+                      theme.palette.mode === "dark"
+                        ? "0 0 16px rgba(0, 229, 201, 0.7)"
+                        : "0 0 14px rgba(13, 148, 136, 0.4)",
                     "&:hover, &.Mui-focusVisible": {
-                      boxShadow: "0 0 20px rgba(0, 229, 201, 0.9)",
+                      boxShadow: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "0 0 20px rgba(0, 229, 201, 0.9)"
+                          : "0 0 18px rgba(13, 148, 136, 0.6)",
                     },
                   },
                   "& .MuiSlider-mark": {
-                    bgcolor: "#384152",
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? "#384152" : "#cbd5e1"),
                     width: 3,
                     height: 8,
                   },
                   "& .MuiSlider-markActive": {
-                    bgcolor: "#00e5c9",
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
                   },
                   "& .MuiSlider-markLabel": {
                     fontSize: { xs: "0.6875rem", sm: "0.75rem" },
@@ -571,7 +578,7 @@ export const ForecastingView: React.FC = () => {
               />
             </Box>
 
-            <Box sx={{ mt: 3, p: 2, borderRadius: 1.25, bgcolor: "rgba(0, 229, 201, 0.08)", border: "1px solid rgba(0, 229, 201, 0.15)", display: "flex", alignItems: "center", gap: 2 }}>
+            <Box sx={{ mt: 3, p: 2, borderRadius: 1.25, bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(13, 148, 136, 0.06)", border: "1px solid", borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.15)" : "rgba(13, 148, 136, 0.2)", display: "flex", alignItems: "center", gap: 2 }}>
               <InfoIcon sx={{ color: "primary.main", fontSize: 20, flexShrink: 0 }} />
               <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.5 }}>
                 Generation costs are adjusted monthly per ERC guidelines to reflect fuel pass-through and WESM spot market rates. Your forecasted bill dynamically recalculates across all ERC unbundled brackets.
@@ -598,15 +605,16 @@ export const ForecastingView: React.FC = () => {
                     flexDirection: "column",
                     justifyContent: "space-between",
                     border: "1px solid",
-                    borderColor: "primary.main",
-                    bgcolor: "rgba(24, 27, 32, 0.85)",
+                    borderColor: (theme) => (theme.palette.mode === "dark" ? "primary.main" : "rgba(13, 148, 136, 0.3)"),
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.85)" : "#ffffff"),
+                    boxShadow: (theme) => (theme.palette.mode === "dark" ? "none" : "0 2px 12px rgba(15, 23, 42, 0.04)"),
                     transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                     "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(0, 229, 201, 0.2)" },
                   }}
                 >
                   <Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                      <Typography variant="overline" sx={{ fontWeight: 800, color: "primary.light", letterSpacing: 0.5 }}>
+                      <Typography variant="overline" sx={{ fontWeight: 800, color: (theme) => theme.palette.mode === "dark" ? "primary.light" : "primary.main", letterSpacing: 0.5 }}>
                         {t("fc.scenarioTrajectory", "CURRENT TRAJECTORY")}
                       </Typography>
                       <Chip label={language === "tl" ? "Tala + Karaniwan" : "Real Logs + Routine"} size="small" color="primary" sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }} />
@@ -641,8 +649,9 @@ export const ForecastingView: React.FC = () => {
                     flexDirection: "column",
                     justifyContent: "space-between",
                     border: "1px solid",
-                    borderColor: "rgba(255, 255, 255, 0.08)",
-                    bgcolor: "rgba(24, 27, 32, 0.65)",
+                    borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0"),
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.65)" : "#ffffff"),
+                    boxShadow: (theme) => (theme.palette.mode === "dark" ? "none" : "0 2px 12px rgba(15, 23, 42, 0.04)"),
                     transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                     "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(0, 229, 201, 0.12)" },
                   }}
@@ -682,20 +691,21 @@ export const ForecastingView: React.FC = () => {
                     flexDirection: "column",
                     justifyContent: "space-between",
                     border: "1px solid",
-                    borderColor: "success.main",
-                    bgcolor: "rgba(6, 78, 59, 0.2)",
+                    borderColor: (theme) => (theme.palette.mode === "dark" ? "success.main" : "rgba(5, 150, 105, 0.4)"),
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(6, 78, 59, 0.2)" : "#ffffff"),
+                    boxShadow: (theme) => (theme.palette.mode === "dark" ? "none" : "0 2px 12px rgba(15, 23, 42, 0.04)"),
                     transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                     "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(52, 211, 153, 0.2)" },
                   }}
                 >
                   <Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                      <Typography variant="overline" sx={{ fontWeight: 800, color: "success.light", letterSpacing: 0.5 }}>
+                      <Typography variant="overline" sx={{ fontWeight: 800, color: (theme) => theme.palette.mode === "dark" ? "success.light" : "success.main", letterSpacing: 0.5 }}>
                         {t("fc.scenarioSmart", "SMART ENERGY AUDIT")}
                       </Typography>
                       <Chip icon={<LeafIcon sx={{ fontSize: "12px !important", color: "white !important" }} />} label={language === "tl" ? "Tipid Load" : "Save Load"} color="success" size="small" sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }} />
                     </Box>
-                    <Typography variant="h5" sx={{ fontWeight: 900, color: "#34d399", mb: 0.5, fontFamily: "monospace" }}>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: (theme) => theme.palette.mode === "dark" ? "#34d399" : "#059669", mb: 0.5, fontFamily: "monospace" }}>
                       ₱{scenarios.smartBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Typography>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -705,9 +715,9 @@ export const ForecastingView: React.FC = () => {
                     </Typography>
                   </Box>
 
-                  <Box sx={{ mt: 2.5, pt: 1.5, borderTop: "1px solid", borderColor: "rgba(52, 211, 153, 0.2)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Box sx={{ mt: 2.5, pt: 1.5, borderTop: "1px solid", borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(52, 211, 153, 0.2)" : "#e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>{language === "tl" ? "Buwanang Matitipid:" : "Monthly Savings:"}</Typography>
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: "#34d399", fontFamily: "monospace" }}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: (theme) => theme.palette.mode === "dark" ? "#34d399" : "#059669", fontFamily: "monospace" }}>
                       -₱{scenarios.smartSavings.toFixed(2)}
                     </Typography>
                   </Box>
@@ -725,20 +735,21 @@ export const ForecastingView: React.FC = () => {
                     flexDirection: "column",
                     justifyContent: "space-between",
                     border: "1px solid",
-                    borderColor: "warning.main",
-                    bgcolor: "rgba(120, 53, 15, 0.2)",
+                    borderColor: (theme) => (theme.palette.mode === "dark" ? "warning.main" : "rgba(217, 119, 6, 0.4)"),
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(120, 53, 15, 0.2)" : "#ffffff"),
+                    boxShadow: (theme) => (theme.palette.mode === "dark" ? "none" : "0 2px 12px rgba(15, 23, 42, 0.04)"),
                     transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                     "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(251, 191, 36, 0.2)" },
                   }}
                 >
                   <Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                      <Typography variant="overline" sx={{ fontWeight: 800, color: "warning.light", letterSpacing: 0.5 }}>
+                      <Typography variant="overline" sx={{ fontWeight: 800, color: (theme) => theme.palette.mode === "dark" ? "warning.light" : "warning.main", letterSpacing: 0.5 }}>
                         {t("fc.scenarioStress", "HEAVY LOAD STRESS")}
                       </Typography>
                       <Chip icon={<SunIcon sx={{ fontSize: "12px !important", color: "white !important" }} />} label={language === "tl" ? "Peligro sa Bill" : "Surge Risk"} color="warning" size="small" sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }} />
                     </Box>
-                    <Typography variant="h5" sx={{ fontWeight: 900, color: "#fbbf24", mb: 0.5, fontFamily: "monospace" }}>
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: (theme) => theme.palette.mode === "dark" ? "#fbbf24" : "#d97706", mb: 0.5, fontFamily: "monospace" }}>
                       ₱{scenarios.stressBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Typography>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -748,9 +759,9 @@ export const ForecastingView: React.FC = () => {
                     </Typography>
                   </Box>
 
-                  <Box sx={{ mt: 2.5, pt: 1.5, borderTop: "1px solid", borderColor: "rgba(251, 191, 36, 0.2)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Box sx={{ mt: 2.5, pt: 1.5, borderTop: "1px solid", borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(251, 191, 36, 0.2)" : "#e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>{language === "tl" ? "Dagdag sa Bill:" : "Bill Increase:"}</Typography>
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: "#fbbf24", fontFamily: "monospace" }}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: (theme) => theme.palette.mode === "dark" ? "#fbbf24" : "#d97706", fontFamily: "monospace" }}>
                       +₱{scenarios.stressExtra.toFixed(2)}
                     </Typography>
                   </Box>
@@ -765,8 +776,9 @@ export const ForecastingView: React.FC = () => {
               p: { xs: 2.5, sm: 3 },
               borderRadius: 1.5,
               border: "1px solid",
-              borderColor: "rgba(0, 229, 201, 0.25)",
-              bgcolor: "rgba(24, 27, 32, 0.7)",
+              borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(13, 148, 136, 0.25)"),
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.7)" : "#ffffff"),
+              boxShadow: (theme) => (theme.palette.mode === "dark" ? "none" : "0 2px 12px rgba(15, 23, 42, 0.04)"),
             }}
           >
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1.5 }}>

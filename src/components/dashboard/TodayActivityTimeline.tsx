@@ -332,10 +332,20 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
         p: { xs: 2.5, sm: 3 },
         borderRadius: 1.5,
         border: "1px solid",
-        borderColor: activeLiveCount > 0 ? "rgba(0, 229, 201, 0.4)" : "rgba(255, 255, 255, 0.08)",
+        borderColor: (theme) =>
+          activeLiveCount > 0
+            ? "rgba(0, 229, 201, 0.4)"
+            : theme.palette.mode === "dark"
+            ? "rgba(255, 255, 255, 0.08)"
+            : "#e2e8f0",
         bgcolor: (theme) =>
-          theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.82)" : "rgba(255, 255, 255, 0.9)",
-        boxShadow: activeLiveCount > 0 ? "0 0 24px rgba(0, 229, 201, 0.12)" : "none",
+          theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.82)" : "#ffffff",
+        boxShadow: (theme) =>
+          activeLiveCount > 0
+            ? "0 0 24px rgba(0, 229, 201, 0.12)"
+            : theme.palette.mode === "dark"
+            ? "none"
+            : "0 2px 12px rgba(15, 23, 42, 0.04)",
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
@@ -347,7 +357,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
               p: 1,
               borderRadius: 1,
               bgcolor: activeLiveCount > 0 ? "rgba(0, 229, 201, 0.15)" : "rgba(0, 229, 201, 0.1)",
-              color: "#00e5c9",
+              color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -419,11 +429,11 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
       {timelineData.length === 0 ? (
         <Paper variant="outlined" sx={{ p: 4, textAlign: "center", borderRadius: 1.25 }}>
           <Typography variant="body2" sx={{ color: "text.secondary" }}>
-            No appliances configured yet. Add your appliances in the Appliance Inventory!
+            No appliances configured yet.
           </Typography>
         </Paper>
       ) : (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
           {timelineData.map(({ app, sessionBlocks, totalDayHours }) => {
             const targetHours = Number(app.hours_per_day) || 0;
 
@@ -437,12 +447,17 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                   p: 1.25,
                   borderRadius: 1.25,
                   bgcolor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "rgba(0, 0, 0, 0.02)",
+                    theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "#f8fafc",
                   border: "1px solid",
-                  borderColor: app.is_currently_on ? "rgba(52, 211, 153, 0.3)" : "rgba(255, 255, 255, 0.05)",
+                  borderColor: (theme) =>
+                    app.is_currently_on
+                      ? "rgba(52, 211, 153, 0.4)"
+                      : theme.palette.mode === "dark"
+                      ? "rgba(255, 255, 255, 0.05)"
+                      : "#e2e8f0",
                   "&:hover": {
                     bgcolor: (theme) =>
-                      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.04)",
+                      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "#f1f5f9",
                   },
                   transition: "all 0.2s ease",
                 }}
@@ -456,7 +471,14 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                     <Chip
                       label={`${app.watts}W`}
                       size="small"
-                      sx={{ height: 16, fontSize: "0.5625rem", fontWeight: 800, bgcolor: "rgba(0, 229, 201, 0.12)", color: "primary.main" }}
+                      sx={{
+                        height: 16,
+                        fontSize: "0.5625rem",
+                        fontWeight: 800,
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(13, 148, 136, 0.1)",
+                        color: (theme) => (theme.palette.mode === "dark" ? "primary.main" : "#0d9488"),
+                      }}
                     />
                     <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.625rem", fontWeight: 700 }}>
                       {totalDayHours > 0 ? `${totalDayHours.toFixed(1)}h metered` : targetHours > 0 ? `${targetHours}h target` : "On-Demand"}
@@ -470,8 +492,10 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                     flexGrow: 1,
                     height: 26,
                     borderRadius: 1,
-                    bgcolor: "rgba(0, 0, 0, 0.25)",
-                    border: "1px solid rgba(255, 255, 255, 0.06)",
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.25)" : "#f1f5f9"),
+                    border: "1px solid",
+                    borderColor: (theme) =>
+                      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "#e2e8f0",
                     position: "relative",
                     overflow: "hidden",
                   }}
@@ -486,7 +510,8 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                         top: 0,
                         bottom: 0,
                         width: "1px",
-                        bgcolor: "rgba(255, 255, 255, 0.05)",
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.06)",
                       }}
                     />
                   ))}

@@ -841,50 +841,93 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
 
             return (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={app.id}>
-                <Card
-                  data-tour={appIdx === 0 ? "appliance-card" : undefined}
-                  sx={{
-                    p: { xs: 2.25, sm: 2.5 },
-                    borderRadius: 1.5,
-                    border: "1px solid",
-                    borderColor: isOn ? "#00e5c9" : "rgba(255, 255, 255, 0.08)",
-                    bgcolor: isOn ? "rgba(0, 229, 201, 0.08)" : "background.paper",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    position: "relative",
-                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                    "&:hover": {
-                      borderColor: "primary.main",
-                      transform: "translateY(-3px)",
-                      boxShadow: "0 8px 24px rgba(0, 229, 201, 0.15)",
-                    },
-                  }}
-                >
-                  <Box>
-                    {/* Top Row: Category & Power Toggle */}
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5, gap: 1 }}>
-                      <Chip
-                        label={app.category}
-                        size="small"
-                        sx={{ fontWeight: 700, fontSize: "0.7rem", bgcolor: "rgba(0, 229, 201, 0.1)", color: "text.primary" }}
-                      />
-                      <IconButton
-                        size="small"
-                        onClick={() => togglePower(app)}
-                        sx={{
-                          bgcolor: isOn ? "primary.main" : "rgba(255, 255, 255, 0.06)",
-                          color: isOn ? "#0c1b18" : "text.secondary",
-                          "&:hover": {
-                            bgcolor: isOn ? "primary.dark" : "rgba(0, 229, 201, 0.2)",
-                            transform: "scale(1.08)",
-                          },
-                          transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                        }}
-                      >
-                        <PowerIcon fontSize="small" />
-                      </IconButton>
-                    </Box>
+                  <Card
+                    data-tour={appIdx === 0 ? "appliance-card" : undefined}
+                    sx={{
+                      p: { xs: 2.25, sm: 2.5 },
+                      borderRadius: 1.5,
+                      border: "1px solid",
+                      borderColor: (theme) =>
+                        isOn
+                          ? theme.palette.mode === "dark"
+                            ? "#00e5c9"
+                            : "#0d9488"
+                          : theme.palette.mode === "dark"
+                          ? "rgba(255, 255, 255, 0.08)"
+                          : "#e2e8f0",
+                      bgcolor: (theme) =>
+                        isOn
+                          ? theme.palette.mode === "dark"
+                            ? "rgba(0, 229, 201, 0.08)"
+                            : "rgba(13, 148, 136, 0.06)"
+                          : "background.paper",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      position: "relative",
+                      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                      "&:hover": {
+                        borderColor: "primary.main",
+                        transform: "translateY(-3px)",
+                        boxShadow: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "0 8px 24px rgba(0, 229, 201, 0.15)"
+                            : "0 8px 24px rgba(13, 148, 136, 0.1)",
+                      },
+                    }}
+                  >
+                    <Box>
+                      {/* Top Row: Category & Power Toggle */}
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5, gap: 1 }}>
+                        <Chip
+                          label={app.category}
+                          size="small"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: "0.7rem",
+                            bgcolor: (theme) =>
+                              theme.palette.mode === "dark"
+                                ? "rgba(0, 229, 201, 0.1)"
+                                : "rgba(13, 148, 136, 0.08)",
+                            color: (theme) =>
+                              theme.palette.mode === "dark" ? "#00e5c9" : "#0f766e",
+                          }}
+                        />
+                        <IconButton
+                          size="small"
+                          onClick={() => togglePower(app)}
+                          sx={{
+                            bgcolor: (theme) =>
+                              isOn
+                                ? theme.palette.mode === "dark"
+                                  ? "primary.main"
+                                  : "#0d9488"
+                                : theme.palette.mode === "dark"
+                                ? "rgba(255, 255, 255, 0.06)"
+                                : "#f1f5f9",
+                            color: (theme) =>
+                              isOn
+                                ? theme.palette.mode === "dark"
+                                  ? "#0c1b18"
+                                  : "#ffffff"
+                                : "text.secondary",
+                            "&:hover": {
+                              bgcolor: (theme) =>
+                                isOn
+                                  ? theme.palette.mode === "dark"
+                                    ? "primary.dark"
+                                    : "#0f766e"
+                                  : theme.palette.mode === "dark"
+                                  ? "rgba(0, 229, 201, 0.2)"
+                                  : "#e2e8f0",
+                              transform: "scale(1.08)",
+                            },
+                            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                          }}
+                        >
+                          <PowerIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
 
                     {/* Appliance Name & Details */}
                     <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>

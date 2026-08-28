@@ -490,8 +490,11 @@ return (
           sx={{
             p: 0.75,
             borderRadius: 2,
-            bgcolor: "#14171c",
-            border: "1px solid #222732",
+            bgcolor: (theme) => (theme.palette.mode === "dark" ? "#14171c" : "#ffffff"),
+            border: "1px solid",
+            borderColor: (theme) => (theme.palette.mode === "dark" ? "#222732" : "#e2e8f0"),
+            boxShadow: (theme) =>
+              theme.palette.mode === "dark" ? "none" : "0 2px 8px rgba(15, 23, 42, 0.04)",
             display: "flex",
             alignItems: "center",
             gap: 1,
@@ -512,13 +515,40 @@ return (
               fontWeight: 700,
               textTransform: "none",
               whiteSpace: "nowrap",
-              bgcolor: selectedSpaceId === "all" ? "rgba(0, 229, 201, 0.15)" : "transparent",
-              color: selectedSpaceId === "all" ? "#00e5c9" : "text.secondary",
+              bgcolor: (theme) =>
+                selectedSpaceId === "all"
+                  ? theme.palette.mode === "dark"
+                    ? "rgba(0, 229, 201, 0.15)"
+                    : "rgba(13, 148, 136, 0.1)"
+                  : "transparent",
+              color: (theme) =>
+                selectedSpaceId === "all"
+                  ? theme.palette.mode === "dark"
+                    ? "#00e5c9"
+                    : "#0f766e"
+                  : "text.secondary",
               border: "1px solid",
-              borderColor: selectedSpaceId === "all" ? "rgba(0, 229, 201, 0.4)" : "transparent",
+              borderColor: (theme) =>
+                selectedSpaceId === "all"
+                  ? theme.palette.mode === "dark"
+                    ? "rgba(0, 229, 201, 0.4)"
+                    : "rgba(13, 148, 136, 0.3)"
+                  : "transparent",
               "&:hover": {
-                bgcolor: selectedSpaceId === "all" ? "rgba(0, 229, 201, 0.2)" : "rgba(255, 255, 255, 0.05)",
-                color: selectedSpaceId === "all" ? "#00e5c9" : "#ffffff",
+                bgcolor: (theme) =>
+                  selectedSpaceId === "all"
+                    ? theme.palette.mode === "dark"
+                      ? "rgba(0, 229, 201, 0.2)"
+                      : "rgba(13, 148, 136, 0.15)"
+                    : theme.palette.mode === "dark"
+                    ? "rgba(255, 255, 255, 0.05)"
+                    : "#f1f5f9",
+                color: (theme) =>
+                  selectedSpaceId === "all"
+                    ? theme.palette.mode === "dark"
+                      ? "#00e5c9"
+                      : "#0f766e"
+                    : "text.primary",
               },
             }}
           >
@@ -548,13 +578,40 @@ return (
                   fontWeight: 700,
                   textTransform: "none",
                   whiteSpace: "nowrap",
-                  bgcolor: isSelected ? "rgba(0, 229, 201, 0.15)" : "transparent",
-                  color: isSelected ? "#00e5c9" : "text.secondary",
+                  bgcolor: (theme) =>
+                    isSelected
+                      ? theme.palette.mode === "dark"
+                        ? "rgba(0, 229, 201, 0.15)"
+                        : "rgba(13, 148, 136, 0.1)"
+                      : "transparent",
+                  color: (theme) =>
+                    isSelected
+                      ? theme.palette.mode === "dark"
+                        ? "#00e5c9"
+                        : "#0f766e"
+                      : "text.secondary",
                   border: "1px solid",
-                  borderColor: isSelected ? "rgba(0, 229, 201, 0.4)" : "transparent",
+                  borderColor: (theme) =>
+                    isSelected
+                      ? theme.palette.mode === "dark"
+                        ? "rgba(0, 229, 201, 0.4)"
+                        : "rgba(13, 148, 136, 0.3)"
+                      : "transparent",
                   "&:hover": {
-                    bgcolor: isSelected ? "rgba(0, 229, 201, 0.2)" : "rgba(255, 255, 255, 0.05)",
-                    color: isSelected ? "#00e5c9" : "#ffffff",
+                    bgcolor: (theme) =>
+                      isSelected
+                        ? theme.palette.mode === "dark"
+                          ? "rgba(0, 229, 201, 0.2)"
+                          : "rgba(13, 148, 136, 0.15)"
+                        : theme.palette.mode === "dark"
+                        ? "rgba(255, 255, 255, 0.05)"
+                        : "#f1f5f9",
+                    color: (theme) =>
+                      isSelected
+                        ? theme.palette.mode === "dark"
+                          ? "#00e5c9"
+                          : "#0f766e"
+                        : "text.primary",
                   },
                 }}
               >
@@ -568,11 +625,31 @@ return (
       {/* 2. MONTH SUMMARY & PROJECTED CONSUMPTION DIAGNOSTIC BANNER */}
       <Grid container spacing={{ xs: 1.5, sm: 2 }}>
         <Grid size={{ xs: 6, sm: 3 }}>
-          <Paper sx={{ p: 2, borderRadius: 1.25, bgcolor: "rgba(24, 27, 32, 0.75)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+          <Paper
+            sx={{
+              p: 2,
+              borderRadius: 1.25,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.75)" : "#ffffff",
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+              boxShadow: (theme) =>
+                theme.palette.mode === "dark" ? "none" : "0 2px 10px rgba(15, 23, 42, 0.04)",
+            }}
+          >
             <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 0.75 }}>
-              <CheckCircleIcon sx={{ fontSize: 16, color: "#00e5c9" }} /> Audited Actuals
+              <CheckCircleIcon sx={{ fontSize: 16, color: (theme) => theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488" }} /> Audited Actuals
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 900, color: "#00e5c9", mt: 0.5, fontFamily: "monospace" }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 900,
+                color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
+                mt: 0.5,
+                fontFamily: "monospace",
+              }}
+            >
               ₱{monthSummary.actualCost.toFixed(2)}
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
@@ -582,11 +659,31 @@ return (
         </Grid>
 
         <Grid size={{ xs: 6, sm: 3 }}>
-          <Paper sx={{ p: 2, borderRadius: 1.25, bgcolor: "rgba(24, 27, 32, 0.75)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+          <Paper
+            sx={{
+              p: 2,
+              borderRadius: 1.25,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.75)" : "#ffffff",
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+              boxShadow: (theme) =>
+                theme.palette.mode === "dark" ? "none" : "0 2px 10px rgba(15, 23, 42, 0.04)",
+            }}
+          >
             <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 0.75 }}>
-              <ClockIcon sx={{ fontSize: 16, color: "#26c6da" }} /> Remaining Projected
+              <ClockIcon sx={{ fontSize: 16, color: (theme) => theme.palette.mode === "dark" ? "#26c6da" : "#0284c7" }} /> Remaining Projected
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 900, color: "#26c6da", mt: 0.5, fontFamily: "monospace" }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 900,
+                color: (theme) => (theme.palette.mode === "dark" ? "#26c6da" : "#0284c7"),
+                mt: 0.5,
+                fontFamily: "monospace",
+              }}
+            >
               ~₱{monthSummary.projectedCost.toFixed(2)}
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
@@ -596,11 +693,31 @@ return (
         </Grid>
 
         <Grid size={{ xs: 6, sm: 3 }}>
-          <Paper sx={{ p: 2, borderRadius: 1.25, bgcolor: "rgba(24, 27, 32, 0.75)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+          <Paper
+            sx={{
+              p: 2,
+              borderRadius: 1.25,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.75)" : "#ffffff",
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+              boxShadow: (theme) =>
+                theme.palette.mode === "dark" ? "none" : "0 2px 10px rgba(15, 23, 42, 0.04)",
+            }}
+          >
             <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 0.75 }}>
-              <InsightsIcon sx={{ fontSize: 16, color: "#ffd54f" }} /> Projected Month Bill
+              <InsightsIcon sx={{ fontSize: 16, color: (theme) => theme.palette.mode === "dark" ? "#ffd54f" : "#d97706" }} /> Projected Month Bill
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 900, color: "#ffd54f", mt: 0.5, fontFamily: "monospace" }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 900,
+                color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "#d97706"),
+                mt: 0.5,
+                fontFamily: "monospace",
+              }}
+            >
               ₱{monthSummary.totalMonthCost.toFixed(2)}
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
@@ -610,11 +727,36 @@ return (
         </Grid>
 
         <Grid size={{ xs: 6, sm: 3 }}>
-          <Paper sx={{ p: 2, borderRadius: 1.25, bgcolor: "rgba(24, 27, 32, 0.75)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+          <Paper
+            sx={{
+              p: 2,
+              borderRadius: 1.25,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.75)" : "#ffffff",
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+              boxShadow: (theme) =>
+                theme.palette.mode === "dark" ? "none" : "0 2px 10px rgba(15, 23, 42, 0.04)",
+            }}
+          >
             <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase", letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 0.75 }}>
               Live Power Load
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 900, color: activeWattage > 2000 ? "#f87171" : "#00e5c9", mt: 0.5, fontFamily: "monospace" }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 900,
+                color: (theme) =>
+                  activeWattage > 2000
+                    ? "#f87171"
+                    : theme.palette.mode === "dark"
+                    ? "#00e5c9"
+                    : "#0d9488",
+                mt: 0.5,
+                fontFamily: "monospace",
+              }}
+            >
               {activeWattage} W ({activeAppliances.length} Running)
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
@@ -772,25 +914,43 @@ return (
                     overflow: "hidden",
                     transition: "all 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
                     bgcolor: isCurrentToday
-                      ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.15)" : "rgba(0, 158, 136, 0.08)")
+                      ? (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(0, 229, 201, 0.15)"
+                            : "rgba(13, 148, 136, 0.08)"
                       : metrics.isLogged
-                      ? "rgba(16, 185, 129, 0.05)"
-                      : "transparent",
+                      ? (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(16, 185, 129, 0.06)"
+                            : "rgba(5, 150, 105, 0.05)"
+                      : "background.paper",
                     border: isCurrentToday ? "2px solid" : "1px solid",
                     borderColor: isCurrentToday
                       ? "primary.main"
                       : metrics.isLogged
-                      ? "rgba(52, 211, 153, 0.4)"
+                      ? (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(52, 211, 153, 0.4)"
+                            : "rgba(5, 150, 105, 0.3)"
                       : "divider",
                     boxShadow: isCurrentToday
-                      ? "0 0 16px rgba(0, 229, 201, 0.35), 0 0 4px rgba(0, 229, 201, 0.2)"
+                      ? (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "0 0 16px rgba(0, 229, 201, 0.35), 0 0 4px rgba(0, 229, 201, 0.2)"
+                            : "0 0 16px rgba(13, 148, 136, 0.25), 0 2px 8px rgba(13, 148, 136, 0.15)"
                       : "none",
                     "&:hover": {
                       borderColor: "primary.light",
                       transform: "translateY(-2px)",
                       boxShadow: isCurrentToday
-                        ? "0 0 20px rgba(0, 229, 201, 0.45), 0 4px 12px rgba(0, 229, 201, 0.2)"
-                        : "0 4px 12px rgba(0, 229, 201, 0.15)",
+                        ? (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "0 0 20px rgba(0, 229, 201, 0.45), 0 4px 12px rgba(0, 229, 201, 0.2)"
+                              : "0 0 20px rgba(13, 148, 136, 0.35), 0 4px 12px rgba(13, 148, 136, 0.2)"
+                        : (theme) =>
+                            theme.palette.mode === "dark"
+                              ? "0 4px 12px rgba(0, 229, 201, 0.15)"
+                              : "0 4px 12px rgba(13, 148, 136, 0.12)",
                     },
                   }}
                 >

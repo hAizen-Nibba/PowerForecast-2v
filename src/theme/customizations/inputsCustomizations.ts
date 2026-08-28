@@ -29,7 +29,9 @@ export const inputsCustomizations: Components<Theme> = {
         padding: '8px 16px',
         transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
         '&:hover': {
-          boxShadow: '0 4px 14px rgba(0, 229, 201, 0.35)',
+          boxShadow: theme.palette.mode === 'dark'
+            ? '0 4px 14px rgba(0, 229, 201, 0.35)'
+            : '0 4px 12px rgba(13, 148, 136, 0.2)',
           transform: 'translateY(-1px)',
         },
         '&:active': {
@@ -89,11 +91,11 @@ export const inputsCustomizations: Components<Theme> = {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
         borderRadius: 8,
-        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(24, 27, 32, 0.75)' : 'rgba(255, 255, 255, 0.9)',
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(24, 27, 32, 0.75)' : '#ffffff',
         borderColor: alpha(theme.palette.primary.main, 0.25),
         transition: 'border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease',
         '& .MuiOutlinedInput-notchedOutline': {
-          borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : alpha(theme.palette.primary.main, 0.2),
+          borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : '#e2e8f0',
           transition: 'border-color 180ms ease',
         },
         '&:hover .MuiOutlinedInput-notchedOutline': {

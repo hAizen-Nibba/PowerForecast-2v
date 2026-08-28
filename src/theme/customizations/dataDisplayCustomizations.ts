@@ -35,7 +35,7 @@ export const dataDisplayCustomizations: Components<Theme> = {
         fontWeight: 700,
         backgroundColor: theme.palette.mode === 'dark' 
           ? 'rgba(23, 26, 31, 0.95)' 
-          : 'rgba(240, 243, 246, 0.95)',
+          : '#f8fafc',
         color: theme.palette.text.secondary,
         textTransform: 'uppercase',
         fontSize: '0.6875rem',
@@ -52,7 +52,7 @@ export const dataDisplayCustomizations: Components<Theme> = {
         borderRadius: 8,
         padding: '6px 10px',
         boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
-        border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(0, 229, 201, 0.25)' : 'rgba(255,255,255,0.1)'}`,
+        border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(0, 229, 201, 0.25)' : 'rgba(15, 23, 42, 0.1)'}`,
       }),
     },
   },

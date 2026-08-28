@@ -115,10 +115,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
           />
           <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, letterSpacing: "-0.01em", color: "#ffffff", lineHeight: 1.2 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                fontWeight: 800,
+                letterSpacing: "-0.01em",
+                color: (theme) => (theme.palette.mode === "dark" ? "#ffffff" : "#0f172a"),
+                lineHeight: 1.2,
+              }}
+            >
               PowerForecast
             </Typography>
-            <Typography variant="caption" sx={{ color: "primary.light", fontSize: "0.6875rem", mt: 0.25, display: "block" }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: (theme) => (theme.palette.mode === "dark" ? "primary.light" : "primary.main"),
+                fontSize: "0.6875rem",
+                fontWeight: 700,
+                mt: 0.25,
+                display: "block",
+              }}
+            >
               Meralco Energy Intel
             </Typography>
           </Box>
@@ -142,6 +159,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     px: 1.5,
                     position: "relative",
                     "&.Mui-selected": {
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(13, 148, 136, 0.1)",
                       "&::before": {
                         content: '""',
                         position: "absolute",
@@ -150,7 +169,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         bottom: "18%",
                         width: 3,
                         borderRadius: "0 4px 4px 0",
-                        bgcolor: "#00e5c9",
+                        bgcolor: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
                       },
                     },
                   }}
@@ -158,7 +177,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <ListItemIcon
                     sx={{
                       minWidth: 34,
-                      color: isActive ? "#00e5c9" : "text.secondary",
+                      color: (theme) =>
+                        isActive ? (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488") : "text.secondary",
                       transition: "color 0.2s ease",
                     }}
                   >
@@ -170,8 +190,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       primary: {
                         sx: {
                           fontSize: "0.8125rem",
-                          fontWeight: isActive ? 700 : 500,
-                          color: isActive ? "#ffffff" : "text.secondary",
+                          fontWeight: isActive ? 800 : 500,
+                          color: (theme) =>
+                            isActive
+                              ? theme.palette.mode === "dark"
+                                ? "#ffffff"
+                                : "#0f766e"
+                              : "text.secondary",
                           letterSpacing: "-0.01em",
                         },
                       },
@@ -192,9 +217,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             p: 1.75,
             borderRadius: 1.25,
             bgcolor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.88)" : "rgba(255, 255, 255, 0.08)",
+              theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.88)" : "#f8fafc",
             border: "1px solid",
-            borderColor: "divider",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? "divider" : "#e2e8f0",
             mb: 1.5,
           }}
         >
@@ -206,7 +232,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   height: 8,
                   borderRadius: "50%",
                   bgcolor: runningCount > 0 ? "success.main" : "text.disabled",
-                  boxShadow: runningCount > 0 ? "0 0 8px #00e5c9" : "none",
+                  boxShadow: (theme) =>
+                    runningCount > 0
+                      ? theme.palette.mode === "dark"
+                        ? "0 0 8px #00e5c9"
+                        : "0 0 8px rgba(5, 150, 105, 0.5)"
+                      : "none",
                   transition: "all 0.3s ease",
                 }}
               />
@@ -221,18 +252,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 height: 20,
                 fontSize: "0.6875rem",
                 fontWeight: 700,
-                bgcolor: "rgba(0, 229, 201, 0.12)",
-                color: "#00e5c9",
-                border: "1px solid rgba(0, 229, 201, 0.3)",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(13, 148, 136, 0.1)",
+                color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)",
               }}
             />
           </Box>
 
           <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-            <Typography variant="h6" sx={{ fontWeight: 800, fontFamily: "monospace", color: "#ffffff" }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 800,
+                fontFamily: "monospace",
+                color: (theme) => (theme.palette.mode === "dark" ? "#ffffff" : "#0f172a"),
+              }}
+            >
               {activeWattage} <Typography component="span" variant="caption" sx={{ color: "text.secondary" }}>W</Typography>
             </Typography>
-            <Typography variant="caption" sx={{ color: "#00e5c9", fontFamily: "monospace", fontWeight: 700 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
+                fontFamily: "monospace",
+                fontWeight: 700,
+              }}
+            >
               ₱{((activeWattage / 1000) * 14.8261).toFixed(2)}/hr
             </Typography>
           </Box>
@@ -242,12 +290,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Divider sx={{ my: 1, borderColor: "divider" }} />
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  <CoinsIcon sx={{ fontSize: 13, color: "#00e5c9" }} />
+                  <CoinsIcon sx={{ fontSize: 13, color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488") }} />
                   <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
                     Session:
                   </Typography>
                 </Box>
-                <Typography variant="caption" sx={{ color: "success.light", fontFamily: "monospace", fontWeight: 700 }}>
+                <Typography variant="caption" sx={{ color: "success.main", fontFamily: "monospace", fontWeight: 700 }}>
                   ₱{totalSessionCost.toFixed(4)}
                 </Typography>
               </Box>
@@ -268,7 +316,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               fontFamily: "monospace",
               fontSize: "0.6875rem",
               fontWeight: 700,
-              color: "primary.light",
+              color: (theme) => (theme.palette.mode === "dark" ? "primary.light" : "primary.main"),
             }}
           >
             {APP_VERSION}

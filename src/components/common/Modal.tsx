@@ -97,7 +97,7 @@ export const Modal: React.FC<ModalProps> = ({
             borderTop: "1px solid",
             borderColor: "divider",
             bgcolor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(9, 9, 56, 0.4)" : "rgba(248, 250, 252, 0.8)",
+              theme.palette.mode === "dark" ? "rgba(9, 9, 56, 0.4)" : "#f8fafc",
           }}
         >
           {footer}

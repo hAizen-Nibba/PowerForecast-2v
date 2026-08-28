@@ -465,21 +465,21 @@ export const MeralcoCalculator: React.FC = () => {
                 borderRadius: 1.5,
                 bgcolor: (theme) =>
                   theme.palette.mode === "dark"
-                    ? "linear-gradient(135deg, rgba(32, 35, 40, 0.98) 0%, rgba(23, 25, 29, 0.98) 100%)"
+                    ? "rgba(24, 27, 32, 0.95)"
                     : "#ffffff",
                 border: "1px solid",
                 borderColor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(0, 158, 136, 0.25)",
+                  theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)",
                 boxShadow: (theme) =>
                   theme.palette.mode === "dark"
                     ? "0 12px 36px rgba(0, 0, 0, 0.45), 0 0 24px rgba(0, 229, 201, 0.1)"
-                    : "0 8px 30px rgba(0, 158, 136, 0.1)",
+                    : "0 4px 20px rgba(15, 23, 42, 0.04)",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
               }}
             >
-              <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.light", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: (theme) => theme.palette.mode === "dark" ? "primary.light" : "primary.main", letterSpacing: "0.1em", textTransform: "uppercase" }}>
                 Total Projected Amount Due
               </Typography>
 
@@ -490,7 +490,7 @@ export const MeralcoCalculator: React.FC = () => {
                   fontFamily: "monospace",
                   letterSpacing: "-0.03em",
                   my: 1,
-                  color: "primary.main",
+                  color: (theme) => (theme.palette.mode === "dark" ? "primary.main" : "#0d9488"),
                   fontSize: { xs: "2.25rem", sm: "3rem", md: "3.5rem" },
                 }}
               >
@@ -510,7 +510,19 @@ export const MeralcoCalculator: React.FC = () => {
               <Chip
                 label={`Calculated for ${kwh} kWh (Effective: ₱${bill.effectiveRatePerKwh.toFixed(4)}/kWh)`}
                 size="small"
-                sx={{ mt: 2, fontWeight: 700, fontFamily: "monospace", height: 26, bgcolor: "rgba(0, 229, 201, 0.1)", color: "text.primary" }}
+                sx={{
+                  mt: 2,
+                  fontWeight: 700,
+                  fontFamily: "monospace",
+                  height: 26,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.1)" : "rgba(13, 148, 136, 0.08)",
+                  color: (theme) =>
+                    theme.palette.mode === "dark" ? "#00e5c9" : "#0f766e",
+                  border: "1px solid",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.2)",
+                }}
               />
             </Card>
 

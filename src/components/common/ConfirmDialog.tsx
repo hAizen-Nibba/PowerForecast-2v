@@ -101,10 +101,14 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         paper: {
           sx: {
             borderRadius: 3,
-            bgcolor: "#13161c",
+            bgcolor: (theme) => (theme.palette.mode === "dark" ? "#13161c" : "#ffffff"),
             backgroundImage: "none",
-            border: "1px solid #282f3c",
-            boxShadow: "0 24px 64px rgba(0, 0, 0, 0.85)",
+            border: "1px solid",
+            borderColor: (theme) => (theme.palette.mode === "dark" ? "#282f3c" : "#e2e8f0"),
+            boxShadow: (theme) =>
+              theme.palette.mode === "dark"
+                ? "0 24px 64px rgba(0, 0, 0, 0.85)"
+                : "0 24px 64px rgba(15, 23, 42, 0.15)",
             p: 1,
           },
         },
@@ -137,7 +141,14 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             {severityConfig.icon}
           </Box>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 800, fontSize: "1.05rem", color: "#ffffff" }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 800,
+                fontSize: "1.05rem",
+                color: (theme) => (theme.palette.mode === "dark" ? "#ffffff" : "#0f172a"),
+              }}
+            >
               {title}
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
@@ -148,7 +159,13 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         <IconButton
           onClick={onCancel}
           size="small"
-          sx={{ color: "text.secondary", "&:hover": { color: "#ffffff", bgcolor: "rgba(255,255,255,0.08)" } }}
+          sx={{
+            color: "text.secondary",
+            "&:hover": {
+              color: "text.primary",
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)"),
+            },
+          }}
         >
           <CloseIcon fontSize="small" />
         </IconButton>
@@ -168,9 +185,10 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                 fontWeight: 800,
                 fontFamily: "inherit",
                 fontSize: "0.75rem",
-                bgcolor: "#1c2028",
-                color: "#f1f5f9",
-                border: "1px solid #2e3544",
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? "#1c2028" : "#f1f5f9"),
+                color: (theme) => (theme.palette.mode === "dark" ? "#f1f5f9" : "#0f172a"),
+                border: "1px solid",
+                borderColor: (theme) => (theme.palette.mode === "dark" ? "#2e3544" : "#e2e8f0"),
               }}
             />
           </Box>
@@ -179,7 +197,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         <Typography
           variant="body2"
           sx={{
-            color: "#e2e8f0",
+            color: (theme) => (theme.palette.mode === "dark" ? "#e2e8f0" : "#334155"),
             fontSize: "0.875rem",
             lineHeight: 1.6,
           }}
@@ -193,8 +211,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             sx={{
               p: 1.5,
               borderRadius: 2,
-              bgcolor: "#181c24",
-              borderColor: "#262c37",
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? "#181c24" : "#f8fafc"),
+              borderColor: (theme) => (theme.palette.mode === "dark" ? "#262c37" : "#e2e8f0"),
             }}
           >
             <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.5, display: "block" }}>
@@ -217,13 +235,13 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             fontWeight: 700,
             fontSize: "0.8125rem",
             textTransform: "none",
-            color: "#94a3b8",
-            borderColor: "#2e3544",
-            bgcolor: "#1c2028",
+            color: (theme) => (theme.palette.mode === "dark" ? "#94a3b8" : "#475569"),
+            borderColor: (theme) => (theme.palette.mode === "dark" ? "#2e3544" : "#cbd5e1"),
+            bgcolor: (theme) => (theme.palette.mode === "dark" ? "#1c2028" : "#f1f5f9"),
             "&:hover": {
-              borderColor: "#475569",
-              bgcolor: "#242a35",
-              color: "#ffffff",
+              borderColor: (theme) => (theme.palette.mode === "dark" ? "#475569" : "#94a3b8"),
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? "#242a35" : "#e2e8f0"),
+              color: "text.primary",
             },
           }}
         >

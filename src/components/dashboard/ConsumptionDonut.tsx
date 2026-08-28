@@ -125,14 +125,26 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
                               borderRadius: 2,
                               bgcolor: (theme) =>
                                 theme.palette.mode === "dark" ? "rgba(23, 26, 31, 0.95)" : "#ffffff",
-                              border: "1px solid rgba(0, 229, 201, 0.3)",
-                              boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+                              border: "1px solid",
+                              borderColor: (theme) =>
+                                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "#e2e8f0",
+                              boxShadow: (theme) =>
+                                theme.palette.mode === "dark"
+                                  ? "0 8px 24px rgba(0,0,0,0.4)"
+                                  : "0 4px 16px rgba(15, 23, 42, 0.08)",
                             }}
                           >
                             <Typography variant="caption" sx={{ fontWeight: 700, display: "block" }}>
                               {item.name}
                             </Typography>
-                            <Typography variant="caption" sx={{ fontWeight: 800, color: "#00e5c9", fontFamily: "monospace" }}>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                fontWeight: 800,
+                                color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
+                                fontFamily: "monospace",
+                              }}
+                            >
                               {item.value} kWh ({((Number(item.value) / (totalKwh || 1)) * 100).toFixed(1)}%)
                             </Typography>
                           </Box>
@@ -169,7 +181,15 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
                 <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", letterSpacing: "-0.02em" }}>
                   {Math.round(totalKwh)}
                 </Typography>
-                <Typography variant="caption" sx={{ color: "primary.light", fontWeight: 700, fontSize: "0.6875rem", textTransform: "uppercase" }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: (theme) => (theme.palette.mode === "dark" ? "primary.light" : "primary.main"),
+                    fontWeight: 700,
+                    fontSize: "0.6875rem",
+                    textTransform: "uppercase",
+                  }}
+                >
                   kWh/mo
                 </Typography>
               </Box>

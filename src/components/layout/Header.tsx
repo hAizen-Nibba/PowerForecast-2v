@@ -120,6 +120,13 @@ export const Header: React.FC<HeaderProps> = ({
       sx={{
         zIndex: (theme) => theme.zIndex.drawer + 1,
         backdropFilter: "blur(20px)",
+        bgcolor: (theme) =>
+          theme.palette.mode === "dark" ? "rgba(23, 25, 29, 0.82)" : "rgba(255, 255, 255, 0.88)",
+        color: "text.primary",
+        boxShadow: (theme) =>
+          theme.palette.mode === "dark"
+            ? "0 4px 20px rgba(0, 0, 0, 0.3)"
+            : "0 2px 12px rgba(15, 23, 42, 0.04)",
         borderBottom: "1px solid",
         borderColor: "divider",
       }}
