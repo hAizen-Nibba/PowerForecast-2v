@@ -211,18 +211,18 @@ export const DevLogsFloatingWidget: React.FC = () => {
       case "error":
         return <span className="px-1.5 py-0.2 rounded bg-rose-950/80 text-rose-300 border border-rose-800 font-mono text-[10px]">ERROR</span>;
       case "telemetry":
-        return <span className="px-1.5 py-0.2 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-mono text-[10px]">TELEM</span>;
+        return <span className="px-1.5 py-0.2 rounded bg-teal-950/80 text-teal-300 border border-teal-800 font-mono text-[10px]">TELEM</span>;
       default:
-        return <span className="px-1.5 py-0.2 rounded bg-[#1e2260] text-[#a2a5ff] border border-[#2e3488] font-mono text-[10px]">INFO</span>;
+        return <span className="px-1.5 py-0.2 rounded bg-[#202530] text-slate-300 border border-[#2e3544] font-mono text-[10px]">INFO</span>;
     }
   };
 
   const getSourceIcon = (source: LogSource) => {
     switch (source) {
       case "AI Scanner":
-        return <Sparkles className="w-3 h-3 text-yellow-300 shrink-0" />;
+        return <Sparkles className="w-3 h-3 text-amber-300 shrink-0" />;
       case "PELP Database":
-        return <Database className="w-3 h-3 text-[#8183fc] shrink-0" />;
+        return <Database className="w-3 h-3 text-teal-300 shrink-0" />;
       case "Telemetry":
         return <Radio className="w-3 h-3 text-emerald-400 shrink-0" />;
       case "Calculator":
@@ -252,27 +252,27 @@ export const DevLogsFloatingWidget: React.FC = () => {
         title="PowerForecast Live Dev Logs (Drag anywhere / Click to open)"
       >
         <div
-          className={`relative w-14 h-14 rounded-full bg-[#0b0c2e] border-2 shadow-2xl flex items-center justify-center transition-transform group-hover:scale-105 group-active:scale-95 ${
+          className={`relative w-14 h-14 rounded-full bg-[#181c24] border-2 shadow-2xl flex items-center justify-center transition-transform group-hover:scale-105 group-active:scale-95 ${
             isOpen
-              ? "border-[#8183fc] ring-4 ring-[#5c68db]/40 bg-[#14164a]"
+              ? "border-[#00e5c9] ring-4 ring-[#00e5c9]/30 bg-[#202530]"
               : hasNewPulse
               ? "border-emerald-400 ring-4 ring-emerald-500/40"
               : errorCount > 0
               ? "border-rose-500 ring-2 ring-rose-500/30"
-              : "border-[#383d8a] hover:border-[#6c7ae0]"
+              : "border-[#2e3542] hover:border-[#00e5c9]"
           }`}
         >
           {/* Glowing background halo */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#5c68db]/30 to-transparent blur-xs pointer-events-none" />
+          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#00e5c9]/20 to-transparent blur-xs pointer-events-none" />
 
           {/* Icon */}
           <div className="relative text-white flex items-center justify-center">
             {errorCount > 0 ? (
               <Bug className="w-6 h-6 text-rose-400" />
             ) : hasNewPulse ? (
-              <Sparkles className="w-6 h-6 text-yellow-300 animate-spin" />
+              <Sparkles className="w-6 h-6 text-amber-300 animate-spin" />
             ) : (
-              <Terminal className="w-6 h-6 text-[#8183fc] group-hover:text-white transition-colors" />
+              <Terminal className="w-6 h-6 text-[#00e5c9] group-hover:text-white transition-colors" />
             )}
           </div>
 
@@ -281,14 +281,14 @@ export const DevLogsFloatingWidget: React.FC = () => {
             className={`absolute -top-1.5 -right-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full border shadow-md font-mono ${
               errorCount > 0
                 ? "bg-rose-600 border-rose-400 text-white animate-pulse"
-                : "bg-[#5c68db] border-[#8183fc] text-white"
+                : "bg-[#00e5c9] border-[#00c4aa] text-slate-950"
             }`}
           >
             {logs.length > 99 ? "99+" : logs.length}
           </span>
 
           {/* Live Activity Blinking Dot */}
-          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#090933] animate-pulse" />
+          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#14171c] animate-pulse" />
         </div>
       </div>
 
@@ -303,20 +303,20 @@ export const DevLogsFloatingWidget: React.FC = () => {
             height: isExpandedFull ? "calc(100vh - 40px)" : "540px",
             zIndex: 9998,
           }}
-          className="rounded-2xl bg-[#090a2a]/95 backdrop-blur-xl border border-[#343a8c] shadow-2xl flex flex-col overflow-hidden text-slate-200 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-white/10"
+          className="rounded-2xl bg-[#13161c]/98 backdrop-blur-xl border border-[#262c37] shadow-2xl flex flex-col overflow-hidden text-slate-200 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-white/5"
         >
           {/* Header (Draggable Handle) */}
           <div
             onPointerDown={isExpandedFull ? undefined : handleWindowPointerDown}
             onPointerMove={isExpandedFull ? undefined : handleWindowPointerMove}
             onPointerUp={isExpandedFull ? undefined : handleWindowPointerUp}
-            className={`p-3 bg-[#101242] border-b border-[#22255e] flex items-center justify-between select-none ${
+            className={`p-3 bg-[#181c23] border-b border-[#242934] flex items-center justify-between select-none ${
               isExpandedFull ? "cursor-default" : "cursor-move"
             }`}
           >
             <div className="flex items-center gap-2">
               <GripVertical className="w-4 h-4 text-slate-500" />
-              <div className="p-1.5 rounded-lg bg-[#1c1f57] border border-[#2e3382] text-yellow-300">
+              <div className="p-1.5 rounded-lg bg-[#202530] border border-[#2d3544] text-[#00e5c9]">
                 <Terminal className="w-4 h-4" />
               </div>
               <div>
@@ -338,7 +338,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
               <button
                 onClick={() => setAutoScroll(!autoScroll)}
                 className={`p-1.5 rounded-md transition-colors ${
-                  autoScroll ? "text-emerald-400 hover:bg-[#1a1c54]" : "text-slate-400 hover:text-white"
+                  autoScroll ? "text-emerald-400 hover:bg-[#222733]" : "text-slate-400 hover:text-white"
                 }`}
                 title={autoScroll ? "Auto-scroll ON (Click to pause)" : "Auto-scroll PAUSED (Click to resume)"}
               >
@@ -347,7 +347,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
 
               <button
                 onClick={handleExportDump}
-                className="p-1.5 text-slate-400 hover:text-white hover:bg-[#1a1c54] rounded-md transition-colors"
+                className="p-1.5 text-slate-400 hover:text-white hover:bg-[#222733] rounded-md transition-colors"
                 title="Export Logs Dump (.json)"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -355,7 +355,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
 
               <button
                 onClick={() => devLog.clear()}
-                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-[#1a1c54] rounded-md transition-colors"
+                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-[#222733] rounded-md transition-colors"
                 title="Clear Logs"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -363,7 +363,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
 
               <button
                 onClick={() => setIsExpandedFull(!isExpandedFull)}
-                className="p-1.5 text-slate-400 hover:text-white hover:bg-[#1a1c54] rounded-md transition-colors"
+                className="p-1.5 text-slate-400 hover:text-white hover:bg-[#222733] rounded-md transition-colors"
                 title={isExpandedFull ? "Restore Window Size" : "Maximize Fullscreen"}
               >
                 {isExpandedFull ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
@@ -380,7 +380,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
           </div>
 
           {/* Search & Filter Bar */}
-          <div className="p-2.5 bg-[#0d0e33] border-b border-[#22255e] space-y-2">
+          <div className="p-2.5 bg-[#15181f] border-b border-[#242934] space-y-2">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -389,7 +389,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
                   placeholder="Filter logs by keyword, model, or payload..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#151745] border border-[#2d317a] rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#5c68db]"
+                  className="w-full bg-[#1c2028] border border-[#2e3542] rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#00e5c9]"
                 />
                 {searchQuery && (
                   <button
@@ -405,7 +405,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
               <select
                 value={filterSource}
                 onChange={(e) => setFilterSource(e.target.value)}
-                className="bg-[#151745] border border-[#2d317a] rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-[#5c68db] cursor-pointer"
+                className="bg-[#1c2028] border border-[#2e3542] rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-[#00e5c9] cursor-pointer"
               >
                 <option value="all">All Sources</option>
                 <option value="AI Scanner">AI Scanner</option>
@@ -433,8 +433,8 @@ export const DevLogsFloatingWidget: React.FC = () => {
                   onClick={() => setFilterLevel(pill.id)}
                   className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap cursor-pointer ${
                     filterLevel === pill.id
-                      ? "bg-[#5c68db] text-white font-semibold shadow-xs"
-                      : "bg-[#14164a] text-slate-400 hover:text-white border border-[#22255e]"
+                      ? "bg-[#00e5c9] text-slate-950 font-bold shadow-xs"
+                      : "bg-[#1b1f27] text-slate-400 hover:text-white border border-[#272d38] hover:border-[#384050]"
                   }`}
                 >
                   {pill.label}
@@ -468,7 +468,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
                         ? "bg-cyan-950/20 border-cyan-900/40"
                         : log.level === "success"
                         ? "bg-emerald-950/20 border-emerald-900/40"
-                        : "bg-[#10123f]/70 border-[#22255e]/80 hover:border-[#383d8a]"
+                        : "bg-[#171b22] border-[#242a34] hover:border-[#343c4a]"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -478,9 +478,9 @@ export const DevLogsFloatingWidget: React.FC = () => {
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-[10px] text-slate-400 font-sans">{log.formattedTime}</span>
                             {getLevelBadge(log.level)}
-                            <span className="text-[10px] font-semibold text-[#a2a5ff] font-sans">[{log.source}]</span>
+                            <span className="text-[10px] font-semibold text-teal-300 font-sans">[{log.source}]</span>
                             {log.durationMs !== undefined && (
-                              <span className="text-[10px] text-yellow-300 font-sans font-medium">
+                              <span className="text-[10px] text-amber-300 font-sans font-medium">
                                 ({log.durationMs}ms)
                               </span>
                             )}
@@ -495,7 +495,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={() => handleCopyLog(log)}
-                          className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#1f225e] transition-colors"
+                          className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#232936] transition-colors"
                           title="Copy Log Entry"
                         >
                           {isCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
@@ -503,7 +503,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
                         {log.details && (
                           <button
                             onClick={() => setExpandedLogId(isExpanded ? null : log.id)}
-                            className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#1f225e] transition-colors"
+                            className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#232936] transition-colors"
                             title={isExpanded ? "Collapse payload" : "Expand JSON payload"}
                           >
                             {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
@@ -514,17 +514,17 @@ export const DevLogsFloatingWidget: React.FC = () => {
 
                     {/* Expandable JSON Payload Inspector */}
                     {isExpanded && log.details && (
-                      <div className="mt-2 pt-2 border-t border-[#22255e]/70">
+                      <div className="mt-2 pt-2 border-t border-[#242934]">
                         <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1 font-sans">
                           <span>Payload / Metadata:</span>
                           <button
                             onClick={() => navigator.clipboard.writeText(JSON.stringify(log.details, null, 2))}
-                            className="text-[#8183fc] hover:underline"
+                            className="text-[#00e5c9] hover:underline"
                           >
                             Copy Raw JSON
                           </button>
                         </div>
-                        <pre className="p-2 rounded bg-[#06071e] text-[10px] text-emerald-300 font-mono overflow-x-auto max-h-48 whitespace-pre-wrap leading-tight border border-[#1b1e4f]">
+                        <pre className="p-2 rounded bg-[#0f1115] text-[10px] text-emerald-300 font-mono overflow-x-auto max-h-48 whitespace-pre-wrap leading-tight border border-[#222731]">
                           {typeof log.details === "string"
                             ? log.details
                             : JSON.stringify(log.details, null, 2)}
@@ -538,14 +538,14 @@ export const DevLogsFloatingWidget: React.FC = () => {
           </div>
 
           {/* Footer Status Bar */}
-          <div className="p-2 bg-[#0d0e33] border-t border-[#22255e] flex items-center justify-between text-[11px] text-slate-400 font-mono">
+          <div className="p-2 bg-[#15181f] border-t border-[#242934] flex items-center justify-between text-[11px] text-slate-400 font-mono">
             <div className="flex items-center gap-3">
               <span>Total: <strong className="text-white">{logs.length}</strong></span>
               <span>Errors: <strong className={errorCount > 0 ? "text-rose-400" : "text-slate-400"}>{errorCount}</strong></span>
-              <span>Filtered: <strong className="text-yellow-300">{filteredLogs.length}</strong></span>
+              <span>Filtered: <strong className="text-amber-300">{filteredLogs.length}</strong></span>
             </div>
-            <div className="flex items-center gap-1.5 text-[#a2a5ff]">
-              <Sparkles className="w-3 h-3 text-yellow-300" />
+            <div className="flex items-center gap-1.5 text-teal-300">
+              <Sparkles className="w-3 h-3 text-amber-300" />
               <span>Gemini 3.7 Flash Active</span>
             </div>
           </div>
@@ -554,3 +554,5 @@ export const DevLogsFloatingWidget: React.FC = () => {
     </>
   );
 };
+
+export default DevLogsFloatingWidget;

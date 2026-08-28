@@ -15,7 +15,9 @@ import {
   CheckCircle as CheckCircleIcon,
   WarningAmber as AlertIcon,
   Close as CloseIcon,
+  HistoryEdu as ChangelogIcon,
 } from "@mui/icons-material";
+import { SystemChangelogModal } from "../changelog/SystemChangelogModal";
 
 export const VersionBadge: React.FC = () => {
   const [dbStatus, setDbStatus] = useState<{
@@ -28,6 +30,7 @@ export const VersionBadge: React.FC = () => {
     message: "Initializing...",
   });
   const [isOpen, setIsOpen] = useState(false);
+  const [isChangelogModalOpen, setIsChangelogModalOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -149,6 +152,37 @@ export const VersionBadge: React.FC = () => {
 
           <Divider sx={{ my: 1 }} />
 
+          {/* GitHub Changelogs Button */}
+          <Button
+            fullWidth
+            variant="outlined"
+            size="small"
+            startIcon={<ChangelogIcon sx={{ fontSize: 16, color: "#00e5c9" }} />}
+            onClick={() => {
+              setIsOpen(false);
+              setIsChangelogModalOpen(true);
+            }}
+            sx={{
+              my: 1,
+              py: 0.75,
+              fontSize: "0.75rem",
+              fontWeight: 800,
+              textTransform: "none",
+              color: "#f1f5f9",
+              bgcolor: "rgba(0, 229, 201, 0.08)",
+              borderColor: "rgba(0, 229, 201, 0.3)",
+              borderRadius: 1.5,
+              "&:hover": {
+                bgcolor: "rgba(0, 229, 201, 0.16)",
+                borderColor: "#00e5c9",
+              },
+            }}
+          >
+            📜 View Version Changelogs
+          </Button>
+
+          <Divider sx={{ my: 1 }} />
+
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pt: 0.5 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
               <ShieldIcon sx={{ fontSize: 14, color: "success.light" }} />
@@ -234,6 +268,12 @@ export const VersionBadge: React.FC = () => {
           }}
         />
       </Box>
+
+      {/* GitHub Version Changelogs Modal */}
+      <SystemChangelogModal
+        isOpen={isChangelogModalOpen}
+        onClose={() => setIsChangelogModalOpen(false)}
+      />
     </Box>
   );
 };
