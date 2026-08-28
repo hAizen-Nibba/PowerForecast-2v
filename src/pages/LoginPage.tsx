@@ -143,23 +143,30 @@ export const LoginPage: React.FC = () => {
         />
 
         <Box
+          component="img"
+          src={isDark ? "/Assets/Off.png" : "/Assets/On.png"}
+          alt="PowerForecast Energy Bulb"
           sx={{
-            position: "relative",
-            width: 2,
-            height: { md: 100, lg: 130 },
-            bgcolor: isDark ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.15)",
-            mx: "auto",
+            height: { md: "calc(100vh - 100px)", lg: "calc(100vh - 110px)" },
+            maxHeight: { md: 640, lg: 750 },
+            width: "auto",
+            objectFit: "contain",
+            display: "block",
+            filter: isDark
+              ? "drop-shadow(0 25px 45px rgba(0, 0, 0, 0.95))"
+              : "drop-shadow(0 25px 60px rgba(255, 213, 79, 0.6))",
           }}
         />
       </Box>
 
       {/* Main Login Card */}
       <Container
-        maxWidth="sm"
+        maxWidth="lg"
         sx={{
+          flexGrow: 1,
           display: "flex",
-          justifyContent: "center",
           alignItems: "center",
+          justifyContent: { xs: "center", md: "flex-end" },
           py: { xs: 4, sm: 6 },
           position: "relative",
           zIndex: 1,

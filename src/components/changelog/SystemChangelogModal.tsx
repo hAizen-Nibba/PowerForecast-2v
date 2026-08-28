@@ -41,10 +41,10 @@ export interface SystemChangelogEntry {
 // Master compiled GitHub deployment history covering all releases from 2.1.1v to 2.13.DEV
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
-    id: "2.13.6v",
-    version: "2.13.6v",
-    description: "2.13.6v - System-wide Light Mode polish: fix dark sidebar drawer, white cards for Telemetry & Pareto breakdowns, soft slate predictive bars, and high-contrast calendar pricing",
-    git_commit_tag: "2.13.6v",
+    id: "2.13.7v",
+    version: "2.13.7v",
+    description: "2.13.7v - Restore hanging glowing bulb asset and asymmetric bento card positioning on LoginPage",
+    git_commit_tag: "2.13.7v",
     deployed_by: "hAizen-Nibba",
     created_at: new Date().toISOString(),
     source: "github",
