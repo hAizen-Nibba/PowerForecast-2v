@@ -23,6 +23,7 @@ import {
 } from "@mui/icons-material";
 import { Modal } from "../common/Modal";
 import { ApplianceUsageLog, UserAppliance } from "../../types";
+import { useConfirm } from "../common/ConfirmProvider";
 
 interface SessionLogsModalProps {
   isOpen: boolean;
@@ -45,6 +46,7 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
   onClearAllLogs,
   onUpdateLog,
 }) => {
+  const { confirm } = useConfirm();
   const [filterText, setFilterText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [editingLog, setEditingLog] = useState<ApplianceUsageLog | null>(null);
@@ -63,11 +65,12 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
 
   const handleSaveEdit = async () => {
     if (!editingLog || !onUpdateLog) return;
-    const totalMins = editHours * 60 + editMinutes;
-    if (totalMins <= 0) return;
+    const newTotalMinutes = editHours * 60 + editMinutes;
+    if (newTotalMinutes <= 0) return;
+
     setIsUpdating(true);
     try {
-      await onUpdateLog(editingLog.id, totalMins);
+      await onUpdateLog(editingLog.id, newTotalMinutes);
       setEditingLog(null);
     } finally {
       setIsUpdating(false);
@@ -94,7 +97,18 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
   };
 
   const handleClearAll = async () => {
-    if (!window.confirm("Are you sure you want to clear all historical session logs?")) return;
+    const ok = await confirm({
+      title: "Clear All Historical Session Logs?",
+      message: `Are you sure you want to permanently delete all ${logs.length} historical stopwatch session log(s)?`,
+      detail: "This will remove all session receipt records. Your calendar daily usage totals will remain intact.",
+      itemName: `${logs.length} Session Logs • Total ₱${totalCost.toFixed(2)}`,
+      confirmText: "Yes, Clear All Logs",
+      cancelText: "Cancel",
+      severity: "error",
+    });
+
+    if (!ok) return;
+
     setIsDeleting(true);
     try {
       await onClearAllLogs();
@@ -275,7 +289,20 @@ export const SessionLogsModal: React.FC<SessionLogsModalProps> = ({
                       <IconButton
                         size="small"
                         color="error"
-                        onClick={() => onDeleteLog(log.id)}
+                        onClick={async () => {
+                          const ok = await confirm({
+                            title: "Delete Session Receipt?",
+                            message: `Are you sure you want to delete this session log for "${app?.name || "Appliance"}"?`,
+                            detail: `Duration: ${durText} • ${(log.kwh_consumed || 0).toFixed(3)} kWh (₱${(log.estimated_cost || 0).toFixed(2)})`,
+                            itemName: `${app?.name || "Session"} • ${dateStr}`,
+                            confirmText: "Yes, Delete Log",
+                            cancelText: "Cancel",
+                            severity: "error",
+                          });
+                          if (ok) {
+                            onDeleteLog(log.id);
+                          }
+                        }}
                         disabled={isDeleting}
                       >
                         <DeleteIcon fontSize="small" />

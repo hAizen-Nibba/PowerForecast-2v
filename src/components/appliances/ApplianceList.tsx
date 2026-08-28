@@ -41,6 +41,7 @@ import { SpaceManagementModal } from "./SpaceManagementModal";
 import { AiVisionScannerModal } from "../vision/AiVisionScannerModal";
 import { ScheduleQueueModal } from "../calendar/ScheduleQueueModal";
 import { useToast } from "../common/ToastProvider";
+import { useConfirm } from "../common/ConfirmProvider";
 import { devLog } from "../../lib/devLogger";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
 import { supabaseClient } from "../../lib/supabaseClient";
@@ -72,6 +73,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
   const [isQueueModalOpen, setIsQueueModalOpen] = useState(false);
 
   const { showSuccess, showInfo, showError } = useToast();
+  const { confirm } = useConfirm();
 
   const appliancesRes = useList<UserAppliance>({
     resource: "user_appliances",
@@ -298,10 +300,21 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
     showSuccess("Appliance inventory exported to JSON.");
   };
 
-  const handleClearAll = () => {
-    if (!window.confirm(`Are you sure you want to clear all registered appliances in ${activeSpace?.name}?`)) return;
+  const handleClearAll = async () => {
+    const ok = await confirm({
+      title: "Clear All Registered Appliances?",
+      message: `Are you sure you want to remove all ${currentSpaceAppliances.length} appliance(s) from "${activeSpace?.name}"?`,
+      detail: "This action cannot be undone. You will need to re-add your appliances manually or from the PELP catalog.",
+      itemName: activeSpace?.name,
+      confirmText: "Yes, Clear All",
+      cancelText: "Cancel",
+      severity: "error",
+    });
+
+    if (!ok) return;
+
     currentSpaceAppliances.forEach((a) => deleteAppliance({ resource: "user_appliances", id: a.id }));
-    showInfo("Cleared space appliances.");
+    showInfo(`Cleared all appliances in ${activeSpace?.name}.`);
   };
 
   // -------------------------------------------------------------
@@ -972,8 +985,17 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                         <IconButton
                           size="small"
                           color="error"
-                          onClick={() => {
-                            if (window.confirm(`Delete ${app.name}?`)) {
+                          onClick={async () => {
+                            const ok = await confirm({
+                              title: "Delete Appliance?",
+                              message: `Are you sure you want to remove "${app.name}" (${app.watts}W)?`,
+                              detail: "Historical usage data and saved session logs for this device will remain archived in your audit records.",
+                              itemName: `${app.name} • ${app.category || "General"}`,
+                              confirmText: "Yes, Delete",
+                              cancelText: "Cancel",
+                              severity: "error",
+                            });
+                            if (ok) {
                               deleteAppliance({ resource: "user_appliances", id: app.id });
                               showInfo(`Removed ${app.name}`);
                             }

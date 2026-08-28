@@ -41,10 +41,10 @@ export interface SystemChangelogEntry {
 // Master compiled GitHub deployment history covering all releases from 2.1.1v to 2.13.DEV
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
-    id: "2.13.3v",
-    version: "2.13.3v",
-    description: "2.13.3v - Add space deletion capability with safe appliance reassignment, redesign calendar space switcher bar to sleek bento pill group (SS2), and fix rate volatility slider edge label clipping (SS3)",
-    git_commit_tag: "2.13.3v",
+    id: "2.13.4v",
+    version: "2.13.4v",
+    description: "2.13.4v - Implement custom Bento Warning & Confirmation Dialog system (useConfirm hook) replacing all generic browser popups",
+    git_commit_tag: "2.13.4v",
     deployed_by: "hAizen-Nibba",
     created_at: new Date().toISOString(),
     source: "github",

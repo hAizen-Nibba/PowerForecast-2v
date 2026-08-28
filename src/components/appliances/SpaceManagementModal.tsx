@@ -23,6 +23,7 @@ import { ApplianceList } from "../../types";
 import { useCreate, useUpdate, useDelete } from "@refinedev/core";
 import { supabaseClient } from "../../lib/supabaseClient";
 import { devLog } from "../../lib/devLogger";
+import { useConfirm } from "../common/ConfirmProvider";
 
 interface SpaceManagementModalProps {
   isOpen: boolean;
@@ -45,6 +46,7 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
   const [tariffType, setTariffType] = useState<"residential" | "commercial">("residential");
   const [isDeletingLocal, setIsDeletingLocal] = useState(false);
 
+  const { confirm } = useConfirm();
   const { mutate: createSpace, isLoading: isCreating } = useCreate();
   const { mutate: updateSpace, isLoading: isUpdating } = useUpdate();
   const { mutate: deleteSpace } = useDelete();
@@ -97,15 +99,29 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
   const handleDelete = async () => {
     if (!spaceToEdit) return;
     if (!canDelete) {
-      alert("Cannot delete the only remaining space.");
+      await confirm({
+        title: "Action Restricted",
+        message: "Cannot delete the only remaining space in your account. Please create another space first before removing this one.",
+        confirmText: "Understood",
+        cancelText: "Close",
+        severity: "warning",
+      });
       return;
     }
 
-    const confirmMsg = fallbackSpace
-      ? `Are you sure you want to delete the space "${spaceToEdit.name}"?\n\nAll registered appliances in this space will be automatically and safely moved to "${fallbackSpace.name}".`
-      : `Are you sure you want to delete the space "${spaceToEdit.name}"?`;
+    const ok = await confirm({
+      title: "Delete Space / List?",
+      message: `Are you sure you want to permanently delete the space "${spaceToEdit.name}"?`,
+      detail: fallbackSpace
+        ? `Zero data loss: all registered appliances in "${spaceToEdit.name}" will be automatically moved to "${fallbackSpace.name}".`
+        : "All registered appliances in this space will be retained in your unassigned appliance pool.",
+      itemName: `${spaceToEdit.name} • ${spaceToEdit.tariff_type === "commercial" ? "Commercial Tariff" : "Residential Tariff"}`,
+      confirmText: "Yes, Delete Space",
+      cancelText: "Cancel",
+      severity: "error",
+    });
 
-    if (!window.confirm(confirmMsg)) return;
+    if (!ok) return;
 
     setIsDeletingLocal(true);
     try {

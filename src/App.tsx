@@ -21,6 +21,7 @@ import { SignupPage } from "./pages/SignupPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { VersionBadge } from "./components/common/VersionBadge";
 import { ToastProvider } from "./components/common/ToastProvider";
+import { ConfirmProvider } from "./components/common/ConfirmProvider";
 import { LanguageProvider } from "./context/LanguageContext";
 import { AppTheme } from "./theme/AppTheme";
 import {
@@ -42,7 +43,8 @@ export const App: React.FC = () => {
     <AppTheme>
       <LanguageProvider>
         <ToastProvider>
-          <HashRouter>
+          <ConfirmProvider>
+            <HashRouter>
           <Refine
             dataProvider={resilientDataProvider}
             authProvider={authProvider}
@@ -178,11 +180,12 @@ export const App: React.FC = () => {
             <UnsavedChangesNotifier />
             <VersionBadge />
           </Refine>
-        </HashRouter>
-      </ToastProvider>
-    </LanguageProvider>
-  </AppTheme>
-);
+          </HashRouter>
+          </ConfirmProvider>
+        </ToastProvider>
+      </LanguageProvider>
+    </AppTheme>
+  );
 };
 
 export default App;
