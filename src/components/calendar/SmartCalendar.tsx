@@ -484,53 +484,85 @@ return (
         </Box>
       </Box>
 
-      {/* 1.5. Space Switcher Tabs */}
+      {/* 1.5. Space Switcher Bento Pill Bar */}
       {spaces.length > 1 && (
-        <Card sx={{ borderRadius: 1.5, overflow: "hidden" }}>
-          <Tabs
-            value={selectedSpaceId}
-            onChange={(_, v) => setSelectedSpaceId(v)}
-            variant="scrollable"
-            scrollButtons="auto"
+        <Box
+          sx={{
+            p: 0.75,
+            borderRadius: 2,
+            bgcolor: "#14171c",
+            border: "1px solid #222732",
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            overflowX: "auto",
+            "&::-webkit-scrollbar": { height: 4 },
+            "&::-webkit-scrollbar-thumb": { bgcolor: "#2e3544", borderRadius: 2 },
+          }}
+        >
+          <Button
+            size="small"
+            onClick={() => setSelectedSpaceId("all")}
+            startIcon={<PublicIcon sx={{ fontSize: 16 }} />}
             sx={{
-              minHeight: 44,
-              bgcolor: "rgba(24, 27, 32, 0.65)",
-              "& .MuiTab-root": {
-                fontWeight: 700,
-                fontSize: "0.8125rem",
-                minHeight: 44,
-                textTransform: "none",
-                letterSpacing: "0.01em",
-              },
-              "& .Mui-selected": {
-                color: "primary.main",
+              px: 1.75,
+              py: 0.6,
+              borderRadius: 1.5,
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              textTransform: "none",
+              whiteSpace: "nowrap",
+              bgcolor: selectedSpaceId === "all" ? "rgba(0, 229, 201, 0.15)" : "transparent",
+              color: selectedSpaceId === "all" ? "#00e5c9" : "text.secondary",
+              border: "1px solid",
+              borderColor: selectedSpaceId === "all" ? "rgba(0, 229, 201, 0.4)" : "transparent",
+              "&:hover": {
+                bgcolor: selectedSpaceId === "all" ? "rgba(0, 229, 201, 0.2)" : "rgba(255, 255, 255, 0.05)",
+                color: selectedSpaceId === "all" ? "#00e5c9" : "#ffffff",
               },
             }}
           >
-            <Tab
-              value="all"
-              icon={<PublicIcon sx={{ fontSize: 18 }} />}
-              iconPosition="start"
-              label={`All Spaces (${allAppliances.length})`}
-            />
-            {spaces.map((space) => {
-              const count = allAppliances.filter((a) => a.list_id === space.id).length;
-              return (
-                <Tab
-                  key={space.id}
-                  value={space.id}
-                  icon={
-                    space.tariff_type === "commercial"
-                      ? <StoreIcon sx={{ fontSize: 18 }} />
-                      : <HomeIcon sx={{ fontSize: 18 }} />
-                  }
-                  iconPosition="start"
-                  label={`${space.name} (${count})`}
-                />
-              );
-            })}
-          </Tabs>
-        </Card>
+            All Spaces ({allAppliances.length})
+          </Button>
+
+          {spaces.map((space) => {
+            const count = allAppliances.filter((a) => a.list_id === space.id).length;
+            const isSelected = selectedSpaceId === space.id;
+            return (
+              <Button
+                key={space.id}
+                size="small"
+                onClick={() => setSelectedSpaceId(space.id)}
+                startIcon={
+                  space.tariff_type === "commercial" ? (
+                    <StoreIcon sx={{ fontSize: 16 }} />
+                  ) : (
+                    <HomeIcon sx={{ fontSize: 16 }} />
+                  )
+                }
+                sx={{
+                  px: 1.75,
+                  py: 0.6,
+                  borderRadius: 1.5,
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  textTransform: "none",
+                  whiteSpace: "nowrap",
+                  bgcolor: isSelected ? "rgba(0, 229, 201, 0.15)" : "transparent",
+                  color: isSelected ? "#00e5c9" : "text.secondary",
+                  border: "1px solid",
+                  borderColor: isSelected ? "rgba(0, 229, 201, 0.4)" : "transparent",
+                  "&:hover": {
+                    bgcolor: isSelected ? "rgba(0, 229, 201, 0.2)" : "rgba(255, 255, 255, 0.05)",
+                    color: isSelected ? "#00e5c9" : "#ffffff",
+                  },
+                }}
+              >
+                {space.name} ({count})
+              </Button>
+            );
+          })}
+        </Box>
       )}
 
       {/* 2. MONTH SUMMARY & PROJECTED CONSUMPTION DIAGNOSTIC BANNER */}

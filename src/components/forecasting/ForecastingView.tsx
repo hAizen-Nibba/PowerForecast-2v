@@ -511,26 +511,61 @@ export const ForecastingView: React.FC = () => {
               />
             </Box>
 
-            <Box sx={{ px: { xs: 1, sm: 2 } }}>
+            <Box sx={{ px: { xs: 3.5, sm: 6, md: 7 }, pt: 1, pb: 2.5 }}>
               <Slider
                 value={genRateDelta}
                 min={-2.0}
                 max={3.0}
                 step={0.25}
                 marks={[
-                  { value: -2.0, label: "-₱2.00 (ERC Refund)" },
+                  { value: -2.0, label: "-₱2.00 (Refund)" },
                   { value: -1.0, label: "-₱1.00" },
                   { value: 0, label: "₱0.00 (Published)" },
                   { value: 1.5, label: "+₱1.50" },
-                  { value: 3.0, label: "+₱3.00 (WESM Spike)" },
+                  { value: 3.0, label: "+₱3.00 (Spike)" },
                 ]}
                 onChange={(_, val) => setGenRateDelta(val as number)}
                 sx={{
                   height: 8,
+                  "& .MuiSlider-track": {
+                    bgcolor: "#00e5c9",
+                    borderColor: "#00e5c9",
+                  },
+                  "& .MuiSlider-rail": {
+                    bgcolor: "#242a35",
+                    opacity: 1,
+                  },
                   "& .MuiSlider-thumb": {
                     width: 22,
                     height: 22,
-                    boxShadow: "0 0 15px rgba(0, 229, 201, 0.6)",
+                    bgcolor: "#ffffff",
+                    border: "3px solid #00e5c9",
+                    boxShadow: "0 0 16px rgba(0, 229, 201, 0.7)",
+                    "&:hover, &.Mui-focusVisible": {
+                      boxShadow: "0 0 20px rgba(0, 229, 201, 0.9)",
+                    },
+                  },
+                  "& .MuiSlider-mark": {
+                    bgcolor: "#384152",
+                    width: 3,
+                    height: 8,
+                  },
+                  "& .MuiSlider-markActive": {
+                    bgcolor: "#00e5c9",
+                  },
+                  "& .MuiSlider-markLabel": {
+                    fontSize: { xs: "0.6875rem", sm: "0.75rem" },
+                    fontWeight: 700,
+                    color: "text.secondary",
+                    mt: 1,
+                  },
+                  "& .MuiSlider-markLabel[data-index='0']": {
+                    transform: { xs: "translateX(0%)", sm: "translateX(0%)" },
+                    textAlign: "left",
+                  },
+                  "& .MuiSlider-markLabel[data-index='4']": {
+                    transform: { xs: "translateX(-100%)", sm: "translateX(-100%)" },
+                    textAlign: "right",
                   },
                 }}
               />

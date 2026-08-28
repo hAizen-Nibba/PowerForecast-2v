@@ -571,6 +571,21 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
           >
             Export
           </Button>
+          {spaces.length > 1 && (
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              startIcon={<TrashIcon />}
+              onClick={() => {
+                setSpaceToEdit(activeSpace);
+                setIsSpaceModalOpen(true);
+              }}
+              sx={{ borderRadius: 1, fontWeight: 700 }}
+            >
+              Delete Space
+            </Button>
+          )}
           {currentSpaceAppliances.length > 0 && (
             <Button
               variant="outlined"
@@ -998,7 +1013,17 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             setSpaceToEdit(null);
           }}
           spaceToEdit={spaceToEdit}
-          canDelete={spaces.length > 0}
+          canDelete={spaces.length > 1}
+          fallbackSpace={spaces.find((s) => s.id !== (spaceToEdit?.id || activeSpace?.id)) || spaces[0]}
+          onDeleted={(deletedId) => {
+            const nextSpace = spaces.find((s) => s.id !== deletedId);
+            if (nextSpace) {
+              setActiveSpaceId(nextSpace.id);
+            }
+            if (spacesRes?.refetch) spacesRes.refetch();
+            if (appliancesRes?.refetch) appliancesRes.refetch();
+            showInfo("Space deleted and appliances reassigned.");
+          }}
         />
       )}
 

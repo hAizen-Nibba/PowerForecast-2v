@@ -6,13 +6,12 @@ import DialogActions from "@mui/material/DialogActions";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
-import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import Divider from "@mui/material/Divider";
 import Paper from "@mui/material/Paper";
-import Chip from "@mui/material/Chip";
+import Tooltip from "@mui/material/Tooltip";
 import {
   Home as HomeIcon,
   Store as StoreIcon,
@@ -22,12 +21,16 @@ import {
 } from "@mui/icons-material";
 import { ApplianceList } from "../../types";
 import { useCreate, useUpdate, useDelete } from "@refinedev/core";
+import { supabaseClient } from "../../lib/supabaseClient";
+import { devLog } from "../../lib/devLogger";
 
 interface SpaceManagementModalProps {
   isOpen: boolean;
   onClose: () => void;
   spaceToEdit?: ApplianceList | null;
   canDelete?: boolean;
+  fallbackSpace?: ApplianceList | null;
+  onDeleted?: (spaceId: string) => void;
 }
 
 export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
@@ -35,13 +38,16 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
   onClose,
   spaceToEdit,
   canDelete = false,
+  fallbackSpace,
+  onDeleted,
 }) => {
   const [name, setName] = useState("");
   const [tariffType, setTariffType] = useState<"residential" | "commercial">("residential");
+  const [isDeletingLocal, setIsDeletingLocal] = useState(false);
 
   const { mutate: createSpace, isLoading: isCreating } = useCreate();
   const { mutate: updateSpace, isLoading: isUpdating } = useUpdate();
-  const { mutate: deleteSpace, isLoading: isDeleting } = useDelete();
+  const { mutate: deleteSpace } = useDelete();
 
   useEffect(() => {
     if (spaceToEdit) {
@@ -88,18 +94,60 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!spaceToEdit) return;
-    if (window.confirm(`Are you sure you want to delete the space "${spaceToEdit.name}"?`)) {
+    if (!canDelete) {
+      alert("Cannot delete the only remaining space.");
+      return;
+    }
+
+    const confirmMsg = fallbackSpace
+      ? `Are you sure you want to delete the space "${spaceToEdit.name}"?\n\nAll registered appliances in this space will be automatically and safely moved to "${fallbackSpace.name}".`
+      : `Are you sure you want to delete the space "${spaceToEdit.name}"?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsDeletingLocal(true);
+    try {
+      // 1. Reassign appliances in this space to fallback space (or null)
+      if (fallbackSpace) {
+        const { error: moveErr } = await supabaseClient
+          .from("user_appliances")
+          .update({ list_id: fallbackSpace.id })
+          .eq("list_id", spaceToEdit.id);
+
+        if (moveErr) {
+          devLog.warn("SpaceManagement", `Error moving appliances to fallback space: ${moveErr.message}`);
+        } else {
+          devLog.info("SpaceManagement", `Reassigned appliances from deleted space to ${fallbackSpace.name}`);
+        }
+      } else {
+        await supabaseClient
+          .from("user_appliances")
+          .update({ list_id: null })
+          .eq("list_id", spaceToEdit.id);
+      }
+
+      // 2. Delete the space from appliance_lists
       deleteSpace(
         {
           resource: "appliance_lists",
           id: spaceToEdit.id,
         },
         {
-          onSuccess: () => onClose(),
+          onSuccess: () => {
+            if (onDeleted) onDeleted(spaceToEdit.id);
+            onClose();
+          },
+          onError: (err: any) => {
+            devLog.error("SpaceManagement", `Failed to delete space: ${err?.message}`, err);
+          },
         }
       );
+    } catch (err: any) {
+      devLog.error("SpaceManagement", `Exception deleting space: ${err?.message}`, err);
+    } finally {
+      setIsDeletingLocal(false);
     }
   };
 
@@ -223,32 +271,44 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
         <Divider />
 
         <DialogActions sx={{ p: 2.5, px: 3, display: "flex", justifyContent: "space-between" }}>
-          {spaceToEdit && canDelete ? (
-            <Button
-              color="error"
-              size="small"
-              startIcon={<DeleteIcon />}
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              Delete
-            </Button>
+          {spaceToEdit ? (
+            canDelete ? (
+              <Button
+                color="error"
+                size="small"
+                startIcon={<DeleteIcon />}
+                onClick={handleDelete}
+                disabled={isDeletingLocal}
+                sx={{ fontWeight: 700 }}
+              >
+                {isDeletingLocal ? "Deleting..." : "Delete Space"}
+              </Button>
+            ) : (
+              <Tooltip title="Cannot delete the only remaining space">
+                <span>
+                  <Button color="error" size="small" startIcon={<DeleteIcon />} disabled sx={{ fontWeight: 700 }}>
+                    Delete Space
+                  </Button>
+                </span>
+              </Tooltip>
+            )
           ) : (
             <Box />
           )}
 
           <Box sx={{ display: "flex", gap: 1 }}>
-            <Button variant="outlined" size="small" onClick={onClose}>
+            <Button variant="outlined" size="small" onClick={onClose} sx={{ fontWeight: 700 }}>
               Cancel
             </Button>
             <Button
               type="submit"
               variant="contained"
               size="small"
-              disabled={isCreating || isUpdating}
+              disabled={isCreating || isUpdating || isDeletingLocal}
               startIcon={<SaveIcon />}
+              sx={{ fontWeight: 700 }}
             >
-              {spaceToEdit ? "Save Space" : "Create Space"}
+              {spaceToEdit ? "Save Changes" : "Create Space"}
             </Button>
           </Box>
         </DialogActions>
@@ -256,5 +316,3 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
     </Dialog>
   );
 };
-
-export default SpaceManagementModal;
