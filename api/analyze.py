@@ -72,7 +72,7 @@ class handler(BaseHTTPRequestHandler):
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(json.dumps({
-                "error": "No Gemini API key configured on server. Please add GEMINI_API_KEY to your Vercel Environment Variables."
+                "error": "API key configuration error on server. Please contact administrator."
             }).encode('utf-8'))
             return
 
