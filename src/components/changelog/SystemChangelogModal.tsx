@@ -12,7 +12,6 @@ import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import CircularProgress from "@mui/material/CircularProgress";
 import Tooltip from "@mui/material/Tooltip";
-import Fade from "@mui/material/Fade";
 import {
   Close as CloseIcon,
   Search as SearchIcon,
@@ -25,6 +24,7 @@ import {
   Verified as VerifiedIcon,
   Terminal as TerminalIcon,
   FiberManualRecord as DotIcon,
+  RocketLaunch as DeploymentIcon,
 } from "@mui/icons-material";
 import { supabaseClient, APP_VERSION } from "../../lib/supabaseClient";
 
@@ -35,177 +35,334 @@ export interface SystemChangelogEntry {
   git_commit_tag?: string;
   deployed_by?: string;
   created_at?: string;
+  source?: "github" | "database" | "local";
 }
 
-// Fallback historical changelog cache in case of offline/network issues
-const FALLBACK_CHANGELOGS: SystemChangelogEntry[] = [
+// Master compiled GitHub deployment history covering all releases from 2.1.1v to 2.13.DEV
+const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
-    id: "2.13.DEV-fallback",
+    id: "2.13.DEV",
     version: "2.13.DEV",
     description: "2.13.DEV - Harmonize DevLogs floating widget colors with obsidian & teal system theme, add interactive GitHub Version Changelog Viewer Modal with audit log sync",
     git_commit_tag: "2.13.DEV",
-    deployed_by: "Antigravity Developer",
-    created_at: new Date().toISOString(),
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-28T02:24:59.000Z",
+    source: "github",
   },
   {
-    id: "2.13.1v-fallback",
+    id: "2.13.1v",
     version: "2.13.1v",
     description: "2.13.1v - Overnight stopwatch 11:59 PM auto-save rollover, live multi-day timeline previews, and Option 1 smart allocation anti-duplication sync",
     git_commit_tag: "2.13.1v",
-    deployed_by: "Antigravity Developer",
-    created_at: "2026-08-28T02:00:59.995Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-28T02:02:33.000Z",
+    source: "github",
   },
   {
-    id: "2.13.0v-fallback",
+    id: "2.13.0v",
     version: "2.13.0v",
     description: "2.13.0v - Fix calculator, popover, auth, and component color schemes to match graphite and cyan palette",
     git_commit_tag: "2.13.0v",
-    deployed_by: "Antigravity Developer",
+    deployed_by: "hAizen-Nibba",
     created_at: "2026-08-27T03:03:51.000Z",
+    source: "github",
   },
   {
-    id: "2.12.2v-fallback",
+    id: "2.12.2v",
     version: "2.12.2v",
     description: "2.12.2v - Bento corner radius harmonization across entire application, complete emoji removal, and theme aesthetics refinement",
     git_commit_tag: "2.12.2v",
-    deployed_by: "Antigravity Developer",
+    deployed_by: "hAizen-Nibba",
     created_at: "2026-08-27T02:44:46.000Z",
+    source: "github",
   },
   {
-    id: "2.12.1v-fallback",
+    id: "2.12.1v",
     version: "2.12.1v",
-    description: "2.12.1v - Add live stopwatch start/stop controls inside DateAnalyticsModal for Today with real-time session logging and visual receipts",
+    description: "2.12.1v - Add live stopwatch start/stop controls inside DateAnalyticsModal for Today with real-time session logging",
     git_commit_tag: "2.12.1v",
-    deployed_by: "Antigravity Release Bot",
-    created_at: "2026-08-26T23:09:16.390Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-26T23:09:53.000Z",
+    source: "github",
   },
   {
-    id: "2.12.0v-fallback",
+    id: "2.12.0v",
     version: "2.12.0v",
-    description: "2.12.0v - Major Release: Appliance Target Quota system with interactive Mini Calendar historical backfill, 3-mode contextual calendar telemetry, Progressive Routine conversion, and comprehensive English & Tagalog guided tours",
+    description: "2.12.0v - Release 2.12.0: Appliance Target Quota system with interactive Mini Calendar historical backfill, contextual calendar telemetry, and comprehensive English & Tagalog guided tours",
     git_commit_tag: "2.12.0v",
-    deployed_by: "Antigravity Release Bot",
-    created_at: "2026-08-26T23:01:48.401Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-26T23:02:09.000Z",
+    source: "github",
   },
   {
-    id: "2.11.1cv-fallback",
+    id: "2.11.1cv",
     version: "2.11.1cv",
     description: "2.11.1cv - Comprehensive system-flow aligned overhaul of guided tours across all 6 pages with pure English and Tagalog support (Taglish removed)",
     git_commit_tag: "2.11.1cv",
-    deployed_by: "Antigravity Release Bot",
-    created_at: "2026-08-26T22:58:52.299Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-26T22:59:50.000Z",
+    source: "github",
   },
   {
-    id: "2.11.1bv-fallback",
+    id: "2.11.1bv",
     version: "2.11.1bv",
-    description: "2.11.1bv - Replace from-to date inputs with interactive Mini Calendar Grid date selector locked strictly to current account month with past day toggleable presets and future date locking",
+    description: "2.11.1bv - Replace from-to date inputs with interactive Mini Calendar Grid date selector locked to current account month",
     git_commit_tag: "2.11.1bv",
-    deployed_by: "Antigravity Release Bot",
-    created_at: "2026-08-26T22:50:24.024Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-26T22:51:49.000Z",
+    source: "github",
   },
   {
-    id: "2.11.1v-fallback",
+    id: "2.11.1v",
     version: "2.11.1v",
-    description: "2.11.1v - Add ApplianceRoutineModal with Quick Target Quota & Elaborated Past Dates backfill on catalog import, graceful warning on 0h save, remove Use Routine Defaults toolbar button, and add interactive past timeline tracks with Progressive Routine Conversion prompt",
+    description: "2.11.1v - Add ApplianceRoutineModal for target quotas & elaborated backfill, graceful 0h save warning, remove Use Routine Defaults toolbar button, and add interactive past timeline tracks with Progressive Routine prompt",
     git_commit_tag: "2.11.1v",
-    deployed_by: "Antigravity Release Bot",
-    created_at: "2026-08-26T22:35:42.073Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-26T22:36:29.000Z",
+    source: "github",
   },
   {
-    id: "2.11.0bv-fallback",
+    id: "2.11.0bv",
     version: "2.11.0bv",
     description: "2.11.0bv - Implement Smart Date-Aware Autofill with Exclude Today toggle, decouple routine target quota from stopwatch runtime, and add date-contextual telemetry modes",
     git_commit_tag: "2.11.0bv",
-    deployed_by: "Antigravity Developer",
-    created_at: "2026-08-26T21:42:44.825Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-26T21:44:41.000Z",
+    source: "github",
   },
   {
-    id: "2.11.0v-fallback",
+    id: "2.11.0v",
     version: "2.11.0v",
     description: "2.11.0v - Release PowerForecast 2.11.0 with refactored 24h activity timeline, enhanced calendar telemetry modal, and live stopwatch tracking",
     git_commit_tag: "2.11.0v",
-    deployed_by: "Antigravity Developer",
-    created_at: "2026-08-26T21:20:23.505Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-26T21:23:39.000Z",
+    source: "github",
   },
   {
-    id: "2.10.7v-fallback",
+    id: "2.10.7v",
     version: "2.10.7v",
     description: "2.10.7v - Refactor 24-hour activity timeline and calendar analytics modal to remove simulated routine slots, optimize live stopwatch telemetry, and streamline session inspections",
     git_commit_tag: "2.10.7v",
-    deployed_by: "Antigravity Developer",
-    created_at: "2026-08-26T21:13:49.811Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-26T21:15:25.000Z",
+    source: "github",
   },
   {
-    id: "2.10.6v-fallback",
+    id: "2.10.6v",
     version: "2.10.6v",
     description: "2.10.6v - Remove email verification requirement and redirect on registration to allow immediate post-signup access to dashboard",
     git_commit_tag: "2.10.6v",
-    deployed_by: "Antigravity Developer",
-    created_at: "2026-08-26T17:42:39.247Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-26T17:43:44.000Z",
+    source: "github",
   },
   {
-    id: "2.10.5v-fallback",
+    id: "2.10.5v",
     version: "2.10.5v",
     description: "2.10.5v - Fix calendar space filter leakage, resolve DateAnalyticsModal slider lock-in override, and include live running stopwatches in Today cell metrics",
     git_commit_tag: "2.10.5v",
-    deployed_by: "Antigravity Developer",
-    created_at: "2026-08-26T17:14:05.308Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-26T17:14:46.000Z",
+    source: "github",
   },
   {
-    id: "2.10.4v-fallback",
+    id: "2.10.4v",
     version: "2.10.4v",
     description: "2.10.4v - Implement registration timestamp guard, global token invalidation on auto-confirm, and database connection telemetry",
     git_commit_tag: "2.10.4v",
-    deployed_by: "Antigravity Developer",
-    created_at: "2026-08-26T17:04:20.863Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-26T17:04:49.000Z",
+    source: "github",
   },
   {
-    id: "2.10.3v-fallback",
+    id: "2.10.3v",
     version: "2.10.3v",
-    description: "2.10.3v - Add interactive 24-hour timeline block inspector with click-to-edit and delete actions, auto-log past routine baselines into appliance_usage_logs for session log visibility, and add inline edit and update support in Schedule Queue.",
+    description: "2.10.3v - Add interactive 24h timeline block inspector with edit/delete, auto-log past routines into appliance_usage_logs, and add inline editing to Schedule Queue",
     git_commit_tag: "2.10.3v",
-    deployed_by: "Antigravity Developer",
-    created_at: "2026-08-26T16:20:01.514Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-26T16:23:20.000Z",
+    source: "github",
   },
   {
-    id: "2.10.2v-fallback",
+    id: "2.10.2v",
     version: "2.10.2v",
     description: "2.10.2v - Fix 24-hour activity timeline calculation and visual collision bugs: enforce 24.0h daily cap, prevent duplicate manual block accounting, implement non-overlapping idle slot allocation algorithm, and refine timeline in-bar label typography",
     git_commit_tag: "2.10.2v",
-    deployed_by: "Antigravity Developer",
-    created_at: "2026-08-26T15:51:24.254Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-26T15:52:09.000Z",
+    source: "github",
   },
   {
-    id: "2.10.1v-fallback",
+    id: "2.10.1v",
     version: "2.10.1v",
     description: "2.10.1v - Resolve 7 calendar & daily usage logic loopholes: fix double-counting on log updates, reconcile orphaned usage on log delete, prevent passive timer drift in stopwatch edit mode, fix 24h load curve modulo collapse, prevent live session overwrite in date analytics, parse routine autofill dates at local midnight, and await bulk async deletes",
     git_commit_tag: "2.10.1v",
-    deployed_by: "Antigravity Developer",
-    created_at: "2026-08-26T15:23:31.871Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-26T15:23:48.000Z",
+    source: "github",
   },
   {
-    id: "2.10.0v-fallback",
+    id: "2.10.0v",
     version: "2.10.0v",
     description: "2.10.0v - Implement user registration email verification flow with cross-tab sync, optimize live power demand memoization, and add comprehensive auth documentation",
     git_commit_tag: "2.10.0v",
-    deployed_by: "Antigravity Developer",
-    created_at: "2026-08-26T14:49:27.693Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-26T14:52:33.000Z",
+    source: "github",
   },
   {
-    id: "2.6.1cv-fallback",
+    id: "2.9.1v",
+    version: "2.9.1v",
+    description: "2.9.1v - Full UI Tagalog translation support and remove redundant sidebar settings link",
+    git_commit_tag: "2.9.1v",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-25T10:50:41.000Z",
+    source: "github",
+  },
+  {
+    id: "2.9.0v",
+    version: "2.9.0v",
+    description: "2.9.0v - Add dedicated Settings page, Household Sharing with invite links, strict 2-step account deletion, and sign out confirmation",
+    git_commit_tag: "2.9.0v",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-25T10:40:00.000Z",
+    source: "github",
+  },
+  {
+    id: "2.8.0v",
+    version: "2.8.0v",
+    description: "2.8.0v - Revamp Forecasting engine to be strictly data-driven based on actual logged telemetry, inventory routine baselines, and ERC unbundled calculations",
+    git_commit_tag: "2.8.0v",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-25T09:17:28.000Z",
+    source: "github",
+  },
+  {
+    id: "2.7.2v",
+    version: "2.7.2v",
+    description: "2.7.2v - Implement Master-Detail layout for daily usage log in DateAnalyticsModal",
+    git_commit_tag: "2.7.2v",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-25T08:49:23.000Z",
+    source: "github",
+  },
+  {
+    id: "2.7.1v",
+    version: "2.7.1v",
+    description: "2.7.1v - Refine multi-month trend to baseline predictions, remove weather multipliers and fake past months",
+    git_commit_tag: "2.7.1v",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-25T08:27:37.000Z",
+    source: "github",
+  },
+  {
+    id: "2.7.0v",
+    version: "2.7.0v",
+    description: "2.7.0v - Update version to 2.7.0v across system constants and package manifests",
+    git_commit_tag: "2.7.0v",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-25T08:19:03.000Z",
+    source: "github",
+  },
+  {
+    id: "2.6.2v",
+    version: "2.6.2v",
+    description: "2.6.2v - Remove hardcoded values and nonsenses on Analytics tab, add multi-space support, dynamic seasonal forecasting, and DOE PELP audit",
+    git_commit_tag: "2.6.2v",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-25T08:14:11.000Z",
+    source: "github",
+  },
+  {
+    id: "2.6.1cv",
     version: "2.6.1cv",
-    description: "2.6.1cv - Audit landing page copy to remove overpromised claims and ground features in real system capabilities, add mobile navigation drawer, and refine scrollspy boundary calculations.",
+    description: "2.6.1cv - Align landing page copy with actual system capabilities, add mobile navigation drawer, and refine scrollspy boundary calculations",
     git_commit_tag: "2.6.1cv",
-    deployed_by: "System",
-    created_at: "2026-08-24T13:58:17.534Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-24T14:02:52.000Z",
+    source: "github",
   },
   {
-    id: "2.6.0v-fallback",
+    id: "2.6.1bv",
+    version: "2.6.1bv",
+    description: "2.6.1bv - Reorder landing page navigation headers to Estimator first and Platform Showcase second ([Estimator, Platform Showcase, Core Modules, Tariff Tiers, FAQ]) and update scrollspy initial state",
+    git_commit_tag: "2.6.1bv",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-24T13:39:31.000Z",
+    source: "github",
+  },
+  {
+    id: "2.6.1v",
+    version: "2.6.1v",
+    description: "2.6.1v - Fix landing page header navigation logic with smooth scroll offsets and active scrollspy, reorder headers to Platform Showcase, Estimator, Core Modules, Tariff Tiers, FAQ, and remove API Docs link",
+    git_commit_tag: "2.6.1v",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-24T13:30:48.000Z",
+    source: "github",
+  },
+  {
+    id: "2.6.0v",
     version: "2.6.0v",
     description: "2.6.0v - Release major version 2.6.0 with interactive multi-language guided tour and onboarding system across Dashboard to Forecasting",
     git_commit_tag: "2.6.0v",
-    deployed_by: "Antigravity Developer",
-    created_at: "2026-08-24T12:50:10.125Z",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-24T12:53:02.000Z",
+    source: "github",
+  },
+  {
+    id: "2.5.1v",
+    version: "2.5.1v",
+    description: "2.5.1v - Add interactive guided tour and spotlight walkthrough system across Dashboard to Forecasting with English, Tagalog, and Taglish language support",
+    git_commit_tag: "2.5.1v",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-24T12:46:16.000Z",
+    source: "github",
+  },
+  {
+    id: "2.1.5v",
+    version: "2.1.5v",
+    description: "2.1.5v - Fix missing useNavigate hook in LandingPage to resolve Vercel build failure",
+    git_commit_tag: "2.1.5v",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-22T14:46:29.000Z",
+    source: "github",
+  },
+  {
+    id: "2.1.4v",
+    version: "2.1.4v",
+    description: "2.1.4v - Fix TS2304 build error by removing unused useLogin and useNavigate references in LandingPage",
+    git_commit_tag: "2.1.4v",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-22T14:41:30.000Z",
+    source: "github",
+  },
+  {
+    id: "2.1.3v",
+    version: "2.1.3v",
+    description: "2.1.3v - Enforce strict Supabase authentication validation, eliminate login bypasses, and add Authenticated route guards",
+    git_commit_tag: "2.1.3v",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-22T14:36:55.000Z",
+    source: "github",
+  },
+  {
+    id: "2.1.2v",
+    version: "2.1.2v",
+    description: "2.1.2v - Fix blank screen on Vercel by migrating vercel.json routes to rewrites and setting Vite base path to /",
+    git_commit_tag: "2.1.2v",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-22T14:25:57.000Z",
+    source: "github",
+  },
+  {
+    id: "2.1.1v",
+    version: "2.1.1v",
+    description: "2.1.1v - Integrate energy calculation & accuracy solutions document, live tracking optimizations, and push to PowerForecast-2v repository",
+    git_commit_tag: "2.1.1v",
+    deployed_by: "hAizen-Nibba",
+    created_at: "2026-08-22T14:20:22.000Z",
+    source: "github",
   },
 ];
 
@@ -220,7 +377,7 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const [changelogs, setChangelogs] = useState<SystemChangelogEntry[]>([]);
+  const [changelogs, setChangelogs] = useState<SystemChangelogEntry[]>(COMPLETE_GITHUB_DEPLOYMENTS);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTagFilter, setSelectedTagFilter] = useState("all");
@@ -229,32 +386,98 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
   const fetchChangelogs = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabaseClient
+      // 1. Fetch from Supabase system_changelogs
+      const { data: dbLogs } = await supabaseClient
         .from("system_changelogs")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error || !data || data.length === 0) {
-        setChangelogs(FALLBACK_CHANGELOGS);
-      } else {
-        // Merge with current in-memory version if newer
-        const exists = data.some((d: any) => d.version === APP_VERSION);
-        if (!exists) {
-          const currentEntry: SystemChangelogEntry = {
-            id: "current-runtime",
-            version: APP_VERSION,
-            description: `${APP_VERSION} - Active runtime development version with live database synchronization and telemetry`,
-            git_commit_tag: APP_VERSION,
-            deployed_by: "Antigravity Developer",
-            created_at: new Date().toISOString(),
-          };
-          setChangelogs([currentEntry, ...data]);
-        } else {
-          setChangelogs(data);
+      // 2. Fetch live commits from GitHub API
+      let gitLogs: SystemChangelogEntry[] = [];
+      try {
+        const ghRes = await fetch("https://api.github.com/repos/hAizen-Nibba/PowerForecast-2v/commits?per_page=60", {
+          headers: { Accept: "application/vnd.github.v3+json" },
+        });
+        if (ghRes.ok) {
+          const ghData = await ghRes.json();
+          if (Array.isArray(ghData)) {
+            gitLogs = ghData
+              .filter((c: any) => c.commit && c.commit.message)
+              .map((c: any) => {
+                const fullMsg = c.commit.message || "";
+                const firstLine = fullMsg.split("\n")[0];
+                const match = firstLine.match(/^([0-9]+\.[0-9]+\.[0-9a-zA-Z\-_]+v?)\s*[-:]?\s*(.*)$/);
+                const version = match ? match[1] : firstLine.slice(0, 15);
+                return {
+                  id: c.sha,
+                  version: version.startsWith("2.") ? version : `commit-${c.sha.slice(0, 7)}`,
+                  description: fullMsg,
+                  git_commit_tag: match ? match[1] : c.sha.slice(0, 7),
+                  deployed_by: c.commit.author?.name || c.author?.login || "GitHub Committer",
+                  created_at: c.commit.author?.date || c.commit.committer?.date,
+                  source: "github" as const,
+                };
+              })
+              .filter((entry) => entry.version.startsWith("2."));
+          }
         }
+      } catch {
+        // GitHub API network error or rate limit, continue with DB/manifest
       }
+
+      // 3. Merge: Live GitHub Commits + Database Records + Master Deployment Manifest
+      const mergedMap = new Map<string, SystemChangelogEntry>();
+
+      // Base manifest first
+      COMPLETE_GITHUB_DEPLOYMENTS.forEach((item) => {
+        mergedMap.set(item.version, item);
+      });
+
+      // DB logs override / augment
+      if (dbLogs && Array.isArray(dbLogs)) {
+        dbLogs.forEach((item: any) => {
+          if (!mergedMap.has(item.version)) {
+            mergedMap.set(item.version, { ...item, source: "database" });
+          } else {
+            const existing = mergedMap.get(item.version)!;
+            mergedMap.set(item.version, {
+              ...existing,
+              ...item,
+              source: "database",
+            });
+          }
+        });
+      }
+
+      // Git API live logs override / augment
+      gitLogs.forEach((item) => {
+        if (!mergedMap.has(item.version)) {
+          mergedMap.set(item.version, item);
+        }
+      });
+
+      // Ensure active APP_VERSION is always top if newer
+      if (!mergedMap.has(APP_VERSION)) {
+        mergedMap.set(APP_VERSION, {
+          id: "current-runtime",
+          version: APP_VERSION,
+          description: `${APP_VERSION} - Active runtime development version with live database and GitHub synchronization`,
+          git_commit_tag: APP_VERSION,
+          deployed_by: "hAizen-Nibba",
+          created_at: new Date().toISOString(),
+          source: "local",
+        });
+      }
+
+      const sorted = Array.from(mergedMap.values()).sort((a, b) => {
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return timeB - timeA;
+      });
+
+      setChangelogs(sorted);
     } catch {
-      setChangelogs(FALLBACK_CHANGELOGS);
+      setChangelogs(COMPLETE_GITHUB_DEPLOYMENTS);
     } finally {
       setIsLoading(false);
     }
@@ -273,14 +496,19 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Filter options
+  // Filter options for fast version series navigation
   const filterOptions = [
-    { id: "all", label: "All Releases" },
+    { id: "all", label: "All Deployments" },
     { id: "2.13", label: "v2.13.x" },
     { id: "2.12", label: "v2.12.x" },
     { id: "2.11", label: "v2.11.x" },
     { id: "2.10", label: "v2.10.x" },
+    { id: "2.9", label: "v2.9.x" },
+    { id: "2.8", label: "v2.8.x" },
+    { id: "2.7", label: "v2.7.x" },
     { id: "2.6", label: "v2.6.x" },
+    { id: "2.5", label: "v2.5.x" },
+    { id: "2.1", label: "v2.1.x" },
   ];
 
   const filteredChangelogs = useMemo(() => {
@@ -300,7 +528,7 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
   }, [changelogs, searchQuery, selectedTagFilter]);
 
   const openGitHubTag = (tag?: string) => {
-    if (tag) {
+    if (tag && tag.startsWith("2.")) {
       window.open(`${GITHUB_REPO_URL}/releases/tag/${tag}`, "_blank", "noopener,noreferrer");
     } else {
       window.open(GITHUB_REPO_URL, "_blank", "noopener,noreferrer");
@@ -343,7 +571,7 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          borderB: "1px solid #242934",
+          borderBottom: "1px solid #242934",
           bgcolor: "#181c23",
         }}
       >
@@ -360,12 +588,12 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
               justifyContent: "center",
             }}
           >
-            <ChangelogIcon sx={{ fontSize: 22 }} />
+            <DeploymentIcon sx={{ fontSize: 22 }} />
           </Box>
           <Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
               <Typography variant="h6" sx={{ fontWeight: 800, fontSize: "1.1rem", color: "#ffffff" }}>
-                Release History & Audit Changelogs
+                GitHub Deployment & Version Changelogs
               </Typography>
               <Chip
                 label={`${APP_VERSION} • Current`}
@@ -382,7 +610,7 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
               />
             </Box>
             <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem", display: "block" }}>
-              GitHub repository release audit trail with verified database parity
+              Complete deployment audit trail synchronized with GitHub Releases, Tags, and Supabase DB
             </Typography>
           </Box>
         </Box>
@@ -413,7 +641,7 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
             size="small"
             onClick={fetchChangelogs}
             disabled={isLoading}
-            title="Refresh logs from Supabase DB"
+            title="Refresh deployments from GitHub & Database"
             sx={{ color: "text.secondary", "&:hover": { color: "#00e5c9" } }}
           >
             <RefreshIcon sx={{ fontSize: 18, animation: isLoading ? "spin 1s linear infinite" : "none" }} />
@@ -442,7 +670,7 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
           <TextField
             size="small"
-            placeholder="Search updates by keyword, module, or version tag..."
+            placeholder="Search deployments by version (e.g. 2.9, 2.7, 2.13), keyword, module, or author..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             fullWidth
@@ -501,7 +729,7 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
           ))}
           <Box sx={{ ml: "auto", display: "flex", alignItems: "center" }}>
             <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem", fontFamily: "monospace" }}>
-              Showing {filteredChangelogs.length} release(s)
+              Showing {filteredChangelogs.length} of {changelogs.length} deployment(s)
             </Typography>
           </Box>
         </Box>
@@ -523,14 +751,14 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", py: 8, gap: 1.5 }}>
             <CircularProgress size={32} sx={{ color: "#00e5c9" }} />
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Loading audit changelogs from database...
+              Loading deployment audit changelogs from GitHub & Database...
             </Typography>
           </Box>
         ) : filteredChangelogs.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 8, color: "text.secondary" }}>
             <TerminalIcon sx={{ fontSize: 40, opacity: 0.4, mb: 1 }} />
             <Typography variant="body2" sx={{ fontWeight: 700 }}>
-              No releases matching "{searchQuery}"
+              No deployments matching "{searchQuery}"
             </Typography>
             <Typography variant="caption">
               Try adjusting your search query or tag filter above.
@@ -637,7 +865,7 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
                         {isCopied ? <CheckIcon sx={{ fontSize: 14 }} /> : <CopyIcon sx={{ fontSize: 14 }} />}
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="View Tag on GitHub">
+                    <Tooltip title="View on GitHub">
                       <IconButton
                         size="small"
                         onClick={() => openGitHubTag(item.git_commit_tag || item.version)}
