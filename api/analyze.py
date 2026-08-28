@@ -180,4 +180,5 @@ class handler(BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
-        self.wfile.write(json.dumps({"error": f"Google Gemini Vision API error: {last_error}"}).encode('utf-8'))
+        # Secure error response: do not expose internal error details or stack traces to clients
+        self.wfile.write(json.dumps({"error": "Failed to analyze image with Google Gemini API. Please try again later."}).encode('utf-8'))
