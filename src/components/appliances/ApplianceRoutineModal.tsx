@@ -261,11 +261,17 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
         paper: {
           sx: {
             borderRadius: 1.5,
-            bgcolor: "#17191d",
-            backgroundImage: "radial-gradient(ellipse at top, rgba(0, 229, 201, 0.12) 0%, rgba(23, 25, 29, 0.98) 70%)",
-            boxShadow: "0 32px 80px rgba(0, 0, 0, 0.8)",
-            border: "1px solid rgba(0, 229, 201, 0.25)",
-            color: "#ffffff",
+            bgcolor: "background.paper",
+            boxShadow: (theme) =>
+              theme.palette.mode === "dark"
+                ? "0 32px 80px rgba(0, 0, 0, 0.8)"
+                : "0 20px 60px rgba(15, 23, 42, 0.12)",
+            border: "1px solid",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark"
+                ? "rgba(0, 229, 201, 0.25)"
+                : "#e2e8f0",
+            color: "text.primary",
           },
         },
       }}
@@ -284,7 +290,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
               justifyContent: "center",
             }}
           >
-            <BoltIcon sx={{ color: "#ffd54f" }} />
+            <BoltIcon sx={{ color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "#ffffff") }} />
           </Box>
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
@@ -300,10 +306,10 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
         </IconButton>
       </DialogTitle>
 
-      <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)" }} />
+      <Divider />
 
       {/* TABS HEADER */}
-      <Box sx={{ px: 3, borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
+      <Box sx={{ px: 3, borderBottom: "1px solid", borderColor: "divider" }}>
         <Tabs
           value={activeTab}
           onChange={(_, v) => setActiveTab(v)}
@@ -330,8 +336,10 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
           sx={{
             p: 1.5,
             borderRadius: 1.25,
-            bgcolor: "rgba(24, 27, 32, 0.6)",
-            borderColor: "rgba(255, 255, 255, 0.08)",
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.6)" : "#f8fafc",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
@@ -346,7 +354,16 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
             <Typography variant="caption" sx={{ color: "text.secondary", display: "flex", alignItems: "center", gap: 0.75 }}>
               <span>{incomingAppliance.category}</span>
               <span>•</span>
-              <span style={{ color: "#ffd54f", fontWeight: 800 }}>{watts} Watts</span>
+              <Typography
+                component="span"
+                variant="caption"
+                sx={{
+                  color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "#d97706"),
+                  fontWeight: 800,
+                }}
+              >
+                {watts} Watts
+              </Typography>
               {incomingAppliance.energy_rating && <span>• {incomingAppliance.energy_rating}</span>}
             </Typography>
           </Box>
@@ -412,8 +429,15 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                       borderRadius: 2,
                       fontWeight: 800,
                       fontSize: "0.78rem",
-                      bgcolor: isSelected ? "primary.main" : "rgba(255, 255, 255, 0.03)",
-                      borderColor: isSelected ? "primary.main" : "rgba(255, 255, 255, 0.12)",
+                      bgcolor: isSelected
+                        ? "primary.main"
+                        : (theme) =>
+                            theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "#ffffff",
+                      borderColor: isSelected
+                        ? "primary.main"
+                        : (theme) =>
+                            theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0",
+                      color: isSelected ? "#ffffff" : "text.primary",
                     }}
                   >
                     {preset.label}
@@ -423,7 +447,21 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
             </Box>
 
             {/* Custom Input */}
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5, p: 1.5, borderRadius: 1, bgcolor: "rgba(0, 0, 0, 0.25)", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 1.5,
+                p: 1.5,
+                borderRadius: 1,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.25)" : "#f8fafc",
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "#e2e8f0",
+              }}
+            >
               <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
                 Custom Runtime:
               </Typography>
@@ -484,7 +522,16 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                 size="small"
                 variant="outlined"
                 onClick={handleSelectAllPast}
-                sx={{ fontSize: "0.6875rem", py: 0.4, px: 1, borderRadius: 1, fontWeight: 800 }}
+                sx={{
+                  fontSize: "0.6875rem",
+                  py: 0.4,
+                  px: 1,
+                  borderRadius: 1,
+                  fontWeight: 800,
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "#ffffff"),
+                  borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1"),
+                  color: "text.primary",
+                }}
               >
                 All Past (1–{todayDateNumber - 1})
               </Button>
@@ -492,7 +539,16 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                 size="small"
                 variant="outlined"
                 onClick={handleSelectWeekdays}
-                sx={{ fontSize: "0.6875rem", py: 0.4, px: 1, borderRadius: 1, fontWeight: 800 }}
+                sx={{
+                  fontSize: "0.6875rem",
+                  py: 0.4,
+                  px: 1,
+                  borderRadius: 1,
+                  fontWeight: 800,
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "#ffffff"),
+                  borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1"),
+                  color: "text.primary",
+                }}
               >
                 Weekdays Only
               </Button>
@@ -500,7 +556,16 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                 size="small"
                 variant="outlined"
                 onClick={handleSelectWeekends}
-                sx={{ fontSize: "0.6875rem", py: 0.4, px: 1, borderRadius: 1, fontWeight: 800 }}
+                sx={{
+                  fontSize: "0.6875rem",
+                  py: 0.4,
+                  px: 1,
+                  borderRadius: 1,
+                  fontWeight: 800,
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "#ffffff"),
+                  borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1"),
+                  color: "text.primary",
+                }}
               >
                 Weekends Only
               </Button>
@@ -510,7 +575,16 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                 color="inherit"
                 onClick={handleClearSelection}
                 startIcon={<ClearIcon sx={{ fontSize: 13 }} />}
-                sx={{ fontSize: "0.6875rem", py: 0.4, px: 1, borderRadius: 1, fontWeight: 700, opacity: 0.75 }}
+                sx={{
+                  fontSize: "0.6875rem",
+                  py: 0.4,
+                  px: 1,
+                  borderRadius: 1,
+                  fontWeight: 700,
+                  opacity: 0.85,
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "#ffffff"),
+                  borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1"),
+                }}
               >
                 Clear
               </Button>
@@ -518,15 +592,28 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
 
             {/* Mini Calendar Grid */}
             <Paper
+              variant="outlined"
               sx={{
                 p: 1.5,
                 borderRadius: 1.25,
-                bgcolor: "rgba(24, 27, 32, 0.6)",
-                borderColor: "rgba(255, 255, 255, 0.08)",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.6)" : "#f8fafc",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
               }}
             >
               {/* Month Header Label */}
-              <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.light", mb: 1, display: "block", textAlign: "center", letterSpacing: "0.06em" }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 800,
+                  color: (theme) => (theme.palette.mode === "dark" ? "primary.light" : "primary.main"),
+                  mb: 1,
+                  display: "block",
+                  textAlign: "center",
+                  letterSpacing: "0.06em",
+                }}
+              >
                 {monthName.toUpperCase()}
               </Typography>
 
@@ -574,10 +661,13 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            bgcolor: "rgba(255, 255, 255, 0.02)",
-                            opacity: 0.25,
+                            bgcolor: (theme) =>
+                              theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "#f1f5f9",
+                            opacity: 0.4,
                             cursor: "not-allowed",
-                            border: "1px solid rgba(255, 255, 255, 0.04)",
+                            border: "1px solid",
+                            borderColor: (theme) =>
+                              theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "#e2e8f0",
                           }}
                         >
                           <Typography variant="caption" sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
@@ -599,15 +689,37 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                             flexDirection: "column",
                             alignItems: "center",
                             justifyContent: "center",
-                            bgcolor: "rgba(0, 229, 201, 0.12)",
-                            border: "1px dashed rgba(0, 229, 201, 0.6)",
+                            bgcolor: (theme) =>
+                              theme.palette.mode === "dark"
+                                ? "rgba(0, 229, 201, 0.12)"
+                                : "rgba(13, 148, 136, 0.1)",
+                            border: (theme) =>
+                              theme.palette.mode === "dark"
+                                ? "1px dashed rgba(0, 229, 201, 0.6)"
+                                : "1px dashed rgba(13, 148, 136, 0.6)",
                             cursor: "not-allowed",
                           }}
                         >
-                          <Typography variant="caption" sx={{ fontSize: "0.6875rem", fontWeight: 900, color: "primary.main", lineHeight: 1 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontSize: "0.6875rem",
+                              fontWeight: 900,
+                              color: (theme) => (theme.palette.mode === "dark" ? "primary.main" : "#0d9488"),
+                              lineHeight: 1,
+                            }}
+                          >
                             {dayNum}
                           </Typography>
-                          <Typography variant="caption" sx={{ fontSize: "0.5rem", fontWeight: 800, color: "primary.main", lineHeight: 1 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontSize: "0.5rem",
+                              fontWeight: 800,
+                              color: (theme) => (theme.palette.mode === "dark" ? "primary.main" : "#0d9488"),
+                              lineHeight: 1,
+                            }}
+                          >
                             TODAY
                           </Typography>
                         </Box>
@@ -627,13 +739,39 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                         alignItems: "center",
                         justifyContent: "center",
                         cursor: "pointer",
-                        bgcolor: isSelected ? "primary.main" : "rgba(255, 255, 255, 0.03)",
-                        border: isSelected ? "1px solid #00e5c9" : "1px solid rgba(255, 255, 255, 0.08)",
-                        color: isSelected ? "#0c1b18" : "text.primary",
-                        boxShadow: isSelected ? "0 0 10px rgba(0, 229, 201, 0.5)" : "none",
+                        bgcolor: (theme) =>
+                          isSelected
+                            ? theme.palette.mode === "dark"
+                              ? "primary.main"
+                              : "#0d9488"
+                            : theme.palette.mode === "dark"
+                            ? "rgba(255, 255, 255, 0.03)"
+                            : "#ffffff",
+                        border: (theme) =>
+                          isSelected
+                            ? theme.palette.mode === "dark"
+                              ? "1px solid #00e5c9"
+                              : "1px solid #0d9488"
+                            : theme.palette.mode === "dark"
+                            ? "1px solid rgba(255, 255, 255, 0.08)"
+                            : "1px solid #e2e8f0",
+                        color: isSelected ? "#ffffff" : "text.primary",
+                        boxShadow: (theme) =>
+                          isSelected
+                            ? theme.palette.mode === "dark"
+                              ? "0 0 10px rgba(0, 229, 201, 0.5)"
+                              : "0 2px 8px rgba(13, 148, 136, 0.3)"
+                            : "none",
                         transition: "all 0.12s ease",
                         "&:hover": {
-                          bgcolor: isSelected ? "primary.dark" : "rgba(0, 229, 201, 0.15)",
+                          bgcolor: (theme) =>
+                            isSelected
+                              ? theme.palette.mode === "dark"
+                                ? "primary.dark"
+                                : "#0f766e"
+                              : theme.palette.mode === "dark"
+                              ? "rgba(0, 229, 201, 0.15)"
+                              : "rgba(13, 148, 136, 0.1)",
                           borderColor: "primary.main",
                         },
                       }}
@@ -642,7 +780,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                         <Typography variant="caption" sx={{ fontSize: "0.75rem", fontWeight: isSelected ? 900 : 600 }}>
                           {dayNum}
                         </Typography>
-                        {isSelected && <CheckIcon sx={{ fontSize: 11, color: "#0c1b18" }} />}
+                        {isSelected && <CheckIcon sx={{ fontSize: 11, color: "#ffffff" }} />}
                       </Box>
                     </Box>
                   );
@@ -651,12 +789,28 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
             </Paper>
 
             {/* Daily Hours for Backfill */}
-            <Box sx={{ p: 1.5, borderRadius: 1.25, bgcolor: "rgba(0, 0, 0, 0.25)", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: 1.25,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.25)" : "#f8fafc",
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "#e2e8f0",
+              }}
+            >
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
                   Daily Runtime for Backfill Days:
                 </Typography>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.main" }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    fontWeight: 800,
+                    color: (theme) => (theme.palette.mode === "dark" ? "primary.main" : "#0d9488"),
+                  }}
+                >
                   {hoursPerDay} hrs / day
                 </Typography>
               </Box>
@@ -668,7 +822,22 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                     size="small"
                     variant={hoursPerDay === h ? "contained" : "outlined"}
                     onClick={() => handleHoursChange(h)}
-                    sx={{ minWidth: 40, px: 1, py: 0.25, fontSize: "0.72rem", fontWeight: 800 }}
+                    sx={{
+                      minWidth: 40,
+                      px: 1,
+                      py: 0.25,
+                      fontSize: "0.72rem",
+                      fontWeight: 800,
+                      bgcolor:
+                        hoursPerDay === h
+                          ? "primary.main"
+                          : (theme) => (theme.palette.mode === "dark" ? "transparent" : "#ffffff"),
+                      borderColor:
+                        hoursPerDay === h
+                          ? "primary.main"
+                          : (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.2)" : "#cbd5e1"),
+                      color: hoursPerDay === h ? "#ffffff" : "text.primary",
+                    }}
                   >
                     {h}h
                   </Button>
@@ -682,8 +851,10 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
               sx={{
                 p: 1.5,
                 borderRadius: 1.25,
-                bgcolor: "rgba(0, 229, 201, 0.08)",
-                borderColor: "rgba(0, 229, 201, 0.25)",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(13, 148, 136, 0.08)",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(13, 148, 136, 0.25)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -694,7 +865,14 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
               <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
                 Backfill Selection Total ({selectedDaysCount} days):
               </Typography>
-              <Typography variant="subtitle2" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f" }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: 900,
+                  fontFamily: "monospace",
+                  color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "#d97706"),
+                }}
+              >
                 ~₱{backfillTotalCost.toFixed(2)} ({backfillTotalKwh.toFixed(2)} kWh)
               </Typography>
             </Paper>
@@ -707,15 +885,26 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
           sx={{
             p: 2,
             borderRadius: 1.25,
-            bgcolor: "rgba(24, 27, 32, 0.75)",
-            borderColor: "rgba(0, 229, 201, 0.25)",
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.75)" : "#f8fafc",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "#e2e8f0",
             display: "flex",
             flexDirection: "column",
             gap: 1.25,
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.light", display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 800,
+                color: (theme) => (theme.palette.mode === "dark" ? "primary.light" : "primary.main"),
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+              }}
+            >
               <TrendingUpIcon sx={{ fontSize: 16 }} />
               FORECASTED ENERGY & COST IMPACT:
             </Typography>
@@ -728,20 +917,52 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
           </Box>
 
           <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5, textAlign: "center" }}>
-            <Box sx={{ p: 1, borderRadius: 2, bgcolor: "rgba(0, 0, 0, 0.25)" }}>
+            <Box
+              sx={{
+                p: 1,
+                borderRadius: 2,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.25)" : "#ffffff",
+                border: (theme) =>
+                  theme.palette.mode === "dark" ? "none" : "1px solid #e2e8f0",
+              }}
+            >
               <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
                 Daily Consumption
               </Typography>
-              <Typography variant="subtitle2" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f" }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: 900,
+                  fontFamily: "monospace",
+                  color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "#d97706"),
+                }}
+              >
                 {dailyKwh.toFixed(3)} kWh/day (₱{dailyCost.toFixed(2)})
               </Typography>
             </Box>
 
-            <Box sx={{ p: 1, borderRadius: 2, bgcolor: "rgba(0, 0, 0, 0.25)" }}>
+            <Box
+              sx={{
+                p: 1,
+                borderRadius: 2,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.25)" : "#ffffff",
+                border: (theme) =>
+                  theme.palette.mode === "dark" ? "none" : "1px solid #e2e8f0",
+              }}
+            >
               <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
                 Estimated Monthly Bill
               </Typography>
-              <Typography variant="subtitle2" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.light" }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: 900,
+                  fontFamily: "monospace",
+                  color: (theme) => (theme.palette.mode === "dark" ? "primary.light" : "primary.main"),
+                }}
+              >
                 ₱{monthlyCost.toFixed(2)}/mo ({monthlyKwh.toFixed(1)} kWh)
               </Typography>
             </Box>
@@ -749,9 +970,18 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
         </Paper>
       </DialogContent>
 
-      <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)" }} />
+      <Divider />
 
-      <DialogActions sx={{ p: 2, px: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <DialogActions
+        sx={{
+          p: 2,
+          px: 3,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          bgcolor: (theme) => (theme.palette.mode === "dark" ? "transparent" : "#f8fafc"),
+        }}
+      >
         <Button variant="outlined" onClick={onClose} sx={{ borderRadius: 2, fontWeight: 700 }}>
           Cancel
         </Button>
