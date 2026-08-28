@@ -155,13 +155,14 @@ export const ForecastingView: React.FC = () => {
     };
   }, [targetAppliances, daysInActiveMonth, simulatedGenRate, tariffType]);
 
-  // 4. Composite End-of-Month Forecast (Actual Logged + Remaining Routine Days)
+  // 4. Composite End-of-Month Forecast (Actual Logged + Remaining Unlogged Routine Days)
   const trajectoryForecast = useMemo(() => {
     let forecastedKwh = 0;
     let projectedRemainingKwh = 0;
+    const unloggedDaysCount = Math.max(0, daysInActiveMonth - mtdActuals.loggedDaysCount);
 
     if (mtdActuals.hasLoggedRecords) {
-      projectedRemainingKwh = Number((routineBaseline.dailyKwh * remainingDays).toFixed(3));
+      projectedRemainingKwh = Number((routineBaseline.dailyKwh * unloggedDaysCount).toFixed(3));
       forecastedKwh = Number((mtdActuals.actualKwh + projectedRemainingKwh).toFixed(3));
     } else {
       // If zero logs recorded for this month yet, projection runs on pure inventory routine
@@ -176,9 +177,10 @@ export const ForecastingView: React.FC = () => {
       forecastedKwh,
       projectedRemainingKwh,
       forecastedBill,
+      unloggedDaysCount,
       effectiveBurnRate: Number(effectiveBurnRate.toFixed(3)),
     };
-  }, [mtdActuals, routineBaseline, remainingDays, daysInActiveMonth, simulatedGenRate, tariffType]);
+  }, [mtdActuals, routineBaseline, daysInActiveMonth, simulatedGenRate, tariffType]);
 
   // 5. Data-Driven Scenarios Based on Actual System Capabilities
   const scenarios = useMemo(() => {

@@ -41,12 +41,12 @@ export interface SystemChangelogEntry {
 // Master compiled GitHub deployment history covering all releases from 2.1.1v to 2.13.DEV
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
-    id: "2.12.DEV-1v",
-    version: "2.12.DEV-1v",
-    description: "2.12.DEV-1v - Harmonize DevLogs floating widget colors with obsidian & teal system theme, add interactive GitHub Version Changelog Viewer Modal with audit log sync",
-    git_commit_tag: "2.12.DEV-1v",
+    id: "2.13.2v",
+    version: "2.13.2v",
+    description: "2.13.2v - Harden calculations: auto-save stopwatch on Dashboard & List power toggle, fix month forecast unlogged days accounting, and meter multi-session live stopwatches",
+    git_commit_tag: "2.13.2v",
     deployed_by: "hAizen-Nibba",
-    created_at: "2026-08-28T02:24:59.000Z",
+    created_at: new Date().toISOString(),
     source: "github",
   },
   {

@@ -946,19 +946,19 @@ export function computeDayMetrics(
     let totalCost = filteredLogged.reduce((acc, curr) => acc + (Number(curr.estimated_cost) || 0), 0);
     let activeCount = filteredLogged.filter((u) => Number(u.hours_used) > 0).length;
 
-    // Incorporate live running stopwatches for appliances that don't already have completed hours recorded today
+    // Incorporate live running stopwatches for active appliances in real-time
     appliances.forEach((app) => {
       if (app.is_currently_on && app.last_turned_on_at) {
-        const alreadyHasSavedRow = filteredLogged.some((r) => r.appliance_id === app.id && Number(r.hours_used) > 0);
-        if (!alreadyHasSavedRow) {
-          const start = new Date(app.last_turned_on_at);
-          const now = new Date();
-          const slices = splitSessionAcrossDays(start, now);
-          const daySlice = slices.find((s) => s.dateKey === dateKey);
-          if (daySlice && daySlice.hours > 0) {
-            const appKwh = calculateKwh(app.watts, daySlice.hours, app.quantity || 1);
-            totalKwh += appKwh;
-            totalCost += calculateCost(appKwh, effectiveRate);
+        const start = new Date(app.last_turned_on_at);
+        const now = new Date();
+        const slices = splitSessionAcrossDays(start, now);
+        const daySlice = slices.find((s) => s.dateKey === dateKey);
+        if (daySlice && daySlice.hours > 0) {
+          const appKwh = calculateKwh(app.watts, daySlice.hours, app.quantity || 1);
+          totalKwh += appKwh;
+          totalCost += calculateCost(appKwh, effectiveRate);
+          const alreadyHasSavedRow = filteredLogged.some((r) => r.appliance_id === app.id && Number(r.hours_used) > 0);
+          if (!alreadyHasSavedRow) {
             activeCount += 1;
           }
         }

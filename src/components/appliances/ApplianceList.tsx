@@ -43,6 +43,8 @@ import { ScheduleQueueModal } from "../calendar/ScheduleQueueModal";
 import { useToast } from "../common/ToastProvider";
 import { devLog } from "../../lib/devLogger";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
+import { supabaseClient } from "../../lib/supabaseClient";
+import { accumulateLiveSessionDailyUsage, calculateKwh, calculateCost } from "../../lib/dailyUsageService";
 
 interface ApplianceListProps {
   onOpenAiScanner?: () => void;
@@ -181,9 +183,63 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
   const spaceTariffType = activeSpace?.tariff_type || "residential";
   const spaceBillCalc = calculateMeralcoBill(spaceMonthlyKwh, undefined, 0, false, spaceTariffType);
 
-  const togglePower = (app: UserAppliance) => {
+  const togglePower = async (app: UserAppliance) => {
     const newState = !app.is_currently_on;
     const nowIso = newState ? new Date().toISOString() : null;
+
+    if (!newState && app.last_turned_on_at) {
+      // Stopwatch is being STOPPED! Save the completed session to logs & daily usage
+      const start = new Date(app.last_turned_on_at);
+      const end = new Date();
+      if (!isNaN(start.getTime())) {
+        const diffMs = Math.max(1000, end.getTime() - start.getTime());
+        const durationMinutes = Math.max(1, Math.round(diffMs / 60000));
+        const durationHours = diffMs / 3600000;
+        const appKwh = calculateKwh(app.watts, durationHours, app.quantity || 1);
+        const effectiveRate = app.tariff_type === "commercial" ? 15.2 : 14.8261;
+        const appCost = calculateCost(appKwh, effectiveRate);
+
+        try {
+          // 1. Insert session log
+          await supabaseClient.from("appliance_usage_logs").insert({
+            appliance_id: app.id,
+            user_id: app.user_id || null,
+            started_at: start.toISOString(),
+            ended_at: end.toISOString(),
+            duration_minutes: durationMinutes,
+            kwh_consumed: appKwh,
+            estimated_cost: appCost,
+            source: "stopwatch",
+          });
+
+          // 2. Accumulate in daily_appliance_usage
+          await accumulateLiveSessionDailyUsage({
+            appliance_id: app.id,
+            durationMinutes,
+            watts: app.watts,
+            quantity: app.quantity || 1,
+            effectiveRate,
+            user_id: app.user_id,
+            startTime: start,
+            endTime: end,
+          });
+
+          // 3. Dispatch global sync event
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(
+              new CustomEvent("powerforecast_stopwatch_rollover", {
+                detail: {
+                  rolledOverCount: 1,
+                  affectedDates: [start.toISOString().split("T")[0], end.toISOString().split("T")[0]],
+                },
+              })
+            );
+          }
+        } catch (err: any) {
+          devLog.warn("ApplianceList", `Error auto-saving stopped session: ${err?.message}`);
+        }
+      }
+    }
 
     devLog.telemetry("Telemetry", `Stopwatch ${newState ? "started [TIMING]" : "stopped [STOPPED]"}: "${app.name}" (${app.watts}W @ 230V)`, {
       applianceId: app.id,
@@ -204,7 +260,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
       },
     });
 
-    showInfo(`${app.name} stopwatch ${newState ? "started" : "stopped"}.`);
+    showInfo(`${app.name} stopwatch ${newState ? "started" : "stopped and saved"}.`);
   };
 
   const getRunningDuration = (turnedOnAt?: string | null) => {
