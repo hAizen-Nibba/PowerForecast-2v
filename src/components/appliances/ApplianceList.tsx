@@ -176,7 +176,11 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
   );
 
   const spaceMonthlyKwh = currentSpaceAppliances.reduce((acc, curr) => {
-    const kwh = Number(curr.monthly_kwh) || (curr.watts * curr.hours_per_day * (curr.quantity || 1) * 30) / 1000;
+    const w = Number(curr.watts) || 0;
+    const h = Number(curr.hours_per_day) || 0;
+    const q = Number(curr.quantity) || 1;
+    const d = Number(curr.days_per_month) || 30;
+    const kwh = Number(curr.monthly_kwh) > 0 ? Number(curr.monthly_kwh) : (w * h * q * d) / 1000;
     return acc + kwh;
   }, 0);
 
@@ -796,12 +800,16 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
           filteredAppliances.map((app: UserAppliance, appIdx: number) => {
             const isOn = app.is_currently_on;
             const liveSpent = getAccumulatedPesos(app);
-            const monthlyKwh = Number(app.monthly_kwh) || ((app.watts * app.hours_per_day * (app.quantity || 1) * 30) / 1000);
+            const w = Number(app.watts) || 0;
+            const h = Number(app.hours_per_day) || 0;
+            const q = Number(app.quantity) || 1;
+            const d = Number(app.days_per_month) || 30;
+            const monthlyKwh = Number(app.monthly_kwh) > 0 ? Number(app.monthly_kwh) : ((w * h * q * d) / 1000);
             
             // Calculate deterministic unbundled monthly cost with this space's tariff
             const appBill = calculateMeralcoBill(monthlyKwh, undefined, 0, false, spaceTariffType);
             const monthlyCost = appBill.totalBill;
-            const hourlyRate = ((app.watts * (app.quantity || 1)) / 1000) * (appBill.effectiveRatePerKwh || 14.82);
+            const hourlyRate = ((w * q) / 1000) * (appBill.effectiveRatePerKwh || 14.82);
 
             return (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={app.id}>

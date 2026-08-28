@@ -41,7 +41,11 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
 
   appliances.forEach((app) => {
     const cat = app.category || "Other";
-    const kwh = Number(app.monthly_kwh) || ((app.watts * app.hours_per_day * app.days_per_month * (app.quantity || 1)) / 1000);
+    const watts = Number(app.watts) || 0;
+    const hours = Number(app.hours_per_day) || 0;
+    const days = Number(app.days_per_month) || 30;
+    const qty = Number(app.quantity) || 1;
+    const kwh = Number(app.monthly_kwh) > 0 ? Number(app.monthly_kwh) : ((watts * hours * days * qty) / 1000);
     categoryTotals[cat] = (categoryTotals[cat] || 0) + kwh;
 
     const spaceObj = spaces.find((s) => s.id === app.list_id) || spaces[0];
