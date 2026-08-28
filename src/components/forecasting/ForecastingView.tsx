@@ -389,8 +389,12 @@ export const ForecastingView: React.FC = () => {
               p: { xs: 2.5, sm: 3 },
               borderRadius: 1.5,
               border: "1px solid",
-              borderColor: "rgba(0, 229, 201, 0.25)",
-              bgcolor: "rgba(24, 27, 32, 0.78)",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "#e2e8f0",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.78)" : "#ffffff",
+              boxShadow: (theme) =>
+                theme.palette.mode === "dark" ? "none" : "0 2px 12px rgba(15, 23, 42, 0.04)",
               backdropFilter: "blur(12px)",
             }}
           >
@@ -404,7 +408,15 @@ export const ForecastingView: React.FC = () => {
               <Chip
                 label={`${mtdActuals.loggedDaysCount} Days In • ${remainingDays} Days Left`}
                 size="small"
-                sx={{ fontWeight: 700, bgcolor: "rgba(0, 229, 201, 0.12)", color: "#00e5c9", border: "1px solid rgba(0, 229, 201, 0.3)" }}
+                sx={{
+                  fontWeight: 700,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(13, 148, 136, 0.1)",
+                  color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0f766e"),
+                  border: "1px solid",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)",
+                }}
               />
             </Box>
 
@@ -416,14 +428,24 @@ export const ForecastingView: React.FC = () => {
                   sx={{
                     p: 2,
                     borderRadius: 1.25,
-                    bgcolor: "rgba(255, 255, 255, 0.02)",
-                    borderColor: "rgba(255, 255, 255, 0.06)",
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "#f8fafc",
+                    borderColor: (theme) =>
+                      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "#e2e8f0",
                   }}
                 >
                   <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>
                     {language === "tl" ? "NAITALANG MTD" : "RECORDED MTD ACTUAL"}
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.light", my: 0.5 }}>
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: 900,
+                      fontFamily: "monospace",
+                      color: (theme) => (theme.palette.mode === "dark" ? "primary.light" : "primary.main"),
+                      my: 0.5,
+                    }}
+                  >
                     {mtdActuals.actualKwh.toFixed(1)} <Typography component="span" variant="caption">kWh</Typography>
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -439,14 +461,24 @@ export const ForecastingView: React.FC = () => {
                   sx={{
                     p: 2,
                     borderRadius: 1.25,
-                    bgcolor: "rgba(255, 255, 255, 0.02)",
-                    borderColor: "rgba(255, 255, 255, 0.06)",
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "#f8fafc",
+                    borderColor: (theme) =>
+                      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "#e2e8f0",
                   }}
                 >
                   <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>
                     {language === "tl" ? "TINATAYANG NATITIRA" : "PROJECTED REMAINING"}
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f", my: 0.5 }}>
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: 900,
+                      fontFamily: "monospace",
+                      color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "#d97706"),
+                      my: 0.5,
+                    }}
+                  >
                     {trajectoryForecast.projectedRemainingKwh.toFixed(1)} <Typography component="span" variant="caption">kWh</Typography>
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -462,14 +494,30 @@ export const ForecastingView: React.FC = () => {
                   sx={{
                     p: 2,
                     borderRadius: 1.25,
-                    bgcolor: "rgba(0, 229, 201, 0.08)",
-                    borderColor: "rgba(0, 229, 201, 0.3)",
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(13, 148, 136, 0.06)",
+                    borderColor: (theme) =>
+                      theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)",
                   }}
                 >
-                  <Typography variant="caption" sx={{ color: "primary.light", fontWeight: 800 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: (theme) => (theme.palette.mode === "dark" ? "primary.light" : "primary.main"),
+                      fontWeight: 800,
+                    }}
+                  >
                     {language === "tl" ? "KABUUANG PREDIKSYON SA BILL" : "COMPOSITE FORECASTED BILL"}
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#00e5c9", my: 0.5 }}>
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: 900,
+                      fontFamily: "monospace",
+                      color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
+                      my: 0.5,
+                    }}
+                  >
                     ₱{trajectoryForecast.forecastedBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -877,8 +925,12 @@ export const ForecastingView: React.FC = () => {
               p: { xs: 2.5, sm: 3 },
               borderRadius: 1.5,
               border: "1px solid",
-              borderColor: "rgba(255, 255, 255, 0.08)",
-              bgcolor: "rgba(24, 27, 32, 0.65)",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.65)" : "#ffffff",
+              boxShadow: (theme) =>
+                theme.palette.mode === "dark" ? "none" : "0 2px 12px rgba(15, 23, 42, 0.04)",
             }}
           >
             <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary", mb: 1 }}>
@@ -896,8 +948,10 @@ export const ForecastingView: React.FC = () => {
                   sx={{
                     p: 1.75,
                     borderRadius: 1.25,
-                    bgcolor: "rgba(255, 255, 255, 0.02)",
-                    borderColor: "rgba(255, 255, 255, 0.06)",
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "#f8fafc",
+                    borderColor: (theme) =>
+                      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "#e2e8f0",
                     display: "flex",
                     flexDirection: "column",
                     gap: 1,
@@ -910,8 +964,20 @@ export const ForecastingView: React.FC = () => {
                           width: 26,
                           height: 26,
                           borderRadius: "50%",
-                          bgcolor: idx < 3 ? "primary.main" : "rgba(255, 255, 255, 0.1)",
-                          color: idx < 3 ? "#0c1b18" : "#ffffff",
+                          bgcolor: (theme) =>
+                            idx < 3
+                              ? theme.palette.mode === "dark"
+                                ? "primary.main"
+                                : "#0d9488"
+                              : theme.palette.mode === "dark"
+                              ? "rgba(255, 255, 255, 0.1)"
+                              : "#e2e8f0",
+                          color: (theme) =>
+                            idx < 3
+                              ? "#ffffff"
+                              : theme.palette.mode === "dark"
+                              ? "#ffffff"
+                              : "#0f172a",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -932,7 +998,14 @@ export const ForecastingView: React.FC = () => {
                     </Box>
 
                     <Box sx={{ textAlign: "right" }}>
-                      <Typography variant="body2" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f" }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: 900,
+                          fontFamily: "monospace",
+                          color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "#d97706"),
+                        }}
+                      >
                         ₱{cost.toFixed(2)}
                       </Typography>
                       <Typography variant="caption" sx={{ color: "text.secondary", fontFamily: "monospace" }}>
@@ -947,7 +1020,8 @@ export const ForecastingView: React.FC = () => {
                     sx={{
                       height: 6,
                       borderRadius: 1,
-                      bgcolor: "rgba(255, 255, 255, 0.08)",
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
                       "& .MuiLinearProgress-bar": {
                         borderRadius: 1,
                         bgcolor: idx === 0 ? "#ef4444" : idx === 1 ? "#f59e0b" : "primary.main",

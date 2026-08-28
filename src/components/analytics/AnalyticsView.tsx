@@ -12,6 +12,7 @@ import TooltipMui from "@mui/material/Tooltip";
 import ButtonGroup from "@mui/material/ButtonGroup";
 import Paper from "@mui/material/Paper";
 import Divider from "@mui/material/Divider";
+import { useTheme } from "@mui/material/styles";
 import {
   BarChart as AnalyticsIcon,
   TrendingUp as TrendingUpIcon,
@@ -53,6 +54,8 @@ import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
 import { MetricCard } from "../common/MetricCard";
 
 export const AnalyticsView: React.FC = () => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>("all");
   const [zoomPreset, setZoomPreset] = useState<"24h" | "morning" | "day" | "evening">("24h");
   const [breakdownView, setBreakdownView] = useState<"category" | "appliances">("category");
@@ -388,7 +391,7 @@ export const AnalyticsView: React.FC = () => {
           cost: Math.round(recorded.cost),
           status: "Recorded Actuals",
           type: "recorded",
-          fillColor: "#009e88",
+          fillColor: isDark ? "#009e88" : "#0d9488",
         });
       }
     }
@@ -409,7 +412,7 @@ export const AnalyticsView: React.FC = () => {
       cost: Math.round(totalActiveCost),
       status: `Active Cycle • Day ${currentDay} of ${daysInCurrentMonth} (MTD + Projected)`,
       type: "active",
-      fillColor: "#00e5c9",
+      fillColor: isDark ? "#00e5c9" : "#14b8a6",
     });
 
     // 4. Future Months (Next 5 Months): Pure Baseline Prediction from registered appliance routines
@@ -424,12 +427,12 @@ export const AnalyticsView: React.FC = () => {
         cost: Math.round(totalCost),
         status: "Predicted Cycle • Based on active appliance baseline routine",
         type: "predicted",
-        fillColor: "#2a2f38",
+        fillColor: isDark ? "#2a2f38" : "#cbd5e1",
       });
     }
 
     return points;
-  }, [dailyUsageRecords, totalMonthlyKwh, totalCost, effectiveRate]);
+  }, [dailyUsageRecords, totalMonthlyKwh, totalCost, effectiveRate, isDark]);
 
   // AI Energy Insights & Actionable Recommendations
   const actionableInsights = useMemo(() => {
@@ -792,7 +795,17 @@ export const AnalyticsView: React.FC = () => {
                       </Typography>
                       <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary" }}>
                         {item.kwh.toFixed(1)} kWh ({item.percentage}%) •{" "}
-                        <span style={{ color: "#ffd54f", fontFamily: "monospace" }}>₱{item.cost.toFixed(2)}</span>
+                        <Typography
+                          component="span"
+                          variant="caption"
+                          sx={{
+                            color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "#d97706"),
+                            fontFamily: "monospace",
+                            fontWeight: 800,
+                          }}
+                        >
+                          ₱{item.cost.toFixed(2)}
+                        </Typography>
                       </Typography>
                     </Box>
                     <LinearProgress
@@ -801,7 +814,8 @@ export const AnalyticsView: React.FC = () => {
                       sx={{
                         height: 8,
                         borderRadius: 1,
-                        bgcolor: "rgba(0, 229, 201, 0.1)",
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.1)" : "rgba(13, 148, 136, 0.1)",
                         "& .MuiLinearProgress-bar": {
                           borderRadius: 1,
                           background: "linear-gradient(90deg, #00e5c9, #26c6da)",
@@ -824,7 +838,17 @@ export const AnalyticsView: React.FC = () => {
                       </Box>
                       <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary" }}>
                         {app.kwh.toFixed(1)} kWh ({app.percentage}%) •{" "}
-                        <span style={{ color: "#ffd54f", fontFamily: "monospace" }}>₱{app.cost.toFixed(2)}</span>
+                        <Typography
+                          component="span"
+                          variant="caption"
+                          sx={{
+                            color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "#d97706"),
+                            fontFamily: "monospace",
+                            fontWeight: 800,
+                          }}
+                        >
+                          ₱{app.cost.toFixed(2)}
+                        </Typography>
                       </Typography>
                     </Box>
                     <LinearProgress
@@ -833,7 +857,8 @@ export const AnalyticsView: React.FC = () => {
                       sx={{
                         height: 8,
                         borderRadius: 1,
-                        bgcolor: "rgba(255, 255, 255, 0.08)",
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
                         "& .MuiLinearProgress-bar": {
                           borderRadius: 1,
                           background: "linear-gradient(90deg, #00e5c9, #26c6da)",
@@ -1019,16 +1044,16 @@ export const AnalyticsView: React.FC = () => {
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
             {MONTHLY_TREND_DATA.some((d) => d.type === "recorded") && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#009e88" }} />
+                <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: isDark ? "#009e88" : "#0d9488" }} />
                 <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>Recorded History</Typography>
               </Box>
             )}
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#00e5c9" }} />
+              <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: isDark ? "#00e5c9" : "#14b8a6" }} />
               <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>Active Billing Cycle</Typography>
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#2a2f38" }} />
+              <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: isDark ? "#2a2f38" : "#cbd5e1" }} />
               <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>Predicted (Appliance Baseline)</Typography>
             </Box>
           </Box>
@@ -1049,10 +1074,10 @@ export const AnalyticsView: React.FC = () => {
                         sx={{
                           p: 1.5,
                           borderRadius: 1.25,
-                          bgcolor: "#17191d",
-                          border: "1px solid rgba(0, 229, 201, 0.35)",
-                          color: "#ffffff",
-                          boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+                          bgcolor: isDark ? "#17191d" : "#ffffff",
+                          border: isDark ? "1px solid rgba(0, 229, 201, 0.35)" : "1px solid #e2e8f0",
+                          color: isDark ? "#ffffff" : "#0f172a",
+                          boxShadow: isDark ? "0 8px 32px rgba(0,0,0,0.6)" : "0 8px 24px rgba(15, 23, 42, 0.08)",
                         }}
                       >
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
@@ -1060,15 +1085,41 @@ export const AnalyticsView: React.FC = () => {
                             {d.month}
                           </Typography>
                           {d.type === "predicted" && (
-                            <Chip label="PREDICTED" size="small" sx={{ height: 16, fontSize: "0.6rem", fontWeight: 800, bgcolor: "rgba(255, 255, 255, 0.08)", color: "text.secondary" }} />
+                            <Chip
+                              label="PREDICTED"
+                              size="small"
+                              sx={{
+                                height: 16,
+                                fontSize: "0.6rem",
+                                fontWeight: 800,
+                                bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9",
+                                color: "text.secondary",
+                              }}
+                            />
                           )}
                           {d.type === "active" && (
-                            <Chip label="ACTIVE" size="small" sx={{ height: 16, fontSize: "0.6rem", fontWeight: 800, bgcolor: "#00e5c9", color: "#0c1b18" }} />
+                            <Chip
+                              label="ACTIVE"
+                              size="small"
+                              sx={{
+                                height: 16,
+                                fontSize: "0.6rem",
+                                fontWeight: 800,
+                                bgcolor: isDark ? "#00e5c9" : "primary.main",
+                                color: isDark ? "#0c1b18" : "#ffffff",
+                              }}
+                            />
                           )}
                         </Box>
                         <Typography
                           variant="caption"
-                          sx={{ display: "block", color: "#00e5c9", fontWeight: 800, fontFamily: "monospace", fontSize: "0.95rem" }}
+                          sx={{
+                            display: "block",
+                            color: isDark ? "#00e5c9" : "primary.main",
+                            fontWeight: 800,
+                            fontFamily: "monospace",
+                            fontSize: "0.95rem",
+                          }}
                         >
                           {d.kwh} kWh (~₱{d.cost.toLocaleString()})
                         </Typography>
@@ -1094,7 +1145,7 @@ export const AnalyticsView: React.FC = () => {
       {/* 7. Actionable AI Energy Recommendations */}
       <Card data-tour="analytics-insights" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 1.5 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
-          <SparklesIcon sx={{ color: "#ffd54f" }} />
+          <SparklesIcon sx={{ color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "#d97706") }} />
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
               AI Smart Energy Audit & Actionable Insights
@@ -1119,8 +1170,13 @@ export const AnalyticsView: React.FC = () => {
                   sx={{
                     p: 2,
                     borderRadius: 1.25,
-                    bgcolor: "rgba(24, 27, 32, 0.65)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.65)" : "#ffffff",
+                    border: "1px solid",
+                    borderColor: (theme) =>
+                      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+                    boxShadow: (theme) =>
+                      theme.palette.mode === "dark" ? "none" : "0 2px 10px rgba(15, 23, 42, 0.04)",
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",

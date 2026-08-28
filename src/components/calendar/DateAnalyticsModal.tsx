@@ -1003,8 +1003,22 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                 p: 1.75,
                 borderRadius: 1.25,
                 textAlign: "center",
-                bgcolor: isSelectedToday && hasActiveStopwatch ? "rgba(0, 229, 201, 0.12)" : "rgba(24, 27, 32, 0.7)",
-                borderColor: isSelectedToday && hasActiveStopwatch ? "rgba(0, 229, 201, 0.4)" : "rgba(255, 255, 255, 0.08)",
+                bgcolor: (theme) =>
+                  isSelectedToday && hasActiveStopwatch
+                    ? theme.palette.mode === "dark"
+                      ? "rgba(0, 229, 201, 0.12)"
+                      : "rgba(13, 148, 136, 0.1)"
+                    : theme.palette.mode === "dark"
+                    ? "rgba(24, 27, 32, 0.7)"
+                    : "#f8fafc",
+                borderColor: (theme) =>
+                  isSelectedToday && hasActiveStopwatch
+                    ? theme.palette.mode === "dark"
+                      ? "rgba(0, 229, 201, 0.4)"
+                      : "rgba(13, 148, 136, 0.3)"
+                    : theme.palette.mode === "dark"
+                    ? "rgba(255, 255, 255, 0.08)"
+                    : "#e2e8f0",
                 transition: "all 0.2s ease",
               }}
             >
@@ -1021,7 +1035,16 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                   />
                 )}
               </Box>
-              <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f", my: 0.25, letterSpacing: "-0.01em" }}>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 900,
+                  fontFamily: "monospace",
+                  color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "#d97706"),
+                  my: 0.25,
+                  letterSpacing: "-0.01em",
+                }}
+              >
                 ₱{dayTotals.cost.toFixed(2)}
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
@@ -1036,8 +1059,22 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                 p: 1.75,
                 borderRadius: 1.25,
                 textAlign: "center",
-                bgcolor: isSelectedToday && hasActiveStopwatch ? "rgba(0, 229, 201, 0.12)" : "rgba(24, 27, 32, 0.7)",
-                borderColor: isSelectedToday && hasActiveStopwatch ? "rgba(0, 229, 201, 0.4)" : "rgba(255, 255, 255, 0.08)",
+                bgcolor: (theme) =>
+                  isSelectedToday && hasActiveStopwatch
+                    ? theme.palette.mode === "dark"
+                      ? "rgba(0, 229, 201, 0.12)"
+                      : "rgba(13, 148, 136, 0.1)"
+                    : theme.palette.mode === "dark"
+                    ? "rgba(24, 27, 32, 0.7)"
+                    : "#f8fafc",
+                borderColor: (theme) =>
+                  isSelectedToday && hasActiveStopwatch
+                    ? theme.palette.mode === "dark"
+                      ? "rgba(0, 229, 201, 0.4)"
+                      : "rgba(13, 148, 136, 0.3)"
+                    : theme.palette.mode === "dark"
+                    ? "rgba(255, 255, 255, 0.08)"
+                    : "#e2e8f0",
                 transition: "all 0.2s ease",
               }}
             >
@@ -1054,7 +1091,16 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                   />
                 )}
               </Box>
-              <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.light", my: 0.25, letterSpacing: "-0.01em" }}>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 900,
+                  fontFamily: "monospace",
+                  color: (theme) => (theme.palette.mode === "dark" ? "primary.light" : "primary.main"),
+                  my: 0.25,
+                  letterSpacing: "-0.01em",
+                }}
+              >
                 {dayTotals.kwh < 0.01 ? dayTotals.kwh.toFixed(4) : dayTotals.kwh.toFixed(3)} kWh
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
@@ -1069,8 +1115,8 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                 p: 1.75,
                 borderRadius: 1.25,
                 textAlign: "center",
-                bgcolor: "rgba(24, 27, 32, 0.7)",
-                borderColor: "rgba(255, 255, 255, 0.08)",
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.7)" : "#f8fafc"),
+                borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0"),
               }}
             >
               <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800, letterSpacing: "0.04em", fontSize: "0.6875rem", display: "block" }}>

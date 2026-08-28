@@ -21,13 +21,16 @@ export const navigationCustomizations: Components<Theme> = {
       paper: ({ theme }: { theme: Theme }) => ({
         backgroundColor: theme.palette.mode === 'dark' 
           ? '#141619' 
-          : '#1a222c',
-        color: '#ffffff',
+          : '#ffffff',
+        color: theme.palette.text.primary,
         borderRight: `1px solid ${
           theme.palette.mode === 'dark' 
             ? 'rgba(255, 255, 255, 0.08)' 
-            : 'rgba(255, 255, 255, 0.1)'
+            : '#e2e8f0'
         }`,
+        boxShadow: theme.palette.mode === 'dark'
+          ? 'none'
+          : '2px 0 16px rgba(15, 23, 42, 0.03)',
         transition: 'width 240ms cubic-bezier(0.4, 0, 0.2, 1)',
       }),
     },
@@ -42,17 +45,17 @@ export const navigationCustomizations: Components<Theme> = {
         '&.Mui-selected': {
           backgroundColor: theme.palette.mode === 'dark' 
             ? 'rgba(0, 229, 201, 0.15)' 
-            : 'rgba(255, 255, 255, 0.16)',
-          color: theme.palette.mode === 'dark' ? '#00e5c9' : '#ffffff',
+            : 'rgba(13, 148, 136, 0.1)',
+          color: theme.palette.mode === 'dark' ? '#00e5c9' : '#0f766e',
           fontWeight: 600,
           '&:hover': {
             backgroundColor: theme.palette.mode === 'dark' 
               ? 'rgba(0, 229, 201, 0.22)' 
-              : 'rgba(255, 255, 255, 0.22)',
+              : 'rgba(13, 148, 136, 0.15)',
           },
         },
         '&:hover': {
-          backgroundColor: 'rgba(255, 255, 255, 0.06)',
+          backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
           transform: 'translateX(2px)',
         },
       }),

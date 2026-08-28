@@ -1011,23 +1011,30 @@ return (
                     )}
                   </Box>
 
-                  <Box sx={{ textAlign: "right", mt: 1 }}>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontWeight: 800,
-                        fontFamily: "monospace",
-                        color: metrics.isLogged ? "#ffd54f" : "#a5b4fc",
-                        display: "block",
-                        fontSize: { xs: "0.75rem", sm: "0.8125rem" },
-                      }}
-                    >
-                      {metrics.isLogged ? `₱${metrics.cost.toFixed(2)}` : `~₱${metrics.cost.toFixed(2)}`}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.625rem" }}>
-                      {metrics.kwh} kWh
-                    </Typography>
-                  </Box>
+                    <Box sx={{ textAlign: "right", mt: 1 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontWeight: 800,
+                          fontFamily: "monospace",
+                          color: (theme) =>
+                            metrics.isLogged
+                              ? theme.palette.mode === "dark"
+                                ? "#ffd54f"
+                                : "#d97706"
+                              : theme.palette.mode === "dark"
+                              ? "#a5b4fc"
+                              : "#4f46e5",
+                          display: "block",
+                          fontSize: { xs: "0.75rem", sm: "0.8125rem" },
+                        }}
+                      >
+                        {metrics.isLogged ? `₱${metrics.cost.toFixed(2)}` : `~₱${metrics.cost.toFixed(2)}`}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.625rem" }}>
+                        {metrics.kwh} kWh
+                      </Typography>
+                    </Box>
                 </Paper>
               </Grid>
             );
