@@ -13,24 +13,32 @@ import IconButton from "@mui/material/IconButton";
 import Divider from "@mui/material/Divider";
 import Paper from "@mui/material/Paper";
 import Chip from "@mui/material/Chip";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
 import {
   Bolt as BoltIcon,
   Close as CloseIcon,
   Save as SaveIcon,
   Home as HomeIcon,
   Store as StoreIcon,
+  Create as PenIcon,
+  Storage as DatabaseIcon,
+  CameraAlt as CameraIcon,
 } from "@mui/icons-material";
 import { UserAppliance, ApplianceList } from "../../types";
 import { useCreate, useUpdate, useList } from "@refinedev/core";
 import { getDefaultStartHour } from "../../lib/loadCurveService";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
 import { DuplicateApplianceModal } from "./DuplicateApplianceModal";
+import { PelpCatalogTabContent } from "./PelpCatalogTabContent";
+import { AiVisionScannerTabContent } from "./AiVisionScannerTabContent";
 
 interface ApplianceModalProps {
   isOpen: boolean;
   onClose: () => void;
   applianceToEdit?: UserAppliance | null;
   defaultListId?: string | null;
+  initialTab?: number;
 }
 
 export const ApplianceModal: React.FC<ApplianceModalProps> = ({
@@ -38,7 +46,11 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
   onClose,
   applianceToEdit,
   defaultListId,
+  initialTab = 0,
 }) => {
+  const [activeTab, setActiveTab] = useState<number>(initialTab);
+
+  // Manual Entry Form states
   const [name, setName] = useState("");
   const [category, setCategory] = useState("Air Conditioners");
   const [brand, setBrand] = useState("");
@@ -73,6 +85,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
 
   useEffect(() => {
     if (applianceToEdit) {
+      setActiveTab(0);
       setName(applianceToEdit.name || "");
       const cat = applianceToEdit.category || "Air Conditioners";
       setCategory(cat);
@@ -87,6 +100,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
       setEnergyRating(applianceToEdit.energy_rating || "5-Star");
       setSelectedListId(applianceToEdit.list_id || (spaces[0]?.id || ""));
     } else {
+      setActiveTab(initialTab);
       setName("");
       setCategory("Air Conditioners");
       setBrand("");
@@ -100,7 +114,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
       setEnergyRating("5-Star");
       setSelectedListId(defaultListId || (spaces[0]?.id || ""));
     }
-  }, [applianceToEdit, isOpen, spaces, defaultListId]);
+  }, [applianceToEdit, isOpen, spaces, defaultListId, initialTab]);
 
   const currentSpace = spaces.find((s) => s.id === selectedListId) || spaces[0];
   const tariffType: "residential" | "commercial" = currentSpace?.tariff_type || "residential";
@@ -109,7 +123,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
   const billCalc = calculateMeralcoBill(monthlyKwh, undefined, 0, false, tariffType);
   const estimatedCost = billCalc.totalBill.toFixed(2);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmitManual = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
@@ -206,267 +220,356 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
     );
   };
 
+  const isEditing = Boolean(applianceToEdit);
+
   return (
     <>
-      <Dialog open={isOpen} onClose={onClose} fullWidth maxWidth="sm">
-      <form onSubmit={handleSubmit}>
-        <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 2 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Box
-              sx={{
-                width: 36,
-                height: 36,
-                borderRadius: 2,
-                bgcolor: "primary.main",
-                color: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <BoltIcon sx={{ color: "#ffd54f" }} />
+      <Dialog
+        open={isOpen}
+        onClose={onClose}
+        fullWidth
+        maxWidth={isEditing ? "sm" : "md"}
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 2,
+              overflow: "hidden",
+            },
+          },
+        }}
+      >
+        <DialogTitle sx={{ px: 3, pt: 2.5, pb: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              <Box
+                sx={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 1.5,
+                  bgcolor: isEditing ? "warning.main" : "primary.main",
+                  color: "#0c1b18",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <BoltIcon sx={{ color: isEditing ? "#ffffff" : "#0c1b18", fontSize: 22 }} />
+              </Box>
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                  {isEditing ? "Edit Appliance Specs" : "Add New Appliance"}
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                  {isEditing
+                    ? `Updating "${applianceToEdit?.name}" in ${currentSpace?.name || "Space"}`
+                    : `Add or import a device into "${currentSpace?.name || "Space"}"`}
+                </Typography>
+              </Box>
             </Box>
-            <Typography variant="h6" sx={{ fontWeight: 800 }}>
-              {applianceToEdit ? "Edit Appliance Specs" : "Add New Appliance"}
-            </Typography>
+            <IconButton onClick={onClose} size="small">
+              <CloseIcon fontSize="small" />
+            </IconButton>
           </Box>
-          <IconButton onClick={onClose} size="small">
-            <CloseIcon fontSize="small" />
-          </IconButton>
         </DialogTitle>
 
-        <Divider />
+        {/* Tab Navigation Header (Only in Add mode) */}
+        {!isEditing && (
+          <Box sx={{ borderBottom: 1, borderColor: "divider", px: 3, bgcolor: "action.hover" }}>
+            <Tabs
+              value={activeTab}
+              onChange={(_, val) => setActiveTab(val)}
+              variant="scrollable"
+              scrollButtons="auto"
+              sx={{
+                minHeight: 48,
+                "& .MuiTab-root": {
+                  textTransform: "none",
+                  fontWeight: 700,
+                  fontSize: "0.875rem",
+                  minHeight: 48,
+                  py: 1,
+                  px: 2,
+                  gap: 1,
+                },
+              }}
+            >
+              <Tab
+                icon={<PenIcon fontSize="small" />}
+                iconPosition="start"
+                label="Manual Entry"
+              />
+              <Tab
+                icon={<DatabaseIcon fontSize="small" />}
+                iconPosition="start"
+                label="DOE PELP Catalog"
+              />
+              <Tab
+                icon={<CameraIcon fontSize="small" />}
+                iconPosition="start"
+                label={
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                    <span>AI Vision Scan</span>
+                    <Chip label="AI" size="small" color="primary" sx={{ height: 18, fontSize: "0.625rem", fontWeight: 800 }} />
+                  </Box>
+                }
+              />
+            </Tabs>
+          </Box>
+        )}
 
         <DialogContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
-          {/* Explicit Space / List Selection */}
-          {spaces.length > 0 && (
-            <Box>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 1 }}>
-                ASSIGN TO SPACE / LIST
-              </Typography>
-              <TextField
-                select
-                fullWidth
-                size="small"
-                value={selectedListId}
-                onChange={(e) => setSelectedListId(e.target.value)}
-                helperText={`Tariff Applied: ${tariffType === "commercial" ? "Commercial (General Power)" : "Residential (230V Stepped)"}`}
-              >
-                {spaces.map((space) => (
-                  <MenuItem key={space.id} value={space.id}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      {space.tariff_type === "commercial" ? (
-                        <StoreIcon fontSize="small" sx={{ color: "secondary.main" }} />
-                      ) : (
-                        <HomeIcon fontSize="small" sx={{ color: "primary.main" }} />
-                      )}
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                        {space.name}
-                      </Typography>
-                      <Chip
-                        label={space.tariff_type === "commercial" ? "Commercial" : "Residential"}
-                        size="small"
-                        sx={{ fontSize: "0.6875rem", height: 20 }}
-                      />
-                    </Box>
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Box>
+          {/* TAB 0 / EDIT MODE: MANUAL ENTRY FORM */}
+          {activeTab === 0 && (
+            <form id="manual-appliance-form" onSubmit={handleSubmitManual}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                {/* Space / List Selection */}
+                {spaces.length > 1 && (
+                  <Box>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 1 }}>
+                      TARGET SPACE
+                    </Typography>
+                    <TextField
+                      select
+                      fullWidth
+                      size="small"
+                      value={selectedListId}
+                      onChange={(e) => setSelectedListId(e.target.value)}
+                      helperText={`Tariff Applied: ${tariffType === "commercial" ? "Commercial (General Power)" : "Residential (230V Stepped)"}`}
+                    >
+                      {spaces.map((space) => (
+                        <MenuItem key={space.id} value={space.id}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            {space.tariff_type === "commercial" ? (
+                              <StoreIcon fontSize="small" sx={{ color: "secondary.main" }} />
+                            ) : (
+                              <HomeIcon fontSize="small" sx={{ color: "primary.main" }} />
+                            )}
+                            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                              {space.name}
+                            </Typography>
+                            <Chip
+                              label={space.tariff_type === "commercial" ? "Commercial" : "Residential"}
+                              size="small"
+                              sx={{ fontSize: "0.6875rem", height: 20 }}
+                            />
+                          </Box>
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Box>
+                )}
+
+                <Grid container spacing={2}>
+                  <Grid size={12}>
+                    <TextField
+                      required
+                      fullWidth
+                      size="small"
+                      label="Appliance Name / Description"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. Master Bedroom Inverter AC or Store Showcase Chiller"
+                    />
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      select
+                      fullWidth
+                      size="small"
+                      label="Category"
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                    >
+                      <MenuItem value="Air Conditioners">Air Conditioners</MenuItem>
+                      <MenuItem value="Refrigerators & Freezers">Refrigerators & Freezers</MenuItem>
+                      <MenuItem value="Television Sets">Television Sets</MenuItem>
+                      <MenuItem value="Electric Fans">Electric Fans</MenuItem>
+                      <MenuItem value="Clothes Washing Machines">Clothes Washing Machines</MenuItem>
+                      <MenuItem value="Lighting Products">Lighting Products</MenuItem>
+                      <MenuItem value="Kitchen Appliances">Kitchen Appliances</MenuItem>
+                      <MenuItem value="Water Heaters & Pumps">Water Heaters & Pumps</MenuItem>
+                      <MenuItem value="Computers & Office">Computers & Office</MenuItem>
+                      <MenuItem value="Other">Other</MenuItem>
+                    </TextField>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      select
+                      fullWidth
+                      size="small"
+                      label="Room / Zone Location"
+                      value={roomLocation}
+                      onChange={(e) => setRoomLocation(e.target.value)}
+                    >
+                      <MenuItem value="Living Room">Living Room</MenuItem>
+                      <MenuItem value="Master Bedroom">Master Bedroom</MenuItem>
+                      <MenuItem value="Bedroom 2">Bedroom 2</MenuItem>
+                      <MenuItem value="Kitchen">Kitchen</MenuItem>
+                      <MenuItem value="Dining">Dining</MenuItem>
+                      <MenuItem value="Laundry Area">Laundry Area</MenuItem>
+                      <MenuItem value="Home Office">Home Office</MenuItem>
+                      <MenuItem value="Store Front / Retail">Store Front / Retail</MenuItem>
+                      <MenuItem value="Workshop / Storage">Workshop / Storage</MenuItem>
+                    </TextField>
+                  </Grid>
+
+                  <Grid size={6}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Brand (Optional)"
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      placeholder="e.g. Panasonic, Carrier"
+                    />
+                  </Grid>
+
+                  <Grid size={6}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Model No. (Optional)"
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
+                      placeholder="e.g. CS-XPU12WKH"
+                    />
+                  </Grid>
+
+                  <Grid size={6}>
+                    <TextField
+                      required
+                      type="number"
+                      fullWidth
+                      size="small"
+                      label="Power Draw (Watts)"
+                      value={watts}
+                      onChange={(e) => setWatts(Number(e.target.value) || 0)}
+                    />
+                  </Grid>
+
+                  <Grid size={6}>
+                    <TextField
+                      required
+                      type="number"
+                      fullWidth
+                      size="small"
+                      label="Quantity"
+                      value={quantity}
+                      onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
+                    />
+                  </Grid>
+
+                  <Grid size={6}>
+                    <TextField
+                      type="number"
+                      fullWidth
+                      size="small"
+                      label="Daily Run-Time (Hours)"
+                      value={hoursPerDay}
+                      onChange={(e) => setHoursPerDay(Number(e.target.value) || 0)}
+                    />
+                  </Grid>
+
+                  <Grid size={6}>
+                    <TextField
+                      type="number"
+                      fullWidth
+                      size="small"
+                      label="Days Active per Month"
+                      value={daysPerMonth}
+                      onChange={(e) => setDaysPerMonth(Number(e.target.value) || 0)}
+                    />
+                  </Grid>
+                </Grid>
+
+                {/* Real-time projection preview */}
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: 1.5,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    bgcolor: "action.hover",
+                  }}
+                >
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                      Monthly Projected Cost ({tariffType === "commercial" ? "Commercial Rate" : "Residential Rate"})
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f" }}>
+                      ₱{estimatedCost}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ textAlign: "right" }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                      Energy Volume
+                    </Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, fontFamily: "monospace" }}>
+                      {monthlyKwh} kWh/mo
+                    </Typography>
+                  </Box>
+                </Paper>
+
+                <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1.5, mt: 1 }}>
+                  <Button variant="outlined" onClick={onClose}>
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={isCreating || isUpdating}
+                    startIcon={<SaveIcon />}
+                    sx={{ fontWeight: 700 }}
+                  >
+                    {isEditing ? "Save Changes" : "Save Appliance"}
+                  </Button>
+                </Box>
+              </Box>
+            </form>
           )}
 
-          <Grid container spacing={2}>
-            <Grid size={12}>
-              <TextField
-                required
-                fullWidth
-                size="small"
-                label="Appliance Name / Description"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Master Bedroom Inverter AC or Store Showcase Chiller"
-              />
-            </Grid>
+          {/* TAB 1: DOE PELP CATALOG */}
+          {activeTab === 1 && !isEditing && (
+            <PelpCatalogTabContent
+              selectedListId={selectedListId}
+              onSelectedListIdChange={setSelectedListId}
+              onClose={onClose}
+            />
+          )}
 
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                select
-                fullWidth
-                size="small"
-                label="Category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                <MenuItem value="Air Conditioners">Air Conditioners</MenuItem>
-                <MenuItem value="Refrigerators & Freezers">Refrigerators & Freezers</MenuItem>
-                <MenuItem value="Television Sets">Television Sets</MenuItem>
-                <MenuItem value="Electric Fans">Electric Fans</MenuItem>
-                <MenuItem value="Washing Machines">Washing Machines</MenuItem>
-                <MenuItem value="Lighting Products">Lighting Products</MenuItem>
-                <MenuItem value="Kitchen & Cooking">Kitchen & Cooking</MenuItem>
-                <MenuItem value="Computing & Office">Computing & Office</MenuItem>
-                <MenuItem value="Other">Other</MenuItem>
-              </TextField>
-            </Grid>
-
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                select
-                fullWidth
-                size="small"
-                label="Room / Zone Location"
-                value={roomLocation}
-                onChange={(e) => setRoomLocation(e.target.value)}
-              >
-                <MenuItem value="Living Room">Living Room</MenuItem>
-                <MenuItem value="Master Bedroom">Master Bedroom</MenuItem>
-                <MenuItem value="Bedroom 2">Bedroom 2</MenuItem>
-                <MenuItem value="Kitchen">Kitchen</MenuItem>
-                <MenuItem value="Dining">Dining</MenuItem>
-                <MenuItem value="Laundry Area">Laundry Area</MenuItem>
-                <MenuItem value="Home Office">Home Office</MenuItem>
-                <MenuItem value="Store Front / Retail">Store Front / Retail</MenuItem>
-                <MenuItem value="Workshop / Storage">Workshop / Storage</MenuItem>
-              </TextField>
-            </Grid>
-
-            <Grid size={6}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Brand (Optional)"
-                value={brand}
-                onChange={(e) => setBrand(e.target.value)}
-                placeholder="e.g. Panasonic, Carrier"
-              />
-            </Grid>
-
-            <Grid size={6}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Model No. (Optional)"
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                placeholder="e.g. CS-XPU12WKH"
-              />
-            </Grid>
-
-            <Grid size={6}>
-              <TextField
-                required
-                type="number"
-                fullWidth
-                size="small"
-                label="Power Draw (Watts)"
-                value={watts}
-                onChange={(e) => setWatts(Number(e.target.value) || 0)}
-              />
-            </Grid>
-
-            <Grid size={6}>
-              <TextField
-                required
-                type="number"
-                fullWidth
-                size="small"
-                label="Quantity"
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
-              />
-            </Grid>
-
-            <Grid size={6}>
-              <TextField
-                type="number"
-                fullWidth
-                size="small"
-                label="Daily Run-Time (Hours)"
-                value={hoursPerDay}
-                onChange={(e) => setHoursPerDay(Number(e.target.value) || 0)}
-              />
-            </Grid>
-
-            <Grid size={6}>
-              <TextField
-                type="number"
-                fullWidth
-                size="small"
-                label="Days Active per Month"
-                value={daysPerMonth}
-                onChange={(e) => setDaysPerMonth(Number(e.target.value) || 0)}
-              />
-            </Grid>
-          </Grid>
-
-          {/* Real-time projection preview */}
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2,
-              borderRadius: 2,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              bgcolor: "action.hover",
-            }}
-          >
-            <Box>
-              <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                Monthly Projected Cost ({tariffType === "commercial" ? "Commercial Rate" : "Residential Rate"})
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f" }}>
-                ₱{estimatedCost}
-              </Typography>
-            </Box>
-            <Box sx={{ textAlign: "right" }}>
-              <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                Energy Volume
-              </Typography>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, fontFamily: "monospace" }}>
-                {monthlyKwh} kWh/mo
-              </Typography>
-            </Box>
-          </Paper>
+          {/* TAB 2: AI VISION SCAN */}
+          {activeTab === 2 && !isEditing && (
+            <AiVisionScannerTabContent
+              selectedListId={selectedListId}
+              onSelectedListIdChange={setSelectedListId}
+              onClose={onClose}
+            />
+          )}
         </DialogContent>
+      </Dialog>
 
-        <Divider />
-
-        <DialogActions sx={{ p: 2.5, px: 3 }}>
-          <Button variant="outlined" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={isCreating || isUpdating}
-            startIcon={<SaveIcon />}
-          >
-            {applianceToEdit ? "Save Changes" : "Save Appliance"}
-          </Button>
-        </DialogActions>
-      </form>
-    </Dialog>
-
-    {/* Duplicate Appliance Resolution Modal */}
-    {isDuplicateModalOpen && (
-      <DuplicateApplianceModal
-        isOpen={isDuplicateModalOpen}
-        onClose={() => {
-          setIsDuplicateModalOpen(false);
-          setDuplicateIncoming(null);
-          setDuplicateExisting(null);
-        }}
-        incomingAppliance={duplicateIncoming}
-        existingAppliance={duplicateExisting}
-        spaceName={spaces.find((s) => s.id === (selectedListId || spaces[0]?.id))?.name || "Current Space"}
-        onCombineQuantity={handleCombineQuantity}
-        onAddDistinct={handleAddDistinct}
-      />
-    )}
+      {/* Duplicate Appliance Resolution Modal */}
+      {isDuplicateModalOpen && (
+        <DuplicateApplianceModal
+          isOpen={isDuplicateModalOpen}
+          onClose={() => {
+            setIsDuplicateModalOpen(false);
+            setDuplicateIncoming(null);
+            setDuplicateExisting(null);
+          }}
+          incomingAppliance={duplicateIncoming}
+          existingAppliance={duplicateExisting}
+          spaceName={spaces.find((s) => s.id === (selectedListId || spaces[0]?.id))?.name || "Current Space"}
+          onCombineQuantity={handleCombineQuantity}
+          onAddDistinct={handleAddDistinct}
+        />
+      )}
     </>
   );
 };
 
 export default ApplianceModal;
-

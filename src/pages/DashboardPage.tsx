@@ -454,20 +454,11 @@ export const DashboardPage: React.FC = () => {
         ))}
       </Grid>
 
-      {/* Global Modals */}
+      {/* Global Add Appliance Modal */}
       <ApplianceModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         defaultListId={spaces[0]?.id || null}
-      />
-      <PelpCatalogModal
-        isOpen={isPelpModalOpen}
-        onClose={() => setIsPelpModalOpen(false)}
-        defaultListId={spaces[0]?.id || null}
-      />
-      <AiVisionScannerModal
-        isOpen={isAiScannerOpen}
-        onClose={() => setIsAiScannerOpen(false)}
       />
     </Box>
   );

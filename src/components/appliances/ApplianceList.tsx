@@ -59,8 +59,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
 
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isPelpModalOpen, setIsPelpModalOpen] = useState(false);
-  const [isAiScannerOpen, setIsAiScannerOpen] = useState(false);
+  const [addModalInitialTab, setAddModalInitialTab] = useState<number>(0);
   const [isSpaceModalOpen, setIsSpaceModalOpen] = useState(false);
   const [spaceToEdit, setSpaceToEdit] = useState<ApplianceSpace | null>(null);
   const [applianceToEdit, setApplianceToEdit] = useState<UserAppliance | null>(null);
@@ -614,165 +613,108 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
         </Box>
       </Card>
 
-      {/* Bento Row 3: 3-Method Ingestion Action Bento Panel */}
-      <Grid container spacing={2} data-tour="appliance-add-buttons">
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Paper
-            variant="outlined"
+      {/* Bento Row 3: Unified Add Appliance Action Bar */}
+      <Paper
+        variant="outlined"
+        data-tour="appliance-add-buttons"
+        sx={{
+          p: 2.25,
+          borderRadius: 1.5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 2,
+          bgcolor: (theme) =>
+            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.04)" : "rgba(0, 158, 136, 0.02)",
+          border: "1px solid",
+          borderColor: (theme) =>
+            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.2)" : "rgba(0, 158, 136, 0.2)",
+          transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+          "&:hover": {
+            borderColor: "primary.main",
+            boxShadow: "0 4px 20px rgba(0, 229, 201, 0.12)",
+          },
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+          <Button
+            variant="contained"
+            color="primary"
+            size="large"
+            startIcon={<PlusIcon />}
             onClick={() => {
               setApplianceToEdit(null);
+              setAddModalInitialTab(0);
               setIsAddModalOpen(true);
             }}
             sx={{
-              p: 2.25,
+              fontWeight: 800,
+              px: 3,
+              py: 1.1,
               borderRadius: 1.25,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              border: "1px solid",
-              borderColor: "primary.main",
-              bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(0, 158, 136, 0.04)",
-              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-              "&:hover": {
-                transform: "translateY(-3px)",
-                boxShadow: "0 8px 24px rgba(0, 229, 201, 0.2)",
-                bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.14)" : "rgba(0, 158, 136, 0.08)",
-              },
+              boxShadow: "0 4px 16px rgba(0, 229, 201, 0.25)",
+              fontSize: "0.9375rem",
+              textTransform: "none",
             }}
           >
-            <Box
-              sx={{
-                width: 44,
-                height: 44,
-                borderRadius: 1,
-                bgcolor: "primary.main",
-                color: "#0c1b18",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <PenIcon fontSize="small" />
-            </Box>
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                + Manual Entry
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                Add custom device with wattage & daily runtime
-              </Typography>
-            </Box>
-          </Paper>
-        </Grid>
+            + Add Appliance
+          </Button>
+          <Box sx={{ display: { xs: "none", md: "block" } }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+              Add custom devices, import from 12k+ certified PELP models, or scan energy stickers
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+              Choose from Manual Entry, Official DOE PELP Database, or AI Vision Camera Scan
+            </Typography>
+          </Box>
+        </Box>
 
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Paper
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Chip
+            icon={<PenIcon sx={{ fontSize: "14px !important" }} />}
+            label="Manual"
+            size="small"
             variant="outlined"
-            onClick={() => setIsPelpModalOpen(true)}
-            sx={{
-              p: 2.25,
-              borderRadius: 1.25,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              border: "1px solid",
-              borderColor: "info.main",
-              bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(6, 182, 212, 0.08)" : "rgba(6, 182, 212, 0.04)",
-              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-              "&:hover": {
-                transform: "translateY(-3px)",
-                boxShadow: "0 8px 24px rgba(6, 182, 212, 0.2)",
-                bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(6, 182, 212, 0.14)" : "rgba(6, 182, 212, 0.08)",
-              },
+            onClick={() => {
+              setApplianceToEdit(null);
+              setAddModalInitialTab(0);
+              setIsAddModalOpen(true);
             }}
-          >
-            <Box
-              sx={{
-                width: 44,
-                height: 44,
-                borderRadius: 1,
-                bgcolor: "info.main",
-                color: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <DatabaseIcon fontSize="small" />
-            </Box>
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                + DOE PELP Catalog
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                Search official Philippine certified models
-              </Typography>
-            </Box>
-          </Paper>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Paper
+            sx={{ cursor: "pointer", fontWeight: 600 }}
+          />
+          <Chip
+            icon={<DatabaseIcon sx={{ fontSize: "14px !important" }} />}
+            label="PELP Catalog"
+            size="small"
             variant="outlined"
-            onClick={() => setIsAiScannerOpen(true)}
-            sx={{
-              p: 2.25,
-              borderRadius: 1.25,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              border: "1px solid",
-              borderColor: "secondary.main",
-              bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.04)",
-              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-              "&:hover": {
-                transform: "translateY(-3px)",
-                boxShadow: "0 8px 24px rgba(245, 158, 11, 0.2)",
-                bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.14)" : "rgba(245, 158, 11, 0.08)",
-              },
+            onClick={() => {
+              setApplianceToEdit(null);
+              setAddModalInitialTab(1);
+              setIsAddModalOpen(true);
             }}
-          >
-            <Box
-              sx={{
-                width: 44,
-                height: 44,
-                borderRadius: 1,
-                bgcolor: "secondary.main",
-                color: "#0c1b18",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <CameraIcon fontSize="small" />
-            </Box>
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                + AI Vision Scan
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                Scan energy label sticker or nameplate with camera
-              </Typography>
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
+            sx={{ cursor: "pointer", fontWeight: 600 }}
+          />
+          <Chip
+            icon={<CameraIcon sx={{ fontSize: "14px !important" }} />}
+            label="AI Scan"
+            size="small"
+            color="primary"
+            variant="outlined"
+            onClick={() => {
+              setApplianceToEdit(null);
+              setAddModalInitialTab(2);
+              setIsAddModalOpen(true);
+            }}
+            sx={{ cursor: "pointer", fontWeight: 700 }}
+          />
+        </Box>
+      </Paper>
 
       {/* Bento Row 4: Search & Filters */}
       <Box data-tour="appliance-filters" sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, alignItems: "center", justifyContent: "space-between" }}>
         <TextField
+
           size="small"
           placeholder="Search appliances in this space..."
           value={searchQuery}
@@ -820,7 +762,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                 No appliances in "{activeSpace?.name}" yet.
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
-                Use one of the 3 buttons above (Manual Entry, DOE PELP Catalog, or AI Vision Scan) to add devices into this space.
+                Use the "+ Add Appliance" button above to add custom devices, import from the certified DOE PELP database, or scan energy stickers with AI.
               </Typography>
             </Paper>
           </Grid>
@@ -1056,7 +998,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
         )}
       </Grid>
 
-      {/* Add / Edit Appliance Modal */}
+      {/* Unified Add/Edit Appliance Modal with 3 Tabs */}
       {isAddModalOpen && (
         <ApplianceModal
           isOpen={isAddModalOpen}
@@ -1066,6 +1008,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
           }}
           applianceToEdit={applianceToEdit}
           defaultListId={activeSpace?.id || null}
+          initialTab={addModalInitialTab}
         />
       )}
 
@@ -1089,24 +1032,6 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             if (appliancesRes?.refetch) appliancesRes.refetch();
             showInfo("Space deleted and appliances reassigned.");
           }}
-        />
-      )}
-
-      {/* DOE PELP Catalog Modal */}
-      {isPelpModalOpen && (
-        <PelpCatalogModal
-          isOpen={isPelpModalOpen}
-          onClose={() => setIsPelpModalOpen(false)}
-          defaultListId={activeSpace?.id || null}
-        />
-      )}
-
-      {/* AI Vision Scanner Modal */}
-      {isAiScannerOpen && (
-        <AiVisionScannerModal
-          isOpen={isAiScannerOpen}
-          onClose={() => setIsAiScannerOpen(false)}
-          defaultListId={activeSpace?.id || null}
         />
       )}
 
