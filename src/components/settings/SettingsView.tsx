@@ -1010,7 +1010,7 @@ export const SettingsView: React.FC = () => {
                 {language === "tl" ? `Matagumpay na nagawa ang imbitasyon para kay ${inviteName}!` : `Invitation successfully created for ${inviteName}!`}
               </Alert>
 
-              <Box sx={{ p: 2, borderRadius: 1, bgcolor: "rgba(0, 0, 0, 0.4)", border: "1px solid rgba(0, 229, 201, 0.3)" }}>
+              <Box sx={{ p: 2, borderRadius: 1, bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.4)" : "rgba(13, 148, 136, 0.08)", border: "1px solid", borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.3)" }}>
                 <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800, display: "block", mb: 0.5 }}>
                   {t("settings.inviteCodeLabel", "HOUSEHOLD INVITE CODE:")}
                 </Typography>

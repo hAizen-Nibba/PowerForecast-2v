@@ -157,7 +157,7 @@ export const VersionBadge: React.FC = () => {
             fullWidth
             variant="outlined"
             size="small"
-            startIcon={<ChangelogIcon sx={{ fontSize: 16, color: "#00e5c9" }} />}
+            startIcon={<ChangelogIcon sx={{ fontSize: 16, color: (theme) => theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488" }} />}
             onClick={() => {
               setIsOpen(false);
               setIsChangelogModalOpen(true);
@@ -168,13 +168,16 @@ export const VersionBadge: React.FC = () => {
               fontSize: "0.75rem",
               fontWeight: 800,
               textTransform: "none",
-              color: "#f1f5f9",
-              bgcolor: "rgba(0, 229, 201, 0.08)",
-              borderColor: "rgba(0, 229, 201, 0.3)",
-              borderRadius: 1.5,
+              color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0f766e"),
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(13, 148, 136, 0.08)",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.3)",
+              borderRadius: 1.25,
               "&:hover": {
-                bgcolor: "rgba(0, 229, 201, 0.16)",
-                borderColor: "#00e5c9",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.16)" : "rgba(13, 148, 136, 0.15)",
+                borderColor: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
               },
             }}
           >

@@ -377,9 +377,16 @@ export const Header: React.FC<HeaderProps> = ({
                   minWidth: 230,
                   p: 0.75,
                   borderRadius: 1.25,
-                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
-                  border: "1px solid rgba(0, 229, 201, 0.25)",
-                  bgcolor: "rgba(23, 26, 31, 0.98)",
+                  boxShadow: (theme) =>
+                    theme.palette.mode === "dark"
+                      ? "0 8px 32px rgba(0, 0, 0, 0.5)"
+                      : "0 10px 30px rgba(0, 0, 0, 0.12)",
+                  border: "1px solid",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(0, 0, 0, 0.08)",
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(23, 26, 31, 0.98)" : "#ffffff",
+                  color: "text.primary",
                   backdropFilter: "blur(20px)",
                 },
               },
@@ -407,16 +414,16 @@ export const Header: React.FC<HeaderProps> = ({
               />
             </Box>
 
-            <Divider sx={{ my: 0.75, borderColor: "rgba(255, 255, 255, 0.08)" }} />
+            <Divider sx={{ my: 0.75 }} />
 
             <MenuItem
               onClick={() => {
                 setAnchorEl(null);
                 navigate("/settings");
               }}
-              sx={{ gap: 1.25, fontSize: "0.8125rem", fontWeight: 700, borderRadius: 1, py: 0.75 }}
+              sx={{ gap: 1.25, fontSize: "0.8125rem", fontWeight: 700, borderRadius: 1, py: 0.75, color: "text.primary" }}
             >
-              <SettingsIcon fontSize="small" sx={{ color: "primary.light" }} />
+              <SettingsIcon fontSize="small" sx={{ color: "primary.main" }} />
               {t("header.settings", "Settings")}
             </MenuItem>
 
@@ -442,15 +449,19 @@ export const Header: React.FC<HeaderProps> = ({
               paper: {
                 sx: {
                   borderRadius: 1.5,
-                  border: "1px solid rgba(0, 229, 201, 0.25)",
-                  bgcolor: "rgba(23, 26, 31, 0.98)",
+                  border: "1px solid",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(0, 0, 0, 0.12)",
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(23, 26, 31, 0.98)" : "#ffffff",
+                  color: "text.primary",
                   backdropFilter: "blur(20px)",
                   p: 1,
                 },
               },
             }}
           >
-            <DialogTitle sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1.25 }}>
+            <DialogTitle sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1.25, color: "text.primary" }}>
               <LogoutIcon sx={{ color: "error.main" }} />
               {t("header.confirmSignOut", "Confirm Sign Out")}
             </DialogTitle>
@@ -470,7 +481,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setIsLogoutConfirmOpen(false);
                   logout();
                 }}
-                sx={{ fontWeight: 800, borderRadius: 2, px: 2 }}
+                sx={{ fontWeight: 800, borderRadius: 1.25, px: 2 }}
               >
                 {t("header.signOut", "Sign Out")}
               </Button>
