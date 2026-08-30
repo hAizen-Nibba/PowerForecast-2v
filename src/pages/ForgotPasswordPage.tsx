@@ -133,9 +133,14 @@ export const ForgotPasswordPage: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await supabaseClient.auth.updateUser({ password: newPassword.trim() });
+      // SECURITY: Validate user update response from Supabase.
+      // If error occurs or no active user session exists to update, fail securely.
+      const { data, error } = await supabaseClient.auth.updateUser({ password: newPassword.trim() });
       if (error) {
         throw error;
+      }
+      if (!data?.user) {
+        throw new Error("Unable to update password. Session may have expired or account is invalid.");
       }
 
       devLog.info("Auth", `Password successfully reset for ${email} via Security Question.`);
