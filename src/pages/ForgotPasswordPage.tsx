@@ -57,47 +57,39 @@ export const ForgotPasswordPage: React.FC = () => {
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setErrorMessage("Please enter a valid email address (e.g. name@domain.com).");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // 1. Check local security directory
-      const secDirectory = JSON.parse(localStorage.getItem("powerforecast_sec_dir") || "{}");
-      let foundQuestion = secDirectory[trimmedEmail]?.question;
-      let foundAnswer = secDirectory[trimmedEmail]?.answer;
+      devLog.info("Auth", `Querying security challenge for ${trimmedEmail}`);
+      const { data, error } = await supabaseClient.rpc("get_security_question", {
+        p_email: trimmedEmail,
+      });
 
-      // 2. If not found in local cache, check Supabase accounts table
-      if (!foundQuestion) {
-        try {
-          const { data: profile } = await supabaseClient
-            .from("accounts")
-            .select("*")
-            .eq("email", trimmedEmail)
-            .maybeSingle();
-
-          if (profile?.security_question) {
-            foundQuestion = profile.security_question;
-            foundAnswer = profile.security_answer;
-          }
-        } catch (dbErr) {
-          devLog.warn("Auth", "Could not query accounts table for security question", dbErr);
-        }
+      if (error) {
+        throw error;
       }
 
-      if (!foundQuestion) {
-        setErrorMessage("Security question is not configured for this account. Please contact support.");
+      if (!data || data.success === false) {
+        setErrorMessage(data?.error || "No security challenge configured for this account.");
         return;
       }
 
-      setSecurityQuestion(foundQuestion);
-      setExpectedAnswer(foundAnswer || "");
+      setSecurityQuestion(data.question);
       setStep("question");
     } catch (err: any) {
-      setErrorMessage(err?.message || "Failed to locate account. Please verify your email.");
+      devLog.error("Auth", "Failed to retrieve security question:", err);
+      setErrorMessage(err?.message || "Failed to locate account. Please verify your email address.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Step 2: Verify Answer and Reset Password
+  // Step 2: Verify Answer and Reset Password Directly
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -107,22 +99,13 @@ export const ForgotPasswordPage: React.FC = () => {
       return;
     }
 
-    // Verify security answer match
-    const normalizedInput = securityAnswer.trim().toLowerCase();
-    const normalizedTarget = expectedAnswer.trim().toLowerCase();
-
-    if (expectedAnswer && normalizedInput !== normalizedTarget) {
-      setErrorMessage("Security answer does not match our records. Please try again.");
-      return;
-    }
-
     if (!newPassword.trim() || !confirmPassword.trim()) {
-      setErrorMessage("Please fill in your new password.");
+      setErrorMessage("Please enter and confirm your new password.");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setErrorMessage("Passwords do not match. Please verify.");
+      setErrorMessage("Passwords do not match. Please verify and try again.");
       return;
     }
 
@@ -133,19 +116,26 @@ export const ForgotPasswordPage: React.FC = () => {
 
     setIsLoading(true);
     try {
-      // SECURITY: Validate user update response from Supabase.
-      // If error occurs or no active user session exists to update, fail securely.
-      const { data, error } = await supabaseClient.auth.updateUser({ password: newPassword.trim() });
+      devLog.info("Auth", `Verifying security answer and resetting password for ${email.trim()}`);
+      const { data, error } = await supabaseClient.rpc("reset_password_with_security_answer", {
+        p_email: email.trim().toLowerCase(),
+        p_answer: securityAnswer.trim(),
+        p_new_password: newPassword.trim(),
+      });
+
       if (error) {
         throw error;
       }
-      if (!data?.user) {
-        throw new Error("Unable to update password. Session may have expired or account is invalid.");
+
+      if (!data || data.success === false) {
+        setErrorMessage(data?.error || "Failed to reset password. Please check your answer.");
+        return;
       }
 
-      devLog.info("Auth", `Password successfully reset for ${email} via Security Question.`);
+      devLog.info("Auth", `Password successfully reset for ${email.trim()}`);
       setStep("success");
     } catch (err: any) {
+      devLog.error("Auth", "Password reset failed:", err);
       setErrorMessage(err?.message || "Failed to update password. Please try again.");
     } finally {
       setIsLoading(false);

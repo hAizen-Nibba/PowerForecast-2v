@@ -39,13 +39,22 @@ export const LoginPage: React.FC = () => {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!email.trim() || !password.trim()) {
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail || !trimmedPassword) {
       setErrorMessage("Please enter both email and password.");
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setErrorMessage("Please enter a valid email address (e.g. name@domain.com).");
+      return;
+    }
+
     login(
-      { email, password, rememberMe },
+      { email: trimmedEmail, password: trimmedPassword, rememberMe },
       {
         onSuccess: () => navigate("/dashboard"),
         onError: (err: any) => {

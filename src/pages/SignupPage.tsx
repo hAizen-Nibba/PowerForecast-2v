@@ -54,40 +54,46 @@ export const SignupPage: React.FC = () => {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+    const trimmedConfirmPassword = confirmPassword.trim();
+    const trimmedAnswer = securityAnswer.trim();
+
+    if (!trimmedEmail || !trimmedPassword || !trimmedConfirmPassword) {
       setErrorMessage("Please fill in all required fields.");
       return;
     }
 
     // Basic email validation regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
-      setErrorMessage("Please enter a valid email address.");
+    if (!emailRegex.test(trimmedEmail)) {
+      setErrorMessage("Please enter a valid email address (e.g. name@domain.com).");
       return;
     }
 
-    if (password !== confirmPassword) {
+    if (trimmedPassword !== trimmedConfirmPassword) {
       setErrorMessage("Passwords do not match. Please verify and try again.");
       return;
     }
 
-    if (password.length < 6) {
+    if (trimmedPassword.length < 6) {
       setErrorMessage("Password must be at least 6 characters long.");
       return;
     }
 
-    if (!securityAnswer.trim()) {
+    if (!trimmedAnswer) {
       setErrorMessage("Please provide an answer for the security question.");
       return;
     }
 
     register(
       {
-        name,
-        email,
-        password,
+        name: trimmedName,
+        email: trimmedEmail,
+        password: trimmedPassword,
         securityQuestion,
-        securityAnswer,
+        securityAnswer: trimmedAnswer,
       },
       {
         onSuccess: (data: any) => {

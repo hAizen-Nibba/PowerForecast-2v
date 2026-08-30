@@ -41,12 +41,21 @@ export interface SystemChangelogEntry {
 // Master compiled GitHub deployment history covering all releases from 2.1.1v to 2.13.DEV
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "2.13.11v",
+    version: "2.13.11v",
+    description: "2.13.11v - Fix auth validation, duplicate email detection, and direct security question password reset via Supabase RPC",
+    git_commit_tag: "2.13.11v",
+    deployed_by: "hAizen-Nibba",
+    created_at: new Date().toISOString(),
+    source: "github",
+  },
+  {
     id: "2.13.10v",
     version: "2.13.10v",
     description: "2.13.10v - Consolidate Manual Entry, DOE PELP Catalog, and AI Vision Scan into unified [+ Add Appliance] button with multi-tab popup window",
     git_commit_tag: "2.13.10v",
     deployed_by: "hAizen-Nibba",
-    created_at: new Date().toISOString(),
+    created_at: "2026-08-30T12:45:00.000Z",
     source: "github",
   },
   {

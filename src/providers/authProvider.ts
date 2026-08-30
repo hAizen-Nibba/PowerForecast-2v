@@ -121,6 +121,18 @@ export const authProvider: AuthProvider = {
         };
       }
 
+      // Detect Supabase duplicate email response (empty identities array)
+      if (data?.user && (!data.user.identities || data.user.identities.length === 0)) {
+        devLog.warn("Auth", `Registration rejected: email already registered (${trimmedEmail})`);
+        return {
+          success: false,
+          error: {
+            name: "RegisterError",
+            message: "An account with this email address already exists. Please sign in or use password recovery.",
+          },
+        };
+      }
+
       // Record security question map in local persistent cache for rapid password recovery
       if (securityQuestion && securityAnswer) {
         try {
