@@ -1,5 +1,6 @@
 import json
 from http.server import BaseHTTPRequestHandler
+from cors_utils import send_cors_headers
 
 def compute_bill(kwh, gen_rate=7.12, other_charges=0.0):
     kwh = float(kwh or 0)
@@ -51,9 +52,7 @@ def compute_bill(kwh, gen_rate=7.12, other_charges=0.0):
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        send_cors_headers(self, 'POST, OPTIONS')
         self.end_headers()
 
     def do_POST(self):
@@ -72,6 +71,6 @@ class handler(BaseHTTPRequestHandler):
 
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
+        send_cors_headers(self, 'POST, OPTIONS')
         self.end_headers()
         self.wfile.write(json.dumps(result).encode('utf-8'))
