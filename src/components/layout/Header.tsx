@@ -40,6 +40,7 @@ import { getNotificationPermission } from "../../lib/notificationService";
 import { useTour } from "../../hooks/useTour";
 import { ROUTE_TO_TOUR_PAGE } from "../tour/tourSteps";
 import { useLanguage } from "../../context/LanguageContext";
+import { MeralcoRatePopover } from "./MeralcoRatePopover";
 
 interface HeaderProps {
   onOpenSidebar: () => void;
@@ -196,22 +197,8 @@ export const Header: React.FC<HeaderProps> = ({
             />
           </Tooltip>
 
-          {/* Rate Badge */}
-          <Chip
-            icon={<BoltIcon sx={{ color: "#ffd54f !important" }} />}
-            label="₱9.2800/kWh"
-            size="small"
-            sx={{
-              display: { xs: "none", md: "inline-flex" },
-              fontWeight: 700,
-              fontFamily: "monospace",
-              bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 158, 136, 0.08)",
-              border: "1px solid",
-              borderColor: "divider",
-              height: 26,
-            }}
-          />
+          {/* Meralco Generation Rate Badge & Hover Breakdown Popover */}
+          <MeralcoRatePopover />
         </Box>
 
         {/* Center: Live Time / Date */}

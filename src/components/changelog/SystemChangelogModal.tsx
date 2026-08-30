@@ -41,12 +41,21 @@ export interface SystemChangelogEntry {
 // Master compiled GitHub deployment history covering all releases from 2.1.1v to 2.13.DEV
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "2.13.15v",
+    version: "2.13.15v",
+    description: "2.13.15v - Implement Meralco Generation Rate interactive hover breakdown popover and click-to-refetch mechanism in header",
+    git_commit_tag: "2.13.15v",
+    deployed_by: "hAizen-Nibba",
+    created_at: new Date().toISOString(),
+    source: "github",
+  },
+  {
     id: "2.13.14v",
     version: "2.13.14v",
     description: "2.13.14v - Reorder Settings layout to place Account Security & Credentials directly above the Danger Zone section",
     git_commit_tag: "2.13.14v",
     deployed_by: "hAizen-Nibba",
-    created_at: new Date().toISOString(),
+    created_at: "2026-08-30T13:45:00.000Z",
     source: "github",
   },
   {
