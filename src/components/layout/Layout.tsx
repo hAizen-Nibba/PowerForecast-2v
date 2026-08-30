@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
@@ -11,6 +11,8 @@ import { TourProvider } from "../tour/TourProvider";
 import { useStopwatchMidnightRollover } from "../../hooks/useStopwatchMidnightRollover";
 
 export const Layout: React.FC = () => {
+  const location = useLocation();
+  const isSettings = location.pathname === "/settings";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAiScannerOpen, setIsAiScannerOpen] = useState(false);
   const { mode, toggleColorMode } = useColorMode();
@@ -31,11 +33,13 @@ export const Layout: React.FC = () => {
         overflowX: "hidden",
       }}
     >
-      {/* Left Navigation Sidebar */}
-      <Sidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
+      {/* Left Navigation Sidebar (Hidden on Settings page) */}
+      {!isSettings && (
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+      )}
 
       {/* Main Viewport & Header */}
       <Box
@@ -44,7 +48,7 @@ export const Layout: React.FC = () => {
           display: "flex",
           flexDirection: "column",
           minWidth: 0,
-          pl: { xs: 0, lg: "260px" },
+          pl: { xs: 0, lg: isSettings ? 0 : "260px" },
           position: "relative",
           zIndex: 10,
           transition: "padding-left 0.24s cubic-bezier(0.4, 0, 0.2, 1)",

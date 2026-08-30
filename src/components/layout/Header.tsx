@@ -30,8 +30,9 @@ import {
   HelpOutlined as HelpIcon,
   Settings as SettingsIcon,
   Shield as ShieldIcon,
+  ArrowBack as ArrowBackIcon,
 } from "@mui/icons-material";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useGetIdentity, useLogout } from "@refinedev/core";
 import { checkSupabaseConnection } from "../../lib/supabaseClient";
 import { NotificationPopover } from "./NotificationPopover";
@@ -139,16 +140,36 @@ export const Header: React.FC<HeaderProps> = ({
           gap: 1.5,
         }}
       >
-        {/* Left: Mobile Menu Toggle, DB Status, and Tariff Indicators */}
+        {/* Left: Mobile Menu Toggle, Back button on Settings, DB Status, and Tariff Indicators */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={onOpenSidebar}
-            sx={{ display: { lg: "none" }, p: 0.75 }}
-          >
-            <MenuIcon />
-          </IconButton>
+          {location.pathname === "/settings" ? (
+            <Button
+              component={Link}
+              to="/dashboard"
+              startIcon={<ArrowBackIcon />}
+              size="small"
+              variant="outlined"
+              color="primary"
+              sx={{
+                borderRadius: 1.25,
+                fontWeight: 700,
+                textTransform: "none",
+                fontSize: "0.8125rem",
+                mr: 0.5,
+              }}
+            >
+              {t("common.backToDashboard", "Back to Dashboard")}
+            </Button>
+          ) : (
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={onOpenSidebar}
+              sx={{ display: { lg: "none" }, p: 0.75 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
 
           {/* Database Connection Status Chip */}
           <Tooltip title={dbStatus.ok ? `Supabase Connected (${dbStatus.latency || 0}ms)` : "Supabase Offline / Local Mode"}>

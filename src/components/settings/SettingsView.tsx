@@ -8,6 +8,7 @@ import Paper from "@mui/material/Paper";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import TextField from "@mui/material/TextField";
+import MenuItem from "@mui/material/MenuItem";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -37,6 +38,10 @@ import {
   Check as CheckIcon,
   Security as SecurityIcon,
   Lock as LockIcon,
+  Key as KeyIcon,
+  VpnKey as VpnKeyIcon,
+  HelpOutlined as QuestionIcon,
+  Save as SaveIcon,
   Bolt as BoltIcon,
   Shield as ShieldIcon,
   WarningAmber as WarningIcon,
@@ -47,6 +52,7 @@ import { useGetIdentity, useLogout } from "@refinedev/core";
 import { useToast } from "../common/ToastProvider";
 import { supabaseClient } from "../../lib/supabaseClient";
 import { useLanguage, Language } from "../../context/LanguageContext";
+import { devLog } from "../../lib/devLogger";
 
 interface HouseholdMember {
   id: string;
@@ -58,12 +64,224 @@ interface HouseholdMember {
   joinedAt: string;
 }
 
+const SECURITY_QUESTION_PRESETS = [
+  "What is your primary household electricity meter number?",
+  "What is the name of your first pet?",
+  "What city were you born in?",
+  "What was the brand of your first major electrical appliance?",
+  "What is your favorite childhood street name?",
+];
+
 export const SettingsView: React.FC = () => {
   const { data: identity } = useGetIdentity<any>();
   const { mutate: logout } = useLogout();
   const { showSuccess, showError, showInfo } = useToast();
   const { language, setLanguage, t } = useLanguage();
 
+  // ── 1. Change Password State ─────────────────────────────
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+
+  // ── 2. Security Recovery Challenge State ──────────────────
+  const [secQuestion, setSecQuestion] = useState(SECURITY_QUESTION_PRESETS[0]);
+  const [secAnswer, setSecAnswer] = useState("");
+  const [secVerifyPassword, setSecVerifyPassword] = useState("");
+  const [showSecAnswer, setShowSecAnswer] = useState(false);
+  const [showSecVerifyPassword, setShowSecVerifyPassword] = useState(false);
+  const [isUpdatingSec, setIsUpdatingSec] = useState(false);
+  const [secError, setSecError] = useState("");
+
+  useEffect(() => {
+    const fetchCurrentSecQuestion = async () => {
+      try {
+        const { data: userData } = await supabaseClient.auth.getUser();
+        if (userData?.user?.user_metadata?.security_question) {
+          setSecQuestion(userData.user.user_metadata.security_question);
+        }
+      } catch (e) {
+        devLog.warn("Settings", "Could not preload security question:", e);
+      }
+    };
+    fetchCurrentSecQuestion();
+  }, []);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError("");
+
+    const trimmedCurrent = currentPassword.trim();
+    const trimmedNew = newPassword.trim();
+    const trimmedConfirm = confirmNewPassword.trim();
+
+    if (!trimmedCurrent || !trimmedNew || !trimmedConfirm) {
+      setPasswordError(
+        language === "tl"
+          ? "Pakipunan ang lahat ng field para sa pagpapalit ng password."
+          : "Please fill in all password fields."
+      );
+      return;
+    }
+
+    if (trimmedNew.length < 6) {
+      setPasswordError(
+        language === "tl"
+          ? "Dapat ay may hindi bababa sa 6 na character ang bagong password."
+          : "New password must be at least 6 characters long."
+      );
+      return;
+    }
+
+    if (trimmedNew !== trimmedConfirm) {
+      setPasswordError(
+        language === "tl"
+          ? "Hindi nagtutugma ang bagong password at kumpirmasyon."
+          : "New passwords do not match."
+      );
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const userEmail = identity?.email;
+      if (!userEmail) throw new Error("Could not detect active user email.");
+
+      // 1. Verify current password
+      const { error: authErr } = await supabaseClient.auth.signInWithPassword({
+        email: userEmail,
+        password: trimmedCurrent,
+      });
+
+      if (authErr) {
+        setPasswordError(
+          language === "tl"
+            ? "Maling kasalukuyang password. Pakisuri at subukang muli."
+            : "Current password is incorrect. Please verify and try again."
+        );
+        setIsChangingPassword(false);
+        return;
+      }
+
+      // 2. Update to new password
+      const { error: updateErr } = await supabaseClient.auth.updateUser({
+        password: trimmedNew,
+      });
+
+      if (updateErr) {
+        throw updateErr;
+      }
+
+      showSuccess(
+        language === "tl"
+          ? "Matagumpay na pinalitan ang iyong password!"
+          : "Password successfully updated!",
+        language === "tl" ? "Na-update ang Password" : "Password Changed"
+      );
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+    } catch (err: any) {
+      setPasswordError(err?.message || "Failed to update password.");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const handleUpdateSecurityQuestion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSecError("");
+
+    const trimmedAnswer = secAnswer.trim();
+    const trimmedVerifyPassword = secVerifyPassword.trim();
+
+    if (!trimmedAnswer) {
+      setSecError(
+        language === "tl"
+          ? "Pakilagay ang iyong sagot sa security question."
+          : "Please provide an answer for the security question."
+      );
+      return;
+    }
+
+    if (!trimmedVerifyPassword) {
+      setSecError(
+        language === "tl"
+          ? "Pakilagay ang password ng iyong account upang makumpirma ang pagbabago."
+          : "Please enter your account password to authorize this security update."
+      );
+      return;
+    }
+
+    setIsUpdatingSec(true);
+    try {
+      const userEmail = identity?.email;
+      if (!userEmail) throw new Error("Could not detect active user email.");
+
+      // 1. Authenticate password
+      const { error: authErr } = await supabaseClient.auth.signInWithPassword({
+        email: userEmail,
+        password: trimmedVerifyPassword,
+      });
+
+      if (authErr) {
+        setSecError(
+          language === "tl"
+            ? "Maling password ng account. Hindi ma-update ang security question."
+            : "Incorrect account password. Security question update was not authorized."
+        );
+        setIsUpdatingSec(false);
+        return;
+      }
+
+      // 2. Update user metadata in Supabase
+      const { error: updateErr } = await supabaseClient.auth.updateUser({
+        data: {
+          security_question: secQuestion,
+          security_answer: trimmedAnswer.toLowerCase(),
+        },
+      });
+
+      if (updateErr) {
+        throw updateErr;
+      }
+
+      // Sync local cache
+      try {
+        const secDir = JSON.parse(localStorage.getItem("powerforecast_sec_dir") || "{}");
+        secDir[userEmail.toLowerCase()] = {
+          question: secQuestion,
+          answer: trimmedAnswer.toLowerCase(),
+        };
+        localStorage.setItem("powerforecast_sec_dir", JSON.stringify(secDir));
+      } catch (e) {
+        devLog.warn("Settings", "Failed to cache security directory locally:", e);
+      }
+
+      showSuccess(
+        language === "tl"
+          ? "Na-update ang iyong security recovery question at sagot!"
+          : "Security recovery question & answer updated successfully!",
+        language === "tl" ? "Na-update ang Seguridad" : "Security Updated"
+      );
+
+      setSecAnswer("");
+      setSecVerifyPassword("");
+    } catch (err: any) {
+      setSecError(err?.message || "Failed to update security challenge.");
+    } finally {
+      setIsUpdatingSec(false);
+    }
+  };
+
+  const passwordsMatch = !confirmNewPassword || newPassword === confirmNewPassword;
+
+  // ── 3. Language & Localization ───────────────────────────
   const handleLanguageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const lang = e.target.value as Language;
     setLanguage(lang);
@@ -73,7 +291,7 @@ export const SettingsView: React.FC = () => {
     );
   };
 
-  // 2. Household Members State
+  // ── 4. Household Members State ───────────────────────────
   const householdStorageKey = `powerforecast_household_${identity?.id || "default"}`;
 
   const [members, setMembers] = useState<HouseholdMember[]>(() => {
@@ -161,7 +379,7 @@ export const SettingsView: React.FC = () => {
     showInfo(language === "tl" ? `Tinanggal si ${memberName} sa household.` : `Removed ${memberName} from household.`);
   };
 
-  // 3. Account Deletion Security Flow (2-Step Verification)
+  // ── 5. Account Deletion Security Flow ────────────────────
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -239,7 +457,7 @@ export const SettingsView: React.FC = () => {
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3.5 } }}>
+    <Box sx={{ maxWidth: 1040, mx: "auto", width: "100%", display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3.5 } }}>
       {/* Page Header */}
       <Box sx={{ pb: 2, borderBottom: "1px solid", borderColor: "divider" }}>
         <Typography variant="h5" sx={{ fontWeight: 800, color: "text.primary", display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -247,18 +465,260 @@ export const SettingsView: React.FC = () => {
           {t("settings.title", "Account & Household Settings")}
         </Typography>
         <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
-          {t("settings.subtitle", "Manage your language preferences, invite family members with tailored roles, and manage your account security.")}
+          {t("settings.subtitle", "Manage your account credentials, security challenge, family access, and preferences.")}
         </Typography>
       </Box>
 
-      {/* 1. Language Preferences Section */}
+      {/* 1. Account Security & Credentials Section (Change Password & Security Question) */}
+      <Card
+        sx={{
+          p: { xs: 2.5, sm: 3 },
+          borderRadius: 1.5,
+          border: "1px solid",
+          borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.2)" : "rgba(13, 148, 136, 0.2)"),
+          bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.85)" : "#ffffff"),
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+          <SecurityIcon sx={{ color: "primary.main" }} />
+          <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
+            {language === "tl" ? "Seguridad at Kredensyal ng Account" : "Account Security & Credentials"}
+          </Typography>
+        </Box>
+        <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2.5 }}>
+          {language === "tl"
+            ? "I-update ang password ng iyong account at ang security challenge para sa mabilis na password recovery."
+            : "Update your master login password and your backup security challenge for password recovery."}
+        </Typography>
+
+        <Grid container spacing={3}>
+          {/* Sub-form A: Change Password */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2.5,
+                borderRadius: 1.25,
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.25)" : "rgba(248, 250, 252, 0.8)"),
+              }}
+            >
+              <Box component="form" onSubmit={handleChangePassword}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+                  <LockIcon sx={{ fontSize: 18, color: "primary.light" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                    {language === "tl" ? "Palitan ang Password" : "Change Login Password"}
+                  </Typography>
+                </Box>
+
+                {passwordError && (
+                  <Alert severity="error" sx={{ mb: 2, borderRadius: 1, py: 0.5 }}>
+                    {passwordError}
+                  </Alert>
+                )}
+
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <TextField
+                    type={showCurrentPassword ? "text" : "password"}
+                    size="small"
+                    fullWidth
+                    label={language === "tl" ? "Kasalukuyang Password" : "Current Password"}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    required
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton size="small" onClick={() => setShowCurrentPassword(!showCurrentPassword)}>
+                              {showCurrentPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                  />
+
+                  <TextField
+                    type={showNewPassword ? "text" : "password"}
+                    size="small"
+                    fullWidth
+                    label={language === "tl" ? "Bagong Password (min 6 chars)" : "New Password (min 6 chars)"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton size="small" onClick={() => setShowNewPassword(!showNewPassword)}>
+                              {showNewPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                  />
+
+                  <TextField
+                    type={showConfirmNewPassword ? "text" : "password"}
+                    size="small"
+                    fullWidth
+                    label={language === "tl" ? "Kumpirmahin ang Bagong Password" : "Confirm New Password"}
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    error={!passwordsMatch}
+                    helperText={!passwordsMatch ? (language === "tl" ? "Hindi nagtutugma" : "Passwords do not match") : ""}
+                    required
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton size="small" onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}>
+                              {showConfirmNewPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                  />
+
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    disabled={isChangingPassword || !passwordsMatch}
+                    startIcon={isChangingPassword ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+                    sx={{ mt: 1, fontWeight: 700, borderRadius: 1 }}
+                  >
+                    {isChangingPassword
+                      ? (language === "tl" ? "Ina-update..." : "Updating...")
+                      : (language === "tl" ? "I-save ang Bagong Password" : "Update Password")}
+                  </Button>
+                </Box>
+              </Box>
+            </Paper>
+          </Grid>
+
+          {/* Sub-form B: Update Security Question & Answer */}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2.5,
+                borderRadius: 1.25,
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.25)" : "rgba(248, 250, 252, 0.8)"),
+              }}
+            >
+              <Box component="form" onSubmit={handleUpdateSecurityQuestion}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+                  <QuestionIcon sx={{ fontSize: 18, color: "secondary.light" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                    {language === "tl" ? "Security Recovery Challenge" : "Security Recovery Challenge"}
+                  </Typography>
+                </Box>
+
+                {secError && (
+                  <Alert severity="error" sx={{ mb: 2, borderRadius: 1, py: 0.5 }}>
+                    {secError}
+                  </Alert>
+                )}
+
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <TextField
+                    select
+                    size="small"
+                    fullWidth
+                    label={language === "tl" ? "Pumili ng Security Question" : "Select Security Question"}
+                    value={secQuestion}
+                    onChange={(e) => setSecQuestion(e.target.value)}
+                  >
+                    {SECURITY_QUESTION_PRESETS.map((q) => (
+                      <MenuItem key={q} value={q} sx={{ fontSize: "0.8125rem" }}>
+                        {q}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+
+                  <TextField
+                    type={showSecAnswer ? "text" : "password"}
+                    size="small"
+                    fullWidth
+                    label={language === "tl" ? "Bagong Sagot sa Security Question" : "New Security Answer"}
+                    value={secAnswer}
+                    onChange={(e) => setSecAnswer(e.target.value)}
+                    placeholder={language === "tl" ? "Ilagay ang iyong sagot..." : "Enter your security answer..."}
+                    required
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton size="small" onClick={() => setShowSecAnswer(!showSecAnswer)}>
+                              {showSecAnswer ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                  />
+
+                  <TextField
+                    type={showSecVerifyPassword ? "text" : "password"}
+                    size="small"
+                    fullWidth
+                    label={language === "tl" ? "Kumpirmahin gamit ang Account Password" : "Confirm with Account Password"}
+                    value={secVerifyPassword}
+                    onChange={(e) => setSecVerifyPassword(e.target.value)}
+                    placeholder={language === "tl" ? "Password ng account..." : "Account password..."}
+                    required
+                    helperText={language === "tl" ? "Kailangan ang password upang ma-save ang security key" : "Password required to authorize updating recovery key"}
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton size="small" onClick={() => setShowSecVerifyPassword(!showSecVerifyPassword)}>
+                              {showSecVerifyPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                  />
+
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    color="secondary"
+                    disabled={isUpdatingSec}
+                    startIcon={isUpdatingSec ? <CircularProgress size={16} color="inherit" /> : <VpnKeyIcon />}
+                    sx={{ mt: 1, fontWeight: 700, borderRadius: 1 }}
+                  >
+                    {isUpdatingSec
+                      ? (language === "tl" ? "Ina-update..." : "Updating...")
+                      : (language === "tl" ? "I-save ang Security Challenge" : "Save Security Challenge")}
+                  </Button>
+                </Box>
+              </Box>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Card>
+
+      {/* 2. Language Preferences Section */}
       <Card
         sx={{
           p: { xs: 2.5, sm: 3 },
           borderRadius: 1.5,
           border: "1px solid",
           borderColor: "rgba(255, 255, 255, 0.08)",
-          bgcolor: "rgba(24, 27, 32, 0.7)",
+          bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.7)" : "#ffffff"),
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
@@ -298,14 +758,14 @@ export const SettingsView: React.FC = () => {
         </RadioGroup>
       </Card>
 
-      {/* 2. Household Sharing & Hierarchy Section */}
+      {/* 3. Household Sharing & Hierarchy Section */}
       <Card
         sx={{
           p: { xs: 2.5, sm: 3 },
           borderRadius: 1.5,
           border: "1px solid",
           borderColor: "rgba(255, 255, 255, 0.08)",
-          bgcolor: "rgba(24, 27, 32, 0.7)",
+          bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.7)" : "#ffffff"),
         }}
       >
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5, flexWrap: "wrap", gap: 1.5 }}>
@@ -334,10 +794,10 @@ export const SettingsView: React.FC = () => {
         <Divider sx={{ my: 2 }} />
 
         {/* Members Table */}
-        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2.5, bgcolor: "rgba(0, 0, 0, 0.2)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2.5, bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.2)" : "#f8fafc"), border: "1px solid rgba(255, 255, 255, 0.08)" }}>
           <Table size="small">
             <TableHead>
-              <TableRow sx={{ bgcolor: "rgba(255, 255, 255, 0.03)" }}>
+              <TableRow sx={{ bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "#f1f5f9") }}>
                 <TableCell sx={{ fontWeight: 800, fontSize: "0.75rem", color: "text.secondary" }}>{t("settings.member", "MEMBER")}</TableCell>
                 <TableCell sx={{ fontWeight: 800, fontSize: "0.75rem", color: "text.secondary" }}>{t("settings.email", "EMAIL")}</TableCell>
                 <TableCell sx={{ fontWeight: 800, fontSize: "0.75rem", color: "text.secondary" }}>{t("settings.role", "ROLE & PERMISSIONS")}</TableCell>
@@ -412,8 +872,8 @@ export const SettingsView: React.FC = () => {
         </TableContainer>
 
         {/* Hierarchy Explanation Matrix */}
-        <Box sx={{ mt: 3, p: 2, borderRadius: 2.5, bgcolor: "rgba(0, 229, 201, 0.08)", border: "1px solid rgba(0, 229, 201, 0.15)" }}>
-          <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.light", display: "block", mb: 1 }}>
+        <Box sx={{ mt: 3, p: 2, borderRadius: 2.5, bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(13, 148, 136, 0.06)"), border: "1px solid", borderColor: "primary.main" }}>
+          <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.main", display: "block", mb: 1 }}>
             {t("settings.permMatrix", "HOUSEHOLD PERMISSION MATRIX")}
           </Typography>
           <Grid container spacing={1.5}>
@@ -447,7 +907,7 @@ export const SettingsView: React.FC = () => {
         </Box>
       </Card>
 
-      {/* 3. Danger Zone: Account Deletion */}
+      {/* 4. Danger Zone: Account Deletion */}
       <Card
         sx={{
           p: { xs: 2.5, sm: 3 },
@@ -499,7 +959,7 @@ export const SettingsView: React.FC = () => {
             sx: {
               borderRadius: 1.5,
               border: "1px solid rgba(0, 229, 201, 0.3)",
-              bgcolor: "rgba(23, 26, 31, 0.98)",
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(23, 26, 31, 0.98)" : "#ffffff"),
               backdropFilter: "blur(20px)",
               p: 1,
             },
@@ -602,7 +1062,7 @@ export const SettingsView: React.FC = () => {
             sx: {
               borderRadius: 1.5,
               border: "1px solid rgba(248, 113, 113, 0.5)",
-              bgcolor: "rgba(20, 10, 25, 0.96)",
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(20, 10, 25, 0.96)" : "#ffffff"),
               backdropFilter: "blur(24px)",
               p: 1,
             },
