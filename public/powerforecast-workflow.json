@@ -1,0 +1,119 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "PowerForecast System Workflow & Telemetry Pipeline",
+    "subtitle": "End-to-End Appliance Ingestion, Real-Time Telemetry, Meralco Unbundled Tariff Computation, and Audit Pipeline",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "end-to-end",
+        "label": "End-to-End Power Forecasting",
+        "focus": ["user_auth", "appliance_hub", "live_dashboard", "telemetry_tracker", "load_curve_gen", "unbundled_tariff", "analytics_report", "storage_sync"],
+        "note": "Follow the complete lifecycle from tenant entry to unbundled Meralco billing and database audit."
+      },
+      {
+        "id": "appliance-intake",
+        "label": "Appliance Ingestion & AI Vision",
+        "focus": ["user_auth", "appliance_hub", "catalog_vision"],
+        "note": "Three ingestion paths: manual entry, 6,800+ DOE PELP models, and AI dual-engine OCR (Tesseract + Gemini)."
+      },
+      {
+        "id": "telemetry-scheduling",
+        "label": "Live Telemetry & Peak Scheduling",
+        "focus": ["live_dashboard", "smart_calendar", "telemetry_tracker", "peak_analyzer"],
+        "note": "Live circuit switches, stopwatch tracking, and 24h load curve with 11AM-4PM & 6PM-9PM peak overlays."
+      },
+      {
+        "id": "tariff-and-audit",
+        "label": "ERC Unbundled Tariff & Audit",
+        "focus": ["meralco_ui", "load_curve_gen", "unbundled_tariff", "whatif_sim", "analytics_report", "storage_sync"],
+        "note": "ERC unbundled rate math, what-if savings simulation, DevLogger microtask queue, and persistence."
+      }
+    ],
+    "output": "public/powerforecast-workflow.html"
+  },
+  "lanes": [
+    { "id": "ui", "label": "User & Presentation Tier" },
+    { "id": "ingest", "label": "Appliance Ingestion Hub" },
+    { "id": "telemetry", "label": "Live Telemetry & Scheduling" },
+    { "id": "calc", "label": "Tariff & Calculation Engine" },
+    { "id": "policy", "label": "Peak Policy & Windows", "variant": "exception" },
+    { "id": "persist", "label": "Persistence & Audit" }
+  ],
+  "phases": [
+    { "id": "intake_phase", "label": "Intake & Ingestion", "fromCol": 0, "toCol": 1 },
+    { "id": "telemetry_phase", "label": "Telemetry & Scheduling", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "tariff_phase", "label": "Tariff & Persistence", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "ingest_group", "label": "Multi-Source Intake", "lane": "ingest", "fromCol": 1, "toCol": 1, "variant": "emphasis" },
+    { "id": "telemetry_group", "label": "Telemetry & Profiling", "lane": "telemetry", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "tariff_group", "label": "Tariff & Optimization", "lane": "calc", "fromCol": 4, "toCol": 5, "variant": "dashed" },
+    { "id": "audit_group", "label": "Persistence & Logs", "lane": "persist", "fromCol": 5, "toCol": 5, "variant": "security" }
+  ],
+  "mainPath": ["user_auth", "appliance_hub", "live_dashboard", "telemetry_tracker", "load_curve_gen", "unbundled_tariff", "analytics_report", "storage_sync"],
+  "nodes": [
+    { "id": "user_auth", "lane": "ui", "col": 0, "type": "external", "label": "User Session", "sublabel": "Tenant Auth", "tag": "Refine v4", "width": 128 },
+    { "id": "appliance_hub", "lane": "ui", "col": 1, "type": "frontend", "label": "Appliance Hub", "sublabel": "Inventory specs", "brand": "react", "tag": "React 18", "width": 128 },
+    { "id": "catalog_vision", "lane": "ingest", "col": 1, "type": "database", "label": "DOE & Vision", "sublabel": "PELP & Gemini", "brand": "google-gemini", "tag": "Multi-Source", "width": 128 },
+    { "id": "live_dashboard", "lane": "ui", "col": 2, "type": "frontend", "label": "Live Board", "sublabel": "Circuit toggles", "brand": "react", "tag": "Real-Time", "width": 128 },
+    { "id": "smart_calendar", "lane": "telemetry", "col": 2, "type": "frontend", "label": "Smart Calendar", "sublabel": "Month & Week", "brand": "react", "tag": "Scheduler", "width": 128 },
+    { "id": "telemetry_tracker", "lane": "telemetry", "col": 3, "type": "backend", "label": "Telemetry", "sublabel": "Live stopwatch", "brand": "typescript", "tag": "Live Draw", "width": 128 },
+    { "id": "load_curve_gen", "lane": "calc", "col": 3, "type": "backend", "label": "24H Profiler", "sublabel": "Minute aggregate", "brand": "typescript", "tag": "Load Curve", "width": 128 },
+    { "id": "peak_analyzer", "lane": "policy", "col": 3, "type": "security", "label": "Peak Analyzer", "sublabel": "Meralco windows", "brand": "typescript", "tag": "Overlays", "width": 128 },
+    { "id": "meralco_ui", "lane": "ui", "col": 4, "type": "frontend", "label": "Calculator", "sublabel": "Tariff controls", "brand": "react", "tag": "Tariff UI", "width": 128 },
+    { "id": "unbundled_tariff", "lane": "calc", "col": 4, "type": "backend", "label": "ERC Engine", "sublabel": "Unbundled rate", "brand": "typescript", "tag": "Formula", "width": 128 },
+    { "id": "whatif_sim", "lane": "calc", "col": 5, "type": "backend", "label": "Simulator", "sublabel": "Savings model", "brand": "typescript", "tag": "Optimizer", "width": 128 },
+    { "id": "analytics_report", "lane": "ui", "col": 5, "type": "frontend", "label": "Analytics", "sublabel": "Receipt breakdown", "brand": "react", "tag": "Export", "width": 128 },
+    { "id": "storage_sync", "lane": "persist", "col": 5, "type": "cloud", "label": "Supabase Sync", "sublabel": "Local & Postgres", "brand": "supabase", "tag": "Audit Parity", "width": 128 }
+  ],
+  "edges": [
+    { "from": "user_auth", "to": "appliance_hub", "label": "session", "variant": "emphasis", "role": "main" },
+    { "from": "appliance_hub", "to": "catalog_vision", "label": "import / scan", "variant": "emphasis", "role": "branch" },
+    { "from": "catalog_vision", "to": "appliance_hub", "label": "specs", "variant": "dashed", "role": "return" },
+    { "from": "appliance_hub", "to": "live_dashboard", "label": "inventory", "variant": "emphasis", "role": "main" },
+    { "from": "live_dashboard", "to": "smart_calendar", "label": "schedule", "variant": "default", "role": "branch" },
+    { "from": "live_dashboard", "to": "telemetry_tracker", "label": "active draw", "variant": "emphasis", "role": "main" },
+    { "from": "smart_calendar", "to": "telemetry_tracker", "label": "routine", "variant": "default", "role": "branch" },
+    { "from": "telemetry_tracker", "to": "load_curve_gen", "label": "telemetry", "variant": "emphasis", "role": "main" },
+    { "from": "load_curve_gen", "to": "peak_analyzer", "label": "timestamp", "variant": "security", "role": "branch" },
+    { "from": "load_curve_gen", "to": "unbundled_tariff", "label": "monthly kWh", "variant": "emphasis", "role": "main" },
+    { "from": "peak_analyzer", "to": "unbundled_tariff", "label": "peak ratio", "variant": "security", "role": "branch" },
+    { "from": "meralco_ui", "to": "unbundled_tariff", "label": "rates", "variant": "default", "role": "branch" },
+    { "from": "unbundled_tariff", "to": "analytics_report", "label": "itemized bill", "variant": "emphasis", "role": "main" },
+    { "from": "unbundled_tariff", "to": "whatif_sim", "label": "baseline", "variant": "default", "role": "branch" },
+    { "from": "analytics_report", "to": "storage_sync", "label": "persist state", "variant": "emphasis", "role": "main" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Triple-Channel Appliance Ingestion",
+      "items": [
+        "Manual Specification with real-time wattage and operational duty cycle",
+        "Official DOE PELP Catalog ingesting 6,800+ Philippine energy-certified models",
+        "AI Multi-Angle Vision with local Tesseract.js OCR & Google Gemini 2.0 Flash"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Real-Time Telemetry & Peak Windows",
+      "items": [
+        "Live Power Board with circuit switches and active running stopwatch",
+        "Smart Calendar featuring Month Grid, 7-Day Week, and 24-Hour Timeline views",
+        "Meralco Peak Overlays highlighting 11:00-16:00 and 18:00-21:00 high-demand bands"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "ERC Tariff Formula & Audit Trail",
+      "items": [
+        "Full unbundled computation (Generation, Transmission, System Loss, Distribution, VAT)",
+        "Lifeline subsidy (<100 kWh) and Senior Citizen 5% discount calculation",
+        "Asynchronous DevLogger microtask queue with dual LocalStorage & Supabase sync"
+      ]
+    }
+  ]
+}

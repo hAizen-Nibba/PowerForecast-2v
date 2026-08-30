@@ -301,35 +301,50 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
           </Alert>
         )}
 
-        {/* Space Selector & Gemini Key trigger */}
+        {/* Preset Mode Selector & Space / Key Controls */}
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
-          {spaces.length > 1 && (
-            <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel>Target Space</InputLabel>
-              <Select
-                value={selectedSpaceId}
-                label="Target Space"
-                onChange={(e) => setSelectedSpaceId(e.target.value)}
-              >
-                {spaces.map((sp) => (
-                  <MenuItem key={sp.id} value={sp.id}>
-                    {sp.name} ({sp.tariff_type === "commercial" ? "Commercial" : "Residential"})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
+          <FormControl size="small" sx={{ minWidth: 220 }}>
+            <InputLabel>Scan Mode / Preset</InputLabel>
+            <Select
+              value={preset}
+              label="Scan Mode / Preset"
+              onChange={(e) => setPreset(e.target.value as any)}
+            >
+              <MenuItem value="energy_guide">🟡 DOE Yellow Energy Guide</MenuItem>
+              <MenuItem value="nameplate">⚙️ Technical Specification Plate</MenuItem>
+              <MenuItem value="inverter_check">⚡ Inverter & Efficiency Audit</MenuItem>
+            </Select>
+          </FormControl>
 
-          <Button
-            size="small"
-            variant="text"
-            color="inherit"
-            startIcon={<KeyIcon fontSize="small" />}
-            onClick={() => setShowApiKeyInput((prev) => !prev)}
-            sx={{ fontSize: "0.75rem" }}
-          >
-            {apiKey ? "Custom Key Configured" : "Enter API Key"}
-          </Button>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {spaces.length > 1 && (
+              <FormControl size="small" sx={{ minWidth: 160 }}>
+                <InputLabel>Target Space</InputLabel>
+                <Select
+                  value={selectedSpaceId}
+                  label="Target Space"
+                  onChange={(e) => setSelectedSpaceId(e.target.value)}
+                >
+                  {spaces.map((sp) => (
+                    <MenuItem key={sp.id} value={sp.id}>
+                      {sp.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+
+            <Button
+              size="small"
+              variant="text"
+              color="inherit"
+              startIcon={<KeyIcon fontSize="small" />}
+              onClick={() => setShowApiKeyInput((prev) => !prev)}
+              sx={{ fontSize: "0.75rem" }}
+            >
+              {apiKey ? "Custom Key Configured" : "Enter API Key"}
+            </Button>
+          </Box>
         </Box>
 
         {showApiKeyInput && (
@@ -434,10 +449,33 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
         {scanResult && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 1.25, bgcolor: "action.hover" }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "success.main", display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-                <CheckCircleIcon fontSize="small" />
-                Gemini AI Specs Extracted
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1, mb: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "success.main", display: "flex", alignItems: "center", gap: 1 }}>
+                  <CheckCircleIcon fontSize="small" />
+                  Gemini AI Specs Extracted
+                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
+                  {scanResult.is_inverter && (
+                    <Chip label="⚡ Inverter" size="small" color="success" sx={{ fontWeight: 700, height: 22 }} />
+                  )}
+                  {scanResult.detected_star_rating && (
+                    <Chip label={`⭐ ${scanResult.detected_star_rating}-Star`} size="small" color="warning" sx={{ fontWeight: 700, height: 22 }} />
+                  )}
+                  {(scanResult.cspf || scanResult.eer) && (
+                    <Chip label={`CSPF/EER: ${scanResult.cspf || scanResult.eer}`} size="small" color="info" sx={{ fontWeight: 600, height: 22 }} />
+                  )}
+                  {scanResult.cooling_capacity_kj_h && (
+                    <Chip label={`❄️ ${scanResult.cooling_capacity_kj_h.toLocaleString()} kJ/h`} size="small" sx={{ fontWeight: 600, height: 22 }} />
+                  )}
+                  <Chip
+                    label={scanResult.confidence ? `${scanResult.confidence.toUpperCase()} CONFIDENCE` : "HIGH CONFIDENCE"}
+                    size="small"
+                    variant="outlined"
+                    color={scanResult.confidence === "low" ? "warning" : "default"}
+                    sx={{ fontSize: "0.65rem", height: 20 }}
+                  />
+                </Box>
+              </Box>
 
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, sm: 6 }}>
@@ -467,14 +505,56 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
                     onChange={(e) => setEditModel(e.target.value)}
                   />
                 </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    select
+                    fullWidth
+                    size="small"
+                    label="Category"
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                  >
+                    <MenuItem value="Air Conditioners">Air Conditioners</MenuItem>
+                    <MenuItem value="Refrigerators & Freezers">Refrigerators & Freezers</MenuItem>
+                    <MenuItem value="Television Sets">Television Sets</MenuItem>
+                    <MenuItem value="Electric Fans">Electric Fans</MenuItem>
+                    <MenuItem value="Clothes Washing Machines">Clothes Washing Machines</MenuItem>
+                    <MenuItem value="Lighting Products">Lighting Products</MenuItem>
+                    <MenuItem value="Kitchen Appliances">Kitchen Appliances</MenuItem>
+                    <MenuItem value="Water Heaters & Pumps">Water Heaters & Pumps</MenuItem>
+                    <MenuItem value="Computers & Office">Computers & Office</MenuItem>
+                    <MenuItem value="Other">Other</MenuItem>
+                  </TextField>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    select
+                    fullWidth
+                    size="small"
+                    label="Room / Zone Location"
+                    value={editRoom}
+                    onChange={(e) => setEditRoom(e.target.value)}
+                  >
+                    <MenuItem value="Living Room">Living Room</MenuItem>
+                    <MenuItem value="Master Bedroom">Master Bedroom</MenuItem>
+                    <MenuItem value="Bedroom 2">Bedroom 2</MenuItem>
+                    <MenuItem value="Kitchen">Kitchen</MenuItem>
+                    <MenuItem value="Dining">Dining</MenuItem>
+                    <MenuItem value="Laundry Area">Laundry Area</MenuItem>
+                    <MenuItem value="Home Office">Home Office</MenuItem>
+                    <MenuItem value="Store Front / Retail">Store Front / Retail</MenuItem>
+                    <MenuItem value="Workshop / Storage">Workshop / Storage</MenuItem>
+                  </TextField>
+                </Grid>
                 <Grid size={6}>
                   <TextField
                     type="number"
                     fullWidth
                     size="small"
-                    label="Power Draw (Watts)"
+                    label="Rated Electric Power (Watts)"
                     value={editWatts}
                     onChange={(e) => setEditWatts(Number(e.target.value) || 0)}
+                    helperText="Actual electric input wattage"
                   />
                 </Grid>
                 <Grid size={6}>
@@ -482,9 +562,10 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
                     type="number"
                     fullWidth
                     size="small"
-                    label="Monthly kWh"
+                    label="Monthly Consumption (kWh)"
                     value={editMonthlyKwh}
                     onChange={(e) => setEditMonthlyKwh(Number(e.target.value) || 0)}
+                    helperText="Official DOE test or estimated monthly kWh"
                   />
                 </Grid>
               </Grid>

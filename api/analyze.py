@@ -82,24 +82,59 @@ class handler(BaseHTTPRequestHandler):
             parts.append({"text": prompt})
         else:
             default_prompt = (
-                "You are ApplianceSpec AI, an expert electrical energy auditor specialized in Philippine DOE Energy Guide labels and technical specification nameplates.\n"
-                "Analyze the provided image(s) (which may show energy labels, nameplates, or appliance body). "
-                "Extract and reconcile all technical electrical data into clean JSON with these exact keys:\n"
+                "You are ApplianceSpec AI, an elite electrical engineer and energy auditor specializing in Philippine Department of Energy (DOE) PELP standards, Energy Guide yellow labels, and electrical appliance specification nameplates (e.g. Carrier, Condura, Panasonic, LG, Samsung, Sharp, Daikin, Asahi, Astron, Standard, Hanabishi, TCL, Midea, Kolin, Haier, etc.).\n\n"
+                "Examine all uploaded appliance photo(s). Extract real, high-precision technical data visible across the image(s) following these strict engineering rules:\n\n"
+                "### 1. POWER & UNIT DISAMBIGUATION (CRITICAL)\n"
+                "- DO NOT confuse Cooling Capacity (kJ/h, BTU/h, HP, or cooling kW) with Electrical Power Input (Watts).\n"
+                "  * If the label shows 'Cooling Capacity: 9500 kJ/h' or '10,000 BTU/h', that is THERMAL capacity, NOT electric power consumption.\n"
+                "  * Look for 'Rated Power Input (W)', 'Power Consumption (W)', 'Input (W)', 'Total Input (W)', or 'Rated Input'.\n"
+                "  * If electric power (Watts) is not explicitly printed, calculate: Power (W) = Voltage (V) × Current (A) × Power Factor (0.9 for motors/compressors, 1.0 for heaters).\n"
+                "  * Realistic electric input wattage ranges for Philippine residential units:\n"
+                "    - Air Conditioners (Window/Split): 450W - 2200W (NEVER 5000W - 18000W; values >3500W indicate thermal kJ/h or BTU was misread!)\n"
+                "    - Refrigerators & Freezers: 60W - 250W\n"
+                "    - Electric Fans (Desk/Stand/Ceiling/Orbit): 35W - 110W\n"
+                "    - Television Sets (32\"-75\" LED/OLED): 30W - 180W\n"
+                "    - Clothes Washing Machines: 250W - 650W (Motor/Spin), 1200W-2000W (Heater if present)\n\n"
+                "### 2. PHILIPPINE DOE ENERGY GUIDE & PELP EXTRACTION\n"
+                "- Look for the yellow Philippine DOE Energy Guide label:\n"
+                "  * Extract exact 'Monthly Energy Consumption: [X] kWh/month' directly from the yellow label test result box.\n"
+                "  * Extract Star Rating (1 to 5 stars displayed on the top yellow banner).\n"
+                "  * Extract CSPF (Cooling Seasonal Performance Factor) or EER (Energy Efficiency Ratio) if visible.\n\n"
+                "### 3. TECHNOLOGY & INVERTER DETECTION\n"
+                "- Check if the appliance has Inverter technology ('Inverter', 'Dual Inverter', 'DC Inverter', 'Digital Inverter', 'Smart Inverter', 'Direct Drive Inverter'). Set 'is_inverter': true if detected.\n\n"
+                "### 4. CATEGORY NORMALIZATION\n"
+                "Categorize strictly as one of:\n"
+                "- 'Air Conditioners'\n"
+                "- 'Refrigerators & Freezers'\n"
+                "- 'Television Sets'\n"
+                "- 'Electric Fans'\n"
+                "- 'Clothes Washing Machines'\n"
+                "- 'Lighting Products'\n"
+                "- 'Kitchen Appliances'\n"
+                "- 'Water Heaters & Pumps'\n"
+                "- 'Computers & Office'\n"
+                "- 'Other'\n\n"
+                "### 5. PRESET MODE: " + str(preset) + "\n\n"
+                "Respond ONLY with a valid JSON object inside a ```json ``` code block with these keys:\n"
                 "{\n"
                 '  "brand": "Exact brand string (e.g. Astron, Standard, Asahi, Carrier, Panasonic, LG, Sharp, Daikin, Samsung, Condura, etc.)",\n'
-                '  "model": "Exact model number or code (e.g. BRONCO 18, BR-000993)",\n'
-                '  "category": "Air Conditioners | Refrigerating Appliances | Television Sets | Electric Fans | Clothes Washing Machines | Lighting Products | Other",\n'
-                '  "power_watts": number (e.g. 70 for fan, 1050 for AC, 120 for ref),\n'
+                '  "model": "Exact model number/code visible on label (e.g. WCONX008EEV, BRONCO 18, etc.)",\n'
+                '  "category": "Standard category name from list above",\n'
+                '  "power_watts": number (e.g. 70 for fan, 850 for AC, 110 for refrigerator),\n'
                 '  "voltage": number (e.g. 230),\n'
-                '  "monthly_kwh": number (e.g. 16.8 for 70W fan @ 8h/day, 240 for 1000W AC),\n'
-                '  "energy_rating": "e.g. 5-Star DOE or CSPF rating or PS Quality Mark",\n'
-                '  "star_rating": number (1 to 5),\n'
+                '  "current_amps": number or null,\n'
+                '  "is_inverter": boolean,\n'
+                '  "cooling_capacity_kj_h": number or null,\n'
+                '  "cooling_capacity_btu": number or null,\n'
+                '  "cspf": number or null,\n'
+                '  "eer": number or null,\n'
+                '  "monthly_kwh": number (e.g. 16.8 for fan @ 10h/day, 160 for 850W inverter AC @ 8h/day, 28 for inverter refrigerator),\n'
+                '  "energy_rating": "e.g. 5-Star DOE Certified, Inverter, CSPF 5.85, or PS Mark",\n'
+                '  "star_rating": number between 1 and 5,\n'
                 '  "room_location": "Living Room | Master Bedroom | Kitchen | Laundry Area | Home Office",\n'
                 '  "confidence": "high | medium | low",\n'
-                '  "notes": "Detailed engineering audit notes describing detected ratings, serials, and efficiency analysis."\n'
+                '  "notes": "Detailed engineering audit notes: detected rated power, voltage, current, frequency (60Hz), serial number, PELP registration, and energy efficiency summary."\n'
                 "}\n"
-                "Preset: " + str(preset) + "\n"
-                "Respond ONLY with valid JSON inside a ```json ``` code block."
             )
             parts.append({"text": default_prompt})
 

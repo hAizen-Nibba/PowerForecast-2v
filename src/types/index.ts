@@ -173,6 +173,12 @@ export interface VisionScanResult {
   detected_monthly_kwh?: number;
   detected_energy_rating?: string;
   detected_star_rating?: number;
+  is_inverter?: boolean;
+  cooling_capacity_kj_h?: number;
+  cooling_capacity_btu?: number;
+  cspf?: number;
+  eer?: number;
+  rated_current_amps?: number;
   raw_markdown?: string;
   confidence?: 'high' | 'medium' | 'low';
 }

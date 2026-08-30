@@ -41,12 +41,21 @@ export interface SystemChangelogEntry {
 // Master compiled GitHub deployment history covering all releases from 2.1.1v to 2.13.DEV
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "2.13.9v",
+    version: "2.13.9v",
+    description: "2.13.9v - Enhance AI vision scanner prompt with Philippine DOE yellow label standards, unit disambiguation, inverter detection, and schema parity",
+    git_commit_tag: "2.13.9v",
+    deployed_by: "hAizen-Nibba",
+    created_at: new Date().toISOString(),
+    source: "github",
+  },
+  {
     id: "2.13.8v",
     version: "2.13.8v",
     description: "2.13.8v - Revamp ApplianceRoutineModal for Light Mode with theme-adaptive dialog surfaces, white cards, high-contrast calendar grid, and emerald highlights",
     git_commit_tag: "2.13.8v",
     deployed_by: "hAizen-Nibba",
-    created_at: new Date().toISOString(),
+    created_at: "2026-08-30T12:00:00.000Z",
     source: "github",
   },
   {

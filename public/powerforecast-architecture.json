@@ -1,0 +1,337 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "PowerForecast High-Level System Architecture",
+    "output": "public/powerforecast-architecture.html",
+    "visual_preset": "blueprint",
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "viewBox": [1120, 620],
+    "views": [
+      {
+        "id": "primary-request-flow",
+        "label": "End-to-End Energy Pipeline",
+        "focus": ["user_client", "refine_spa", "ui_modules", "ingest_engine", "load_profiler", "tariff_engine", "storage_tier"],
+        "note": "Trace client intake, bottom-up specs, 24H load profiling, unbundled ERC tariff math, and durable storage sync."
+      },
+      {
+        "id": "ingestion-intelligence",
+        "label": "Appliance Ingestion & AI Vision",
+        "focus": ["refine_spa", "ingest_engine", "doe_pelp", "ai_vision"],
+        "note": "Inspect multi-source intake: manual specs, 6,800+ DOE PELP catalog models, and dual-engine Tesseract.js / Gemini OCR."
+      },
+      {
+        "id": "tariff-and-telemetry",
+        "label": "Telemetry & Tariff Computation",
+        "focus": ["ui_modules", "load_profiler", "tariff_engine", "python_api"],
+        "note": "Follow real-time telemetry aggregation, Meralco peak window overlays, ERC tariff math, and Python serverless endpoints."
+      },
+      {
+        "id": "security-persistence",
+        "label": "Auth, Telemetry & Persistence",
+        "focus": ["refine_spa", "supabase_auth", "devlogger", "storage_tier"],
+        "note": "Examine JWT session gates, asynchronous microtask audit dispatch, and dual-mode (LocalStorage + PostgreSQL) data persistence."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "user_client",
+      "type": "external",
+      "label": "Tenant / User",
+      "sublabel": "Browser & Mobile Web",
+      "pos": [40, 110],
+      "size": [120, 60]
+    },
+    {
+      "id": "refine_spa",
+      "type": "frontend",
+      "label": "Refine React SPA",
+      "sublabel": "Vite 8 & Refine v4",
+      "brand": "react",
+      "pos": [230, 110],
+      "size": [130, 60],
+      "tag": "SPA Root"
+    },
+    {
+      "id": "ui_modules",
+      "type": "frontend",
+      "label": "Interactive Views",
+      "sublabel": "Board, Calendar & Calc",
+      "brand": "typescript",
+      "pos": [230, 280],
+      "size": [130, 60],
+      "tag": "Recharts UI"
+    },
+    {
+      "id": "theme_portal",
+      "type": "frontend",
+      "label": "Theme & Portals",
+      "sublabel": "Dual Theme & z-[9999]",
+      "brand": "typescript",
+      "pos": [230, 450],
+      "size": [130, 60],
+      "tag": "Modal Shell"
+    },
+    {
+      "id": "doe_pelp",
+      "type": "database",
+      "label": "DOE PELP Catalog",
+      "sublabel": "6,800+ Certified Models",
+      "brand": "typescript",
+      "pos": [460, 110],
+      "size": [130, 60],
+      "tag": "Philippine PELP"
+    },
+    {
+      "id": "ingest_engine",
+      "type": "backend",
+      "label": "Appliance Hub",
+      "sublabel": "Bottom-Up Modeling",
+      "brand": "typescript",
+      "pos": [460, 280],
+      "size": [130, 60],
+      "tag": "Duty Cycles & Watts"
+    },
+    {
+      "id": "ai_vision",
+      "type": "security",
+      "label": "AI Vision & OCR",
+      "sublabel": "Tesseract & Gemini 2.0",
+      "brand": "google-gemini",
+      "pos": [460, 450],
+      "size": [130, 60],
+      "tag": "Dual-Engine Scanner"
+    },
+    {
+      "id": "load_profiler",
+      "type": "backend",
+      "label": "24H Load Profiler",
+      "sublabel": "Minute-Level Aggregator",
+      "brand": "typescript",
+      "pos": [690, 110],
+      "size": [130, 60],
+      "tag": "Peak Overlays"
+    },
+    {
+      "id": "tariff_engine",
+      "type": "backend",
+      "label": "ERC Tariff Engine",
+      "sublabel": "Unbundled Meralco Math",
+      "brand": "typescript",
+      "pos": [690, 280],
+      "size": [130, 60],
+      "tag": "8 Unbundled Rates"
+    },
+    {
+      "id": "python_api",
+      "type": "cloud",
+      "label": "Python Serverless",
+      "sublabel": "FastAPI & Analytics",
+      "brand": "python",
+      "pos": [690, 450],
+      "size": [130, 60],
+      "tag": "Vercel /api/*"
+    },
+    {
+      "id": "supabase_auth",
+      "type": "security",
+      "label": "Supabase Auth",
+      "sublabel": "JWT & Email Verify",
+      "brand": "supabase",
+      "pos": [920, 110],
+      "size": [130, 60],
+      "tag": "RLS Policies"
+    },
+    {
+      "id": "devlogger",
+      "type": "messagebus",
+      "label": "DevLogger Queue",
+      "sublabel": "Async Telemetry Bus",
+      "brand": "typescript",
+      "pos": [920, 280],
+      "size": [130, 60],
+      "tag": "queueMicrotask"
+    },
+    {
+      "id": "storage_tier",
+      "type": "database",
+      "label": "Persistence Tier",
+      "sublabel": "LocalStorage & Postgres",
+      "brand": "postgresql",
+      "pos": [920, 450],
+      "size": [130, 60],
+      "tag": "Dual-Mode Sync"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Client Presentation Tier (React 18 / Vite / Refine)",
+      "wraps": ["refine_spa", "ui_modules", "theme_portal"],
+      "pad": 16
+    },
+    {
+      "kind": "region",
+      "label": "Appliance Ingestion & Intelligence Subsystem",
+      "wraps": ["doe_pelp", "ingest_engine", "ai_vision"],
+      "pad": 16
+    },
+    {
+      "kind": "security-group",
+      "label": "Energy Modeling & ERC Tariff Calculation Engine",
+      "wraps": ["load_profiler", "tariff_engine", "python_api"],
+      "pad": 16
+    },
+    {
+      "kind": "region",
+      "label": "Security, Telemetry & Persistence Tier",
+      "wraps": ["supabase_auth", "devlogger", "storage_tier"],
+      "pad": 16
+    }
+  ],
+  "connections": [
+    {
+      "id": "user-to-spa",
+      "from": "user_client",
+      "to": "refine_spa",
+      "label": "HTTPS",
+      "variant": "emphasis",
+      "labelAt": [195, 155]
+    },
+    {
+      "id": "spa-to-ui",
+      "from": "refine_spa",
+      "to": "ui_modules",
+      "label": "route / state",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [295, 225]
+    },
+    {
+      "id": "ui-to-theme",
+      "from": "ui_modules",
+      "to": "theme_portal",
+      "label": "portal mount",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [295, 395]
+    },
+    {
+      "id": "spa-to-auth",
+      "from": "refine_spa",
+      "to": "supabase_auth",
+      "label": "JWT session",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [[295, 46], [985, 46]],
+      "labelAt": [640, 38]
+    },
+    {
+      "id": "doe-to-ingest",
+      "from": "doe_pelp",
+      "to": "ingest_engine",
+      "label": "6.8k catalog",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [525, 225]
+    },
+    {
+      "id": "ui-to-ingest",
+      "from": "ui_modules",
+      "to": "ingest_engine",
+      "label": "specs",
+      "variant": "emphasis",
+      "labelDy": -24
+    },
+    {
+      "id": "vision-to-ingest",
+      "from": "ai_vision",
+      "to": "ingest_engine",
+      "label": "OCR payload",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelAt": [525, 395]
+    },
+    {
+      "id": "ingest-to-profiler",
+      "from": "ingest_engine",
+      "to": "load_profiler",
+      "label": "duty cycles",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "profiler-to-tariff",
+      "from": "load_profiler",
+      "to": "tariff_engine",
+      "label": "24h load curve",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [755, 225]
+    },
+    {
+      "id": "tariff-to-api",
+      "from": "tariff_engine",
+      "to": "python_api",
+      "label": "ML reconcile",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [755, 395]
+    },
+    {
+      "id": "tariff-to-logger",
+      "from": "tariff_engine",
+      "to": "devlogger",
+      "label": "telemetry",
+      "variant": "dashed",
+      "labelDy": -24
+    },
+    {
+      "id": "tariff-to-storage",
+      "from": "tariff_engine",
+      "to": "storage_tier",
+      "label": "durable sync",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Triple-Channel Appliance Ingestion",
+      "items": [
+        "Manual parameter entry with rated watts & load factor",
+        "Official DOE PELP Catalog indexing 6,800+ certified appliances",
+        "Dual-engine OCR with local Tesseract.js and Gemini 2.0 Flash"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "ERC Unbundled Meralco Formulation",
+      "items": [
+        "Unbundled breakdown: Gen, Trans, SysLoss, Dist, Supply, Metering",
+        "Lifeline & Senior Citizen 5% discount subsidy adjustments",
+        "24H minute-level load curve with 11AM-4PM & 6PM-9PM peak overlays"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Enterprise Reliability & Audit Parity",
+      "items": [
+        "Safe Isolated Local Mode fallback with zero cloud dependency",
+        "Supabase PostgreSQL sync with Row Level Security (RLS)",
+        "DevLogger microtask queue eliminating React rendering race conditions"
+      ]
+    }
+  ]
+}
