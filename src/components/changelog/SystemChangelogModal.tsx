@@ -41,12 +41,21 @@ export interface SystemChangelogEntry {
 // Master compiled GitHub deployment history covering all releases from 2.1.1v to 2.13.DEV
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "2.13.16v",
+    version: "2.13.16v",
+    description: "2.13.16v - Fix hover flickering logic on Meralco rate popover by bypassing modal backdrop interception and adding debounced mouse transition",
+    git_commit_tag: "2.13.16v",
+    deployed_by: "hAizen-Nibba",
+    created_at: new Date().toISOString(),
+    source: "github",
+  },
+  {
     id: "2.13.15v",
     version: "2.13.15v",
     description: "2.13.15v - Implement Meralco Generation Rate interactive hover breakdown popover and click-to-refetch mechanism in header",
     git_commit_tag: "2.13.15v",
     deployed_by: "hAizen-Nibba",
-    created_at: new Date().toISOString(),
+    created_at: "2026-08-30T13:55:00.000Z",
     source: "github",
   },
   {

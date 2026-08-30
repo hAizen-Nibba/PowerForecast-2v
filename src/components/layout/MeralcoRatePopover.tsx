@@ -35,29 +35,44 @@ export const MeralcoRatePopover: React.FC = () => {
 
   useEffect(() => {
     getMeralcoTariff(false).then((data) => setTariff(data));
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
   }, []);
 
   const handleMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
     }
     setAnchorEl(event.currentTarget);
   };
 
   const handleMouseLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
     hoverTimeoutRef.current = setTimeout(() => {
       setAnchorEl(null);
-    }, 220);
+    }, 250);
   };
 
   const handlePopoverMouseEnter = () => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
     }
   };
 
   const handlePopoverMouseLeave = () => {
-    setAnchorEl(null);
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setAnchorEl(null);
+    }, 250);
   };
 
   const handleRefresh = async (e?: React.MouseEvent) => {
@@ -96,7 +111,11 @@ export const MeralcoRatePopover: React.FC = () => {
   return (
     <>
       {/* Header Rate Badge Button */}
-      <Tooltip title={isOpen ? "" : (language === "tl" ? "I-hover para sa buong detalye • I-click para i-refetch" : "Hover for full tariff breakdown • Click to refetch data")} arrow>
+      <Tooltip
+        title={isOpen ? "" : (language === "tl" ? "I-hover para sa buong detalye • I-click para i-refetch" : "Hover for full tariff breakdown • Click to refetch data")}
+        arrow
+        disableHoverListener={isOpen}
+      >
         <Chip
           icon={
             isRefreshing ? (
@@ -160,11 +179,16 @@ export const MeralcoRatePopover: React.FC = () => {
           vertical: "top",
           horizontal: "left",
         }}
+        disableRestoreFocus
+        sx={{
+          pointerEvents: "none",
+        }}
         slotProps={{
           paper: {
             onMouseEnter: handlePopoverMouseEnter,
             onMouseLeave: handlePopoverMouseLeave,
             sx: {
+              pointerEvents: "auto",
               mt: 1.25,
               width: { xs: 340, sm: 460 },
               borderRadius: 1.5,
