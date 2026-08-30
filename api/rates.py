@@ -1,5 +1,6 @@
 import json
 from http.server import BaseHTTPRequestHandler
+from cors_utils import send_cors_headers
 
 DEFAULT_RATES = {
     "effective_month": "August 2026",
@@ -15,14 +16,12 @@ DEFAULT_RATES = {
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        send_cors_headers(self, 'GET, OPTIONS')
         self.end_headers()
 
     def do_GET(self):
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
+        send_cors_headers(self, 'GET, OPTIONS')
         self.end_headers()
         self.wfile.write(json.dumps(DEFAULT_RATES).encode('utf-8'))

@@ -4,6 +4,7 @@ import re
 import urllib.request
 import urllib.error
 from http.server import BaseHTTPRequestHandler
+from cors_utils import send_cors_headers
 
 def get_gemini_api_keys():
     keys = []
@@ -43,9 +44,7 @@ def get_gemini_api_keys():
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        send_cors_headers(self, 'POST, OPTIONS')
         self.end_headers()
 
     def do_POST(self):
@@ -69,7 +68,7 @@ class handler(BaseHTTPRequestHandler):
         if not api_keys:
             self.send_response(401)
             self.send_header('Content-Type', 'application/json')
-            self.send_header('Access-Control-Allow-Origin', '*')
+            send_cors_headers(self, 'POST, OPTIONS')
             self.end_headers()
             self.wfile.write(json.dumps({
                 "error": "No Gemini API key configured on server. Please add GEMINI_API_KEY to your Vercel Environment Variables."
@@ -197,7 +196,7 @@ class handler(BaseHTTPRequestHandler):
 
                         self.send_response(200)
                         self.send_header('Content-Type', 'application/json')
-                        self.send_header('Access-Control-Allow-Origin', '*')
+                        send_cors_headers(self, 'POST, OPTIONS')
                         self.end_headers()
                         self.wfile.write(json.dumps({
                             "success": True,
@@ -213,7 +212,7 @@ class handler(BaseHTTPRequestHandler):
 
         self.send_response(500)
         self.send_header('Content-Type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
+        send_cors_headers(self, 'POST, OPTIONS')
         self.end_headers()
         # Secure error response: do not expose internal error details or stack traces to clients
         self.wfile.write(json.dumps({"error": "Failed to analyze image with Google Gemini API. Please try again later."}).encode('utf-8'))
