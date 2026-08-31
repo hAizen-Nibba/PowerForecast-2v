@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -7,32 +7,19 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
-import TextField from "@mui/material/TextField";
-import Chip from "@mui/material/Chip";
 import Paper from "@mui/material/Paper";
 import Avatar from "@mui/material/Avatar";
-import Rating from "@mui/material/Rating";
 import Divider from "@mui/material/Divider";
 import Tooltip from "@mui/material/Tooltip";
-import Stack from "@mui/material/Stack";
-import CircularProgress from "@mui/material/CircularProgress";
+import type { Theme } from "@mui/material/styles";
 import {
   Close as CloseIcon,
-  Feedback as FeedbackIcon,
-  Send as SendIcon,
-  ContentCopy as CopyIcon,
-  OpenInNew as OpenInNewIcon,
-  ChatBubbleOutlined as ChatIcon,
-  BugReport as BugIcon,
-  Lightbulb as FeatureIcon,
-  HelpOutlined as HelpIcon,
-  ThumbUp as GeneralIcon,
   Verified as VerifiedIcon,
-  Check as CheckIcon,
+  OpenInNew as OpenInNewIcon,
+  SupportAgent as SupportIcon,
+  FormatQuote as QuoteIcon,
+  Facebook as FacebookIcon,
 } from "@mui/icons-material";
-import { useToast } from "../common/ToastProvider";
-import { supabaseClient } from "../../lib/supabaseClient";
-import { devLog } from "../../lib/devLogger";
 
 interface FeedbackModalProps {
   open: boolean;
@@ -41,79 +28,51 @@ interface FeedbackModalProps {
 
 export const FB_PM_LINK = "https://www.facebook.com/aj.umali.533308";
 
-const CATEGORIES = [
-  { id: "Feature Request", label: "Feature Request", icon: <FeatureIcon sx={{ fontSize: 16 }} />, color: "#00e5c9" },
-  { id: "Bug Report", label: "Bug Report", icon: <BugIcon sx={{ fontSize: 16 }} />, color: "#f87171" },
-  { id: "Inquiry / Question", label: "Inquiry / Question", icon: <HelpIcon sx={{ fontSize: 16 }} />, color: "#60a5fa" },
-  { id: "General Feedback", label: "General Feedback", icon: <GeneralIcon sx={{ fontSize: 16 }} />, color: "#fbbf24" },
-];
+interface TeamMember {
+  name: string;
+  role: string;
+  avatar: string;
+  fbLink: string;
+  isLead?: boolean;
+  quote?: string;
+  verified?: boolean;
+}
+
+const TEAM_MEMBERS: {
+  lead: TeamMember;
+  collaborators: TeamMember[];
+} = {
+  lead: {
+    name: "AJ Umali",
+    role: "Lead Developer",
+    avatar: "/Assets/ellen-joe-wallpaper-v0-d9cvw6chy46e1.jpg",
+    fbLink: "https://www.facebook.com/aj.umali.533308",
+    isLead: true,
+    verified: true,
+    quote: "Chill lang par! 'Di ko pa nagagawa dailies ko sa ZZZ at NTE!",
+  },
+  collaborators: [
+    {
+      name: "Dave Villegas",
+      role: "Associate Lead Developer & Backend Developer",
+      avatar: "/Assets/images.jpg",
+      fbLink: "https://www.facebook.com/di3bu",
+    },
+    {
+      name: "Mehojeriel Lacerna",
+      role: "Project Manager, Thesis Group Leader",
+      avatar: "/Assets/eggplant_300x.jpg",
+      fbLink: "https://www.facebook.com/mehojeriel.lacerna",
+    },
+  ],
+};
 
 export const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onClose }) => {
-  const { showSuccess, showError, showInfo } = useToast();
-  const [category, setCategory] = useState<string>("Feature Request");
-  const [rating, setRating] = useState<number | null>(5);
-  const [message, setMessage] = useState<string>("");
-  const [contactEmail, setContactEmail] = useState<string>("");
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [copied, setCopied] = useState<boolean>(false);
-
-  const handleCopyAndOpenPM = () => {
-    const formatted = `[PowerForecast Feedback - ${category}]\nRating: ${rating ? `${rating}/5 Stars` : "Not specified"}\nEmail/Contact: ${contactEmail || "Anonymous"}\n\nMessage:\n${message.trim() || "Hi AJ! I want to share some feedback regarding PowerForecast."}`;
-    
-    try {
-      navigator.clipboard.writeText(formatted);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 3000);
-      showSuccess("Feedback message copied to clipboard! Opening Facebook Messenger PM...");
-    } catch {
-      showInfo("Opening Facebook Messenger PM...");
-    }
-
-    // Open Facebook Profile/PM in new tab
-    window.open(FB_PM_LINK, "_blank", "noopener,noreferrer");
+  const handleOpenLink = (url: string) => {
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const handleOpenDirectPM = () => {
-    window.open(FB_PM_LINK, "_blank", "noopener,noreferrer");
-  };
-
-  const handleSubmitInApp = async () => {
-    if (!message.trim()) {
-      showError("Please enter a brief message or description before submitting.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      // Record in Supabase audit/feedback collection if available
-      const { error } = await supabaseClient.from("user_feedbacks").insert([
-        {
-          category,
-          rating: rating || 5,
-          message: message.trim(),
-          contact: contactEmail.trim() || null,
-          created_at: new Date().toISOString(),
-        },
-      ]);
-
-      if (error) {
-        devLog.warn("Feedback", "Direct table insert failed (fallback to local log):", error.message);
-      } else {
-        devLog.info("Feedback", "Feedback saved successfully to database!");
-      }
-
-      showSuccess("Thank you for your feedback! It helps improve PowerForecast.");
-      setMessage("");
-      onClose();
-    } catch (err: any) {
-      devLog.error("Feedback", "Submission error:", err);
-      showSuccess("Thank you! Your feedback has been received.");
-      setMessage("");
-      onClose();
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const lead = TEAM_MEMBERS.lead;
 
   return (
     <Dialog
@@ -122,51 +81,65 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onClose }) =
       maxWidth="sm"
       fullWidth
       slotProps={{
+        backdrop: {
+          sx: {
+            backdropFilter: "blur(12px)",
+            backgroundColor: "rgba(0, 0, 0, 0.75)",
+          },
+        },
         paper: {
           sx: {
-            borderRadius: 1.5,
-            bgcolor: "background.paper",
+            borderRadius: { xs: 2.5, sm: 3.5 },
+            bgcolor: (theme: Theme) =>
+              theme.palette.mode === "dark" ? "rgba(11, 13, 27, 0.96)" : "rgba(255, 255, 255, 0.98)",
             backgroundImage: "none",
             border: "1px solid",
-            borderColor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "divider",
-            boxShadow: "0 24px 48px rgba(0,0,0,0.5)",
-            backdropFilter: "blur(20px)",
-            p: { xs: 1, sm: 2 },
+            borderColor: (theme: Theme) =>
+              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.35)" : "rgba(0, 229, 201, 0.3)",
+            boxShadow: (theme: Theme) =>
+              theme.palette.mode === "dark"
+                ? "0 24px 64px rgba(0, 0, 0, 0.8), 0 0 32px rgba(0, 229, 201, 0.15)"
+                : "0 24px 64px rgba(0, 0, 0, 0.15)",
+            backdropFilter: "blur(24px)",
+            p: { xs: 1.5, sm: 2.5 },
           },
         },
       }}
     >
+      {/* Header */}
       <DialogTitle
         sx={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          pb: 1,
-          px: 2,
+          pb: 1.5,
+          px: { xs: 1, sm: 1.5 },
+          pt: 1,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Box
             sx={{
-              width: 36,
-              height: 36,
-              borderRadius: 1.25,
+              width: 42,
+              height: 42,
+              borderRadius: "12px",
               bgcolor: "rgba(0, 229, 201, 0.15)",
-              color: "primary.main",
+              border: "1px solid rgba(0, 229, 201, 0.4)",
+              color: "#00e5c9",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              boxShadow: "0 0 16px rgba(0, 229, 201, 0.25)",
             }}
           >
-            <FeedbackIcon sx={{ fontSize: 20 }} />
+            <SupportIcon sx={{ fontSize: 24 }} />
           </Box>
           <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
-              Feedback & Direct Support
+            <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2, letterSpacing: "-0.01em" }}>
+              Developer & Direct Support
             </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Share suggestions, report bugs, or chat directly with the developer
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
+              Connect directly with the developers and team on Facebook Messenger
             </Typography>
           </Box>
         </Box>
@@ -175,206 +148,252 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onClose }) =
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ px: 2, py: 1.5 }}>
-        {/* Developer Contact Card (AJ Umali) */}
-        <Paper
-          variant="outlined"
-          sx={{
-            p: 2,
-            mb: 2.5,
-            borderRadius: 1.25,
-            bgcolor: "rgba(0, 229, 201, 0.05)",
-            border: "1px solid rgba(0, 229, 201, 0.25)",
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            alignItems: { xs: "flex-start", sm: "center" },
-            justifyContent: "space-between",
-            gap: 1.5,
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Avatar
-              src="/Assets/LOGO.png"
-              sx={{
-                width: 44,
-                height: 44,
-                bgcolor: "primary.main",
-                border: "2px solid #00e5c9",
-                boxShadow: "0 0 12px rgba(0, 229, 201, 0.4)",
-              }}
-            >
-              AJ
-            </Avatar>
-            <Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <Typography variant="body2" sx={{ fontWeight: 800 }}>
-                  AJ Umali
-                </Typography>
-                <Tooltip title="Verified Creator & Lead Developer">
-                  <VerifiedIcon sx={{ fontSize: 15, color: "primary.main" }} />
-                </Tooltip>
-              </Box>
-              <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                Lead Developer & System Architect
-              </Typography>
-              <Typography variant="caption" sx={{ color: "primary.light", fontSize: "0.6875rem" }}>
-                Active on Facebook Messenger
-              </Typography>
-            </Box>
-          </Box>
+      <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)", mb: 2 }} />
 
-          <Button
-            variant="contained"
-            size="small"
-            onClick={handleOpenDirectPM}
-            endIcon={<OpenInNewIcon sx={{ fontSize: 16 }} />}
+      <DialogContent sx={{ px: { xs: 1, sm: 1.5 }, py: 0.5 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* Hero Bento Card (AJ Umali) */}
+          <Paper
+            elevation={0}
             sx={{
-              bgcolor: "#1877f2",
-              color: "#fff",
-              fontWeight: 800,
-              borderRadius: 1,
-              textTransform: "none",
-              fontSize: "0.8125rem",
-              px: 2,
-              py: 0.75,
-              whiteSpace: "nowrap",
-              alignSelf: { xs: "stretch", sm: "center" },
-              "&:hover": { bgcolor: "#166fe5" },
+              p: { xs: 2, sm: 2.5 },
+              borderRadius: 3,
+              bgcolor: (theme: Theme) =>
+                theme.palette.mode === "dark" ? "rgba(17, 20, 39, 0.85)" : "rgba(241, 245, 249, 0.9)",
+              border: "1px solid",
+              borderColor: (theme: Theme) =>
+                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.35)" : "rgba(0, 229, 201, 0.3)",
+              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.25)",
+              position: "relative",
+              overflow: "hidden",
             }}
           >
-            Message on Facebook (PM)
-          </Button>
-        </Paper>
+            {/* Top Row: Avatar, Name, Role */}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                alignItems: { xs: "flex-start", sm: "center" },
+                gap: 2,
+                mb: 1.75,
+              }}
+            >
+              {/* Circular Avatar with Cover Fit */}
+              <Avatar
+                src={lead.avatar}
+                alt={lead.name}
+                sx={{
+                  width: { xs: 60, sm: 68 },
+                  height: { xs: 60, sm: 68 },
+                  border: "2px solid #00e5c9",
+                  boxShadow: "0 0 16px rgba(0, 229, 201, 0.45)",
+                  flexShrink: 0,
+                  "& img": {
+                    objectFit: "cover",
+                    objectPosition: "center",
+                  },
+                }}
+              />
 
-        <Stack spacing={2}>
-          {/* Category Chips */}
-          <Box>
-            <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 0.75 }}>
-              Feedback Category
-            </Typography>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-              {CATEGORIES.map((cat) => {
-                const isSelected = category === cat.id;
-                return (
-                  <Chip
-                    key={cat.id}
-                    icon={cat.icon}
-                    label={cat.label}
-                    onClick={() => setCategory(cat.id)}
-                    size="small"
+              <Box sx={{ flex: 1 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, fontSize: "1.125rem", letterSpacing: "-0.01em" }}>
+                    {lead.name}
+                  </Typography>
+                  {lead.verified && (
+                    <Tooltip title="Verified Project Creator & Lead Developer">
+                      <VerifiedIcon sx={{ fontSize: 18, color: "#00e5c9" }} />
+                    </Tooltip>
+                  )}
+                </Box>
+                <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 600, fontSize: "0.8125rem" }}>
+                  {lead.role}
+                </Typography>
+                <Typography variant="caption" sx={{ color: "#00e5c9", fontSize: "0.6875rem", fontWeight: 700 }}>
+                  ● Active on Facebook Messenger
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Custom Quote Box */}
+            {lead.quote && (
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 1.25,
+                  p: 1.5,
+                  mb: 2,
+                  borderRadius: 2,
+                  bgcolor: (theme: Theme) =>
+                    theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.35)" : "rgba(0, 0, 0, 0.04)",
+                  border: "1px solid",
+                  borderColor: (theme: Theme) =>
+                    theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+                }}
+              >
+                <QuoteIcon sx={{ fontSize: 20, color: "#00e5c9", transform: "scaleX(-1)", flexShrink: 0, mt: 0.25 }} />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontStyle: "italic",
+                    fontSize: "0.8125rem",
+                    color: "text.secondary",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  "{lead.quote}"
+                </Typography>
+              </Box>
+            )}
+
+            {/* Message Action Button */}
+            <Button
+              fullWidth
+              variant="contained"
+              onClick={() => handleOpenLink(lead.fbLink)}
+              startIcon={<FacebookIcon sx={{ fontSize: 20 }} />}
+              endIcon={<OpenInNewIcon sx={{ fontSize: 16 }} />}
+              sx={{
+                bgcolor: "#1877f2",
+                color: "#ffffff",
+                fontWeight: 800,
+                borderRadius: 2,
+                textTransform: "none",
+                fontSize: "0.875rem",
+                py: 1,
+                boxShadow: "0 4px 16px rgba(24, 119, 242, 0.35)",
+                "&:hover": {
+                  bgcolor: "#166fe5",
+                  boxShadow: "0 6px 20px rgba(24, 119, 242, 0.5)",
+                  transform: "translateY(-1px)",
+                },
+                transition: "all 0.2s ease-in-out",
+              }}
+            >
+              Message on Facebook (PM)
+            </Button>
+          </Paper>
+
+          {/* Secondary Bento Grid (Dave Villegas & Mehojeriel Lacerna) */}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+              gap: 2,
+            }}
+          >
+            {TEAM_MEMBERS.collaborators.map((member, index) => (
+              <Paper
+                key={index}
+                elevation={0}
+                sx={{
+                  p: 2,
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  borderRadius: 3,
+                  bgcolor: (theme: Theme) =>
+                    theme.palette.mode === "dark" ? "rgba(17, 20, 39, 0.75)" : "rgba(241, 245, 249, 0.8)",
+                  border: "1px solid",
+                  borderColor: (theme: Theme) =>
+                    theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)",
+                  transition: "all 0.2s ease-in-out",
+                  "&:hover": {
+                    borderColor: "rgba(0, 229, 201, 0.3)",
+                    transform: "translateY(-2px)",
+                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.25)",
+                  },
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+                  <Avatar
+                    src={member.avatar}
+                    alt={member.name}
                     sx={{
-                      borderRadius: 1,
-                      fontWeight: isSelected ? 800 : 500,
-                      bgcolor: isSelected ? "rgba(0, 229, 201, 0.15)" : "rgba(255, 255, 255, 0.04)",
-                      color: isSelected ? "primary.main" : "text.secondary",
-                      border: "1px solid",
-                      borderColor: isSelected ? "primary.main" : "rgba(255, 255, 255, 0.08)",
-                      cursor: "pointer",
-                      "&:hover": {
-                        bgcolor: "rgba(0, 229, 201, 0.1)",
+                      width: 48,
+                      height: 48,
+                      border: "2px solid rgba(0, 229, 201, 0.5)",
+                      boxShadow: "0 0 10px rgba(0, 229, 201, 0.25)",
+                      flexShrink: 0,
+                      "& img": {
+                        objectFit: "cover",
+                        objectPosition: "center",
                       },
                     }}
                   />
-                );
-              })}
-            </Box>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: "0.875rem", lineHeight: 1.25 }}>
+                      {member.name}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "text.secondary",
+                        fontSize: "0.6875rem",
+                        display: "block",
+                        lineHeight: 1.35,
+                        mt: 0.25,
+                      }}
+                    >
+                      {member.role}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  size="small"
+                  onClick={() => handleOpenLink(member.fbLink)}
+                  startIcon={<FacebookIcon sx={{ fontSize: 16 }} />}
+                  endIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
+                  sx={{
+                    borderRadius: 1.5,
+                    fontWeight: 700,
+                    textTransform: "none",
+                    fontSize: "0.75rem",
+                    py: 0.75,
+                    borderColor: "rgba(24, 119, 242, 0.4)",
+                    color: "#1877f2",
+                    "&:hover": {
+                      borderColor: "#1877f2",
+                      bgcolor: "rgba(24, 119, 242, 0.08)",
+                    },
+                  }}
+                >
+                  Message on Facebook
+                </Button>
+              </Paper>
+            ))}
           </Box>
-
-          {/* Rating */}
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
-              Overall Experience Rating:
-            </Typography>
-            <Rating
-              value={rating}
-              onChange={(_, val) => setRating(val)}
-              size="small"
-              sx={{ color: "#ffd54f" }}
-            />
-          </Box>
-
-          {/* Message Input */}
-          <TextField
-            multiline
-            rows={4}
-            fullWidth
-            placeholder="Tell us your feedback, report a bug, or suggest a new feature..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            slotProps={{
-              input: {
-                sx: {
-                  fontSize: "0.875rem",
-                  borderRadius: 1.25,
-                  bgcolor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.2)" : "rgba(0, 0, 0, 0.02)",
-                },
-              },
-            }}
-          />
-
-          {/* Optional Contact */}
-          <TextField
-            size="small"
-            fullWidth
-            placeholder="Your email or name (optional)"
-            value={contactEmail}
-            onChange={(e) => setContactEmail(e.target.value)}
-            slotProps={{
-              input: {
-                sx: {
-                  fontSize: "0.8125rem",
-                  borderRadius: 1,
-                },
-              },
-            }}
-          />
-        </Stack>
+        </Box>
       </DialogContent>
 
-      <Divider sx={{ my: 1 }} />
+      <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)", mt: 2 }} />
 
-      <DialogActions sx={{ px: 2, py: 1.5, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
-        {/* Copy & PM button */}
-        <Tooltip title="Copies your formatted feedback and launches Facebook Messenger so you can paste it directly to AJ">
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={handleCopyAndOpenPM}
-            startIcon={copied ? <CheckIcon color="success" /> : <CopyIcon />}
-            sx={{
-              borderRadius: 1,
-              fontWeight: 800,
-              textTransform: "none",
-              fontSize: "0.75rem",
-              borderColor: "rgba(24, 119, 242, 0.5)",
-              color: "#1877f2",
-              "&:hover": { borderColor: "#1877f2", bgcolor: "rgba(24, 119, 242, 0.08)" },
-            }}
-          >
-            {copied ? "Copied! Opening FB..." : "Copy & PM on Facebook"}
-          </Button>
-        </Tooltip>
-
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Button size="small" onClick={onClose} sx={{ fontWeight: 700, borderRadius: 1 }}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            size="small"
-            onClick={handleSubmitInApp}
-            disabled={isSubmitting}
-            startIcon={isSubmitting ? <CircularProgress size={14} color="inherit" /> : <SendIcon />}
-            sx={{
-              borderRadius: 1,
-              fontWeight: 800,
-              textTransform: "none",
-            }}
-          >
-            Submit Feedback
-          </Button>
-        </Box>
+      {/* Footer */}
+      <DialogActions sx={{ px: { xs: 1, sm: 1.5 }, py: 1.5, justifyContent: "flex-end" }}>
+        <Button
+          variant="outlined"
+          onClick={onClose}
+          sx={{
+            px: 3,
+            py: 0.75,
+            borderRadius: 2,
+            fontWeight: 700,
+            textTransform: "none",
+            color: "text.secondary",
+            borderColor: (theme: Theme) =>
+              theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.15)",
+            "&:hover": {
+              borderColor: "text.primary",
+            },
+          }}
+        >
+          Close
+        </Button>
       </DialogActions>
     </Dialog>
   );
