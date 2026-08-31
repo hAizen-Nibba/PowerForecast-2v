@@ -38,8 +38,18 @@ export interface SystemChangelogEntry {
   source?: "github" | "database" | "local";
 }
 
-// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.0.2v
+// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.0.3v
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
+  {
+    id: "3.0.3v",
+    version: "3.0.3v",
+    git_commit_tag: "3.0.3v",
+    created_at: "2026-08-31T23:31:00Z",
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.0.3v - Implement 4-Tier Smart Notification Level System (Relaxed, Standard, Proactive, Strict) with Web Audio API synthesized alert chimes, Android mobile haptic vibrations, real-time load surge spike warnings, and multi-tier budget pacing alerts.",
+  },
   {
     id: "3.0.2v",
     version: "3.0.2v",

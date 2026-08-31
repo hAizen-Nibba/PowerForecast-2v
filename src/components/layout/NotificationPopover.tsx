@@ -10,27 +10,77 @@ import TextField from "@mui/material/TextField";
 import Chip from "@mui/material/Chip";
 import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
+import Paper from "@mui/material/Paper";
+import Tooltip from "@mui/material/Tooltip";
 import {
-  Notifications as NotificationsIcon,
   NotificationsActive as NotificationsActiveIcon,
-  NotificationsOff as NotificationsOffIcon,
   Timer as TimerIcon,
   AccountBalanceWallet as BudgetIcon,
   CalendarMonth as CalendarIcon,
   Bolt as BoltIcon,
+  VolumeUp as SoundIcon,
+  Vibration as VibrationIcon,
+  FlashOn as SurgeIcon,
+  Shield as ShieldIcon,
+  Speed as SpeedIcon,
 } from "@mui/icons-material";
 import { useNotifications } from "../../hooks/useNotifications";
+import { NotificationLevel } from "../../lib/notificationService";
 
 interface NotificationPopoverProps {
   anchorEl: HTMLElement | null;
   onClose: () => void;
 }
 
+const LEVEL_CONFIG: Record<
+  NotificationLevel,
+  { label: string; sub: string; color: string; bg: string; border: string }
+> = {
+  relaxed: {
+    label: "Relaxed (L1)",
+    sub: "Passive & silent; high thresholds only (6h timer, 90% budget)",
+    color: "#60a5fa",
+    bg: "rgba(59, 130, 246, 0.12)",
+    border: "rgba(59, 130, 246, 0.35)",
+  },
+  standard: {
+    label: "Standard (L2)",
+    sub: "Balanced household tracking (4h timer, 80% budget, peak hours)",
+    color: "#00e5c9",
+    bg: "rgba(0, 229, 201, 0.12)",
+    border: "rgba(0, 229, 201, 0.35)",
+  },
+  proactive: {
+    label: "Proactive (L3)",
+    sub: "Energy saver; 2h timer, 70% budget, >2.5kW surge, chimes & haptics",
+    color: "#f59e0b",
+    bg: "rgba(245, 158, 11, 0.12)",
+    border: "rgba(245, 158, 11, 0.35)",
+  },
+  strict: {
+    label: "Strict (L4)",
+    sub: "Maximum vigilance; 1h timer, 50% budget, >2.0kW surge, urgent alarms",
+    color: "#ef4444",
+    bg: "rgba(239, 68, 68, 0.15)",
+    border: "rgba(239, 68, 68, 0.4)",
+  },
+};
+
 export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchorEl, onClose }) => {
-  const { permission, isSupported, prefs, requestPermission, updatePrefs, testNotification } =
-    useNotifications();
+  const {
+    permission,
+    isSupported,
+    prefs,
+    setLevel,
+    requestPermission,
+    updatePrefs,
+    testNotification,
+    previewSound,
+    previewVibration,
+  } = useNotifications();
 
   const open = Boolean(anchorEl);
+  const currentLevelConfig = LEVEL_CONFIG[prefs.notificationLevel || "standard"];
 
   return (
     <Popover
@@ -48,23 +98,26 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchor
       slotProps={{
         paper: {
           sx: {
-            width: 360,
+            width: { xs: "calc(100vw - 24px)", sm: 380 },
+            maxHeight: "85vh",
             p: 2.5,
-            borderRadius: 1.25,
+            borderRadius: 1.5,
             bgcolor: "background.paper",
             border: "1px solid",
             borderColor: (theme) =>
               theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "divider",
             boxShadow: "0 16px 40px rgba(0,0,0,0.5)",
+            overflowY: "auto",
           },
         },
       }}
     >
+      {/* Header */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <NotificationsActiveIcon sx={{ color: "primary.main", fontSize: 22 }} />
+          <NotificationsActiveIcon sx={{ color: currentLevelConfig.color, fontSize: 22 }} />
           <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-            Smart Notifications
+            Smart Energy Alerts
           </Typography>
         </Box>
         <Chip
@@ -76,7 +129,7 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchor
       </Box>
 
       {!isSupported && (
-        <Alert severity="warning" sx={{ mb: 2, borderRadius: 1 }}>
+        <Alert severity="warning" sx={{ mb: 2, borderRadius: 1, fontSize: "0.75rem" }}>
           Web Notifications are not supported in this browser environment.
         </Alert>
       )}
@@ -84,7 +137,7 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchor
       {isSupported && permission === "default" && (
         <Box sx={{ mb: 2, p: 1.5, borderRadius: 1.25, bgcolor: "rgba(0, 229, 201, 0.08)", border: "1px solid rgba(0, 229, 201, 0.25)" }}>
           <Typography variant="caption" sx={{ color: "text.primary", display: "block", mb: 1 }}>
-            Allow browser alerts to receive live stopwatch over-run warnings and schedule reminders.
+            Allow browser alerts to receive live stopwatch over-run warnings, surge spikes, and schedule reminders.
           </Typography>
           <Button
             variant="contained"
@@ -99,30 +152,189 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchor
       )}
 
       {isSupported && permission === "denied" && (
-        <Alert severity="error" sx={{ mb: 2, borderRadius: 2, fontSize: "0.75rem" }}>
+        <Alert severity="error" sx={{ mb: 2, borderRadius: 1.25, fontSize: "0.75rem" }}>
           Notifications are blocked in your browser settings. Please allow notifications for this site to receive smart alerts.
         </Alert>
       )}
 
-      <Stack spacing={1.5} sx={{ mt: 1 }}>
-        {/* Master Switch */}
-        <FormControlLabel
-          control={
-            <Switch
-              checked={prefs.enabled}
-              onChange={(e) => updatePrefs({ enabled: e.target.checked })}
-              color="primary"
-              size="small"
-            />
-          }
-          label={
-            <Typography variant="body2" sx={{ fontWeight: 700 }}>
-              Master Notifications
+      {/* Master Switch & Active Level Badge */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 1.5,
+          mb: 1.5,
+          borderRadius: 1.25,
+          bgcolor: currentLevelConfig.bg,
+          borderColor: currentLevelConfig.border,
+          display: "flex",
+          flexDirection: "column",
+          gap: 1,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <ShieldIcon sx={{ fontSize: 18, color: currentLevelConfig.color }} />
+            <Typography variant="body2" sx={{ fontWeight: 800, color: "text.primary" }}>
+              Alert Sensitivity Level
             </Typography>
-          }
-        />
+          </Box>
+          <Chip
+            label={currentLevelConfig.label}
+            size="small"
+            sx={{
+              fontWeight: 800,
+              fontSize: "0.6875rem",
+              bgcolor: currentLevelConfig.color,
+              color: "#000",
+            }}
+          />
+        </Box>
+        <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.7rem", lineHeight: 1.2 }}>
+          {currentLevelConfig.sub}
+        </Typography>
+
+        {/* 4-Tier Level Selector Bar */}
+        <Box sx={{ display: "flex", gap: 0.5, mt: 0.5 }}>
+          {(["relaxed", "standard", "proactive", "strict"] as NotificationLevel[]).map((lvl) => {
+            const isSelected = (prefs.notificationLevel || "standard") === lvl;
+            const cfg = LEVEL_CONFIG[lvl];
+            return (
+              <Button
+                key={lvl}
+                size="small"
+                onClick={() => setLevel(lvl)}
+                sx={{
+                  flex: 1,
+                  py: 0.4,
+                  px: 0.5,
+                  fontSize: "0.65rem",
+                  fontWeight: 800,
+                  borderRadius: 1,
+                  textTransform: "none",
+                  bgcolor: isSelected ? cfg.color : "rgba(255, 255, 255, 0.05)",
+                  color: isSelected ? "#000" : "text.secondary",
+                  border: "1px solid",
+                  borderColor: isSelected ? cfg.color : "rgba(255, 255, 255, 0.08)",
+                  "&:hover": {
+                    bgcolor: isSelected ? cfg.color : "rgba(255, 255, 255, 0.1)",
+                  },
+                }}
+              >
+                {lvl === "relaxed" ? "Relaxed" : lvl === "standard" ? "Standard" : lvl === "proactive" ? "Proactive" : "Strict"}
+              </Button>
+            );
+          })}
+        </Box>
+      </Paper>
+
+      <Stack spacing={1.25}>
+        {/* Master Switch */}
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+            Master Notifications
+          </Typography>
+          <Switch
+            checked={prefs.enabled}
+            onChange={(e) => updatePrefs({ enabled: e.target.checked })}
+            color="primary"
+            size="small"
+          />
+        </Box>
 
         <Divider />
+
+        {/* Sound & Mobile Haptics Toggles */}
+        <Box sx={{ opacity: prefs.enabled ? 1 : 0.4, transition: "opacity 0.2s" }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <SoundIcon sx={{ fontSize: 18, color: "primary.light" }} />
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                Synthesized Audio Chimes
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <Tooltip title="Preview Audio Chime">
+                <Button
+                  size="small"
+                  onClick={() => previewSound(prefs.notificationLevel === "strict" ? "urgent" : "chime")}
+                  sx={{ minWidth: "auto", px: 1, py: 0.2, fontSize: "0.65rem", fontWeight: 700 }}
+                >
+                  Play
+                </Button>
+              </Tooltip>
+              <Switch
+                checked={prefs.soundEnabled}
+                disabled={!prefs.enabled}
+                onChange={(e) => updatePrefs({ soundEnabled: e.target.checked })}
+                size="small"
+              />
+            </Box>
+          </Box>
+
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 0.75 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <VibrationIcon sx={{ fontSize: 18, color: "#a855f7" }} />
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                Mobile Haptic Vibration
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <Tooltip title="Test Vibration Pattern">
+                <Button
+                  size="small"
+                  onClick={() => previewVibration(prefs.notificationLevel === "strict" ? "critical" : "high")}
+                  sx={{ minWidth: "auto", px: 1, py: 0.2, fontSize: "0.65rem", fontWeight: 700 }}
+                >
+                  Vibrate
+                </Button>
+              </Tooltip>
+              <Switch
+                checked={prefs.vibrationEnabled}
+                disabled={!prefs.enabled}
+                onChange={(e) => updatePrefs({ vibrationEnabled: e.target.checked })}
+                size="small"
+              />
+            </Box>
+          </Box>
+        </Box>
+
+        <Divider />
+
+        {/* Live Power Load Surge Spike Alert */}
+        <Box sx={{ opacity: prefs.enabled ? 1 : 0.4, transition: "opacity 0.2s" }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <SurgeIcon sx={{ fontSize: 18, color: "#f87171" }} />
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                Live Load Surge Alert
+              </Typography>
+            </Box>
+            <Switch
+              checked={prefs.surgeAlert}
+              disabled={!prefs.enabled}
+              onChange={(e) => updatePrefs({ surgeAlert: e.target.checked })}
+              size="small"
+            />
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5, pl: 3.25 }}>
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              Alert if concurrent draw exceeds:
+            </Typography>
+            <TextField
+              type="number"
+              size="small"
+              disabled={!prefs.enabled || !prefs.surgeAlert}
+              value={prefs.surgeThresholdWatts || 2500}
+              onChange={(e) =>
+                updatePrefs({ surgeThresholdWatts: Math.max(500, parseInt(e.target.value) || 2500) })
+              }
+              sx={{ width: 68, "& input": { py: 0.25, px: 1, fontSize: "0.75rem", textAlign: "center" } }}
+            />
+            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              Watts
+            </Typography>
+          </Box>
+        </Box>
 
         {/* Stopwatch Over-run Alert */}
         <Box sx={{ opacity: prefs.enabled ? 1 : 0.4, transition: "opacity 0.2s" }}>
@@ -166,7 +378,7 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchor
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <BudgetIcon sx={{ fontSize: 18, color: "#34d399" }} />
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                Budget Warning
+                Budget Milestones (Multi-Tier)
               </Typography>
             </Box>
             <Switch
@@ -178,7 +390,7 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchor
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5, pl: 3.25 }}>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Alert at:
+              Base threshold:
             </Typography>
             <TextField
               type="number"
@@ -186,12 +398,12 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchor
               disabled={!prefs.enabled || !prefs.budgetAlert}
               value={prefs.budgetThresholdPercent}
               onChange={(e) =>
-                updatePrefs({ budgetThresholdPercent: Math.max(50, Math.min(100, parseInt(e.target.value) || 80)) })
+                updatePrefs({ budgetThresholdPercent: Math.max(30, Math.min(100, parseInt(e.target.value) || 80)) })
               }
               sx={{ width: 60, "& input": { py: 0.25, px: 1, fontSize: "0.75rem", textAlign: "center" } }}
             />
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              % of target
+              % of target budget
             </Typography>
           </Box>
         </Box>
@@ -220,7 +432,7 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchor
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <BoltIcon sx={{ fontSize: 18, color: "#ffd54f" }} />
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                Peak Hours Warning
+                Meralco Peak Hours Warning
               </Typography>
             </Box>
             <Switch
@@ -241,14 +453,14 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchor
           variant="outlined"
           onClick={testNotification}
           disabled={permission !== "granted"}
-          sx={{ borderRadius: 2, fontSize: "0.75rem", textTransform: "none", fontWeight: 700 }}
+          sx={{ borderRadius: 1.5, fontSize: "0.75rem", textTransform: "none", fontWeight: 700 }}
         >
-          Test Alert
+          Test Alert & Haptics
         </Button>
         <Button
           size="small"
           onClick={onClose}
-          sx={{ borderRadius: 2, fontSize: "0.75rem", textTransform: "none", fontWeight: 700 }}
+          sx={{ borderRadius: 1.5, fontSize: "0.75rem", textTransform: "none", fontWeight: 700 }}
         >
           Close
         </Button>
@@ -256,3 +468,5 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchor
     </Popover>
   );
 };
+
+export default NotificationPopover;
