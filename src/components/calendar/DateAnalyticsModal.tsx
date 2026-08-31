@@ -21,6 +21,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import Collapse from "@mui/material/Collapse";
 import {
   Close as CloseIcon,
   Add as PlusIcon,
@@ -41,6 +42,8 @@ import {
   CheckCircle as CheckIcon,
   PlayArrow as PlayIcon,
   Stop as StopIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
 } from "@mui/icons-material";
 import { UserAppliance, DailyApplianceUsage, ApplianceList, ApplianceUsageLog } from "../../types";
 import { useCreate, useDelete, useUpdate } from "@refinedev/core";
@@ -1651,79 +1654,108 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                         const isOver = targetHours > 0 && targetHours < 24 && hours > targetHours;
 
                         return (
-                          <Paper
-                            key={app.id}
-                            variant="outlined"
-                            onClick={() => setSelectedApplianceId(app.id)}
-                            sx={{
-                              p: 1.25,
-                              borderRadius: 1.25,
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              gap: 1,
-                              bgcolor: isSelected
-                                ? "rgba(0, 229, 201, 0.15)"
-                                : "rgba(255, 255, 255, 0.02)",
-                              borderColor: isSelected
-                                ? "primary.main"
-                                : isOver
-                                ? "rgba(239, 68, 68, 0.4)"
-                                : "rgba(255, 255, 255, 0.06)",
-                              transition: "all 0.15s ease",
-                              "&:hover": {
-                                bgcolor: "rgba(0, 229, 201, 0.08)",
-                              },
-                            }}
-                          >
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
-                              <Box
-                                sx={{
-                                  width: 32,
-                                  height: 32,
-                                  borderRadius: 1,
-                                  bgcolor: hours > 0 ? "rgba(0, 229, 201, 0.15)" : "rgba(255, 255, 255, 0.05)",
-                                  color: hours > 0 ? "primary.main" : "text.secondary",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  flexShrink: 0,
-                                }}
-                              >
-                                <BoltIcon fontSize="small" />
-                              </Box>
-                              <Box sx={{ minWidth: 0 }}>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                  <Typography noWrap variant="body2" sx={{ fontWeight: 800, fontSize: "0.82rem" }}>
-                                    {app.name}
+                          <Box key={app.id} sx={{ display: "flex", flexDirection: "column" }}>
+                            <Paper
+                              variant="outlined"
+                              onClick={() => setSelectedApplianceId((prev) => (prev === app.id ? "" : app.id))}
+                              sx={{
+                                p: 1.25,
+                                borderRadius: 1.25,
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                gap: 1,
+                                bgcolor: isSelected
+                                  ? "rgba(0, 229, 201, 0.15)"
+                                  : "rgba(255, 255, 255, 0.02)",
+                                borderColor: isSelected
+                                  ? "primary.main"
+                                  : isOver
+                                  ? "rgba(239, 68, 68, 0.4)"
+                                  : "rgba(255, 255, 255, 0.06)",
+                                transition: "all 0.15s ease",
+                                "&:hover": {
+                                  bgcolor: "rgba(0, 229, 201, 0.08)",
+                                },
+                              }}
+                            >
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+                                <Box
+                                  sx={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 1,
+                                    bgcolor: hours > 0 ? "rgba(0, 229, 201, 0.15)" : "rgba(255, 255, 255, 0.05)",
+                                    color: hours > 0 ? "primary.main" : "text.secondary",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  <BoltIcon fontSize="small" />
+                                </Box>
+                                <Box sx={{ minWidth: 0 }}>
+                                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                    <Typography noWrap variant="body2" sx={{ fontWeight: 800, fontSize: "0.82rem" }}>
+                                      {app.name}
+                                    </Typography>
+                                    {isLive && (
+                                      <Chip label="LIVE" size="small" color="success" sx={{ height: 16, fontSize: "0.5625rem", fontWeight: 900 }} />
+                                    )}
+                                  </Box>
+                                  <Typography noWrap variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
+                                    {app.category} • {app.watts}W {app.room_location ? `(${app.room_location})` : ""}
                                   </Typography>
-                                  {isLive && (
-                                    <Chip label="LIVE" size="small" color="success" sx={{ height: 16, fontSize: "0.5625rem", fontWeight: 900 }} />
+                                </Box>
+                              </Box>
+
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexShrink: 0 }}>
+                                <Box sx={{ textAlign: "right" }}>
+                                  <Typography variant="body2" sx={{ fontWeight: 900, fontFamily: "monospace", color: isOver ? "#f87171" : hours > 0 ? "#ffd54f" : "text.secondary", fontSize: "0.82rem" }}>
+                                    ₱{cost.toFixed(2)}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
+                                    {hours.toFixed(1)}h
+                                  </Typography>
+                                </Box>
+
+                                {/* Mobile Expand / Collapse Chevron Indicator */}
+                                <Box
+                                  sx={{
+                                    display: { xs: "flex", md: "none" },
+                                    color: isSelected ? "primary.main" : "text.secondary",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    transition: "transform 0.2s ease",
+                                  }}
+                                >
+                                  {isSelected ? (
+                                    <ExpandLessIcon sx={{ fontSize: 18 }} />
+                                  ) : (
+                                    <ExpandMoreIcon sx={{ fontSize: 18 }} />
                                   )}
                                 </Box>
-                                <Typography noWrap variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
-                                  {app.category} • {app.watts}W {app.room_location ? `(${app.room_location})` : ""}
-                                </Typography>
                               </Box>
-                            </Box>
+                            </Paper>
 
-                            <Box sx={{ textAlign: "right", flexShrink: 0 }}>
-                              <Typography variant="body2" sx={{ fontWeight: 900, fontFamily: "monospace", color: isOver ? "#f87171" : hours > 0 ? "#ffd54f" : "text.secondary", fontSize: "0.82rem" }}>
-                                ₱{cost.toFixed(2)}
-                              </Typography>
-                              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
-                                {hours.toFixed(1)}h
-                              </Typography>
+                            {/* Mobile Inline Dropdown Accordion Studio */}
+                            <Box sx={{ display: { xs: "block", md: "none" }, width: "100%" }}>
+                              <Collapse in={isSelected} unmountOnExit timeout="auto">
+                                <Box sx={{ pt: 1, pb: 0.5 }}>
+                                  {renderTimeLoggingStudio(app)}
+                                </Box>
+                              </Collapse>
                             </Box>
-                          </Paper>
+                          </Box>
                         );
                       })
                     )}
                   </Paper>
 
-                  {/* Right Column: Selected Appliance Logging Studio */}
-                  <Box>
+                  {/* Right Column: Selected Appliance Logging Studio (Desktop Only) */}
+                  <Box sx={{ display: { xs: "none", md: "block" } }}>
                     {selectedAppliance ? (
                       renderTimeLoggingStudio(selectedAppliance)
                     ) : (

@@ -38,8 +38,18 @@ export interface SystemChangelogEntry {
   source?: "github" | "database" | "local";
 }
 
-// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.0.1v
+// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.0.2v
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
+  {
+    id: "3.0.2v",
+    version: "3.0.2v",
+    git_commit_tag: "3.0.2v",
+    created_at: "2026-08-31T22:47:00Z",
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.0.2v - Implement inline expandable dropdown studio for appliances in Date Analytics modal on mobile viewports: selecting an appliance expands settings, quota telemetry, stopwatch sessions, and runtime controls directly underneath its card.",
+  },
   {
     id: "3.0.1v",
     version: "3.0.1v",
