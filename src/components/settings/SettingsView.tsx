@@ -47,12 +47,17 @@ import {
   WarningAmber as WarningIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
+  Feedback as FeedbackIcon,
+  Chat as ChatIcon,
+  OpenInNew as OpenInNewIcon,
+  Verified as VerifiedIcon,
 } from "@mui/icons-material";
 import { useGetIdentity, useLogout } from "@refinedev/core";
 import { useToast } from "../common/ToastProvider";
 import { supabaseClient } from "../../lib/supabaseClient";
 import { useLanguage, Language } from "../../context/LanguageContext";
 import { devLog } from "../../lib/devLogger";
+import { FeedbackModal, FB_PM_LINK } from "../feedback/FeedbackModal";
 
 interface HouseholdMember {
   id: string;
@@ -77,6 +82,7 @@ export const SettingsView: React.FC = () => {
   const { mutate: logout } = useLogout();
   const { showSuccess, showError, showInfo } = useToast();
   const { language, setLanguage, t } = useLanguage();
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
 
   // ── 1. Change Password State ─────────────────────────────
   const [currentPassword, setCurrentPassword] = useState("");
@@ -907,7 +913,99 @@ export const SettingsView: React.FC = () => {
         </Grid>
       </Card>
 
-      {/* 4. Danger Zone: Account Deletion */}
+      {/* 4. Developer Direct PM & Feedback Support Card */}
+      <Card
+        sx={{
+          p: { xs: 2.5, sm: 3 },
+          borderRadius: 1.5,
+          border: "1px solid",
+          borderColor: (theme) =>
+            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(24, 119, 242, 0.25)",
+          bgcolor: (theme) =>
+            theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.65)" : "rgba(24, 119, 242, 0.03)",
+        }}
+      >
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", md: "center" }, gap: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Avatar
+              src="/Assets/LOGO.png"
+              sx={{
+                width: 52,
+                height: 52,
+                bgcolor: "primary.main",
+                border: "2px solid #00e5c9",
+                boxShadow: "0 0 16px rgba(0, 229, 201, 0.35)",
+              }}
+            >
+              AJ
+            </Avatar>
+            <Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                  Developer Support & Direct PM
+                </Typography>
+                <Chip
+                  icon={<VerifiedIcon sx={{ fontSize: "12px !important", color: "primary.main !important" }} />}
+                  label="AJ Umali"
+                  size="small"
+                  sx={{
+                    height: 20,
+                    fontSize: "0.6875rem",
+                    fontWeight: 800,
+                    bgcolor: "rgba(0, 229, 201, 0.15)",
+                    color: "primary.main",
+                    border: "1px solid rgba(0, 229, 201, 0.3)",
+                  }}
+                />
+              </Box>
+              <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.25, maxWidth: 500 }}>
+                {language === "tl"
+                  ? "May tanong, mungkahi, o nais mag-ulat ng bug? Maaari kang direktang mag-PM sa Facebook o magpadala ng feedback."
+                  : "Have an inquiry, feature suggestion, or bug report? Connect directly with the developer via Facebook Messenger or in-app feedback."}
+              </Typography>
+            </Box>
+          </Box>
+
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.25, width: { xs: "100%", md: "auto" } }}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<FeedbackIcon />}
+              onClick={() => setIsFeedbackModalOpen(true)}
+              sx={{
+                borderRadius: 1,
+                fontWeight: 700,
+                fontSize: "0.8125rem",
+                textTransform: "none",
+                flex: { xs: 1, md: "none" },
+              }}
+            >
+              {language === "tl" ? "Magbigay ng Feedback" : "Submit Feedback"}
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => window.open(FB_PM_LINK, "_blank", "noopener,noreferrer")}
+              startIcon={<ChatIcon />}
+              endIcon={<OpenInNewIcon sx={{ fontSize: 15 }} />}
+              sx={{
+                bgcolor: "#1877f2",
+                color: "#ffffff",
+                borderRadius: 1,
+                fontWeight: 800,
+                fontSize: "0.8125rem",
+                textTransform: "none",
+                flex: { xs: 1, md: "none" },
+                "&:hover": { bgcolor: "#166fe5" },
+              }}
+            >
+              {language === "tl" ? "I-PM si AJ sa Facebook" : "PM AJ on Facebook"}
+            </Button>
+          </Box>
+        </Box>
+      </Card>
+
+      {/* 5. Danger Zone: Account Deletion */}
       <Card
         sx={{
           p: { xs: 2.5, sm: 3 },
@@ -1157,6 +1255,12 @@ export const SettingsView: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Reusable Feedback Modal */}
+      <FeedbackModal
+        open={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
+      />
     </Box>
   );
 };

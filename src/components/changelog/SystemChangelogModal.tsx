@@ -38,8 +38,18 @@ export interface SystemChangelogEntry {
   source?: "github" | "database" | "local";
 }
 
-// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.0.3v
+// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.0.4v
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
+  {
+    id: "3.0.4v",
+    version: "3.0.4v",
+    git_commit_tag: "3.0.4v",
+    created_at: "2026-08-31T23:48:00Z",
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.0.4v - Integrate Developer Direct PM channel (AJ Umali Facebook PM) and universal interactive Feedback & Support Modal across Header action bar, User profile menu, Sidebar navigation drawer, Settings view, and Landing page footer.",
+  },
   {
     id: "3.0.3v",
     version: "3.0.3v",

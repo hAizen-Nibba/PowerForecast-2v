@@ -1663,20 +1663,27 @@ export const LandingPage: React.FC = () => {
               </Box>
             </Grid>
 
-            {/* Col 4: Account */}
+            {/* Col 4: Developer & Support */}
             <Grid size={{ xs: 6, sm: 4, md: 3 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2 }}>
-                Account Access
+                Support & Contact
               </Typography>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <Typography
+                  component="a"
+                  href="https://www.facebook.com/aj.umali.533308"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="body2"
+                  sx={{ color: "primary.main", textDecoration: "none", fontWeight: 700, "&:hover": { textDecoration: "underline" } }}
+                >
+                  PM Developer (AJ Umali) ↗
+                </Typography>
                 <Typography component={Link} to="/login" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", "&:hover": { color: "primary.main" } }}>
-                  Sign In
+                  Sign In to Household
                 </Typography>
                 <Typography component={Link} to="/signup" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", "&:hover": { color: "primary.main" } }}>
                   Create Free Account
-                </Typography>
-                <Typography component={Link} to="/forgot-password" variant="body2" sx={{ color: "text.secondary", textDecoration: "none", "&:hover": { color: "primary.main" } }}>
-                  Forgot Password
                 </Typography>
               </Box>
             </Grid>
@@ -1686,7 +1693,7 @@ export const LandingPage: React.FC = () => {
 
           <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              © {new Date().getFullYear()} PowerForecast • Built with Refine, React 19, Material UI 9, and Supabase.
+              © {new Date().getFullYear()} PowerForecast • Developed by AJ Umali • Built with Refine, React 19, Material UI, and Supabase.
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", fontFamily: "monospace" }}>
               Version {APP_VERSION}
