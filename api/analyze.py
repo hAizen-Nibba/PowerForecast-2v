@@ -208,7 +208,12 @@ class handler(BaseHTTPRequestHandler):
                         }).encode('utf-8'))
                         return
                 except Exception as e:
-                    last_error = str(e)
+                    # Sanitize error message to prevent leaking Gemini API keys present in request URL query params
+                    err_msg = str(e)
+                    for k in api_keys:
+                        if k:
+                            err_msg = err_msg.replace(k, "[REDACTED_API_KEY]")
+                    last_error = err_msg
                     continue
 
         self.send_response(500)
