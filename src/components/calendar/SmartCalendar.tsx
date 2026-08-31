@@ -488,7 +488,7 @@ return (
       {spaces.length > 1 && (
         <Box
           sx={{
-            p: 0.75,
+            p: { xs: 0.75, sm: 1 },
             borderRadius: 2,
             bgcolor: (theme) => (theme.palette.mode === "dark" ? "#14171c" : "#ffffff"),
             border: "1px solid",
@@ -497,7 +497,7 @@ return (
               theme.palette.mode === "dark" ? "none" : "0 2px 8px rgba(15, 23, 42, 0.04)",
             display: "flex",
             alignItems: "center",
-            gap: 1,
+            gap: { xs: 0.75, sm: 1 },
             overflowX: "auto",
             "&::-webkit-scrollbar": { height: 4 },
             "&::-webkit-scrollbar-thumb": { bgcolor: "#2e3544", borderRadius: 2 },
@@ -506,15 +506,16 @@ return (
           <Button
             size="small"
             onClick={() => setSelectedSpaceId("all")}
-            startIcon={<PublicIcon sx={{ fontSize: 16 }} />}
+            startIcon={<PublicIcon sx={{ fontSize: 15 }} />}
             sx={{
-              px: 1.75,
-              py: 0.6,
-              borderRadius: 1.5,
+              px: { xs: 1.5, sm: 2 },
+              py: { xs: 0.45, sm: 0.6 },
+              borderRadius: 2,
               fontSize: "0.75rem",
               fontWeight: 700,
               textTransform: "none",
               whiteSpace: "nowrap",
+              flexShrink: 0,
               bgcolor: (theme) =>
                 selectedSpaceId === "all"
                   ? theme.palette.mode === "dark"
@@ -565,19 +566,20 @@ return (
                 onClick={() => setSelectedSpaceId(space.id)}
                 startIcon={
                   space.tariff_type === "commercial" ? (
-                    <StoreIcon sx={{ fontSize: 16 }} />
+                    <StoreIcon sx={{ fontSize: 15 }} />
                   ) : (
-                    <HomeIcon sx={{ fontSize: 16 }} />
+                    <HomeIcon sx={{ fontSize: 15 }} />
                   )
                 }
                 sx={{
-                  px: 1.75,
-                  py: 0.6,
-                  borderRadius: 1.5,
+                  px: { xs: 1.5, sm: 2 },
+                  py: { xs: 0.45, sm: 0.6 },
+                  borderRadius: 2,
                   fontSize: "0.75rem",
                   fontWeight: 700,
                   textTransform: "none",
                   whiteSpace: "nowrap",
+                  flexShrink: 0,
                   bgcolor: (theme) =>
                     isSelected
                       ? theme.palette.mode === "dark"
@@ -850,9 +852,9 @@ return (
       </Card>
 
       {/* 5. Monthly Grid View */}
-      <Card data-tour="calendar-grid" sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: 1.5 }}>
+      <Card data-tour="calendar-grid" sx={{ p: { xs: 1, sm: 2.5 }, borderRadius: 1.5 }}>
         {/* Day of week headers */}
-        <Grid container columns={7} spacing={1} sx={{ mb: 1, textAlign: "center" }}>
+        <Grid container columns={7} spacing={{ xs: 0.5, sm: 1 }} sx={{ mb: 1, textAlign: "center" }}>
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, idx) => (
             <Grid size={1} key={day}>
               <Typography
@@ -861,8 +863,8 @@ return (
                   fontWeight: 700,
                   color: idx === 0 || idx === 6 ? "primary.light" : "text.secondary",
                   textTransform: "uppercase",
-                  fontSize: "0.6875rem",
-                  letterSpacing: "0.05em",
+                  fontSize: { xs: "0.625rem", sm: "0.6875rem" },
+                  letterSpacing: "0.02em",
                 }}
               >
                 {day}
@@ -872,11 +874,11 @@ return (
         </Grid>
 
         {/* Days grid */}
-        <Grid container columns={7} spacing={1}>
+        <Grid container columns={7} spacing={{ xs: 0.5, sm: 1 }}>
           {/* Empty cells before 1st day */}
           {Array.from({ length: firstDayIndex }).map((_, idx) => (
             <Grid size={1} key={`empty-${idx}`}>
-              <Box sx={{ minHeight: 90, opacity: 0.2 }} />
+              <Box sx={{ minHeight: { xs: 72, sm: 96 }, opacity: 0.2 }} />
             </Grid>
           ))}
 
@@ -903,9 +905,9 @@ return (
                   variant="outlined"
                   onClick={() => setSelectedDateForModal(dayDate)}
                   sx={{
-                    minHeight: { xs: 85, sm: 100 },
-                    p: 1.25,
-                    borderRadius: 1,
+                    minHeight: { xs: 72, sm: 96 },
+                    p: { xs: 0.5, sm: 1, md: 1.25 },
+                    borderRadius: { xs: 1, sm: 1.25 },
                     cursor: "pointer",
                     display: "flex",
                     flexDirection: "column",
@@ -970,13 +972,13 @@ return (
                         sx={{
                           bgcolor: "primary.main",
                           color: "#fff",
-                          fontSize: "0.5625rem",
+                          fontSize: { xs: "0.5rem", sm: "0.5625rem" },
                           fontWeight: 900,
-                          px: 1,
-                          py: 0.15,
-                          borderRadius: "0 0 6px 6px",
-                          letterSpacing: "0.08em",
-                          lineHeight: 1.4,
+                          px: 0.75,
+                          py: 0.1,
+                          borderRadius: "0 0 4px 4px",
+                          letterSpacing: "0.06em",
+                          lineHeight: 1.3,
                         }}
                       >
                         TODAY
@@ -984,57 +986,81 @@ return (
                     </Box>
                   )}
 
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: isCurrentToday ? 1 : 0 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: isCurrentToday ? 0.75 : 0 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                       <Typography
                         variant="body2"
                         sx={{
                           fontWeight: isCurrentToday ? 900 : 700,
                           color: isCurrentToday ? "primary.main" : "text.primary",
+                          fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                          lineHeight: 1.2,
                         }}
                       >
                         {dayNum}
                       </Typography>
                       {metrics.isLogged && (
                         <Tooltip title="Actual Logged Data">
-                          <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "#34d399" }} />
+                          <Box sx={{ width: { xs: 5, sm: 6 }, height: { xs: 5, sm: 6 }, borderRadius: "50%", bgcolor: "#34d399" }} />
                         </Tooltip>
                       )}
                     </Box>
 
                     {metrics.isPeak ? (
                       <Tooltip title="Heavy Load Day">
-                        <FlameIcon sx={{ fontSize: 15, color: "warning.main" }} />
+                        <FlameIcon sx={{ fontSize: { xs: 13, sm: 15 }, color: "warning.main" }} />
                       </Tooltip>
                     ) : (
-                      <ClockIcon sx={{ fontSize: 13, color: metrics.isLogged ? "success.main" : "text.secondary" }} />
+                      <ClockIcon sx={{ fontSize: { xs: 11, sm: 13 }, color: metrics.isLogged ? "success.main" : "text.secondary" }} />
                     )}
                   </Box>
 
-                    <Box sx={{ textAlign: "right", mt: 1 }}>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          fontWeight: 800,
-                          fontFamily: "monospace",
-                          color: (theme) =>
-                            metrics.isLogged
-                              ? theme.palette.mode === "dark"
-                                ? "#ffd54f"
-                                : "#d97706"
-                              : theme.palette.mode === "dark"
-                              ? "#a5b4fc"
-                              : "#4f46e5",
-                          display: "block",
-                          fontSize: { xs: "0.75rem", sm: "0.8125rem" },
-                        }}
-                      >
+                  <Box sx={{ textAlign: "right", mt: 0.5 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontWeight: 800,
+                        fontFamily: "monospace",
+                        color: (theme) =>
+                          metrics.isLogged
+                            ? theme.palette.mode === "dark"
+                              ? "#ffd54f"
+                              : "#d97706"
+                            : theme.palette.mode === "dark"
+                            ? "#a5b4fc"
+                            : "#4f46e5",
+                        display: "block",
+                        fontSize: { xs: "0.625rem", sm: "0.8125rem" },
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        lineHeight: 1.1,
+                      }}
+                    >
+                      {/* On small mobile: round integer to prevent text cutoff like ₱233. */}
+                      <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
+                        {metrics.isLogged ? `₱${Math.round(metrics.cost)}` : `~₱${Math.round(metrics.cost)}`}
+                      </Box>
+                      <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
                         {metrics.isLogged ? `₱${metrics.cost.toFixed(2)}` : `~₱${metrics.cost.toFixed(2)}`}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.625rem" }}>
-                        {metrics.kwh} kWh
-                      </Typography>
-                    </Box>
+                      </Box>
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "text.secondary",
+                        fontSize: { xs: "0.55rem", sm: "0.625rem" },
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "block",
+                        lineHeight: 1,
+                        mt: 0.25,
+                      }}
+                    >
+                      {metrics.kwh} kWh
+                    </Typography>
+                  </Box>
                 </Paper>
               </Grid>
             );

@@ -211,9 +211,9 @@ export const VersionBadge: React.FC = () => {
         sx={{
           display: "flex",
           alignItems: "center",
-          gap: 1,
-          px: 1.5,
-          py: 0.75,
+          gap: { xs: 0.75, sm: 1 },
+          px: { xs: 1.25, sm: 1.5 },
+          py: { xs: 0.5, sm: 0.75 },
           borderRadius: 1,
           bgcolor: (theme) =>
             theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.92)" : "rgba(255, 255, 255, 0.95)",

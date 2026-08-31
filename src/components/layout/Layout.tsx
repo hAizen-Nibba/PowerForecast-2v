@@ -71,7 +71,7 @@ export const Layout: React.FC = () => {
             maxWidth: 1360,
             width: "100%",
             mx: "auto",
-            pb: { xs: "calc(74px + env(safe-area-inset-bottom, 16px))", sm: "calc(80px + env(safe-area-inset-bottom, 16px))", lg: 8 },
+            pb: { xs: "calc(110px + env(safe-area-inset-bottom, 20px))", sm: "calc(120px + env(safe-area-inset-bottom, 20px))", lg: 8 },
             boxSizing: "border-box",
           }}
         >

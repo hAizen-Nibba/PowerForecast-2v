@@ -82,9 +82,10 @@ export const DevLogsFloatingWidget: React.FC = () => {
   // Adjust coordinates on window resize
   useEffect(() => {
     const handleResize = () => {
+      const isMobile = window.innerWidth < 1024;
       setBubblePos((prev) => ({
         x: Math.min(prev.x, window.innerWidth - 70),
-        y: Math.min(prev.y, window.innerHeight - 70),
+        y: Math.min(prev.y, window.innerHeight - (isMobile ? 135 : 70)),
       }));
       setWindowPos((prev) => ({
         x: Math.max(10, Math.min(prev.x, window.innerWidth - 520)),

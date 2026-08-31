@@ -21,11 +21,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenSidebar 
   const { t } = useLanguage();
 
   const navItems = [
-    { label: t("nav.dashboard", "Dashboard"), icon: <DashboardIcon sx={{ fontSize: 20 }} />, path: "/dashboard" },
-    { label: t("nav.calculator", "Calculator"), icon: <CalculatorIcon sx={{ fontSize: 20 }} />, path: "/calculator" },
-    { label: t("nav.appliances", "Appliances"), icon: <BoltIcon sx={{ fontSize: 20 }} />, path: "/appliances" },
-    { label: t("nav.calendar", "Calendar"), icon: <CalendarIcon sx={{ fontSize: 20 }} />, path: "/calendar" },
-    { label: t("nav.analytics", "Analytics"), icon: <AnalyticsIcon sx={{ fontSize: 20 }} />, path: "/analytics" },
+    { label: t("nav.mobile.dashboard", "Dashboard"), icon: <DashboardIcon sx={{ fontSize: 18 }} />, path: "/dashboard" },
+    { label: t("nav.mobile.calculator", "Calculator"), icon: <CalculatorIcon sx={{ fontSize: 18 }} />, path: "/calculator" },
+    { label: t("nav.mobile.appliances", "Appliances"), icon: <BoltIcon sx={{ fontSize: 18 }} />, path: "/appliances" },
+    { label: t("nav.mobile.calendar", "Calendar"), icon: <CalendarIcon sx={{ fontSize: 18 }} />, path: "/calendar" },
+    { label: t("nav.mobile.analytics", "Analytics"), icon: <AnalyticsIcon sx={{ fontSize: 18 }} />, path: "/analytics" },
   ];
 
   const handleHaptic = () => {
@@ -51,8 +51,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenSidebar 
         zIndex: 1300,
         bgcolor: (theme) =>
           theme.palette.mode === "dark"
-            ? "rgba(20, 22, 26, 0.92)"
-            : "rgba(255, 255, 255, 0.92)",
+            ? "rgba(20, 22, 26, 0.94)"
+            : "rgba(255, 255, 255, 0.94)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
         borderTop: "1px solid",
@@ -63,9 +63,9 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenSidebar 
             ? "0 -4px 20px rgba(0, 0, 0, 0.4)"
             : "0 -2px 16px rgba(0, 0, 0, 0.06)",
         pb: "env(safe-area-inset-bottom, 8px)",
-        pt: 0.75,
-        px: 1,
-        justifyContent: "space-around",
+        pt: 0.5,
+        px: 0.5,
+        justifyContent: "space-between",
         alignItems: "center",
         boxSizing: "border-box",
       }}
@@ -86,7 +86,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenSidebar 
               alignItems: "center",
               justifyContent: "center",
               flex: 1,
-              py: 0.5,
+              minWidth: 0,
+              py: 0.25,
               textDecoration: "none",
               color: isActive
                 ? (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488")
@@ -104,8 +105,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenSidebar 
               <Box
                 sx={{
                   position: "absolute",
-                  top: -6,
-                  width: 24,
+                  top: -4,
+                  width: 20,
                   height: 3,
                   borderRadius: "0 0 4px 4px",
                   bgcolor: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
@@ -117,7 +118,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenSidebar 
 
             <Box
               sx={{
-                p: 0.5,
+                p: "3px",
                 borderRadius: 1,
                 display: "flex",
                 alignItems: "center",
@@ -137,11 +138,17 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenSidebar 
             <Typography
               variant="caption"
               sx={{
-                fontSize: "0.625rem",
+                fontSize: "0.575rem",
                 fontWeight: isActive ? 800 : 500,
-                letterSpacing: "-0.01em",
-                mt: 0.25,
-                lineHeight: 1,
+                letterSpacing: "-0.02em",
+                mt: 0.15,
+                lineHeight: 1.1,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                maxWidth: "100%",
+                textAlign: "center",
+                display: "block",
               }}
             >
               {item.label}
@@ -163,7 +170,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenSidebar 
           alignItems: "center",
           justifyContent: "center",
           flex: 1,
-          py: 0.5,
+          minWidth: 0,
+          py: 0.25,
           background: "none",
           border: "none",
           cursor: "pointer",
@@ -176,20 +184,26 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenSidebar 
         }}
         aria-label="Open Navigation Menu"
       >
-        <Box sx={{ p: 0.5, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <MenuIcon sx={{ fontSize: 20 }} />
+        <Box sx={{ p: "3px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <MenuIcon sx={{ fontSize: 18 }} />
         </Box>
         <Typography
           variant="caption"
           sx={{
-            fontSize: "0.625rem",
+            fontSize: "0.575rem",
             fontWeight: 600,
-            letterSpacing: "-0.01em",
-            mt: 0.25,
-            lineHeight: 1,
+            letterSpacing: "-0.02em",
+            mt: 0.15,
+            lineHeight: 1.1,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            maxWidth: "100%",
+            textAlign: "center",
+            display: "block",
           }}
         >
-          {t("nav.more", "More")}
+          {t("nav.mobile.more", "More")}
         </Typography>
       </Box>
     </Box>

@@ -38,8 +38,18 @@ export interface SystemChangelogEntry {
   source?: "github" | "database" | "local";
 }
 
-// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.0.0v
+// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.0.1v
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
+  {
+    id: "3.0.1v",
+    version: "3.0.1v",
+    git_commit_tag: "3.0.1v",
+    created_at: "2026-08-31T22:37:00Z",
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.0.1v - Fix mobile bottom navigation label 2-line word wrapping collisions, Smart Calendar day cell price text truncation on small mobile screens, Space Switcher Bento pill bar padding and border clipping, and expand mobile layout scroll bottom clearance.",
+  },
   {
     id: "3.0.0v",
     version: "3.0.0v",
