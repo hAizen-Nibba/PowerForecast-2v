@@ -125,6 +125,15 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "fc.paretoTitle": "Appliance Monthly Energy Share (Pareto Breakdown)",
     "fc.paretoSubtitle": "Ranked breakdown of which registered devices contribute the highest share of your monthly power consumption.",
 
+    // PWA & Updates
+    "pwa.updateTitle": "New PowerForecast Update Available",
+    "pwa.updateSubtitle": "A new release is ready with performance improvements, bug fixes, and latest features.",
+    "pwa.changelogTitle": "Log of Changes & Release Notes",
+    "pwa.restartButton": "Restart & Update Now",
+    "pwa.updatingButton": "Updating App...",
+    "pwa.laterButton": "Later",
+    "pwa.readyBadge": "Ready to install",
+
     // Common
     "common.save": "Save",
     "common.close": "Close",
@@ -238,6 +247,15 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     "fc.resetDefaults": "Ibalik sa Orihinal",
     "fc.paretoTitle": "Bahagi ng Kagamitan sa Konsumo (Pareto Breakdown)",
     "fc.paretoSubtitle": "Ranggo ng mga rehistradong kagamitan na may pinakamalaking ambag sa buwanang konsumo ng kuryente.",
+
+    // PWA & Updates
+    "pwa.updateTitle": "May Bagong Update ang PowerForecast",
+    "pwa.updateSubtitle": "Handa na ang bagong bersyon na may kasamang mga pagpapahusay, pag-aayos ng bug, at pinakabagong mga tampok.",
+    "pwa.changelogTitle": "Talaan ng mga Pagbabago at Release Notes",
+    "pwa.restartButton": "I-restart at I-update Ngayon",
+    "pwa.updatingButton": "Ina-update ang App...",
+    "pwa.laterButton": "Mamaya na",
+    "pwa.readyBadge": "Handa nang i-install",
 
     // Common
     "common.save": "I-save",

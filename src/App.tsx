@@ -20,6 +20,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { SignupPage } from "./pages/SignupPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { VersionBadge } from "./components/common/VersionBadge";
+import { PwaUpdateModal } from "./components/common/PwaUpdateModal";
 import { ToastProvider } from "./components/common/ToastProvider";
 import { ConfirmProvider } from "./components/common/ConfirmProvider";
 import { LanguageProvider } from "./context/LanguageContext";
@@ -179,6 +180,7 @@ export const App: React.FC = () => {
             </Routes>
             <UnsavedChangesNotifier />
             <VersionBadge />
+            <PwaUpdateModal />
           </Refine>
           </HashRouter>
           </ConfirmProvider>

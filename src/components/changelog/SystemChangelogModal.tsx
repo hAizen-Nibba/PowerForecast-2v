@@ -38,8 +38,18 @@ export interface SystemChangelogEntry {
   source?: "github" | "database" | "local";
 }
 
-// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.0.4v
+// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.1.0v
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
+  {
+    id: "3.1.0v",
+    version: "3.1.0v",
+    git_commit_tag: "3.1.0v",
+    created_at: "2026-09-01T07:25:00Z",
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.1.0v - Implement PWA automatic background update detection, Service Worker lifecycle synchronization, and interactive 'What's New & Restart to Update' popup modal with embedded live changelog notes and 1-click cache activation.",
+  },
   {
     id: "3.0.4v",
     version: "3.0.4v",
