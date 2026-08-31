@@ -218,3 +218,52 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 229, 201, 0.5);
 }
+
+/* ===== Android & Mobile Touch Fluidity Optimizations ===== */
+*,
+*::before,
+*::after {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+input,
+select,
+textarea,
+[role="button"],
+.MuiButtonBase-root,
+.MuiTab-root {
+  touch-action: manipulation;
+}
+
+html,
+body {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+.min-h-screen-dvh {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+}
+
+/* Glassmorphism Mobile Bottom Dock */
+.mobile-bottom-dock {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.35);
+}
+

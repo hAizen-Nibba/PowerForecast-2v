@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import Box from "@mui/material/Box";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
+import { MobileBottomNav } from "./MobileBottomNav";
 import { AiVisionScannerModal } from "../vision/AiVisionScannerModal";
 import { DevLogsFloatingWidget } from "../devlogs/DevLogsFloatingWidget";
 import { VersionBadge } from "../common/VersionBadge";
@@ -25,7 +26,7 @@ export const Layout: React.FC = () => {
       <Box
         sx={{
         display: "flex",
-        minHeight: "100vh",
+        minHeight: "100dvh",
         bgcolor: "background.default",
         color: "text.primary",
         transition: "background-color 0.24s cubic-bezier(0.4, 0, 0.2, 1), color 0.24s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -70,13 +71,18 @@ export const Layout: React.FC = () => {
             maxWidth: 1360,
             width: "100%",
             mx: "auto",
-            pb: { xs: 8, sm: 10, md: 12 },
+            pb: { xs: "calc(74px + env(safe-area-inset-bottom, 16px))", sm: "calc(80px + env(safe-area-inset-bottom, 16px))", lg: 8 },
             boxSizing: "border-box",
           }}
         >
           <Outlet />
         </Box>
       </Box>
+
+      {/* Mobile Bottom Navigation Dock (Visible on Mobile Screens) */}
+      {!isSettings && (
+        <MobileBottomNav onOpenSidebar={() => setSidebarOpen(true)} />
+      )}
 
       {/* Global Modals & Widgets */}
       <AiVisionScannerModal
@@ -95,3 +101,4 @@ export const Layout: React.FC = () => {
 };
 
 export default Layout;
+

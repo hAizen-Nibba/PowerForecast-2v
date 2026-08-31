@@ -363,36 +363,75 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
           </Paper>
         )}
 
-        {/* Upload Dropzone */}
+        {/* Upload & Camera Actions Dropzone */}
         <Paper
           variant="outlined"
           sx={{
-            p: 4,
+            p: { xs: 2.5, sm: 3.5 },
             borderRadius: 1.5,
             textAlign: "center",
             borderStyle: "dashed",
             borderWidth: 2,
             bgcolor: "action.hover",
-            cursor: "pointer",
-            "&:hover": { borderColor: "primary.main" },
+            borderColor: "divider",
             position: "relative",
           }}
-          component="label"
         >
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            hidden
-            onChange={(e) => handleFiles(e.target.files)}
-          />
-          <UploadIcon sx={{ fontSize: 44, color: "primary.main", mb: 1 }} />
-          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-            Click or drag rating label photos here
-          </Typography>
-          <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.5 }}>
-            Upload up to 3 clear photos of appliance specifications (PNG, JPG, WebP)
-          </Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
+            <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", justifyContent: "center" }}>
+              {/* Native Android Camera Trigger */}
+              <Button
+                component="label"
+                variant="contained"
+                color="primary"
+                startIcon={<CameraIcon />}
+                sx={{
+                  fontWeight: 800,
+                  borderRadius: 1.25,
+                  px: 2.5,
+                  py: 1,
+                  fontSize: "0.875rem",
+                  boxShadow: "0 4px 14px rgba(0, 229, 201, 0.25)",
+                }}
+              >
+                Take Photo with Camera
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  hidden
+                  onChange={(e) => handleFiles(e.target.files)}
+                />
+              </Button>
+
+              {/* Gallery / File Picker */}
+              <Button
+                component="label"
+                variant="outlined"
+                startIcon={<UploadIcon />}
+                sx={{
+                  fontWeight: 700,
+                  borderRadius: 1.25,
+                  px: 2.5,
+                  py: 1,
+                  fontSize: "0.875rem",
+                }}
+              >
+                Upload from Gallery
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  hidden
+                  onChange={(e) => handleFiles(e.target.files)}
+                />
+              </Button>
+            </Box>
+
+            <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+              Capture or upload up to 3 clear photos of appliance nameplates, DOE yellow energy guides, or specification stickers
+            </Typography>
+          </Box>
         </Paper>
 
         {/* Staged Photo Previews */}

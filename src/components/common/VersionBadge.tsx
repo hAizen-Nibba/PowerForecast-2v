@@ -52,8 +52,8 @@ export const VersionBadge: React.FC = () => {
     <Box
       sx={{
         position: "fixed",
-        bottom: 16,
-        right: 16,
+        bottom: { xs: "calc(64px + env(safe-area-inset-bottom, 8px))", lg: 16 },
+        right: { xs: 12, lg: 16 },
         zIndex: 1400,
         display: "flex",
         flexDirection: "column",

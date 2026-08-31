@@ -38,15 +38,24 @@ export interface SystemChangelogEntry {
   source?: "github" | "database" | "local";
 }
 
-// Master compiled GitHub deployment history covering all releases from 2.1.1v to 2.13.DEV
+// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.0.0v
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
+  {
+    id: "3.0.0v",
+    version: "3.0.0v",
+    description: "3.0.0v - PowerForecast Mobile & PWA Generation: Implement Web App Manifest, Service Worker offline caching, fluid glassmorphic mobile bottom navigation dock, Android native camera capture for AI scanner, 100dvh dynamic viewport, and persistent state lifecycle reconciliation",
+    git_commit_tag: "3.0.0v",
+    deployed_by: "hAizen-Nibba",
+    created_at: new Date().toISOString(),
+    source: "github",
+  },
   {
     id: "2.13.16v",
     version: "2.13.16v",
     description: "2.13.16v - Fix hover flickering logic on Meralco rate popover by bypassing modal backdrop interception and adding debounced mouse transition",
     git_commit_tag: "2.13.16v",
     deployed_by: "hAizen-Nibba",
-    created_at: new Date().toISOString(),
+    created_at: "2026-08-31T14:10:00.000Z",
     source: "github",
   },
   {

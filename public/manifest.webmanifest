@@ -1,0 +1,48 @@
+{
+  "name": "PowerForecast — Smart Meralco Energy Intelligence",
+  "short_name": "PowerForecast",
+  "description": "Smart Meralco unbundled bill forecasting, real-time telemetry, and certified DOE PELP appliance inventory manager.",
+  "start_url": "/#/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#08091a",
+  "theme_color": "#17191d",
+  "categories": ["utilities", "productivity", "finance"],
+  "icons": [
+    {
+      "src": "/Assets/LOGO.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/Assets/LOGO.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/#/dashboard",
+      "description": "View live power board and grid telemetry"
+    },
+    {
+      "name": "Bill Calculator",
+      "url": "/#/calculator",
+      "description": "Calculate unbundled Meralco electricity bills"
+    },
+    {
+      "name": "Appliance Hub",
+      "url": "/#/appliances",
+      "description": "Manage multi-space inventory and stopwatches"
+    },
+    {
+      "name": "Smart Calendar",
+      "url": "/#/calendar",
+      "description": "View daily load curves and routine schedules"
+    }
+  ]
+}

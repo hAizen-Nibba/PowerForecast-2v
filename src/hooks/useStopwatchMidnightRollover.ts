@@ -53,19 +53,23 @@ export function useStopwatchMidnightRollover() {
     triggerReconciliation();
   }, [triggerReconciliation]);
 
-  // 2. Run on window focus / visibility change (e.g. user opens computer in the morning)
+  // 2. Run on window focus / visibility change / Android app resume (pageshow) / online reconnection
   useEffect(() => {
     const handleFocusOrVisible = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === "visible" || !document.hidden) {
         triggerReconciliation();
       }
     };
 
     window.addEventListener("focus", handleFocusOrVisible);
+    window.addEventListener("pageshow", handleFocusOrVisible);
+    window.addEventListener("online", handleFocusOrVisible);
     document.addEventListener("visibilitychange", handleFocusOrVisible);
 
     return () => {
       window.removeEventListener("focus", handleFocusOrVisible);
+      window.removeEventListener("pageshow", handleFocusOrVisible);
+      window.removeEventListener("online", handleFocusOrVisible);
       document.removeEventListener("visibilitychange", handleFocusOrVisible);
     };
   }, [triggerReconciliation]);

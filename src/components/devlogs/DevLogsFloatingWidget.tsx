@@ -38,15 +38,16 @@ export const DevLogsFloatingWidget: React.FC = () => {
   const [hasNewPulse, setHasNewPulse] = useState(false);
   const [isExpandedFull, setIsExpandedFull] = useState(false);
 
-  // Floating Bubble Position (Default bottom-right)
+  // Floating Bubble Position (Default bottom-right, clearing mobile bottom dock on small screens)
+  const isMobileScreen = typeof window !== "undefined" ? window.innerWidth < 1024 : false;
   const [bubblePos, setBubblePos] = useState({
     x: typeof window !== "undefined" ? Math.max(20, window.innerWidth - 80) : 1000,
-    y: typeof window !== "undefined" ? Math.max(20, window.innerHeight - 80) : 700,
+    y: typeof window !== "undefined" ? Math.max(20, window.innerHeight - (isMobileScreen ? 140 : 80)) : 700,
   });
 
   // Popup Window Position (Default anchored next to bubble)
   const [windowPos, setWindowPos] = useState({
-    x: typeof window !== "undefined" ? Math.max(20, window.innerWidth - 560) : 700,
+    x: typeof window !== "undefined" ? Math.max(10, window.innerWidth - (window.innerWidth < 640 ? window.innerWidth - 20 : 560)) : 700,
     y: typeof window !== "undefined" ? Math.max(20, window.innerHeight - 620) : 200,
   });
 
@@ -297,10 +298,10 @@ export const DevLogsFloatingWidget: React.FC = () => {
         <div
           style={{
             position: "fixed",
-            left: isExpandedFull ? "20px" : `${windowPos.x}px`,
-            top: isExpandedFull ? "20px" : `${windowPos.y}px`,
-            width: isExpandedFull ? "calc(100vw - 40px)" : "530px",
-            height: isExpandedFull ? "calc(100vh - 40px)" : "540px",
+            left: window.innerWidth < 640 ? "10px" : isExpandedFull ? "20px" : `${windowPos.x}px`,
+            top: window.innerWidth < 640 ? "10px" : isExpandedFull ? "20px" : `${windowPos.y}px`,
+            width: window.innerWidth < 640 ? "calc(100vw - 20px)" : isExpandedFull ? "calc(100vw - 40px)" : "530px",
+            height: window.innerWidth < 640 ? "calc(100dvh - 100px)" : isExpandedFull ? "calc(100vh - 40px)" : "540px",
             zIndex: 9998,
           }}
           className="rounded-2xl bg-[#13161c]/98 backdrop-blur-xl border border-[#262c37] shadow-2xl flex flex-col overflow-hidden text-slate-200 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-white/5"
