@@ -1,5 +1,5 @@
-// PowerForecast v3.1.1v Service Worker — High-Performance Mobile Caching & Offline Resilience
-const SW_VERSION = '3.1.1v';
+// PowerForecast v3.2.1v Service Worker — High-Performance Mobile Caching & Offline Resilience
+const SW_VERSION = '3.2.1v';
 const CACHE_NAME = `powerforecast-${SW_VERSION}-cache`;
 
 const STATIC_ASSETS = [
@@ -7,6 +7,9 @@ const STATIC_ASSETS = [
   '/index.html',
   '/manifest.webmanifest',
   '/Assets/LOGO.png',
+  '/Assets/icon-192.png',
+  '/Assets/icon-512.png',
+  '/Assets/icon-maskable-512.png',
   '/favicon.svg',
   '/rates.json',
   '/appliance_db.json'

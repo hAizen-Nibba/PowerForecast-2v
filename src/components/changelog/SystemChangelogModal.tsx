@@ -38,13 +38,23 @@ export interface SystemChangelogEntry {
   source?: "github" | "database" | "local";
 }
 
-// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.2.0v
+// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.2.1v
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
+  {
+    id: "3.2.1v",
+    version: "3.2.1v",
+    git_commit_tag: "3.2.1v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.2.1v - Upgrade PWA App Manifest & Desktop Shell Branding: Generate native 1:1 square high-DPI icons (192x192, 512x512, and 512x512 maskable safe-zone) centered from official PowerForecast vector emblem to replace generic browser fallback on Windows Desktop, Taskbar, and Mobile PWA installations.",
+  },
   {
     id: "3.2.0v",
     version: "3.2.0v",
     git_commit_tag: "3.2.0v",
-    created_at: new Date().toISOString(),
+    created_at: "2026-09-01T12:59:00Z",
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
