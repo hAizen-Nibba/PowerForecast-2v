@@ -31,6 +31,7 @@ export interface UserAppliance {
   is_active: boolean;
   is_currently_on?: boolean;
   last_turned_on_at?: string | null;
+  is_inverter?: boolean;
   ai_metadata?: Record<string, any>;
   created_at?: string;
   updated_at?: string;

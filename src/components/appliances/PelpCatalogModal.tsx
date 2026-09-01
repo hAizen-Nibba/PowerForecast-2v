@@ -109,6 +109,15 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
     const targetListId = selectedListId || (spaces[0]?.id ?? null);
     const targetSpace = spaces.find((s) => s.id === targetListId);
 
+    const isInverter = Boolean(
+      (item.cspf && item.cspf > 0) ||
+      /inverter/i.test(item.model || "") ||
+      /inverter/i.test(item.type || "") ||
+      /inverter/i.test(item.brand || "") ||
+      /inverter/i.test(item.category || "") ||
+      item.star_rating === 5
+    );
+
     const incomingPayload: Partial<UserAppliance> = {
       name: `${item.brand} ${item.model}`,
       category: item.category,
@@ -122,6 +131,7 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
       start_hour: getDefaultStartHour(item.category),
       room_location: room,
       energy_rating: `${item.star_rating || 5}-Star (PELP)`,
+      is_inverter: isInverter,
       monthly_kwh: monthlyKwh,
       list_id: targetListId,
       tariff_type: targetSpace?.tariff_type || "residential",

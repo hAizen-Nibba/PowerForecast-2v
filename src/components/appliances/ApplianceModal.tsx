@@ -15,6 +15,9 @@ import Paper from "@mui/material/Paper";
 import Chip from "@mui/material/Chip";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
+import Switch from "@mui/material/Switch";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Tooltip from "@mui/material/Tooltip";
 import {
   Bolt as BoltIcon,
   Close as CloseIcon,
@@ -24,11 +27,14 @@ import {
   Create as PenIcon,
   Storage as DatabaseIcon,
   CameraAlt as CameraIcon,
+  InfoOutlined as InfoIcon,
+  ElectricMeter as MeterIcon,
 } from "@mui/icons-material";
 import { UserAppliance, ApplianceList } from "../../types";
 import { useCreate, useUpdate, useList } from "@refinedev/core";
 import { getDefaultStartHour } from "../../lib/loadCurveService";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
+import { calculateKwh } from "../../lib/dailyUsageService";
 import { DuplicateApplianceModal } from "./DuplicateApplianceModal";
 import { PelpCatalogTabContent } from "./PelpCatalogTabContent";
 import { AiVisionScannerTabContent } from "./AiVisionScannerTabContent";
@@ -62,6 +68,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
   const [startHour, setStartHour] = useState<number>(13);
   const [roomLocation, setRoomLocation] = useState("Living Room");
   const [energyRating, setEnergyRating] = useState("5-Star Inverter");
+  const [isInverter, setIsInverter] = useState<boolean>(true);
   const [selectedListId, setSelectedListId] = useState<string>("");
 
   // Duplicate modal states
@@ -98,6 +105,15 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
       setStartHour(applianceToEdit.start_hour !== undefined ? applianceToEdit.start_hour : getDefaultStartHour(cat));
       setRoomLocation(applianceToEdit.room_location || "Living Room");
       setEnergyRating(applianceToEdit.energy_rating || "5-Star");
+      setIsInverter(
+        Boolean(
+          applianceToEdit.is_inverter === true ||
+          (applianceToEdit.energy_rating && /inverter/i.test(applianceToEdit.energy_rating)) ||
+          (applianceToEdit.name && /inverter/i.test(applianceToEdit.name)) ||
+          (applianceToEdit.model && /inverter/i.test(applianceToEdit.model)) ||
+          (applianceToEdit.ai_metadata?.is_inverter === true)
+        )
+      );
       setSelectedListId(applianceToEdit.list_id || (spaces[0]?.id || ""));
     } else {
       setActiveTab(initialTab);
@@ -111,7 +127,8 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
       setDaysPerMonth(30);
       setStartHour(13);
       setRoomLocation("Living Room");
-      setEnergyRating("5-Star");
+      setEnergyRating("5-Star Inverter");
+      setIsInverter(true);
       setSelectedListId(defaultListId || (spaces[0]?.id || ""));
     }
   }, [applianceToEdit, isOpen, spaces, defaultListId, initialTab]);
@@ -119,7 +136,14 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
   const currentSpace = spaces.find((s) => s.id === selectedListId) || spaces[0];
   const tariffType: "residential" | "commercial" = currentSpace?.tariff_type || "residential";
 
-  const monthlyKwh = Math.round(((watts * quantity * hoursPerDay * daysPerMonth) / 1000) * 10) / 10;
+  const dailyKwh = calculateKwh(watts, hoursPerDay, quantity, {
+    isInverter,
+    category,
+    energy_rating: energyRating,
+    name,
+    model,
+  });
+  const monthlyKwh = Math.round(dailyKwh * daysPerMonth * 10) / 10;
   const billCalc = calculateMeralcoBill(monthlyKwh, undefined, 0, false, tariffType);
   const estimatedCost = billCalc.totalBill.toFixed(2);
 
@@ -130,7 +154,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
     const targetListId = selectedListId || (spaces[0]?.id ?? null);
     const targetSpace = spaces.find((s) => s.id === targetListId);
 
-    const payload = {
+    const payload: Partial<UserAppliance> = {
       name: name.trim(),
       category,
       brand: brand.trim(),
@@ -142,6 +166,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
       start_hour: startHour,
       room_location: roomLocation,
       energy_rating: energyRating,
+      is_inverter: isInverter,
       monthly_kwh: monthlyKwh,
       list_id: targetListId,
       tariff_type: targetSpace?.tariff_type || "residential",
@@ -459,6 +484,98 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
                       value={quantity}
                       onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
                     />
+                  </Grid>
+
+                  {/* INVERTER COMPRESSOR TELEMETRY & FALLBACK TOGGLE */}
+                  <Grid size={12}>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 2,
+                        borderRadius: 2,
+                        bgcolor: isInverter
+                          ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.05)" : "rgba(13, 148, 136, 0.04)")
+                          : "action.hover",
+                        borderColor: isInverter
+                          ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)")
+                          : "divider",
+                        transition: "all 0.2s ease-in-out",
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <BoltIcon sx={{ color: isInverter ? "primary.main" : "text.secondary", fontSize: 22 }} />
+                          <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isInverter ? "primary.main" : "text.primary" }}>
+                              ⚡ Inverter Technology & Duty Cycle
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                              {isInverter
+                                ? "Smart compressor time-decay & cruising efficiency active"
+                                : "Fixed-speed continuous power draw (100% constant)"}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={isInverter}
+                              onChange={(e) => setIsInverter(e.target.checked)}
+                              color="primary"
+                              size="medium"
+                            />
+                          }
+                          label={
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: isInverter ? "primary.main" : "text.secondary" }}>
+                              {isInverter ? "INVERTER ON" : "INVERTER OFF"}
+                            </Typography>
+                          }
+                          sx={{ m: 0 }}
+                        />
+                      </Box>
+
+                      {/* Live Inverter Telemetry Preview */}
+                      {isInverter && (
+                        <Box
+                          sx={{
+                            mt: 1.5,
+                            pt: 1.5,
+                            borderTop: "1px dashed",
+                            borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.2)" : "rgba(13, 148, 136, 0.2)"),
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 1,
+                          }}
+                        >
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                            <Chip
+                              size="small"
+                              label={`1st Hr Cooldown: ${watts}W (100%)`}
+                              sx={{ fontWeight: 700, fontSize: "0.6875rem", bgcolor: (theme) => theme.palette.mode === "dark" ? "#1e293b" : "#f1f5f9" }}
+                            />
+                            <Chip
+                              size="small"
+                              label={`Cruising Mode: ~${Math.round(watts * (category.toLowerCase().includes("refrigerat") ? 0.35 : 0.42))}W avg`}
+                              color="primary"
+                              variant="outlined"
+                              sx={{ fontWeight: 700, fontSize: "0.6875rem" }}
+                            />
+                            <Chip
+                              size="small"
+                              label={`Effective: ~${Math.round((dailyKwh * 1000) / (hoursPerDay || 1))}W @ ${hoursPerDay}h`}
+                              sx={{ fontWeight: 800, fontSize: "0.6875rem", bgcolor: "primary.main", color: "#ffffff" }}
+                            />
+                          </Box>
+
+                          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, mt: 0.5 }}>
+                            <InfoIcon sx={{ fontSize: 16, color: "text.secondary", mt: 0.25 }} />
+                            <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.4 }}>
+                              <strong>Bakit mahalaga ito?</strong> Ang Inverter ay awtomatikong nagbabawas ng kuryente (cruising mode @ ~42%) kapag lumamig na ang kwarto. Mas accurate ang projection ng iyong Meralco bill kumpara sa fixed-speed. Kung ordinaryong aircon/ref ito, i-toggle lang ng <strong>OFF</strong>.
+                            </Typography>
+                          </Box>
+                        </Box>
+                      )}
+                    </Paper>
                   </Grid>
 
                   <Grid size={6}>

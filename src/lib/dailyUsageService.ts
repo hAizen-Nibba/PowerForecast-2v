@@ -23,10 +23,91 @@ export function parseKeyToDate(key: string): Date {
 }
 
 /**
- * Computes energy in kWh given watts and hours
+ * Inverter / Appliance calculation options
  */
-export function calculateKwh(watts: number, hours: number, quantity: number = 1): number {
-  return Number(((watts * quantity * hours) / 1000).toFixed(4));
+export interface ApplianceKwhOptions {
+  isInverter?: boolean;
+  category?: string;
+  energy_rating?: string;
+  name?: string;
+  model?: string;
+  ai_metadata?: Record<string, any>;
+}
+
+/**
+ * Computes energy in kWh given watts and hours, accounting for Inverter compressor time-decay and refrigeration duty cycles.
+ */
+export function calculateKwh(
+  watts: number,
+  hours: number,
+  quantity: number = 1,
+  options?: ApplianceKwhOptions | boolean | string
+): number {
+  const qty = quantity || 1;
+  const h = Math.max(0, hours);
+  if (h === 0 || watts === 0) return 0;
+
+  let isInverter = false;
+  let category = "";
+
+  if (typeof options === "boolean") {
+    isInverter = options;
+  } else if (typeof options === "string") {
+    category = options;
+    isInverter = /inverter/i.test(category);
+  } else if (options && typeof options === "object") {
+    category = options.category || "";
+    isInverter = Boolean(
+      options.isInverter === true ||
+      (options.energy_rating && /inverter/i.test(options.energy_rating)) ||
+      (options.ai_metadata?.is_inverter === true) ||
+      (options.name && /inverter/i.test(options.name)) ||
+      (options.model && /inverter/i.test(options.model))
+    );
+  }
+
+  const catLower = category.toLowerCase();
+  const isFridge = catLower.includes("refrigerat") || catLower.includes("fridge");
+
+  if (isInverter) {
+    if (isFridge) {
+      // 24/7 Linear Inverter Refrigerator ~35% continuous duty factor
+      return Number(((watts * qty * 0.35 * h) / 1000).toFixed(4));
+    }
+    // Inverter AC / General Inverter Compressor time-decay:
+    // 1st hour: 100% capacity (pull-down cooldown)
+    // Hours > 1: 42% cruising maintenance capacity
+    if (h <= 1) {
+      return Number(((watts * qty * h) / 1000).toFixed(4));
+    }
+    const pullDownKwh = (watts * qty * 1) / 1000;
+    const cruisingKwh = (watts * qty * 0.42 * (h - 1)) / 1000;
+    return Number((pullDownKwh + cruisingKwh).toFixed(4));
+  }
+
+  // Non-inverter standard calculation
+  return Number(((watts * qty * h) / 1000).toFixed(4));
+}
+
+/**
+ * Calculates accurate kWh directly from a UserAppliance object with automatic Inverter detection
+ */
+export function calculateApplianceKwh(
+  app: Partial<UserAppliance>,
+  hours?: number
+): number {
+  const h = hours !== undefined ? hours : Number(app.hours_per_day) || 0;
+  const qty = app.quantity || 1;
+  const watts = app.watts || 0;
+
+  return calculateKwh(watts, h, qty, {
+    isInverter: app.is_inverter,
+    category: app.category,
+    energy_rating: app.energy_rating,
+    name: app.name,
+    model: app.model,
+    ai_metadata: app.ai_metadata,
+  });
 }
 
 /**
@@ -257,8 +338,7 @@ export async function batchSaveDailyUsageAcrossRange(params: {
       }
 
       const hours = Math.max(0, Math.min(24, Number(app.hours_per_day) || 0));
-      const qty = app.quantity || 1;
-      const kwh = calculateKwh(app.watts, hours, qty);
+      const kwh = calculateApplianceKwh(app, hours);
       const cost = calculateCost(kwh, effectiveRate);
 
       allRows.push({
@@ -807,7 +887,7 @@ export async function reconcileOvernightRunningStopwatches(
 
       for (const slice of pastSlices) {
         const sliceMinutes = Math.max(1, Math.round(slice.hours * 60));
-        const sliceKwh = calculateKwh(app.watts, slice.hours, app.quantity || 1);
+        const sliceKwh = calculateApplianceKwh(app, slice.hours);
         const sliceCost = calculateCost(sliceKwh, effectiveRate);
 
         // 1. Insert completed log for yesterday/past day
@@ -832,7 +912,7 @@ export async function reconcileOvernightRunningStopwatches(
 
         const currentHours = existing ? Number(existing.hours_used || 0) : 0;
         const totalHours = Math.max(0, Math.min(24, Number((currentHours + slice.hours).toFixed(2))));
-        const kwh = calculateKwh(app.watts, totalHours, app.quantity || 1);
+        const kwh = calculateApplianceKwh(app, totalHours);
         const cost = calculateCost(kwh, effectiveRate);
 
         await supabaseClient.from("daily_appliance_usage").upsert(
@@ -931,7 +1011,7 @@ export function computeDayMetrics(
         const slices = splitSessionAcrossDays(start, now);
         const daySlice = slices.find((s) => s.dateKey === dateKey);
         if (daySlice && daySlice.hours > 0) {
-          const appKwh = calculateKwh(app.watts, daySlice.hours, app.quantity || 1);
+          const appKwh = calculateApplianceKwh(app, daySlice.hours);
           liveRunningKwh += appKwh;
           liveRunningCost += calculateCost(appKwh, effectiveRate);
           liveActiveCount += 1;
@@ -954,7 +1034,7 @@ export function computeDayMetrics(
         const slices = splitSessionAcrossDays(start, now);
         const daySlice = slices.find((s) => s.dateKey === dateKey);
         if (daySlice && daySlice.hours > 0) {
-          const appKwh = calculateKwh(app.watts, daySlice.hours, app.quantity || 1);
+          const appKwh = calculateApplianceKwh(app, daySlice.hours);
           totalKwh += appKwh;
           totalCost += calculateCost(appKwh, effectiveRate);
           const alreadyHasSavedRow = filteredLogged.some((r) => r.appliance_id === app.id && Number(r.hours_used) > 0);
@@ -1002,19 +1082,20 @@ export function computeDayMetrics(
 
   // Baseline routine consumption
   let projectedKwh = appliances.reduce((acc, app) => {
-    const qty = app.quantity || 1;
     const defaultHours = Number(app.hours_per_day) || 0;
     const hours = isWeekend ? Math.min(24, defaultHours * 1.15) : defaultHours;
-    return acc + (app.watts * qty * hours) / 1000;
+    return acc + calculateApplianceKwh(app, hours);
   }, 0);
 
   // Add scheduled event additions for this day
   const dayEvents = events.filter((e) => e.day === dayStr || e.is_recurring);
   dayEvents.forEach((ev) => {
     const app = appliances.find((a) => a.id === ev.appliance_id);
-    const watts = app ? app.watts * (app.quantity || 1) : 500;
-    const addedKwh = (watts * (ev.duration_hours || 1)) / 1000;
-    projectedKwh += addedKwh;
+    if (app) {
+      projectedKwh += calculateApplianceKwh(app, ev.duration_hours || 1);
+    } else {
+      projectedKwh += calculateKwh(500, ev.duration_hours || 1, 1);
+    }
   });
 
   const projectedCost = projectedKwh * effectiveRate;

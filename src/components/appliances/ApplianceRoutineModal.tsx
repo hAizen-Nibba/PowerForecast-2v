@@ -32,6 +32,7 @@ import { UserAppliance, ApplianceList } from "../../types";
 import { useCreate } from "@refinedev/core";
 import {
   calculateKwh,
+  calculateApplianceKwh,
   calculateCost,
   DEFAULT_EFFECTIVE_RATE,
   formatDateToKey,
@@ -170,7 +171,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
   const quantity = incomingAppliance?.quantity || 1;
 
   // Real-time calculations
-  const dailyKwh = calculateKwh(watts, hoursPerDay, quantity);
+  const dailyKwh = calculateApplianceKwh(incomingAppliance || { watts, quantity }, hoursPerDay);
   const dailyCost = calculateCost(dailyKwh, DEFAULT_EFFECTIVE_RATE);
   const monthlyKwh = dailyKwh * 30;
   const monthlyCost = dailyCost * 30;

@@ -28,7 +28,7 @@ import { useUpdate, useList } from "@refinedev/core";
 import { devLog } from "../../lib/devLogger";
 import { calculateSimultaneousDemand } from "../../lib/meralcoCalculator";
 import { supabaseClient } from "../../lib/supabaseClient";
-import { accumulateLiveSessionDailyUsage, calculateKwh, calculateCost } from "../../lib/dailyUsageService";
+import { accumulateLiveSessionDailyUsage, calculateKwh, calculateApplianceKwh, calculateCost } from "../../lib/dailyUsageService";
 
 interface LivePowerBoardProps {
   onOpenAddModal: () => void;
@@ -94,7 +94,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
         const diffMs = Math.max(1000, end.getTime() - start.getTime());
         const durationMinutes = Math.max(1, Math.round(diffMs / 60000));
         const durationHours = diffMs / 3600000;
-        const appKwh = calculateKwh(app.watts, durationHours, app.quantity || 1);
+        const appKwh = calculateApplianceKwh(app, durationHours);
         const effectiveRate = app.tariff_type === "commercial" ? 15.2 : 14.8261;
         const appCost = calculateCost(appKwh, effectiveRate);
 

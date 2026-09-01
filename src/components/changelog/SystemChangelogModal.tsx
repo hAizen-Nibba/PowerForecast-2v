@@ -38,8 +38,18 @@ export interface SystemChangelogEntry {
   source?: "github" | "database" | "local";
 }
 
-// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.1.1v
+// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.2.0v
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
+  {
+    id: "3.2.0v",
+    version: "3.2.0v",
+    git_commit_tag: "3.2.0v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.2.0v - Implement Smart Inverter Energy Engine & Dynamic Duty Cycle Calculation: Realistic compressor time-decay modeling (1st hr pull-down vs cruising mode @ ~42%), 24/7 continuous linear refrigeration factor, universal interactive fallback toggles across Manual, AI Vision Scanner, and DOE PELP modals with educational telemetry callouts.",
+  },
   {
     id: "3.1.1v",
     version: "3.1.1v",
@@ -640,6 +650,9 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
   // Filter options for fast version series navigation
   const filterOptions = [
     { id: "all", label: "All Deployments" },
+    { id: "3.2", label: "v3.2.x" },
+    { id: "3.1", label: "v3.1.x" },
+    { id: "3.0", label: "v3.0.x" },
     { id: "2.13", label: "v2.13.x" },
     { id: "2.12", label: "v2.12.x" },
     { id: "2.11", label: "v2.11.x" },

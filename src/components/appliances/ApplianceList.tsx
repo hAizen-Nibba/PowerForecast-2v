@@ -45,7 +45,7 @@ import { useConfirm } from "../common/ConfirmProvider";
 import { devLog } from "../../lib/devLogger";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
 import { supabaseClient } from "../../lib/supabaseClient";
-import { accumulateLiveSessionDailyUsage, calculateKwh, calculateCost } from "../../lib/dailyUsageService";
+import { accumulateLiveSessionDailyUsage, calculateKwh, calculateApplianceKwh, calculateCost } from "../../lib/dailyUsageService";
 
 interface ApplianceListProps {
   onOpenAiScanner?: () => void;
@@ -200,7 +200,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
         const diffMs = Math.max(1000, end.getTime() - start.getTime());
         const durationMinutes = Math.max(1, Math.round(diffMs / 60000));
         const durationHours = diffMs / 3600000;
-        const appKwh = calculateKwh(app.watts, durationHours, app.quantity || 1);
+        const appKwh = calculateApplianceKwh(app, durationHours);
         const effectiveRate = app.tariff_type === "commercial" ? 15.2 : 14.8261;
         const appCost = calculateCost(appKwh, effectiveRate);
 
@@ -774,12 +774,26 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             const h = Number(app.hours_per_day) || 0;
             const q = Number(app.quantity) || 1;
             const d = Number(app.days_per_month) || 30;
-            const monthlyKwh = Number(app.monthly_kwh) > 0 ? Number(app.monthly_kwh) : ((w * h * q * d) / 1000);
+
+            const isInverter = Boolean(
+              app.is_inverter === true ||
+              (app.energy_rating && /inverter/i.test(app.energy_rating)) ||
+              (app.name && /inverter/i.test(app.name)) ||
+              (app.model && /inverter/i.test(app.model)) ||
+              (app.ai_metadata?.is_inverter === true)
+            );
+
+            const dailyKwh = calculateApplianceKwh(app, h);
+            const monthlyKwh = Number(app.monthly_kwh) > 0 ? Number(app.monthly_kwh) : Number((dailyKwh * d).toFixed(2));
             
             // Calculate deterministic unbundled monthly cost with this space's tariff
             const appBill = calculateMeralcoBill(monthlyKwh, undefined, 0, false, spaceTariffType);
             const monthlyCost = appBill.totalBill;
-            const hourlyRate = ((w * q) / 1000) * (appBill.effectiveRatePerKwh || 14.82);
+            const isFridge = (app.category || "").toLowerCase().includes("refrigerat");
+            const cruisingFactor = isFridge ? 0.35 : 0.42;
+            const cruisingWatts = Math.round(w * cruisingFactor);
+            const effectiveWatts = h > 0 ? Math.round((dailyKwh * 1000) / h) : (isInverter ? cruisingWatts : w);
+            const hourlyRate = (effectiveWatts / 1000) * (appBill.effectiveRatePerKwh || 14.82);
 
             return (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={app.id}>
@@ -880,13 +894,39 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                     </Typography>
 
                     {/* Stats Badges */}
-                    <Box sx={{ display: "flex", gap: 1, mt: 1.5, flexWrap: "wrap" }}>
-                      <Chip
-                        icon={<BoltIcon sx={{ fontSize: "14px !important", color: "#ffd54f !important" }} />}
-                        label={`${app.watts} W`}
-                        size="small"
-                        sx={{ fontWeight: 800 }}
-                      />
+                    <Box sx={{ display: "flex", gap: 0.75, mt: 1.5, flexWrap: "wrap", alignItems: "center" }}>
+                      {isInverter ? (
+                        <>
+                          <Tooltip title={`⚡ Inverter Cruising: ~${cruisingWatts}W maintenance mode after cooldown`}>
+                            <Chip
+                              icon={<BoltIcon sx={{ fontSize: "14px !important", color: "#00e5c9 !important" }} />}
+                              label={`⚡ Inverter (~${cruisingWatts}W avg)`}
+                              size="small"
+                              sx={{
+                                fontWeight: 800,
+                                fontSize: "0.6875rem",
+                                bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(13, 148, 136, 0.1)",
+                                color: (theme) => theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488",
+                                border: "1px solid",
+                                borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)",
+                              }}
+                            />
+                          </Tooltip>
+                          <Chip
+                            label={`Peak ${app.watts}W`}
+                            size="small"
+                            variant="outlined"
+                            sx={{ fontWeight: 700, fontSize: "0.6875rem" }}
+                          />
+                        </>
+                      ) : (
+                        <Chip
+                          icon={<BoltIcon sx={{ fontSize: "14px !important", color: "#ffd54f !important" }} />}
+                          label={`${app.watts} W`}
+                          size="small"
+                          sx={{ fontWeight: 800 }}
+                        />
+                      )}
                       {app.quantity > 1 && (
                         <Chip
                           label={`Qty: ${app.quantity}`}

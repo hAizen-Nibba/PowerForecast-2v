@@ -16,6 +16,8 @@ import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
+import Switch from "@mui/material/Switch";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import {
@@ -24,6 +26,8 @@ import {
   CheckCircle as CheckCircleIcon,
   Key as KeyIcon,
   Delete as TrashIcon,
+  Bolt as BoltIcon,
+  InfoOutlined as InfoIcon,
 } from "@mui/icons-material";
 import { analyzeMultipleApplianceImages, ImageItem } from "../../lib/visionService";
 import { VisionScanResult, UserAppliance, ApplianceList } from "../../types";
@@ -60,6 +64,7 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
   const [editMonthlyKwh, setEditMonthlyKwh] = useState<number>(16.8);
   const [editCategory, setEditCategory] = useState("Electric Fans");
   const [editRoom, setEditRoom] = useState("Living Room");
+  const [editIsInverter, setEditIsInverter] = useState<boolean>(true);
 
   // Duplicate modal states
   const [duplicateIncoming, setDuplicateIncoming] = useState<Partial<UserAppliance> | null>(null);
@@ -147,6 +152,7 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
         setEditModel(result.detected_model || "");
         setEditWatts(result.detected_watts || 100);
         setEditMonthlyKwh(result.detected_monthly_kwh || 25);
+        setEditIsInverter(Boolean(result.is_inverter));
         if (result.detected_category) setEditCategory(result.detected_category);
       }
     } catch (err: any) {
@@ -173,6 +179,7 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
       start_hour: getDefaultStartHour(editCategory),
       room_location: editRoom,
       energy_rating: scanResult?.detected_energy_rating || `${scanResult?.detected_star_rating || 5}-Star (AI Scan)`,
+      is_inverter: editIsInverter,
       monthly_kwh: editMonthlyKwh,
       list_id: targetListId,
       tariff_type: targetSpace?.tariff_type || "residential",
@@ -534,6 +541,62 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
                   onChange={(e) => setEditMonthlyKwh(Number(e.target.value) || 0)}
                   helperText="Official DOE test or estimated monthly kWh"
                 />
+              </Grid>
+
+              {/* INVERTER FALLBACK INTERACTIVE SWITCH */}
+              <Grid size={12}>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: 1.5,
+                    bgcolor: editIsInverter
+                      ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.05)" : "rgba(13, 148, 136, 0.04)")
+                      : "action.hover",
+                    borderColor: editIsInverter
+                      ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)")
+                      : "divider",
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <BoltIcon sx={{ color: editIsInverter ? "primary.main" : "text.secondary", fontSize: 20 }} />
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: editIsInverter ? "primary.main" : "text.primary" }}>
+                          ⚡ Inverter Compressor Mode
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                          {editIsInverter
+                            ? "AI detected Inverter technology — cruising duty cycle active"
+                            : "Standard non-inverter fixed speed (100% constant)"}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={editIsInverter}
+                          onChange={(e) => setEditIsInverter(e.target.checked)}
+                          color="primary"
+                          size="medium"
+                        />
+                      }
+                      label={
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: editIsInverter ? "primary.main" : "text.secondary" }}>
+                          {editIsInverter ? "INVERTER ON" : "INVERTER OFF"}
+                        </Typography>
+                      }
+                      sx={{ m: 0 }}
+                    />
+                  </Box>
+
+                  <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, mt: 1.5, pt: 1, borderTop: "1px dashed", borderColor: "divider" }}>
+                    <InfoIcon sx={{ fontSize: 16, color: "text.secondary", mt: 0.25 }} />
+                    <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.4 }}>
+                      <strong>Bakit mahalaga ito?</strong> Na-detect ng Gemini AI na Inverter ang unit na ito. Pag lumamig na ang kwarto, bababa ang compressor sa cruising mode (~42% power). Kung fixed-speed (ordinary) ang unit mo, i-toggle lang ito ng <strong>OFF</strong> bago i-save.
+                    </Typography>
+                  </Box>
+                </Paper>
               </Grid>
             </Grid>
           </Paper>

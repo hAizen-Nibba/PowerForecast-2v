@@ -47,10 +47,14 @@ CREATE TABLE IF NOT EXISTS public.user_appliances (
     is_active BOOLEAN DEFAULT true,
     is_currently_on BOOLEAN DEFAULT false,
     last_turned_on_at TIMESTAMP WITH TIME ZONE,
+    is_inverter BOOLEAN DEFAULT false,
     ai_metadata JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::TEXT, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::TEXT, now()) NOT NULL
 );
+
+-- Idempotent column check for existing databases
+ALTER TABLE public.user_appliances ADD COLUMN IF NOT EXISTS is_inverter BOOLEAN DEFAULT false;
 
 -- ==============================================================================
 -- 4. APPLIANCE USAGE SESSIONS & RUNTIME LOGS TABLE

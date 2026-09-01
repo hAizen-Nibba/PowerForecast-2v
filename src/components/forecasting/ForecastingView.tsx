@@ -38,7 +38,7 @@ import {
 import { UserAppliance, ApplianceList, DailyApplianceUsage, ApplianceUsageLog } from "../../types";
 import { useList } from "@refinedev/core";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
-import { calculateKwh, calculateCost, DEFAULT_EFFECTIVE_RATE } from "../../lib/dailyUsageService";
+import { calculateKwh, calculateApplianceKwh, calculateCost, DEFAULT_EFFECTIVE_RATE } from "../../lib/dailyUsageService";
 import { useLanguage } from "../../context/LanguageContext";
 
 export const ForecastingView: React.FC = () => {
@@ -135,7 +135,7 @@ export const ForecastingView: React.FC = () => {
     targetAppliances.forEach((app) => {
       const hours = app.hours_per_day || 0;
       const qty = app.quantity || 1;
-      const kwh = calculateKwh(app.watts, hours, qty);
+      const kwh = calculateApplianceKwh(app, hours);
       dailyKwh += kwh;
 
       // Standby / vampire load estimation for non-operating hours
@@ -239,8 +239,7 @@ export const ForecastingView: React.FC = () => {
 
     targetAppliances.forEach((app) => {
       const activeHours = whatIfHours[app.id] !== undefined ? whatIfHours[app.id] : (app.hours_per_day || 0);
-      const qty = app.quantity || 1;
-      whatIfDailyKwh += calculateKwh(app.watts, activeHours, qty);
+      whatIfDailyKwh += calculateApplianceKwh(app, activeHours);
     });
 
     const daysMultiplier = mtdActuals.hasLoggedRecords ? remainingDays : daysInActiveMonth;
@@ -261,8 +260,7 @@ export const ForecastingView: React.FC = () => {
     return targetAppliances
       .map((app) => {
         const hours = app.hours_per_day || 0;
-        const qty = app.quantity || 1;
-        const monthlyKwh = (app.watts * hours * qty * daysInActiveMonth) / 1000;
+        const monthlyKwh = calculateApplianceKwh(app, hours) * daysInActiveMonth;
         const cost = calculateCost(monthlyKwh, DEFAULT_EFFECTIVE_RATE);
         const sharePercent = routineBaseline.monthlyBaselineKwh > 0 ? (monthlyKwh / routineBaseline.monthlyBaselineKwh) * 100 : 0;
 
