@@ -5,6 +5,18 @@ import urllib.request
 import urllib.error
 from http.server import BaseHTTPRequestHandler
 
+def sanitize_model(model):
+    """Sanitizes model name to prevent URL parameter injection and path traversal."""
+    if not isinstance(model, str) or not re.match(r'^[a-zA-Z0-9.\-]{1,50}$', model):
+        return 'gemini-2.0-flash'
+    return model
+
+def sanitize_preset(preset):
+    """Sanitizes preset mode to prevent prompt injection."""
+    if not isinstance(preset, str) or not re.match(r'^[a-zA-Z0-9_\-]{1,30}$', preset):
+        return 'specs'
+    return preset
+
 def get_gemini_api_keys():
     keys = []
     
@@ -61,8 +73,9 @@ class handler(BaseHTTPRequestHandler):
         image_base64 = payload.get('imageBase64')
         mime_type = payload.get('mimeType', 'image/jpeg')
         prompt = payload.get('prompt')
-        preset = payload.get('preset', 'specs')
-        model = payload.get('model', 'gemini-2.0-flash')
+        # Security: Validate and sanitize model & preset to prevent URL injection and prompt pollution
+        model = sanitize_model(payload.get('model'))
+        preset = sanitize_preset(payload.get('preset'))
 
         api_keys = get_gemini_api_keys()
 
