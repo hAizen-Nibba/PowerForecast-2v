@@ -1,10 +1,28 @@
 import json
+import math
 from http.server import BaseHTTPRequestHandler
 
-def compute_bill(kwh, gen_rate=7.12, other_charges=0.0):
-    kwh = float(kwh or 0)
-    gen_rate = float(gen_rate or 7.12)
-    other_charges = float(other_charges or 0)
+def validate_number(val, name, default=0.0, max_val=1000000.0):
+    if val is None:
+        return default
+    if isinstance(val, bool):
+        raise ValueError(f"Invalid numeric value for {name}.")
+    try:
+        num = float(val)
+    except (ValueError, TypeError):
+        raise ValueError(f"Invalid numeric value for {name}.")
+    if math.isnan(num) or math.isinf(num):
+        raise ValueError(f"Invalid numeric value for {name}.")
+    if num < 0:
+        raise ValueError(f"{name} cannot be negative.")
+    if num > max_val:
+        raise ValueError(f"{name} exceeds maximum allowable threshold.")
+    return num
+
+def compute_bill(kwh=0.0, gen_rate=7.12, other_charges=0.0):
+    kwh = validate_number(kwh, "kwh", default=0.0, max_val=1000000.0)
+    gen_rate = validate_number(gen_rate, "generation_rate", default=7.12, max_val=1000.0)
+    other_charges = validate_number(other_charges, "other_charges", default=0.0, max_val=1000000.0)
 
     # 1. Generation
     gen_cost = round(kwh * gen_rate, 2)
@@ -58,17 +76,29 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         content_length = int(self.headers.get('Content-Length', 0))
-        body = self.rfile.read(content_length).decode('utf-8')
+        body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else ""
         try:
             payload = json.loads(body) if body else {}
         except Exception:
-            payload = {}
+            self.send_response(400)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "Invalid JSON payload."}).encode('utf-8'))
+            return
 
-        kwh = payload.get('kwh', 0)
-        gen_rate = payload.get('generation_rate', 7.12)
-        other_charges = payload.get('other_charges', 0.0)
-
-        result = compute_bill(kwh, gen_rate, other_charges)
+        try:
+            kwh = payload.get('kwh', 0)
+            gen_rate = payload.get('generation_rate', 7.12)
+            other_charges = payload.get('other_charges', 0.0)
+            result = compute_bill(kwh, gen_rate, other_charges)
+        except ValueError as err:
+            self.send_response(400)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(err)}).encode('utf-8'))
+            return
 
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
