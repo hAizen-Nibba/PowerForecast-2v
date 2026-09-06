@@ -59,10 +59,27 @@ class handler(BaseHTTPRequestHandler):
 
         images = payload.get('images', [])
         image_base64 = payload.get('imageBase64')
-        mime_type = payload.get('mimeType', 'image/jpeg')
-        prompt = payload.get('prompt')
-        preset = payload.get('preset', 'specs')
-        model = payload.get('model', 'gemini-2.0-flash')
+        raw_mime_type = payload.get('mimeType', 'image/jpeg')
+        raw_prompt = payload.get('prompt')
+        raw_preset = payload.get('preset', 'specs')
+        raw_model = payload.get('model', 'gemini-2.0-flash')
+
+        # Input Validation & Sanitization
+        allowed_presets = {'specs', 'energy_guide', 'nameplate', 'inverter_check'}
+        preset = raw_preset if isinstance(raw_preset, str) and raw_preset in allowed_presets else 'specs'
+
+        if isinstance(raw_model, str) and re.match(r'^[a-zA-Z0-9.\-_]{1,50}$', raw_model):
+            model = raw_model
+        else:
+            model = 'gemini-2.0-flash'
+
+        allowed_mime_types = {'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'}
+        mime_type = raw_mime_type if isinstance(raw_mime_type, str) and raw_mime_type in allowed_mime_types else 'image/jpeg'
+
+        prompt = None
+        if isinstance(raw_prompt, str) and raw_prompt.strip():
+            # Cap prompt length to 2000 chars to avoid buffer/token abuse
+            prompt = raw_prompt.strip()[:2000]
 
         api_keys = get_gemini_api_keys()
 
@@ -140,9 +157,13 @@ class handler(BaseHTTPRequestHandler):
 
         if images and isinstance(images, list):
             for img in images:
+                if not isinstance(img, dict):
+                    continue
                 b64 = img.get('base64', '')
                 mt = img.get('mimeType', 'image/jpeg')
-                if b64:
+                if not isinstance(mt, str) or mt not in allowed_mime_types:
+                    mt = 'image/jpeg'
+                if isinstance(b64, str) and b64:
                     clean_b64 = re.sub(r'^data:image\/[a-zA-Z]+;base64,', '', b64)
                     parts.append({
                         "inline_data": {
