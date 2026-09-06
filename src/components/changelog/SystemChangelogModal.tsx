@@ -38,13 +38,23 @@ export interface SystemChangelogEntry {
   source?: "github" | "database" | "local";
 }
 
-// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.2.1v
+// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.2.2v
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
+  {
+    id: "3.2.2v",
+    version: "3.2.2v",
+    git_commit_tag: "3.2.2v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.2.2v - Redesign Mobile 'More' navigation drawer with right-side slide-in (anchor=right), remove redundant tabs present on mobile dock, and integrate user profile with logout, settings, live grid load telemetry, Meralco generation rate, and direct version changelogs access.",
+  },
   {
     id: "3.2.1v",
     version: "3.2.1v",
     git_commit_tag: "3.2.1v",
-    created_at: new Date().toISOString(),
+    created_at: "2026-09-06T12:00:00Z",
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
@@ -571,7 +581,7 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
                 const version = match ? match[1] : firstLine.slice(0, 15);
                 return {
                   id: c.sha,
-                  version: version.startsWith("2.") ? version : `commit-${c.sha.slice(0, 7)}`,
+                  version: version.startsWith("2.") || version.startsWith("3.") ? version : `commit-${c.sha.slice(0, 7)}`,
                   description: fullMsg,
                   git_commit_tag: match ? match[1] : c.sha.slice(0, 7),
                   deployed_by: c.commit.author?.name || c.author?.login || "GitHub Committer",
@@ -579,7 +589,7 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
                   source: "github" as const,
                 };
               })
-              .filter((entry) => entry.version.startsWith("2."));
+              .filter((entry) => entry.version.startsWith("2.") || entry.version.startsWith("3."));
           }
         }
       } catch {
