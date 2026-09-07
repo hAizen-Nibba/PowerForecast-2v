@@ -196,7 +196,6 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
       room_location: editRoom,
       energy_rating: scanResult?.detected_energy_rating || `${scanResult?.detected_star_rating || 5}-Star (AI Scan)`,
       is_inverter: editIsInverter,
-      cruising_watts: editIsInverter && isCustomCruising ? Number(editCustomCruisingWatts) : undefined,
       monthly_kwh: editMonthlyKwh,
       list_id: targetListId,
       tariff_type: targetSpace?.tariff_type || "residential",

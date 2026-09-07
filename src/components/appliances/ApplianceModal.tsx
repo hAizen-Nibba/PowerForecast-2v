@@ -65,6 +65,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
 
   // Manual Entry Form states
   const [name, setName] = useState("");
+  const [nameError, setNameError] = useState(false);
   const [category, setCategory] = useState("Air Conditioners");
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
@@ -127,9 +128,11 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
         applianceToEdit.cruising_watts ?? applianceToEdit.ai_metadata?.cruising_watts ?? ""
       );
       setSelectedListId(applianceToEdit.list_id || (spaces[0]?.id || ""));
+      setNameError(false);
     } else {
       setActiveTab(initialTab);
       setName("");
+      setNameError(false);
       setCategory("Air Conditioners");
       setBrand("");
       setModel("");
@@ -189,7 +192,10 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
 
   const handleSubmitManual = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      setNameError(true);
+      return;
+    }
 
     const targetListId = selectedListId || (spaces[0]?.id ?? null);
     if (!targetListId) {
@@ -211,7 +217,6 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
       room_location: roomLocation,
       energy_rating: energyRating,
       is_inverter: supportsInverter ? isInverter : false,
-      cruising_watts: supportsInverter && isInverter && isCustom ? activeCruisingWatts : undefined,
       monthly_kwh: monthlyKwh,
       list_id: targetListId,
       tariff_type: targetSpace?.tariff_type || "residential",
@@ -309,7 +314,9 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
           paper: {
             sx: {
               borderRadius: 2,
-              overflow: "hidden",
+              maxHeight: "90vh",
+              display: "flex",
+              flexDirection: "column",
             },
           },
         }}
@@ -393,7 +400,14 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
           </Box>
         )}
 
-        <DialogContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
+        <DialogContent
+          dividers
+          sx={{
+            p: 3,
+            overflowY: "auto",
+            flex: "1 1 auto",
+          }}
+        >
           {/* TAB 0 / EDIT MODE: MANUAL ENTRY FORM */}
           {activeTab === 0 && (
             <form id="manual-appliance-form" onSubmit={handleSubmitManual}>
@@ -486,7 +500,16 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
                       size="small"
                       label="Appliance Name / Description"
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      error={nameError}
+                      helperText={
+                        nameError
+                          ? "Appliance name is required (e.g. Master Bedroom Inverter AC)"
+                          : "e.g. Master Bedroom Inverter AC or Store Showcase Chiller"
+                      }
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        if (e.target.value.trim()) setNameError(false);
+                      }}
                       placeholder="e.g. Master Bedroom Inverter AC or Store Showcase Chiller"
                     />
                   </Grid>
@@ -809,21 +832,6 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
                     </Typography>
                   </Box>
                 </Paper>
-
-                <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1.5, mt: 1 }}>
-                  <Button variant="outlined" onClick={onClose}>
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={isCreating || isUpdating}
-                    startIcon={<SaveIcon />}
-                    sx={{ fontWeight: 700 }}
-                  >
-                    {isEditing ? "Save Changes" : "Save Appliance"}
-                  </Button>
-                </Box>
               </Box>
             </form>
           )}
@@ -846,6 +854,58 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
             />
           )}
         </DialogContent>
+
+        {/* Sticky Action Footer (Always visible when adding or editing manually) */}
+        {(activeTab === 0 || isEditing) && (
+          <DialogActions
+            sx={{
+              px: 3,
+              py: 1.75,
+              bgcolor: "background.paper",
+              borderTop: 1,
+              borderColor: "divider",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+              <Typography variant="caption" sx={{ color: "text.secondary", display: { xs: "none", sm: "inline" } }}>
+                Estimated:
+              </Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#ffd54f", fontFamily: "monospace" }}>
+                ₱{estimatedCost}/mo
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                ({monthlyKwh} kWh)
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: "flex", gap: 1.5 }}>
+              <Button variant="outlined" onClick={onClose} disabled={isCreating || isUpdating}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                form="manual-appliance-form"
+                onClick={(e) => {
+                  // Direct trigger fallback in case browser doesn't associate external form attribute
+                  if (!name.trim()) {
+                    setNameError(true);
+                    e.preventDefault();
+                  }
+                }}
+                variant="contained"
+                disabled={isCreating || isUpdating}
+                startIcon={<SaveIcon />}
+                sx={{ fontWeight: 700 }}
+              >
+                {isEditing ? "Save Changes" : "Save Appliance"}
+              </Button>
+            </Box>
+          </DialogActions>
+        )}
       </Dialog>
 
       {/* Duplicate Appliance Resolution Modal */}
