@@ -133,10 +133,12 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
       start_hour: getDefaultStartHour(normalizedCat),
       room_location: room,
       energy_rating: `${item.star_rating || 5}-Star (PELP)`,
-      is_inverter: isInverter,
       monthly_kwh: monthlyKwh,
       list_id: targetListId,
       tariff_type: targetSpace?.tariff_type || "residential",
+      ai_metadata: {
+        is_inverter: isInverter,
+      },
     };
 
     // Check if duplicate already exists in this space

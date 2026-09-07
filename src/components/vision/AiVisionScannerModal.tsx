@@ -195,11 +195,11 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
       start_hour: getDefaultStartHour(normalizedCat),
       room_location: editRoom,
       energy_rating: scanResult?.detected_energy_rating || `${scanResult?.detected_star_rating || 5}-Star (AI Scan)`,
-      is_inverter: editIsInverter,
       monthly_kwh: editMonthlyKwh,
       list_id: targetListId,
       tariff_type: targetSpace?.tariff_type || "residential",
       ai_metadata: {
+        is_inverter: editIsInverter,
         ...(scanResult?.detected_model ? { detected_model: scanResult.detected_model } : {}),
         ...(editIsInverter && isCustomCruising ? { cruising_watts: Number(editCustomCruisingWatts) } : {}),
       },

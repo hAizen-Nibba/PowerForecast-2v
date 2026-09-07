@@ -41,6 +41,16 @@ export interface SystemChangelogEntry {
 // Master compiled GitHub deployment history covering all releases
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.2.6v",
+    version: "3.2.6v",
+    git_commit_tag: "3.2.6v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.2.6v - Fix Supabase is_inverter schema cache issue: self-healing DataProvider with automatic unmigrated column recovery and migration of inverter telemetry into JSONB ai_metadata.",
+  },
+  {
     id: "3.2.5v",
     version: "3.2.5v",
     git_commit_tag: "3.2.5v",

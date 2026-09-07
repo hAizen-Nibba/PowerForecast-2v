@@ -171,10 +171,37 @@ export const resilientDataProvider: DataProvider = {
         enrichedVariables.user_id = sessionUser.id;
       }
 
-      const res = await rawSupabaseDataProvider.create<TData, TVariables>({
-        ...params,
-        variables: enrichedVariables,
-      });
+      let res: any;
+      let attempts = 0;
+      while (attempts < 5) {
+        try {
+          res = await rawSupabaseDataProvider.create<TData, TVariables>({
+            ...params,
+            variables: enrichedVariables,
+          });
+          break;
+        } catch (innerErr: any) {
+          attempts++;
+          const colMatch = innerErr?.message?.match(/Could not find the '([^']+)' column/i);
+          if (colMatch && colMatch[1] && colMatch[1] in enrichedVariables) {
+            const badCol = colMatch[1];
+            devLog.warn(
+              "Supabase DataProvider",
+              `Self-healing: stripped unmigrated column '${badCol}' from [${params.resource}] and preserved in ai_metadata (attempt ${attempts})`
+            );
+            if (params.resource === "user_appliances") {
+              enrichedVariables.ai_metadata = {
+                ...(enrichedVariables.ai_metadata || {}),
+                [badCol]: enrichedVariables[badCol],
+              };
+            }
+            delete enrichedVariables[badCol];
+          } else {
+            throw innerErr;
+          }
+        }
+      }
+
       devLog.api("Supabase DataProvider", `Created record in [${params.resource}]`, res);
       return res;
     } catch (err: any) {
@@ -189,7 +216,38 @@ export const resilientDataProvider: DataProvider = {
       return localDataProvider.update<TData, TVariables>(params);
     }
     try {
-      const res = await rawSupabaseDataProvider.update<TData, TVariables>(params);
+      let enrichedVariables = { ...(params.variables as any) };
+      let res: any;
+      let attempts = 0;
+      while (attempts < 5) {
+        try {
+          res = await rawSupabaseDataProvider.update<TData, TVariables>({
+            ...params,
+            variables: enrichedVariables,
+          });
+          break;
+        } catch (innerErr: any) {
+          attempts++;
+          const colMatch = innerErr?.message?.match(/Could not find the '([^']+)' column/i);
+          if (colMatch && colMatch[1] && colMatch[1] in enrichedVariables) {
+            const badCol = colMatch[1];
+            devLog.warn(
+              "Supabase DataProvider",
+              `Self-healing: stripped unmigrated column '${badCol}' on update [${params.resource}] (attempt ${attempts})`
+            );
+            if (params.resource === "user_appliances") {
+              enrichedVariables.ai_metadata = {
+                ...(enrichedVariables.ai_metadata || {}),
+                [badCol]: enrichedVariables[badCol],
+              };
+            }
+            delete enrichedVariables[badCol];
+          } else {
+            throw innerErr;
+          }
+        }
+      }
+
       devLog.api("Supabase DataProvider", `Updated record in [${params.resource}]`, res);
       return res;
     } catch (err: any) {

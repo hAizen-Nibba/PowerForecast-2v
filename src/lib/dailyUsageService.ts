@@ -165,7 +165,7 @@ export function calculateApplianceKwh(
   const watts = app.watts || 0;
 
   return calculateKwh(watts, h, qty, {
-    isInverter: app.is_inverter,
+    isInverter: app.is_inverter ?? (app.ai_metadata?.is_inverter === true),
     category: app.category,
     energy_rating: app.energy_rating,
     name: app.name,

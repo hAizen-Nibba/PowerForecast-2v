@@ -119,11 +119,13 @@ export const PelpCatalogTabContent: React.FC<PelpCatalogTabContentProps> = ({
       start_hour: getDefaultStartHour(normalizedCat),
       room_location: room,
       energy_rating: `${item.star_rating || 5}-Star (PELP Certified)`,
-      is_inverter: isInverter,
       monthly_kwh: monthlyKwh,
       list_id: targetListId,
       tariff_type: targetSpace?.tariff_type || "residential",
       source: "pelp_db",
+      ai_metadata: {
+        is_inverter: isInverter,
+      },
     };
 
     // Check if duplicate already exists in the target space

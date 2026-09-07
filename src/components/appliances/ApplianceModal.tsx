@@ -216,12 +216,12 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
       start_hour: startHour,
       room_location: roomLocation,
       energy_rating: energyRating,
-      is_inverter: supportsInverter ? isInverter : false,
       monthly_kwh: monthlyKwh,
       list_id: targetListId,
       tariff_type: targetSpace?.tariff_type || "residential",
       ai_metadata: {
         ...(applianceToEdit?.ai_metadata || {}),
+        is_inverter: supportsInverter ? isInverter : false,
         ...(supportsInverter && isInverter && isCustom
           ? { cruising_watts: activeCruisingWatts }
           : { cruising_watts: null }),
