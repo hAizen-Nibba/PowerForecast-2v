@@ -1,10 +1,26 @@
 import json
+import math
 from http.server import BaseHTTPRequestHandler
 
-def compute_bill(kwh, gen_rate=7.12, other_charges=0.0):
-    kwh = float(kwh or 0)
-    gen_rate = float(gen_rate or 7.12)
-    other_charges = float(other_charges or 0)
+def validate_number(val, param_name, default=0.0):
+    if val is None:
+        return float(default)
+    if isinstance(val, (bool, list, dict)):
+        raise ValueError(f"Invalid type for {param_name}. Expected number.")
+    try:
+        num = float(val)
+    except (TypeError, ValueError):
+        raise ValueError(f"Invalid numeric value for {param_name}.")
+    if math.isnan(num) or math.isinf(num):
+        raise ValueError(f"Value for {param_name} must be a finite number.")
+    if num < 0:
+        raise ValueError(f"Value for {param_name} cannot be negative.")
+    return num
+
+def compute_bill(kwh=0, gen_rate=7.12, other_charges=0.0):
+    kwh = validate_number(kwh, 'kwh', 0.0)
+    gen_rate = validate_number(gen_rate, 'generation_rate', 7.12)
+    other_charges = validate_number(other_charges, 'other_charges', 0.0)
 
     # 1. Generation
     gen_cost = round(kwh * gen_rate, 2)
@@ -57,10 +73,16 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
-        content_length = int(self.headers.get('Content-Length', 0))
-        body = self.rfile.read(content_length).decode('utf-8')
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+        except (ValueError, TypeError):
+            content_length = 0
+
+        body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else ""
         try:
             payload = json.loads(body) if body else {}
+            if not isinstance(payload, dict):
+                payload = {}
         except Exception:
             payload = {}
 
@@ -68,9 +90,14 @@ class handler(BaseHTTPRequestHandler):
         gen_rate = payload.get('generation_rate', 7.12)
         other_charges = payload.get('other_charges', 0.0)
 
-        result = compute_bill(kwh, gen_rate, other_charges)
+        try:
+            result = compute_bill(kwh, gen_rate, other_charges)
+            status_code = 200
+        except ValueError as err:
+            result = {"success": False, "error": str(err)}
+            status_code = 400
 
-        self.send_response(200)
+        self.send_response(status_code)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
