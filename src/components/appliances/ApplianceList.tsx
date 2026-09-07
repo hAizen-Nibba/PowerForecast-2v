@@ -33,7 +33,7 @@ import {
   Create as PenIcon,
   CameraAlt as CameraIcon,
 } from "@mui/icons-material";
-import { UserAppliance, UserCalendarEvent, ApplianceList as ApplianceSpace } from "../../types";
+import { UserAppliance, UserCalendarEvent, ApplianceList as ApplianceSpace, STREAMLINED_CATEGORIES } from "../../types";
 import { useList, useDelete, useUpdate, useCreate } from "@refinedev/core";
 import { ApplianceModal } from "./ApplianceModal";
 import { PelpCatalogModal } from "./PelpCatalogModal";
@@ -45,7 +45,13 @@ import { useConfirm } from "../common/ConfirmProvider";
 import { devLog } from "../../lib/devLogger";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
 import { supabaseClient } from "../../lib/supabaseClient";
-import { accumulateLiveSessionDailyUsage, calculateKwh, calculateApplianceKwh, calculateCost } from "../../lib/dailyUsageService";
+import {
+  accumulateLiveSessionDailyUsage,
+  calculateKwh,
+  calculateApplianceKwh,
+  calculateCost,
+  normalizeApplianceCategory,
+} from "../../lib/dailyUsageService";
 
 interface ApplianceListProps {
   onOpenAiScanner?: () => void;
@@ -161,7 +167,9 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
         (app.model && app.model.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const matchesCategory =
-        selectedCategory === "all" || app.category.toLowerCase().includes(selectedCategory.toLowerCase());
+        selectedCategory === "all" ||
+        normalizeApplianceCategory(app.category) === selectedCategory ||
+        app.category.toLowerCase().includes(selectedCategory.toLowerCase());
 
       const matchesRoom =
         selectedRoom === "all" || (app.room_location && app.room_location.toLowerCase() === selectedRoom.toLowerCase());
@@ -737,17 +745,14 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             size="small"
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            sx={{ minWidth: 160 }}
+            sx={{ minWidth: 170 }}
           >
             <MenuItem value="all">All Categories</MenuItem>
-            <MenuItem value="Air Conditioners">Air Conditioners</MenuItem>
-            <MenuItem value="Refrigerators & Freezers">Refrigerators</MenuItem>
-            <MenuItem value="Television Sets">TV Sets</MenuItem>
-            <MenuItem value="Electric Fans">Fans</MenuItem>
-            <MenuItem value="Washing Machines">Washing Machines</MenuItem>
-            <MenuItem value="Lighting Products">Lighting</MenuItem>
-            <MenuItem value="Kitchen & Cooking">Kitchen</MenuItem>
-            <MenuItem value="Other">Other</MenuItem>
+            {STREAMLINED_CATEGORIES.map((cat) => (
+              <MenuItem key={cat} value={cat}>
+                {cat}
+              </MenuItem>
+            ))}
           </TextField>
         </Box>
       </Box>
@@ -789,10 +794,21 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             // Calculate deterministic unbundled monthly cost with this space's tariff
             const appBill = calculateMeralcoBill(monthlyKwh, undefined, 0, false, spaceTariffType);
             const monthlyCost = appBill.totalBill;
-            const isFridge = (app.category || "").toLowerCase().includes("refrigerat");
-            const cruisingFactor = isFridge ? 0.35 : 0.42;
-            const cruisingWatts = Math.round(w * cruisingFactor);
-            const effectiveWatts = h > 0 ? Math.round((dailyKwh * 1000) / h) : (isInverter ? cruisingWatts : w);
+            const isFridge = (app.category || "").toLowerCase().includes("refrigerat") || (app.category || "").toLowerCase().includes("freezer") || (app.category || "").toLowerCase().includes("chiller");
+            const isWasher = (app.category || "").toLowerCase().includes("wash") || (app.category || "").toLowerCase().includes("laundry");
+            const customCruising = app.cruising_watts ?? app.ai_metadata?.cruising_watts;
+            const isCustomCruising = customCruising !== undefined && customCruising !== null && Number(customCruising) > 0;
+            const defaultCruisingWatts = isFridge
+              ? Math.round(w / 3)
+              : isWasher
+              ? Math.round(w * 0.50)
+              : Math.round(w * 0.42);
+            const cruisingWatts = isCustomCruising ? Number(customCruising) : defaultCruisingWatts;
+            const effectiveWatts = isFridge
+              ? cruisingWatts
+              : h > 0
+              ? Math.round((dailyKwh * 1000) / h)
+              : (isInverter ? cruisingWatts : w);
             const hourlyRate = (effectiveWatts / 1000) * (appBill.effectiveRatePerKwh || 14.82);
 
             return (
@@ -897,10 +913,10 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                     <Box sx={{ display: "flex", gap: 0.75, mt: 1.5, flexWrap: "wrap", alignItems: "center" }}>
                       {isInverter ? (
                         <>
-                          <Tooltip title={`⚡ Inverter Cruising: ~${cruisingWatts}W maintenance mode after cooldown`}>
+                          <Tooltip title={`⚡ Inverter Cruising: ~${cruisingWatts}W ${isFridge ? "steady continuous maintenance (1/3 duty cycle)" : "maintenance mode after cooldown"}${isCustomCruising ? " (Custom User Override)" : ""}`}>
                             <Chip
                               icon={<BoltIcon sx={{ fontSize: "14px !important", color: "#00e5c9 !important" }} />}
-                              label={`⚡ Inverter (~${cruisingWatts}W avg)`}
+                              label={`⚡ Inverter (${isCustomCruising ? `Custom ~${cruisingWatts}W` : `~${cruisingWatts}W avg`})`}
                               size="small"
                               sx={{
                                 fontWeight: 800,

@@ -29,15 +29,13 @@ export function sanitizeAndReconcileSpecs(d: any): {
 } {
   let cat = String(d.category || 'Other').trim();
   // Normalize categories to standard PowerForecast catalog
-  if (/fan/i.test(cat)) cat = 'Electric Fans';
+  if (/fan|ventilat|exhaust/i.test(cat)) cat = 'Electric Fans & Cooling';
   else if (/condition|aircon|split|window/i.test(cat)) cat = 'Air Conditioners';
   else if (/refrig|freezer|chiller/i.test(cat)) cat = 'Refrigerators & Freezers';
-  else if (/tv|television|screen|display/i.test(cat)) cat = 'Television Sets';
-  else if (/wash|dryer|laundry/i.test(cat)) cat = 'Clothes Washing Machines';
-  else if (/light|lamp|bulb|led/i.test(cat)) cat = 'Lighting Products';
-  else if (/cook|rice|microwave|oven|blender|kettle|air\s*fry/i.test(cat)) cat = 'Kitchen Appliances';
-  else if (/water|heater|shower|pump/i.test(cat)) cat = 'Water Heaters & Pumps';
-  else if (/computer|pc|laptop|printer|monitor/i.test(cat)) cat = 'Computers & Office';
+  else if (/wash|dryer|laundry/i.test(cat)) cat = 'Laundry & Cleaning';
+  else if (/cook|rice|microwave|oven|blender|kettle|air\s*fry|kitchen/i.test(cat)) cat = 'Kitchen & Cooking';
+  else if (/tv|television|screen|display|computer|pc|laptop|printer|monitor/i.test(cat)) cat = 'Entertainment & Work';
+  else cat = 'Lighting & Other';
 
   const isInverter = Boolean(
     d.is_inverter === true ||

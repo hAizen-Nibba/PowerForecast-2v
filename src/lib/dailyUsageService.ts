@@ -32,6 +32,49 @@ export interface ApplianceKwhOptions {
   name?: string;
   model?: string;
   ai_metadata?: Record<string, any>;
+  cruising_watts?: number;
+}
+
+/**
+ * Checks if an appliance category supports Inverter compressor or motor duty cycles
+ */
+export function isCompressorInverterCategory(category: string = ""): boolean {
+  const c = category.toLowerCase();
+  return (
+    c.includes("air condition") ||
+    c.includes("aircon") ||
+    c.includes("refrigerat") ||
+    c.includes("freezer") ||
+    c.includes("chiller") ||
+    c.includes("wash") ||
+    c.includes("laundry")
+  );
+}
+
+/**
+ * Normalizes legacy category strings into the 7 streamlined everyday categories
+ */
+export function normalizeApplianceCategory(category: string = ""): string {
+  const c = category.toLowerCase().trim();
+  if (c.includes("condition") || c.includes("aircon") || c.includes("split") || c.includes("window")) {
+    return "Air Conditioners";
+  }
+  if (c.includes("refrig") || c.includes("freezer") || c.includes("chiller")) {
+    return "Refrigerators & Freezers";
+  }
+  if (c.includes("fan") || c.includes("ventilat") || c.includes("exhaust")) {
+    return "Electric Fans & Cooling";
+  }
+  if (c.includes("cook") || c.includes("rice") || c.includes("microwave") || c.includes("oven") || c.includes("blender") || c.includes("kettle") || c.includes("air fry") || c.includes("kitchen")) {
+    return "Kitchen & Cooking";
+  }
+  if (c.includes("wash") || c.includes("dryer") || c.includes("laundry") || c.includes("iron") || c.includes("vacuum")) {
+    return "Laundry & Cleaning";
+  }
+  if (c.includes("tv") || c.includes("televis") || c.includes("screen") || c.includes("computer") || c.includes("laptop") || c.includes("pc") || c.includes("office") || c.includes("sound") || c.includes("entertain")) {
+    return "Entertainment & Work";
+  }
+  return "Lighting & Other";
 }
 
 /**
@@ -67,21 +110,42 @@ export function calculateKwh(
   }
 
   const catLower = category.toLowerCase();
-  const isFridge = catLower.includes("refrigerat") || catLower.includes("fridge");
+  const isFridge = catLower.includes("refrigerat") || catLower.includes("fridge") || catLower.includes("freezer") || catLower.includes("chiller");
+  const isWasher = catLower.includes("wash") || catLower.includes("laundry");
+
+  // Custom user cruising wattage if provided (e.g. commercial chest freezer at 250W-350W instead of % of surge)
+  const customCruisingWatts =
+    options && typeof options === "object"
+      ? (Number(options.cruising_watts) > 0
+          ? Number(options.cruising_watts)
+          : Number(options.ai_metadata?.cruising_watts) > 0
+          ? Number(options.ai_metadata?.cruising_watts)
+          : undefined)
+      : undefined;
 
   if (isInverter) {
     if (isFridge) {
-      // 24/7 Linear Inverter Refrigerator ~35% continuous duty factor
-      return Number(((watts * qty * 0.35 * h) / 1000).toFixed(4));
+      // 24/7 Linear Inverter Refrigerator / Freezer: steady thermal maintenance (1/3 ~33.3% standard cycle or custom cruising watts)
+      // Without hourly pull-down cooldown spikes because closed fridges/freezers maintain thermal inertia
+      const runningWatts = customCruisingWatts !== undefined ? customCruisingWatts : (watts / 3);
+      return Number(((runningWatts * qty * h) / 1000).toFixed(4));
     }
+
+    if (isWasher) {
+      // Inverter Direct Drive variable motor (~50% variable cycle during active wash/spin)
+      const runningWatts = customCruisingWatts !== undefined ? customCruisingWatts : (watts * 0.50);
+      return Number(((runningWatts * qty * h) / 1000).toFixed(4));
+    }
+
     // Inverter AC / General Inverter Compressor time-decay:
     // 1st hour: 100% capacity (pull-down cooldown)
-    // Hours > 1: 42% cruising maintenance capacity
+    // Hours > 1: Cruising maintenance capacity (default 42% or custom user cruising wattage)
+    const cruisingWatts = customCruisingWatts !== undefined ? customCruisingWatts : (watts * 0.42);
     if (h <= 1) {
       return Number(((watts * qty * h) / 1000).toFixed(4));
     }
     const pullDownKwh = (watts * qty * 1) / 1000;
-    const cruisingKwh = (watts * qty * 0.42 * (h - 1)) / 1000;
+    const cruisingKwh = (cruisingWatts * qty * (h - 1)) / 1000;
     return Number((pullDownKwh + cruisingKwh).toFixed(4));
   }
 
@@ -107,6 +171,7 @@ export function calculateApplianceKwh(
     name: app.name,
     model: app.model,
     ai_metadata: app.ai_metadata,
+    cruising_watts: app.cruising_watts ?? app.ai_metadata?.cruising_watts,
   });
 }
 

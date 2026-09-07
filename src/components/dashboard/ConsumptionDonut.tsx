@@ -10,6 +10,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { UserAppliance, ApplianceList } from "../../types";
 import { PieChart as PieIcon } from "@mui/icons-material";
 import { useList } from "@refinedev/core";
+import { normalizeApplianceCategory } from "../../lib/dailyUsageService";
 
 interface ConsumptionDonutProps {
   appliances: UserAppliance[];
@@ -18,6 +19,11 @@ interface ConsumptionDonutProps {
 const CATEGORY_COLORS: Record<string, string> = {
   "Air Conditioners": "#00e5c9",
   "Refrigerators & Freezers": "#26c6da",
+  "Electric Fans & Cooling": "#10b981",
+  "Kitchen & Cooking": "#f59e0b",
+  "Laundry & Cleaning": "#fbbf24",
+  "Entertainment & Work": "#06b6d4",
+  "Lighting & Other": "#38bdf8",
   "Television Sets": "#06b6d4",
   "Electric Fans": "#10b981",
   "Washing Machines": "#fbbf24",
@@ -40,7 +46,8 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
   const spaceTotals: Record<string, number> = {};
 
   appliances.forEach((app) => {
-    const cat = app.category || "Other";
+    const rawCat = app.category || "Other";
+    const cat = normalizeApplianceCategory(rawCat);
     const watts = Number(app.watts) || 0;
     const hours = Number(app.hours_per_day) || 0;
     const days = Number(app.days_per_month) || 30;

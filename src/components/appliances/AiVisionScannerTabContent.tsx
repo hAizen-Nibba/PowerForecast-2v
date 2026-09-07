@@ -18,6 +18,7 @@ import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import InputAdornment from "@mui/material/InputAdornment";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import {
@@ -30,9 +31,13 @@ import {
   InfoOutlined as InfoIcon,
 } from "@mui/icons-material";
 import { analyzeMultipleApplianceImages, ImageItem } from "../../lib/visionService";
-import { VisionScanResult, UserAppliance, ApplianceList } from "../../types";
+import { VisionScanResult, UserAppliance, ApplianceList, STREAMLINED_CATEGORIES } from "../../types";
 import { useCreate, useUpdate, useList } from "@refinedev/core";
 import { getDefaultStartHour } from "../../lib/loadCurveService";
+import {
+  isCompressorInverterCategory,
+  normalizeApplianceCategory,
+} from "../../lib/dailyUsageService";
 import { devLog } from "../../lib/devLogger";
 import { DuplicateApplianceModal } from "./DuplicateApplianceModal";
 
@@ -62,9 +67,10 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
   const [editModel, setEditModel] = useState("");
   const [editWatts, setEditWatts] = useState<number>(70);
   const [editMonthlyKwh, setEditMonthlyKwh] = useState<number>(16.8);
-  const [editCategory, setEditCategory] = useState("Electric Fans");
+  const [editCategory, setEditCategory] = useState("Electric Fans & Cooling");
   const [editRoom, setEditRoom] = useState("Living Room");
   const [editIsInverter, setEditIsInverter] = useState<boolean>(true);
+  const [editCustomCruisingWatts, setEditCustomCruisingWatts] = useState<number | "">("");
 
   // Duplicate modal states
   const [duplicateIncoming, setDuplicateIncoming] = useState<Partial<UserAppliance> | null>(null);
@@ -170,23 +176,30 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
       return;
     }
     const targetSpace = spaces.find((s) => s.id === targetListId);
+    const normalizedCat = normalizeApplianceCategory(editCategory);
+    const isCustomCruising = editCustomCruisingWatts !== "" && Number(editCustomCruisingWatts) > 0;
 
     const incomingPayload: Partial<UserAppliance> = {
       name: editName || "Scanned Appliance",
-      category: editCategory,
+      category: normalizedCat,
       brand: editBrand,
       model: editModel,
       watts: editWatts,
       quantity: 1,
       hours_per_day: 8,
       days_per_month: 30,
-      start_hour: getDefaultStartHour(editCategory),
+      start_hour: getDefaultStartHour(normalizedCat),
       room_location: editRoom,
       energy_rating: scanResult?.detected_energy_rating || `${scanResult?.detected_star_rating || 5}-Star (AI Scan)`,
       is_inverter: editIsInverter,
+      cruising_watts: editIsInverter && isCustomCruising ? Number(editCustomCruisingWatts) : undefined,
       monthly_kwh: editMonthlyKwh,
       list_id: targetListId,
       tariff_type: targetSpace?.tariff_type || "residential",
+      ai_metadata: {
+        ...(scanResult?.detected_model ? { detected_model: scanResult.detected_model } : {}),
+        ...(editIsInverter && isCustomCruising ? { cruising_watts: Number(editCustomCruisingWatts) } : {}),
+      },
     };
 
     // Check if duplicate already exists in target space
@@ -495,19 +508,22 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
                   fullWidth
                   size="small"
                   label="Category"
-                  value={editCategory}
-                  onChange={(e) => setEditCategory(e.target.value)}
+                  value={normalizeApplianceCategory(editCategory)}
+                  onChange={(e) => {
+                    const newCat = e.target.value;
+                    setEditCategory(newCat);
+                    if (!isCompressorInverterCategory(newCat)) {
+                      setEditIsInverter(false);
+                    } else {
+                      setEditIsInverter(true);
+                    }
+                  }}
                 >
-                  <MenuItem value="Air Conditioners">Air Conditioners</MenuItem>
-                  <MenuItem value="Refrigerators & Freezers">Refrigerators & Freezers</MenuItem>
-                  <MenuItem value="Television Sets">Television Sets</MenuItem>
-                  <MenuItem value="Electric Fans">Electric Fans</MenuItem>
-                  <MenuItem value="Clothes Washing Machines">Clothes Washing Machines</MenuItem>
-                  <MenuItem value="Lighting Products">Lighting Products</MenuItem>
-                  <MenuItem value="Kitchen Appliances">Kitchen Appliances</MenuItem>
-                  <MenuItem value="Water Heaters & Pumps">Water Heaters & Pumps</MenuItem>
-                  <MenuItem value="Computers & Office">Computers & Office</MenuItem>
-                  <MenuItem value="Other">Other</MenuItem>
+                  {STREAMLINED_CATEGORIES.map((cat) => (
+                    <MenuItem key={cat} value={cat}>
+                      {cat}
+                    </MenuItem>
+                  ))}
                 </TextField>
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -554,60 +570,141 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
               </Grid>
 
               {/* INVERTER FALLBACK INTERACTIVE SWITCH */}
-              <Grid size={12}>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    borderRadius: 1.5,
-                    bgcolor: editIsInverter
-                      ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.05)" : "rgba(13, 148, 136, 0.04)")
-                      : "action.hover",
-                    borderColor: editIsInverter
-                      ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)")
-                      : "divider",
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <BoltIcon sx={{ color: editIsInverter ? "primary.main" : "text.secondary", fontSize: 20 }} />
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: editIsInverter ? "primary.main" : "text.primary" }}>
-                          ⚡ Inverter Compressor Mode
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                          {editIsInverter
-                            ? "AI detected Inverter technology — cruising duty cycle active"
-                            : "Standard non-inverter fixed speed (100% constant)"}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={editIsInverter}
-                          onChange={(e) => setEditIsInverter(e.target.checked)}
-                          color="primary"
-                          size="medium"
-                        />
-                      }
-                      label={
-                        <Typography variant="body2" sx={{ fontWeight: 800, color: editIsInverter ? "primary.main" : "text.secondary" }}>
-                          {editIsInverter ? "INVERTER ON" : "INVERTER OFF"}
-                        </Typography>
-                      }
-                      sx={{ m: 0 }}
-                    />
-                  </Box>
+              {isCompressorInverterCategory(editCategory) && (() => {
+                const isFridge = editCategory.toLowerCase().includes("refrig") || editCategory.toLowerCase().includes("freezer") || editCategory.toLowerCase().includes("chiller");
+                const isWasher = editCategory.toLowerCase().includes("wash") || editCategory.toLowerCase().includes("laundry");
+                const defaultCruisingWatts = isFridge
+                  ? Math.round(editWatts / 3)
+                  : isWasher
+                  ? Math.round(editWatts * 0.50)
+                  : Math.round(editWatts * 0.42);
+                const activeCruisingWatts = editCustomCruisingWatts !== "" && Number(editCustomCruisingWatts) > 0 ? Number(editCustomCruisingWatts) : defaultCruisingWatts;
+                const isCustomCruising = editCustomCruisingWatts !== "" && Number(editCustomCruisingWatts) > 0 && Number(editCustomCruisingWatts) !== defaultCruisingWatts;
+                const cruisingPercent = editWatts > 0 ? ((activeCruisingWatts / editWatts) * 100).toFixed(1) : "0";
 
-                  <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, mt: 1.5, pt: 1, borderTop: "1px dashed", borderColor: "divider" }}>
-                    <InfoIcon sx={{ fontSize: 16, color: "text.secondary", mt: 0.25 }} />
-                    <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.4 }}>
-                      <strong>Bakit mahalaga ito?</strong> Na-detect ng Gemini AI na Inverter ang unit na ito. Pag lumamig na ang kwarto, bababa ang compressor sa cruising mode (~42% power). Kung fixed-speed (ordinary) ang unit mo, i-toggle lang ito ng <strong>OFF</strong> bago i-save.
-                    </Typography>
-                  </Box>
-                </Paper>
-              </Grid>
+                return (
+                  <Grid size={12}>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 2,
+                        borderRadius: 1.5,
+                        bgcolor: editIsInverter
+                          ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.05)" : "rgba(13, 148, 136, 0.04)")
+                          : "action.hover",
+                        borderColor: editIsInverter
+                          ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)")
+                          : "divider",
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <BoltIcon sx={{ color: editIsInverter ? "primary.main" : "text.secondary", fontSize: 20 }} />
+                          <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: editIsInverter ? "primary.main" : "text.primary" }}>
+                              ⚡ {isFridge ? "Inverter Compressor & Thermal Duty" : isWasher ? "Inverter Direct Drive Motor" : "Inverter Technology & Duty Cycle"}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                              {editIsInverter
+                                ? isFridge
+                                  ? "Smart continuous thermal maintenance & cruising efficiency active"
+                                  : isWasher
+                                  ? "Smart variable-speed drum motor efficiency active"
+                                  : "Smart compressor time-decay & cruising efficiency active"
+                                : "Standard non-inverter fixed speed (100% constant)"}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={editIsInverter}
+                              onChange={(e) => setEditIsInverter(e.target.checked)}
+                              color="primary"
+                              size="medium"
+                            />
+                          }
+                          label={
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: editIsInverter ? "primary.main" : "text.secondary" }}>
+                              {editIsInverter ? "INVERTER ON" : "INVERTER OFF"}
+                            </Typography>
+                          }
+                          sx={{ m: 0 }}
+                        />
+                      </Box>
+
+                      {editIsInverter && (
+                        <Box sx={{ mt: 1.5, pt: 1.5, borderTop: "1px dashed", borderColor: "divider", display: "flex", flexDirection: "column", gap: 1.25 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+                            {isFridge ? (
+                              <Chip size="small" label="Thermal Duty: Steady Cruising (1/3 Cycle)" sx={{ fontWeight: 700, fontSize: "0.6875rem" }} />
+                            ) : (
+                              <Chip size="small" label={`1st Hr Cooldown: ${editWatts}W (100%)`} sx={{ fontWeight: 700, fontSize: "0.6875rem" }} />
+                            )}
+                            <Chip
+                              size="small"
+                              label={`Cruising Mode: ~${activeCruisingWatts}W avg${isCustomCruising ? " (Custom)" : isFridge ? " (~33%)" : isWasher ? " (~50%)" : " (~42%)"}`}
+                              color="primary"
+                              variant="outlined"
+                              sx={{ fontWeight: 700, fontSize: "0.6875rem" }}
+                            />
+                          </Box>
+
+                          <Box sx={{ p: 1.25, borderRadius: 1, bgcolor: "action.hover", border: "1px solid", borderColor: "divider" }}>
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1, mb: 1 }}>
+                              <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                                {isFridge ? "Running / Cruising Power (Watts)" : "Cruising Power (Watts)"}
+                              </Typography>
+                              {isCustomCruising && (
+                                <Button
+                                  size="small"
+                                  variant="text"
+                                  onClick={() => setEditCustomCruisingWatts("")}
+                                  sx={{ fontSize: "0.6875rem", p: 0, minWidth: "auto", textTransform: "none", color: "primary.main", fontWeight: 700 }}
+                                >
+                                  Reset to Auto ({isFridge ? "~33%" : isWasher ? "~50%" : "~42%"})
+                                </Button>
+                              )}
+                            </Box>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+                              <TextField
+                                type="number"
+                                size="small"
+                                value={editCustomCruisingWatts !== "" ? editCustomCruisingWatts : defaultCruisingWatts}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setEditCustomCruisingWatts(val === "" ? "" : Math.max(0, Number(val)));
+                                }}
+                                slotProps={{
+                                  input: {
+                                    endAdornment: <InputAdornment position="end">W</InputAdornment>,
+                                  },
+                                }}
+                                sx={{ width: 140 }}
+                              />
+                              <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
+                                {activeCruisingWatts}W ({cruisingPercent}% of {editWatts}W rated)
+                                {isCustomCruising ? " • Custom Override" : ` • Smart Auto (${isFridge ? "~33%" : isWasher ? "~50%" : "~42%"})`}
+                              </Typography>
+                            </Box>
+                          </Box>
+
+                          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                            <InfoIcon sx={{ fontSize: 16, color: "text.secondary", mt: 0.25 }} />
+                            <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.4 }}>
+                              {isFridge
+                                ? "Na-detect ng Gemini AI na Inverter ang unit na ito. Tumatakbo ito sa mababang cruising draw (~33% o custom watts mo tulad ng 200W–350W sa chest freezers) para imantina ang lamig."
+                                : isWasher
+                                ? "Na-detect ng Gemini AI na Inverter ang unit na ito. Variable-speed motor ang ginagamit nito para makatipid sa kuryente."
+                                : "Na-detect ng Gemini AI na Inverter ang unit na ito. Pag lumamig na ang kwarto, bababa ang compressor sa cruising mode (~42% o custom draw mo). Kung fixed-speed ito, i-toggle lang ng OFF bago i-save."}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      )}
+                    </Paper>
+                  </Grid>
+                );
+              })()}
             </Grid>
           </Paper>
 

@@ -32,10 +32,23 @@ export interface UserAppliance {
   is_currently_on?: boolean;
   last_turned_on_at?: string | null;
   is_inverter?: boolean;
+  cruising_watts?: number;
   ai_metadata?: Record<string, any>;
   created_at?: string;
   updated_at?: string;
 }
+
+export const STREAMLINED_CATEGORIES = [
+  "Air Conditioners",
+  "Refrigerators & Freezers",
+  "Electric Fans & Cooling",
+  "Kitchen & Cooking",
+  "Laundry & Cleaning",
+  "Entertainment & Work",
+  "Lighting & Other",
+] as const;
+
+export type StreamlinedCategory = (typeof STREAMLINED_CATEGORIES)[number];
 
 export interface ApplianceUsageLog {
   id: string;

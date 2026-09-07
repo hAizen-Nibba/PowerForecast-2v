@@ -29,6 +29,7 @@ import { PELP_CATEGORIES, searchPelpDatabase } from "../../lib/pelpService";
 import { PelpItem, ApplianceList, UserAppliance } from "../../types";
 import { useCreate, useList, useUpdate } from "@refinedev/core";
 import { getDefaultStartHour } from "../../lib/loadCurveService";
+import { normalizeApplianceCategory } from "../../lib/dailyUsageService";
 import { DuplicateApplianceModal } from "./DuplicateApplianceModal";
 import { ApplianceRoutineModal } from "./ApplianceRoutineModal";
 
@@ -118,9 +119,10 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
       item.star_rating === 5
     );
 
+    const normalizedCat = normalizeApplianceCategory(item.category);
     const incomingPayload: Partial<UserAppliance> = {
       name: `${item.brand} ${item.model}`,
-      category: item.category,
+      category: normalizedCat,
       brand: item.brand,
       model: item.model,
       control_no: item.control_no,
@@ -128,7 +130,7 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
       quantity: 1,
       hours_per_day: 8,
       days_per_month: 30,
-      start_hour: getDefaultStartHour(item.category),
+      start_hour: getDefaultStartHour(normalizedCat),
       room_location: room,
       energy_rating: `${item.star_rating || 5}-Star (PELP)`,
       is_inverter: isInverter,

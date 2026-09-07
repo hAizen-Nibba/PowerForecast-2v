@@ -38,8 +38,18 @@ export interface SystemChangelogEntry {
   source?: "github" | "database" | "local";
 }
 
-// Master compiled GitHub deployment history covering all releases from 2.1.1v to 3.2.2v
+// Master compiled GitHub deployment history covering all releases
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
+  {
+    id: "3.2.4v",
+    version: "3.2.4v",
+    git_commit_tag: "3.2.4v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.2.4v - Implement Manual Cruising Wattage Input, 1/3 Duty-Cycle Calibrated Refrigeration Engine, Category-Adaptive Inverter Logic, and 7 Streamlined Everyday Appliance Categories.",
+  },
   {
     id: "3.2.2v",
     version: "3.2.2v",

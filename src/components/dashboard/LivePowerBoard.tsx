@@ -66,20 +66,23 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
   }, [spaces]);
 
   const getCategoryIcon = (category: string) => {
-    switch (category?.toLowerCase()) {
-      case "air conditioners":
-        return <WindIcon fontSize="small" sx={{ color: "primary.light" }} />;
-      case "refrigerators & freezers":
-        return <RefrigeratorIcon fontSize="small" sx={{ color: "primary.light" }} />;
-      case "television sets":
-        return <TvIcon fontSize="small" sx={{ color: "primary.light" }} />;
-      case "electric fans":
-        return <SpeedIcon fontSize="small" sx={{ color: "primary.light" }} />;
-      case "washing machines":
-        return <WashingMachineIcon fontSize="small" sx={{ color: "primary.light" }} />;
-      default:
-        return <LightbulbIcon fontSize="small" sx={{ color: "primary.light" }} />;
+    const c = category?.toLowerCase() || "";
+    if (c.includes("air condition") || c.includes("aircon")) {
+      return <WindIcon fontSize="small" sx={{ color: "primary.light" }} />;
     }
+    if (c.includes("refrigerat") || c.includes("freezer") || c.includes("chiller")) {
+      return <RefrigeratorIcon fontSize="small" sx={{ color: "primary.light" }} />;
+    }
+    if (c.includes("fan") || c.includes("cool")) {
+      return <SpeedIcon fontSize="small" sx={{ color: "primary.light" }} />;
+    }
+    if (c.includes("wash") || c.includes("laundry")) {
+      return <WashingMachineIcon fontSize="small" sx={{ color: "primary.light" }} />;
+    }
+    if (c.includes("tv") || c.includes("televis") || c.includes("computer") || c.includes("entertain") || c.includes("office")) {
+      return <TvIcon fontSize="small" sx={{ color: "primary.light" }} />;
+    }
+    return <LightbulbIcon fontSize="small" sx={{ color: "primary.light" }} />;
   };
 
   const togglePower = async (app: UserAppliance) => {
