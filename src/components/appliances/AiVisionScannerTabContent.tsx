@@ -165,6 +165,10 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
 
   const handleSaveToInventory = () => {
     const targetListId = selectedListId || (spaces[0]?.id ?? null);
+    if (!targetListId) {
+      setScanError("A space is required to save appliances. Please create a space first in the Manual Entry tab.");
+      return;
+    }
     const targetSpace = spaces.find((s) => s.id === targetListId);
 
     const incomingPayload: Partial<UserAppliance> = {
@@ -263,6 +267,12 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
         </Alert>
       )}
 
+      {spaces.length === 0 && (
+        <Alert severity="warning" sx={{ borderRadius: 1 }}>
+          A space is required to save AI scanned appliances. Please create a space first in the Manual Entry tab.
+        </Alert>
+      )}
+
       {/* Preset Mode Selector & Space / Key Controls */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
         <FormControl size="small" sx={{ minWidth: 220 }}>
@@ -279,11 +289,11 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
         </FormControl>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          {spaces.length > 1 && onSelectedListIdChange && (
+          {spaces.length > 0 && onSelectedListIdChange && (
             <FormControl size="small" sx={{ minWidth: 160 }}>
               <InputLabel>Target Space</InputLabel>
               <Select
-                value={selectedListId}
+                value={selectedListId || spaces[0]?.id || ""}
                 label="Target Space"
                 onChange={(e) => onSelectedListIdChange(e.target.value)}
               >

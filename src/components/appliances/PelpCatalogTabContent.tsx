@@ -9,6 +9,7 @@ import Chip from "@mui/material/Chip";
 import Card from "@mui/material/Card";
 import InputAdornment from "@mui/material/InputAdornment";
 import CircularProgress from "@mui/material/CircularProgress";
+import Alert from "@mui/material/Alert";
 import {
   Search as SearchIcon,
   Download as ImportIcon,
@@ -88,6 +89,10 @@ export const PelpCatalogTabContent: React.FC<PelpCatalogTabContentProps> = ({
     if (item.category.includes("Refrigerat") || item.category.includes("Kitchen")) room = "Kitchen";
 
     const targetListId = selectedListId || (spaces[0]?.id ?? null);
+    if (!targetListId) {
+      alert("A space is required to import catalog appliances. Please create a space first in the Manual Entry tab.");
+      return;
+    }
     const targetSpace = spaces.find((s) => s.id === targetListId);
 
     const isInverter = Boolean(
@@ -111,25 +116,23 @@ export const PelpCatalogTabContent: React.FC<PelpCatalogTabContentProps> = ({
       days_per_month: 30,
       start_hour: getDefaultStartHour(item.category),
       room_location: room,
-      energy_rating: `${item.star_rating || 5}-Star (PELP)`,
+      energy_rating: `${item.star_rating || 5}-Star (PELP Certified)`,
       is_inverter: isInverter,
       monthly_kwh: monthlyKwh,
       list_id: targetListId,
       tariff_type: targetSpace?.tariff_type || "residential",
+      source: "pelp_db",
     };
 
-    // Check if duplicate already exists in this space
+    // Check if duplicate already exists in the target space
     const existing = appliances.find((a) => {
       const isSameSpace = a.list_id === targetListId || (!a.list_id && spaces.find((s) => s.id === targetListId)?.is_default);
       if (!isSameSpace) return false;
 
-      const isMatchModel =
-        a.brand?.trim().toLowerCase() === item.brand?.trim().toLowerCase() &&
-        a.model?.trim().toLowerCase() === item.model?.trim().toLowerCase();
-      const isMatchName = a.name?.toLowerCase().includes(`${item.brand} ${item.model}`.toLowerCase());
-      const isMatchControl = a.control_no && a.control_no === item.control_no;
-
-      return isMatchModel || isMatchName || isMatchControl;
+      const isSameControl = a.control_no && a.control_no === item.control_no;
+      const isSameModel =
+        a.brand?.toLowerCase() === item.brand.toLowerCase() && a.model?.toLowerCase() === item.model.toLowerCase();
+      return isSameControl || isSameModel;
     });
 
     if (existing) {
@@ -162,26 +165,19 @@ export const PelpCatalogTabContent: React.FC<PelpCatalogTabContentProps> = ({
     );
   };
 
-  const handleAddDistinct = (payload: Partial<UserAppliance>) => {
-    createAppliance(
-      {
-        resource: "user_appliances",
-        values: payload,
-      },
-      {
-        onSuccess: () => {
-          setImportedControlNo(payload.control_no || payload.name || null);
-          setTimeout(() => setImportedControlNo(null), 3000);
-        },
-      }
-    );
-  };
-
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
       {/* Search & Category Filter */}
       <Grid container spacing={2}>
-        {spaces.length > 1 && onSelectedListIdChange && (
+        {spaces.length === 0 && (
+          <Grid size={12}>
+            <Alert severity="warning" sx={{ borderRadius: 1.5 }}>
+              A space is required to import PELP catalog appliances. Please create a space first in the Manual Entry tab.
+            </Alert>
+          </Grid>
+        )}
+
+        {spaces.length > 0 && onSelectedListIdChange && (
           <Grid size={12}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.5, bgcolor: "action.hover", borderRadius: 1.5, border: "1px solid", borderColor: "divider" }}>
               <Typography variant="caption" sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>
@@ -190,7 +186,7 @@ export const PelpCatalogTabContent: React.FC<PelpCatalogTabContentProps> = ({
               <TextField
                 select
                 size="small"
-                value={selectedListId}
+                value={selectedListId || spaces[0]?.id || ""}
                 onChange={(e) => onSelectedListIdChange(e.target.value)}
                 sx={{ minWidth: 260 }}
               >

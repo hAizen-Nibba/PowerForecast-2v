@@ -29,6 +29,7 @@ import {
   CameraAlt as CameraIcon,
   InfoOutlined as InfoIcon,
   ElectricMeter as MeterIcon,
+  Add as PlusIcon,
 } from "@mui/icons-material";
 import { UserAppliance, ApplianceList } from "../../types";
 import { useCreate, useUpdate, useList } from "@refinedev/core";
@@ -36,6 +37,7 @@ import { getDefaultStartHour } from "../../lib/loadCurveService";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
 import { calculateKwh } from "../../lib/dailyUsageService";
 import { DuplicateApplianceModal } from "./DuplicateApplianceModal";
+import { SpaceManagementModal } from "./SpaceManagementModal";
 import { PelpCatalogTabContent } from "./PelpCatalogTabContent";
 import { AiVisionScannerTabContent } from "./AiVisionScannerTabContent";
 
@@ -70,6 +72,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
   const [energyRating, setEnergyRating] = useState("5-Star Inverter");
   const [isInverter, setIsInverter] = useState<boolean>(true);
   const [selectedListId, setSelectedListId] = useState<string>("");
+  const [isSpaceModalOpen, setIsSpaceModalOpen] = useState(false);
 
   // Duplicate modal states
   const [duplicateIncoming, setDuplicateIncoming] = useState<Partial<UserAppliance> | null>(null);
@@ -152,6 +155,10 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
     if (!name.trim()) return;
 
     const targetListId = selectedListId || (spaces[0]?.id ?? null);
+    if (!targetListId) {
+      setIsSpaceModalOpen(true);
+      return;
+    }
     const targetSpace = spaces.find((s) => s.id === targetListId);
 
     const payload: Partial<UserAppliance> = {
@@ -348,16 +355,59 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
             <form id="manual-appliance-form" onSubmit={handleSubmitManual}>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
                 {/* Space / List Selection */}
-                {spaces.length > 1 && (
+                {spaces.length === 0 ? (
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 2,
+                      borderRadius: 1.5,
+                      bgcolor: "action.hover",
+                      borderColor: "warning.main",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 2,
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "warning.main" }}>
+                        Space Required
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                        You must create a space first (e.g. Home, Office, or Shop) before adding appliances.
+                      </Typography>
+                    </Box>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      color="warning"
+                      startIcon={<PlusIcon />}
+                      onClick={() => setIsSpaceModalOpen(true)}
+                    >
+                      Create Space
+                    </Button>
+                  </Paper>
+                ) : (
                   <Box>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 1 }}>
-                      TARGET SPACE
-                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
+                        TARGET SPACE
+                      </Typography>
+                      <Button
+                        size="small"
+                        variant="text"
+                        startIcon={<PlusIcon fontSize="small" />}
+                        onClick={() => setIsSpaceModalOpen(true)}
+                        sx={{ fontSize: "0.75rem", p: 0, textTransform: "none", fontWeight: 700 }}
+                      >
+                        Add New Space
+                      </Button>
+                    </Box>
                     <TextField
                       select
                       fullWidth
                       size="small"
-                      value={selectedListId}
+                      value={selectedListId || spaces[0]?.id || ""}
                       onChange={(e) => setSelectedListId(e.target.value)}
                       helperText={`Tariff Applied: ${tariffType === "commercial" ? "Commercial (General Power)" : "Residential (230V Stepped)"}`}
                     >
@@ -685,6 +735,17 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
           onAddDistinct={handleAddDistinct}
         />
       )}
+
+      {/* In-Modal Space Creation Modal */}
+      <SpaceManagementModal
+        isOpen={isSpaceModalOpen}
+        onClose={() => setIsSpaceModalOpen(false)}
+        onCreated={(newSpace) => {
+          if (newSpace?.id) {
+            setSelectedListId(newSpace.id);
+          }
+        }}
+      />
     </>
   );
 };

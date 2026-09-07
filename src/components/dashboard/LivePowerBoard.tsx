@@ -291,10 +291,12 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
         {appliances.length === 0 ? (
           <Box sx={{ py: 6, textAlign: "center" }}>
             <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
-              No appliances configured in your household yet.
+              {spaces.length === 0
+                ? "Set up your first space to start adding appliances."
+                : "No appliances configured in your household yet."}
             </Typography>
             <Button variant="contained" size="small" onClick={onOpenAddModal} startIcon={<PlusIcon />}>
-              Add First Appliance
+              {spaces.length === 0 ? "Set Up Space & Add Appliance" : "Add First Appliance"}
             </Button>
           </Box>
         ) : (

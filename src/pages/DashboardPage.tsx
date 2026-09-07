@@ -29,18 +29,24 @@ import { ConsumptionDonut } from "../components/dashboard/ConsumptionDonut";
 import { TodayActivityTimeline } from "../components/dashboard/TodayActivityTimeline";
 import { ApplianceModal } from "../components/appliances/ApplianceModal";
 import { PelpCatalogModal } from "../components/appliances/PelpCatalogModal";
+import { SpaceManagementModal } from "../components/appliances/SpaceManagementModal";
 import { AiVisionScannerModal } from "../components/vision/AiVisionScannerModal";
 import { useList } from "@refinedev/core";
 import { UserAppliance, ApplianceList } from "../types";
 import { calculateMeralcoBill } from "../lib/meralcoCalculator";
 import { useNotifications } from "../hooks/useNotifications";
 import { useLanguage } from "../context/LanguageContext";
+import { useToast } from "../components/common/ToastProvider";
 
 export const DashboardPage: React.FC = () => {
   const { t } = useLanguage();
+  const { showSuccess } = useToast();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPelpModalOpen, setIsPelpModalOpen] = useState(false);
   const [isAiScannerOpen, setIsAiScannerOpen] = useState(false);
+  const [isSpaceModalOpen, setIsSpaceModalOpen] = useState(false);
+  const [pendingAddApplianceAfterSpace, setPendingAddApplianceAfterSpace] = useState(false);
+  const [selectedSpaceIdForAdd, setSelectedSpaceIdForAdd] = useState<string | null>(null);
 
   const listResponse = useList<UserAppliance>({
     resource: "user_appliances",
@@ -52,6 +58,16 @@ export const DashboardPage: React.FC = () => {
 
   const appliances: UserAppliance[] = listResponse?.data?.data || listResponse?.result?.data || [];
   const spaces: ApplianceList[] = spacesResponse?.data?.data || spacesResponse?.result?.data || [];
+
+  const handleOpenAddModal = () => {
+    if (spaces.length === 0) {
+      setPendingAddApplianceAfterSpace(true);
+      setIsSpaceModalOpen(true);
+    } else {
+      setSelectedSpaceIdForAdd(spaces[0]?.id || null);
+      setIsAddModalOpen(true);
+    }
+  };
 
   const runningAppliances = appliances.filter((a: UserAppliance) => a.is_currently_on);
   const activeWattage = runningAppliances.reduce(
@@ -372,7 +388,7 @@ export const DashboardPage: React.FC = () => {
       {/* 4. Main Grid: Live Power Board & Energy Distribution Donut */}
       <Grid container spacing={{ xs: 2.5, sm: 3 }}>
         <Grid size={{ xs: 12, lg: 8 }} data-tour="dashboard-live-board">
-          <LivePowerBoard onOpenAddModal={() => setIsAddModalOpen(true)} />
+          <LivePowerBoard onOpenAddModal={handleOpenAddModal} />
         </Grid>
         <Grid size={{ xs: 12, lg: 4 }} data-tour="dashboard-donut">
           <ConsumptionDonut appliances={appliances} />
@@ -457,8 +473,30 @@ export const DashboardPage: React.FC = () => {
       {/* Global Add Appliance Modal */}
       <ApplianceModal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        defaultListId={spaces[0]?.id || null}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setSelectedSpaceIdForAdd(null);
+        }}
+        defaultListId={selectedSpaceIdForAdd || spaces[0]?.id || null}
+      />
+
+      {/* Dashboard Space Setup Modal (Opens when no spaces exist or user adds a space) */}
+      <SpaceManagementModal
+        isOpen={isSpaceModalOpen}
+        onClose={() => {
+          setIsSpaceModalOpen(false);
+          setPendingAddApplianceAfterSpace(false);
+        }}
+        onCreated={(newSpace) => {
+          if (newSpace?.id) {
+            showSuccess(`Space "${newSpace.name}" created successfully! Now let's add your first appliance.`);
+            if (pendingAddApplianceAfterSpace) {
+              setSelectedSpaceIdForAdd(newSpace.id);
+              setIsAddModalOpen(true);
+              setPendingAddApplianceAfterSpace(false);
+            }
+          }
+        }}
       />
     </Box>
   );

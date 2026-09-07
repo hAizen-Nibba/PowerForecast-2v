@@ -32,6 +32,7 @@ interface SpaceManagementModalProps {
   canDelete?: boolean;
   fallbackSpace?: ApplianceList | null;
   onDeleted?: (spaceId: string) => void;
+  onCreated?: (newSpace: ApplianceList) => void;
 }
 
 export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
@@ -41,6 +42,7 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
   canDelete = false,
   fallbackSpace,
   onDeleted,
+  onCreated,
 }) => {
   const [name, setName] = useState("");
   const [tariffType, setTariffType] = useState<"residential" | "commercial">("residential");
@@ -90,7 +92,13 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
           },
         },
         {
-          onSuccess: () => onClose(),
+          onSuccess: (data: any) => {
+            const created = data?.data;
+            if (created && onCreated) {
+              onCreated(created);
+            }
+            onClose();
+          },
         }
       );
     }
