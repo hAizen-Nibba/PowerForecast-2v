@@ -1,10 +1,27 @@
 import json
+import math
 from http.server import BaseHTTPRequestHandler
 
+def _to_safe_float(val, default=0.0):
+    if val is None:
+        return float(default)
+    try:
+        f = float(val)
+        if math.isnan(f) or math.isinf(f):
+            return float(default)
+        return max(0.0, f)
+    except (ValueError, TypeError):
+        return float(default)
+
 def compute_bill(kwh, gen_rate=7.12, other_charges=0.0):
-    kwh = float(kwh or 0)
-    gen_rate = float(gen_rate or 7.12)
-    other_charges = float(other_charges or 0)
+    kwh = _to_safe_float(kwh, 0.0)
+    gen_rate = _to_safe_float(gen_rate, 7.12)
+    other_charges = _to_safe_float(other_charges, 0.0)
+
+    # Upper bound sanity limits to prevent numerical overflow issues
+    kwh = min(kwh, 1_000_000.0)
+    gen_rate = min(gen_rate, 1_000.0)
+    other_charges = min(other_charges, 10_000_000.0)
 
     # 1. Generation
     gen_cost = round(kwh * gen_rate, 2)
@@ -35,7 +52,7 @@ def compute_bill(kwh, gen_rate=7.12, other_charges=0.0):
             "total_bill": total_bill,
             "energy_cost": energy_amount,
             "other_charges": other_charges,
-            "effective_rate_per_kwh": round(total_bill / max(1, kwh), 4)
+            "effective_rate_per_kwh": round(total_bill / max(1.0, kwh), 4)
         },
         "itemized": {
             "generation_charge": gen_cost,
@@ -57,12 +74,27 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
-        content_length = int(self.headers.get('Content-Length', 0))
-        body = self.rfile.read(content_length).decode('utf-8')
         try:
-            payload = json.loads(body) if body else {}
-        except Exception:
-            payload = {}
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length < 0:
+                content_length = 0
+        except (ValueError, TypeError):
+            content_length = 0
+
+        body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else ""
+        payload = {}
+        if body:
+            try:
+                payload = json.loads(body)
+                if not isinstance(payload, dict):
+                    payload = {}
+            except Exception:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "Invalid JSON payload format."}).encode('utf-8'))
+                return
 
         kwh = payload.get('kwh', 0)
         gen_rate = payload.get('generation_rate', 7.12)
