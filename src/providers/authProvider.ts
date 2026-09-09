@@ -22,11 +22,26 @@ export const authProvider: AuthProvider = {
 
       if (error) {
         devLog.warn("Auth", `Supabase login failed: ${error.message}`);
+        let formattedMessage = error.message || "Invalid email or password.";
+
+        try {
+          const { data: secData } = await supabaseClient.rpc("get_security_question", {
+            p_email: email.trim().toLowerCase(),
+          });
+          if (secData && secData.success === false && secData.error === "No account found with this email address.") {
+            formattedMessage = "No account found with this email address. Please create an account to get started.";
+          } else if (error.message?.toLowerCase().includes("invalid login credentials")) {
+            formattedMessage = "Incorrect password. Please verify your password or use password recovery.";
+          }
+        } catch {
+          // Fall back to default error
+        }
+
         return {
           success: false,
           error: {
             name: "LoginError",
-            message: error.message || "Invalid email or password.",
+            message: formattedMessage,
           },
         };
       }
@@ -83,7 +98,12 @@ export const authProvider: AuthProvider = {
   },
 
   register: async ({ email, password, name, householdType, securityQuestion, securityAnswer }: any) => {
-    if (!email || !password) {
+    const trimmedEmail = (email || "").trim().toLowerCase();
+    const trimmedPassword = (password || "").trim();
+    const trimmedAnswer = (securityAnswer || "").trim().toLowerCase();
+    const trimmedName = (name || "").trim();
+
+    if (!trimmedEmail || !trimmedPassword) {
       return {
         success: false,
         error: {
@@ -93,11 +113,43 @@ export const authProvider: AuthProvider = {
       };
     }
 
+    if (trimmedName) {
+      const nameRegex = /^[a-zA-Z\s-]+$/;
+      if (!nameRegex.test(trimmedName)) {
+        return {
+          success: false,
+          error: {
+            name: "RegisterError",
+            message: "Full Name can only contain letters, spaces, and hyphens.",
+          },
+        };
+      }
+    }
+
+    if (trimmedPassword.toLowerCase() === trimmedEmail) {
+      return {
+        success: false,
+        error: {
+          name: "RegisterError",
+          message: "Password cannot be identical to your email address.",
+        },
+      };
+    }
+
+    if (trimmedAnswer && trimmedAnswer === trimmedEmail) {
+      return {
+        success: false,
+        error: {
+          name: "RegisterError",
+          message: "Security answer cannot be your email address.",
+        },
+      };
+    }
+
     try {
-      const trimmedEmail = email.trim().toLowerCase();
       const { data, error } = await supabaseClient.auth.signUp({
         email: trimmedEmail,
-        password: password.trim(),
+        password: trimmedPassword,
         options: {
           data: {
             name: name?.trim() || trimmedEmail.split("@")[0],
@@ -112,11 +164,17 @@ export const authProvider: AuthProvider = {
 
       if (error) {
         devLog.warn("Auth", `Supabase registration failed: ${error.message}`);
+        const isDuplicate =
+          error.message?.toLowerCase().includes("already registered") ||
+          error.message?.toLowerCase().includes("already in use") ||
+          error.message?.toLowerCase().includes("user already exists");
         return {
           success: false,
           error: {
             name: "RegisterError",
-            message: error.message || "Failed to create account.",
+            message: isDuplicate
+              ? "This email is already registered. Please sign in or use password recovery."
+              : error.message || "Failed to create account.",
           },
         };
       }
@@ -128,7 +186,7 @@ export const authProvider: AuthProvider = {
           success: false,
           error: {
             name: "RegisterError",
-            message: "An account with this email address already exists. Please sign in or use password recovery.",
+            message: "This email is already registered. Please sign in or use password recovery.",
           },
         };
       }

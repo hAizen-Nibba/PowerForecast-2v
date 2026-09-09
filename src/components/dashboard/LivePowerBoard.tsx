@@ -323,13 +323,17 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
                       alignItems: "center",
                       justifyContent: "space-between",
                       gap: 1.5,
-                      borderColor: isOn ? "success.main" : "divider",
+                      borderColor: isOn
+                        ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.28)" : "rgba(13, 148, 136, 0.25)")
+                        : "divider",
                       bgcolor: isOn
-                        ? (theme) => (theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.12)" : "rgba(16, 185, 129, 0.06)")
+                        ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.05)" : "rgba(13, 148, 136, 0.04)")
                         : "transparent",
                       transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                       "&:hover": {
-                        borderColor: isOn ? "success.main" : "primary.main",
+                        borderColor: isOn
+                          ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.45)" : "rgba(13, 148, 136, 0.4)")
+                          : (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.35)" : "primary.main"),
                         transform: "translateY(-1px)",
                       },
                     }}

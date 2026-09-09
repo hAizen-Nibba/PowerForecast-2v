@@ -285,7 +285,16 @@ export const DashboardPage: React.FC = () => {
 
       {/* 3. Sub-Metering & Space Cost Allocation (When Multiple Spaces Exist) */}
       {spaces.length > 1 && (
-        <Card data-tour="dashboard-space-split" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 1.5, border: "1px solid", borderColor: "rgba(0, 229, 201, 0.25)" }}>
+        <Card
+          data-tour="dashboard-space-split"
+          sx={{
+            p: { xs: 2.5, sm: 3 },
+            borderRadius: 1.5,
+            border: "1px solid",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.18)" : "rgba(13, 148, 136, 0.18)",
+          }}
+        >
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1.5 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
               <Box sx={{ p: 1, borderRadius: 1, bgcolor: "primary.main", color: "#0c1b18", display: "flex" }}>

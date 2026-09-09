@@ -184,11 +184,20 @@ export const MeralcoCalculator: React.FC = () => {
                           borderRadius: 1.25,
                           cursor: "pointer",
                           textAlign: "center",
-                          border: "2px solid",
-                          borderColor: tariffType === "residential" ? "primary.main" : "divider",
-                          bgcolor: tariffType === "residential" ? "rgba(0, 229, 201, 0.08)" : "transparent",
+                          border: "1px solid",
+                          borderColor: (theme) =>
+                            tariffType === "residential"
+                              ? theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.35)" : "rgba(13, 148, 136, 0.35)"
+                              : "divider",
+                          bgcolor: (theme) =>
+                            tariffType === "residential"
+                              ? theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.06)" : "rgba(13, 148, 136, 0.05)"
+                              : "transparent",
                           transition: "all 0.15s ease",
-                          "&:hover": { borderColor: "primary.main" },
+                          "&:hover": {
+                            borderColor: (theme) =>
+                              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.45)" : "rgba(13, 148, 136, 0.45)",
+                          },
                         }}
                       >
                         <HomeIcon sx={{ color: tariffType === "residential" ? "primary.main" : "text.secondary", mb: 0.5 }} />
@@ -210,11 +219,20 @@ export const MeralcoCalculator: React.FC = () => {
                           borderRadius: 1.25,
                           cursor: "pointer",
                           textAlign: "center",
-                          border: "2px solid",
-                          borderColor: tariffType === "commercial" ? "secondary.main" : "divider",
-                          bgcolor: tariffType === "commercial" ? "rgba(244, 63, 94, 0.08)" : "transparent",
+                          border: "1px solid",
+                          borderColor: (theme) =>
+                            tariffType === "commercial"
+                              ? theme.palette.mode === "dark" ? "rgba(244, 63, 94, 0.4)" : "rgba(225, 29, 72, 0.35)"
+                              : "divider",
+                          bgcolor: (theme) =>
+                            tariffType === "commercial"
+                              ? theme.palette.mode === "dark" ? "rgba(244, 63, 94, 0.06)" : "rgba(244, 63, 94, 0.04)"
+                              : "transparent",
                           transition: "all 0.15s ease",
-                          "&:hover": { borderColor: "secondary.main" },
+                          "&:hover": {
+                            borderColor: (theme) =>
+                              theme.palette.mode === "dark" ? "rgba(244, 63, 94, 0.55)" : "rgba(225, 29, 72, 0.45)",
+                          },
                         }}
                       >
                         <StoreIcon sx={{ color: tariffType === "commercial" ? "secondary.main" : "text.secondary", mb: 0.5 }} />

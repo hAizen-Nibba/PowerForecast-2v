@@ -25,7 +25,6 @@ import {
   AccessTime as ClockIcon,
   Speed as SpeedIcon,
   CalendarMonth as CalendarIcon,
-  FileDownload as FileDownloadIcon,
   DeleteSweep as DeleteSweepIcon,
   Home as HomeIcon,
   Store as StoreIcon,
@@ -296,16 +295,6 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
     return totalKwh * effectiveRate;
   };
 
-  const exportLoadListJson = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentSpaceAppliances, null, 2));
-    const downloadAnchor = document.createElement("a");
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `powerforecast_${activeSpace?.name || "space"}_inventory.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    showSuccess("Appliance inventory exported to JSON.");
-  };
 
   const handleClearAll = async () => {
     const ok = await confirm({
@@ -330,7 +319,14 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
   if (spaces.length === 0) {
     return (
       <Box sx={{ maxWidth: 640, mx: "auto", py: { xs: 4, sm: 6 } }}>
-        <Card sx={{ p: { xs: 3, sm: 4.5 }, borderRadius: 1.5, textAlign: "center", border: "1px solid", borderColor: "primary.main" }}>
+        <Card sx={{
+          p: { xs: 3, sm: 4.5 },
+          borderRadius: 1.5,
+          textAlign: "center",
+          border: "1px solid",
+          borderColor: (theme) =>
+            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(13, 148, 136, 0.25)",
+        }}>
           <Box
             sx={{
               width: 64,
@@ -378,11 +374,20 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                         borderRadius: 1.25,
                         cursor: "pointer",
                         textAlign: "center",
-                        border: "2px solid",
-                        borderColor: initialTariffType === "residential" ? "primary.main" : "divider",
-                        bgcolor: initialTariffType === "residential" ? "rgba(0, 229, 201, 0.08)" : "transparent",
+                        border: "1px solid",
+                        borderColor: (theme) =>
+                          initialTariffType === "residential"
+                            ? theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.35)" : "rgba(13, 148, 136, 0.35)"
+                            : "divider",
+                        bgcolor: (theme) =>
+                          initialTariffType === "residential"
+                            ? theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.06)" : "rgba(13, 148, 136, 0.05)"
+                            : "transparent",
                         transition: "all 0.15s ease",
-                        "&:hover": { borderColor: "primary.main" },
+                        "&:hover": {
+                          borderColor: (theme) =>
+                            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.45)" : "rgba(13, 148, 136, 0.45)",
+                        },
                       }}
                     >
                       <HomeIcon sx={{ color: initialTariffType === "residential" ? "primary.main" : "text.secondary", fontSize: 28, mb: 0.5 }} />
@@ -404,11 +409,20 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                         borderRadius: 1.25,
                         cursor: "pointer",
                         textAlign: "center",
-                        border: "2px solid",
-                        borderColor: initialTariffType === "commercial" ? "secondary.main" : "divider",
-                        bgcolor: initialTariffType === "commercial" ? "rgba(244, 63, 94, 0.1)" : "transparent",
+                        border: "1px solid",
+                        borderColor: (theme) =>
+                          initialTariffType === "commercial"
+                            ? theme.palette.mode === "dark" ? "rgba(244, 63, 94, 0.4)" : "rgba(225, 29, 72, 0.35)"
+                            : "divider",
+                        bgcolor: (theme) =>
+                          initialTariffType === "commercial"
+                            ? theme.palette.mode === "dark" ? "rgba(244, 63, 94, 0.06)" : "rgba(244, 63, 94, 0.04)"
+                            : "transparent",
                         transition: "all 0.15s ease",
-                        "&:hover": { borderColor: "secondary.main" },
+                        "&:hover": {
+                          borderColor: (theme) =>
+                            theme.palette.mode === "dark" ? "rgba(244, 63, 94, 0.55)" : "rgba(225, 29, 72, 0.45)",
+                        },
                       }}
                     >
                       <StoreIcon sx={{ color: initialTariffType === "commercial" ? "secondary.main" : "text.secondary", fontSize: 28, mb: 0.5 }} />
@@ -510,10 +524,11 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
           borderRadius: 1.5,
           background: (theme) =>
             theme.palette.mode === "dark"
-              ? "linear-gradient(135deg, rgba(23, 25, 29, 0.95) 0%, rgba(32, 35, 40, 0.9) 100%)"
+              ? "linear-gradient(135deg, rgba(20, 23, 27, 0.95) 0%, rgba(26, 30, 35, 0.9) 100%)"
               : "linear-gradient(135deg, #ffffff 0%, #f4f6ff 100%)",
           border: "1px solid",
-          borderColor: "rgba(0, 229, 201, 0.25)",
+          borderColor: (theme) =>
+            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.18)" : "rgba(13, 148, 136, 0.18)",
           display: "flex",
           flexDirection: { xs: "column", md: "row" },
           justifyContent: "space-between",
@@ -582,15 +597,6 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
           >
             Configure
           </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<FileDownloadIcon />}
-            onClick={exportLoadListJson}
-            sx={{ borderRadius: 1, fontWeight: 700 }}
-          >
-            Export
-          </Button>
           {spaces.length > 1 && (
             <Button
               variant="outlined"
@@ -634,14 +640,15 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
           flexWrap: "wrap",
           gap: 2,
           bgcolor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.04)" : "rgba(0, 158, 136, 0.02)",
+            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.03)" : "rgba(0, 158, 136, 0.02)",
           border: "1px solid",
           borderColor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.2)" : "rgba(0, 158, 136, 0.2)",
+            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.15)" : "rgba(13, 148, 136, 0.15)",
           transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
           "&:hover": {
-            borderColor: "primary.main",
-            boxShadow: "0 4px 20px rgba(0, 229, 201, 0.12)",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.35)" : "rgba(13, 148, 136, 0.35)",
+            boxShadow: "0 4px 20px rgba(0, 229, 201, 0.08)",
           },
         }}
       >
@@ -822,16 +829,18 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                       borderColor: (theme) =>
                         isOn
                           ? theme.palette.mode === "dark"
-                            ? "#00e5c9"
-                            : "#0d9488"
+                            ? "rgba(0, 229, 201, 0.28)"
+                            : "rgba(13, 148, 136, 0.25)"
                           : theme.palette.mode === "dark"
-                          ? "rgba(255, 255, 255, 0.08)"
+                          ? "rgba(255, 255, 255, 0.06)"
                           : "#e2e8f0",
                       bgcolor: (theme) =>
                         isOn
                           ? theme.palette.mode === "dark"
-                            ? "rgba(0, 229, 201, 0.08)"
-                            : "rgba(13, 148, 136, 0.06)"
+                            ? "rgba(24, 30, 34, 0.88)"
+                            : "rgba(13, 148, 136, 0.04)"
+                          : theme.palette.mode === "dark"
+                          ? "rgba(20, 24, 28, 0.75)"
                           : "background.paper",
                       display: "flex",
                       flexDirection: "column",
@@ -839,11 +848,14 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                       position: "relative",
                       transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                       "&:hover": {
-                        borderColor: "primary.main",
+                        borderColor: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(0, 229, 201, 0.45)"
+                            : "rgba(13, 148, 136, 0.4)",
                         transform: "translateY(-3px)",
                         boxShadow: (theme) =>
                           theme.palette.mode === "dark"
-                            ? "0 8px 24px rgba(0, 229, 201, 0.15)"
+                            ? "0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(0, 229, 201, 0.08)"
                             : "0 8px 24px rgba(13, 148, 136, 0.1)",
                       },
                     }}

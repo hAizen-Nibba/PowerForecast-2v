@@ -535,7 +535,8 @@ export const ForecastingView: React.FC = () => {
               position: "relative",
               overflow: "hidden",
               border: "1px solid",
-              borderColor: "rgba(0, 229, 201, 0.25)",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.18)" : "rgba(13, 148, 136, 0.18)",
             }}
           >
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 1.5 }}>
@@ -651,11 +652,17 @@ export const ForecastingView: React.FC = () => {
                     flexDirection: "column",
                     justifyContent: "space-between",
                     border: "1px solid",
-                    borderColor: (theme) => (theme.palette.mode === "dark" ? "primary.main" : "rgba(13, 148, 136, 0.3)"),
+                    borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.3)"),
                     bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.85)" : "#ffffff"),
                     boxShadow: (theme) => (theme.palette.mode === "dark" ? "none" : "0 2px 12px rgba(15, 23, 42, 0.04)"),
                     transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                    "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(0, 229, 201, 0.2)" },
+                    "&:hover": {
+                      transform: "translateY(-3px)",
+                      boxShadow: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(0, 229, 201, 0.08)"
+                          : "0 8px 24px rgba(13, 148, 136, 0.15)",
+                    },
                   }}
                 >
                   <Box>
@@ -695,11 +702,11 @@ export const ForecastingView: React.FC = () => {
                     flexDirection: "column",
                     justifyContent: "space-between",
                     border: "1px solid",
-                    borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0"),
-                    bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.65)" : "#ffffff"),
+                    borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "#e2e8f0"),
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.75)" : "#ffffff"),
                     boxShadow: (theme) => (theme.palette.mode === "dark" ? "none" : "0 2px 12px rgba(15, 23, 42, 0.04)"),
                     transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                    "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(0, 229, 201, 0.12)" },
+                    "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(0, 0, 0, 0.35)" },
                   }}
                 >
                   <Box>
@@ -737,11 +744,17 @@ export const ForecastingView: React.FC = () => {
                     flexDirection: "column",
                     justifyContent: "space-between",
                     border: "1px solid",
-                    borderColor: (theme) => (theme.palette.mode === "dark" ? "success.main" : "rgba(5, 150, 105, 0.4)"),
-                    bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(6, 78, 59, 0.2)" : "#ffffff"),
+                    borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(52, 211, 153, 0.3)" : "rgba(5, 150, 105, 0.3)"),
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(24, 30, 28, 0.85)" : "#ffffff"),
                     boxShadow: (theme) => (theme.palette.mode === "dark" ? "none" : "0 2px 12px rgba(15, 23, 42, 0.04)"),
                     transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                    "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(52, 211, 153, 0.2)" },
+                    "&:hover": {
+                      transform: "translateY(-3px)",
+                      boxShadow: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(52, 211, 153, 0.08)"
+                          : "0 8px 24px rgba(52, 211, 153, 0.15)",
+                    },
                   }}
                 >
                   <Box>
@@ -781,11 +794,17 @@ export const ForecastingView: React.FC = () => {
                     flexDirection: "column",
                     justifyContent: "space-between",
                     border: "1px solid",
-                    borderColor: (theme) => (theme.palette.mode === "dark" ? "warning.main" : "rgba(217, 119, 6, 0.4)"),
-                    bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(120, 53, 15, 0.2)" : "#ffffff"),
+                    borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.3)" : "rgba(217, 119, 6, 0.3)"),
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(30, 26, 22, 0.85)" : "#ffffff"),
                     boxShadow: (theme) => (theme.palette.mode === "dark" ? "none" : "0 2px 12px rgba(15, 23, 42, 0.04)"),
                     transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                    "&:hover": { transform: "translateY(-3px)", boxShadow: "0 8px 24px rgba(251, 191, 36, 0.2)" },
+                    "&:hover": {
+                      transform: "translateY(-3px)",
+                      boxShadow: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(251, 191, 36, 0.08)"
+                          : "0 8px 24px rgba(217, 119, 6, 0.15)",
+                    },
                   }}
                 >
                   <Box>

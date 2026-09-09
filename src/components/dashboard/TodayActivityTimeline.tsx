@@ -334,17 +334,15 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
         border: "1px solid",
         borderColor: (theme) =>
           activeLiveCount > 0
-            ? "rgba(0, 229, 201, 0.4)"
+            ? theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.2)" : "rgba(13, 148, 136, 0.2)"
             : theme.palette.mode === "dark"
-            ? "rgba(255, 255, 255, 0.08)"
+            ? "rgba(255, 255, 255, 0.06)"
             : "#e2e8f0",
         bgcolor: (theme) =>
-          theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.82)" : "#ffffff",
+          theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.85)" : "#ffffff",
         boxShadow: (theme) =>
-          activeLiveCount > 0
-            ? "0 0 24px rgba(0, 229, 201, 0.12)"
-            : theme.palette.mode === "dark"
-            ? "none"
+          theme.palette.mode === "dark"
+            ? "0 4px 20px rgba(0, 0, 0, 0.4)"
             : "0 2px 12px rgba(15, 23, 42, 0.04)",
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       }}
