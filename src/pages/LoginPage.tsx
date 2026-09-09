@@ -22,11 +22,13 @@ import {
   DarkMode as MoonIcon,
 } from "@mui/icons-material";
 import { useColorMode } from "../theme/AppTheme";
+import { useToast } from "../components/common/ToastProvider";
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { mutate: login, isLoading } = useLogin();
   const { mode, toggleColorMode } = useColorMode();
+  const { showError, showSuccess } = useToast();
   const isDark = mode === "dark";
 
   const [email, setEmail] = useState("");
@@ -43,22 +45,39 @@ export const LoginPage: React.FC = () => {
     const trimmedPassword = password.trim();
 
     if (!trimmedEmail || !trimmedPassword) {
-      setErrorMessage("Please enter both email and password.");
+      const msg = "Please enter both email and password.";
+      setErrorMessage(msg);
+      showError(msg);
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmedEmail)) {
-      setErrorMessage("Please enter a valid email address (e.g. name@domain.com).");
+      const msg = "Please enter a valid email address (e.g. name@domain.com).";
+      setErrorMessage(msg);
+      showError(msg);
       return;
     }
 
     login(
       { email: trimmedEmail, password: trimmedPassword, rememberMe },
       {
-        onSuccess: () => navigate("/dashboard"),
+        onSuccess: (data: any) => {
+          if (data?.success === false || data?.error) {
+            const msg =
+              data?.error?.message || "Invalid credentials. Please verify your email and password.";
+            setErrorMessage(msg);
+            showError(msg);
+            return;
+          }
+          showSuccess("Welcome back! Signed in successfully.");
+          navigate("/dashboard");
+        },
         onError: (err: any) => {
-          setErrorMessage(err?.message || "Invalid credentials. Please verify your email and password.");
+          const msg =
+            err?.message || "Invalid credentials. Please verify your email and password.";
+          setErrorMessage(msg);
+          showError(msg);
         },
       }
     );
@@ -219,7 +238,26 @@ export const LoginPage: React.FC = () => {
           </Box>
 
               {errorMessage && (
-                <Alert severity="error" sx={{ mb: 3, borderRadius: 1 }}>
+                <Alert
+                  severity="error"
+                  sx={{ mb: 3, borderRadius: 1 }}
+                  action={
+                    errorMessage.toLowerCase().includes("no account found") ||
+                    errorMessage.toLowerCase().includes("does not exist") ||
+                    errorMessage.toLowerCase().includes("create an account") ||
+                    errorMessage.toLowerCase().includes("sign up") ? (
+                      <Button
+                        component={Link}
+                        to="/signup"
+                        color="inherit"
+                        size="small"
+                        sx={{ fontWeight: 700, textDecoration: "underline", textTransform: "none" }}
+                      >
+                        Sign Up
+                      </Button>
+                    ) : undefined
+                  }
+                >
                   {errorMessage}
                 </Alert>
               )}

@@ -8,12 +8,12 @@ export const surfacesCustomizations: Components<Theme> = {
         gap: 16,
         transition: 'all 240ms cubic-bezier(0.4, 0, 0.2, 1)',
         backgroundColor: theme.palette.mode === 'dark' 
-          ? 'rgba(32, 35, 40, 0.88)' 
+          ? 'rgba(24, 27, 32, 0.85)' 
           : '#ffffff',
         borderRadius: 12,
         border: `1px solid ${
           theme.palette.mode === 'dark' 
-            ? 'rgba(255, 255, 255, 0.08)' 
+            ? 'rgba(255, 255, 255, 0.07)' 
             : '#e2e8f0'
         }`,
         backdropFilter: 'blur(16px)',
@@ -22,10 +22,10 @@ export const surfacesCustomizations: Components<Theme> = {
           : '0 2px 10px rgba(15, 23, 42, 0.04)',
         '&:hover': {
           borderColor: theme.palette.mode === 'dark' 
-            ? 'rgba(0, 229, 201, 0.35)' 
-            : 'rgba(13, 148, 136, 0.35)',
+            ? 'rgba(0, 229, 201, 0.28)' 
+            : 'rgba(13, 148, 136, 0.28)',
           boxShadow: theme.palette.mode === 'dark'
-            ? '0 8px 32px rgba(0, 0, 0, 0.55), 0 0 16px rgba(0, 229, 201, 0.06)'
+            ? '0 8px 32px rgba(0, 0, 0, 0.55), 0 0 12px rgba(0, 229, 201, 0.05)'
             : '0 8px 24px rgba(15, 23, 42, 0.08)',
         },
       }),
@@ -36,7 +36,7 @@ export const surfacesCustomizations: Components<Theme> = {
       root: ({ theme }: { theme: Theme }) => ({
         backgroundImage: 'none',
         backgroundColor: theme.palette.mode === 'dark' 
-          ? 'rgba(32, 35, 40, 0.92)' 
+          ? 'rgba(24, 27, 32, 0.9)' 
           : '#ffffff',
         borderRadius: 10,
         transition: 'background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease',

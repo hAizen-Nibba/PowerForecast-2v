@@ -24,6 +24,7 @@ import {
   DarkMode as MoonIcon,
 } from "@mui/icons-material";
 import { useColorMode } from "../theme/AppTheme";
+import { useToast } from "../components/common/ToastProvider";
 
 const SECURITY_QUESTION_PRESETS = [
   "What is your primary household electricity meter number?",
@@ -37,6 +38,7 @@ export const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const { mutate: register, isLoading } = useRegister();
   const { mode, toggleColorMode } = useColorMode();
+  const { showError, showSuccess } = useToast();
   const isDark = mode === "dark";
 
   const [name, setName] = useState("");
@@ -60,30 +62,69 @@ export const SignupPage: React.FC = () => {
     const trimmedConfirmPassword = confirmPassword.trim();
     const trimmedAnswer = securityAnswer.trim();
 
+    if (!trimmedName) {
+      const msg = "Please enter your full name.";
+      setErrorMessage(msg);
+      showError(msg);
+      return;
+    }
+
+    const nameRegex = /^[a-zA-Z\s-]+$/;
+    if (!nameRegex.test(trimmedName)) {
+      const msg = "Full Name can only contain letters, spaces, and hyphens.";
+      setErrorMessage(msg);
+      showError(msg);
+      return;
+    }
+
     if (!trimmedEmail || !trimmedPassword || !trimmedConfirmPassword) {
-      setErrorMessage("Please fill in all required fields.");
+      const msg = "Please fill in all required fields.";
+      setErrorMessage(msg);
+      showError(msg);
       return;
     }
 
     // Basic email validation regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmedEmail)) {
-      setErrorMessage("Please enter a valid email address (e.g. name@domain.com).");
+      const msg = "Please enter a valid email address (e.g. name@domain.com).";
+      setErrorMessage(msg);
+      showError(msg);
       return;
     }
 
     if (trimmedPassword !== trimmedConfirmPassword) {
-      setErrorMessage("Passwords do not match. Please verify and try again.");
+      const msg = "Passwords do not match. Please verify and try again.";
+      setErrorMessage(msg);
+      showError(msg);
       return;
     }
 
     if (trimmedPassword.length < 6) {
-      setErrorMessage("Password must be at least 6 characters long.");
+      const msg = "Password must be at least 6 characters long.";
+      setErrorMessage(msg);
+      showError(msg);
+      return;
+    }
+
+    if (trimmedPassword.toLowerCase() === trimmedEmail) {
+      const msg = "Password cannot be identical to your email address.";
+      setErrorMessage(msg);
+      showError(msg);
       return;
     }
 
     if (!trimmedAnswer) {
-      setErrorMessage("Please provide an answer for the security question.");
+      const msg = "Please provide an answer for the security question.";
+      setErrorMessage(msg);
+      showError(msg);
+      return;
+    }
+
+    if (trimmedAnswer.toLowerCase() === trimmedEmail) {
+      const msg = "Security answer cannot be your email address.";
+      setErrorMessage(msg);
+      showError(msg);
       return;
     }
 
@@ -97,9 +138,22 @@ export const SignupPage: React.FC = () => {
       },
       {
         onSuccess: (data: any) => {
+          if (data?.success === false || data?.error) {
+            const msg =
+              data?.error?.message ||
+              "This email is already registered. Please sign in or use password recovery.";
+            setErrorMessage(msg);
+            showError(msg);
+            return;
+          }
+          showSuccess("Account created successfully! Welcome to PowerForecast.");
           navigate(data?.redirectTo || "/dashboard");
         },
-        onError: (err: any) => setErrorMessage(err?.message || "Registration failed. Please try again."),
+        onError: (err: any) => {
+          const msg = err?.message || "Registration failed. Please try again.";
+          setErrorMessage(msg);
+          showError(msg);
+        },
       }
     );
   };
@@ -261,18 +315,36 @@ export const SignupPage: React.FC = () => {
           </Box>
 
           {errorMessage && (
-            <Alert severity="error" sx={{ mb: 3, borderRadius: 1 }}>
+            <Alert
+              severity="error"
+              sx={{ mb: 3, borderRadius: 1 }}
+              action={
+                errorMessage.toLowerCase().includes("already registered") ||
+                errorMessage.toLowerCase().includes("already exists") ? (
+                  <Button
+                    component={Link}
+                    to="/login"
+                    color="inherit"
+                    size="small"
+                    sx={{ fontWeight: 700, textDecoration: "underline", textTransform: "none" }}
+                  >
+                    Sign In
+                  </Button>
+                ) : undefined
+              }
+            >
               {errorMessage}
             </Alert>
           )}
 
           <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <TextField
-              label="Full Name / Household Name"
+              label="Full Name"
+              required
               fullWidth
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Santos Residence"
+              placeholder="e.g. Maria Santos"
               slotProps={{
                 input: {
                   startAdornment: (

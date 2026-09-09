@@ -770,7 +770,18 @@ return (
 
       {/* 3. Active Stopwatch Sessions Quick Bar (if any running) */}
       {activeAppliances.length > 0 && (
-        <Card data-tour="calendar-live-sessions" sx={{ p: 2.5, borderRadius: 1.5, bgcolor: "rgba(6, 78, 59, 0.2)", border: "1px solid rgba(52, 211, 153, 0.4)" }}>
+        <Card
+          data-tour="calendar-live-sessions"
+          sx={{
+            p: 2.5,
+            borderRadius: 1.5,
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(24, 28, 33, 0.85)" : "rgba(16, 185, 129, 0.05)",
+            border: "1px solid",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(52, 211, 153, 0.25)" : "rgba(16, 185, 129, 0.25)",
+          }}
+        >
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5, flexWrap: "wrap", gap: 1 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#34d399", display: "flex", alignItems: "center", gap: 1 }}>
               <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#34d399" }} />
