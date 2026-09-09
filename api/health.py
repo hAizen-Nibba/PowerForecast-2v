@@ -60,31 +60,10 @@ class handler(BaseHTTPRequestHandler):
         key_count = len(keys)
         server_has_key = key_count > 0
 
-        detected_sources = []
-        if os.environ.get('GEMINI_API_KEY'):
-            detected_sources.append('GEMINI_API_KEY')
-        for i in range(1, 11):
-            if os.environ.get(f'GEMINI_API_KEY_{i}'):
-                detected_sources.append(f'GEMINI_API_KEY_{i}')
-        if os.environ.get('GEMINI_API_KEY_FALLBACK'):
-            detected_sources.append('GEMINI_API_KEY_FALLBACK')
-        if os.environ.get('GEMINI_API_KEYS'):
-            detected_sources.append('GEMINI_API_KEYS')
-
-        if key_count > 1:
-            primary_name = detected_sources[0] if detected_sources else 'GEMINI_API_KEY'
-            key_name = f"{primary_name} (+{key_count - 1} Fallback Keys)"
-        elif key_count == 1:
-            key_name = detected_sources[0] if detected_sources else 'GEMINI_API_KEY'
-        else:
-            key_name = None
-
         res = {
             "status": "ok",
             "serverHasKey": server_has_key,
             "keyCount": key_count,
-            "keyNameDetected": key_name,
-            "detectedSources": detected_sources,
             "maxImagesSupported": 3,
             "defaultModel": "gemini-2.5-flash",
             "supportedModels": ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
