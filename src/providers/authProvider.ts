@@ -191,19 +191,6 @@ export const authProvider: AuthProvider = {
         };
       }
 
-      // Record security question map in local persistent cache for rapid password recovery
-      if (securityQuestion && securityAnswer) {
-        try {
-          const secDirectory = JSON.parse(localStorage.getItem("powerforecast_sec_dir") || "{}");
-          secDirectory[trimmedEmail] = {
-            question: securityQuestion,
-            answer: securityAnswer.trim().toLowerCase(),
-          };
-          localStorage.setItem("powerforecast_sec_dir", JSON.stringify(secDirectory));
-        } catch (e) {
-          devLog.warn("Auth", "Failed to cache security directory entry", e);
-        }
-      }
 
       // If a session was created during sign up, set active user and go directly to dashboard
       let userSession = data?.session;

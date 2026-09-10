@@ -257,17 +257,6 @@ export const SettingsView: React.FC = () => {
         throw updateErr;
       }
 
-      // Sync local cache
-      try {
-        const secDir = JSON.parse(localStorage.getItem("powerforecast_sec_dir") || "{}");
-        secDir[userEmail.toLowerCase()] = {
-          question: secQuestion,
-          answer: trimmedAnswer.toLowerCase(),
-        };
-        localStorage.setItem("powerforecast_sec_dir", JSON.stringify(secDir));
-      } catch (e) {
-        devLog.warn("Settings", "Failed to cache security directory locally:", e);
-      }
 
       showSuccess(
         language === "tl"
