@@ -1,53 +1,19 @@
 import { CpuHardwareItem, GpuHardwareItem } from "../types";
 import { devLog } from "./devLogger";
-
-let cachedCpus: CpuHardwareItem[] | null = null;
-let cachedGpus: GpuHardwareItem[] | null = null;
+import { CPU_CATALOG, GPU_CATALOG } from "./pcHardwareData";
 
 /**
- * Loads the curated CPU catalog from public/pc_data/cpus.json
+ * Loads the curated CPU catalog
  */
 export async function fetchCpuCatalog(): Promise<CpuHardwareItem[]> {
-  if (cachedCpus) return cachedCpus;
-  try {
-    const res = await fetch("/pc_data/cpus.json");
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    cachedCpus = data;
-    return data;
-  } catch (err) {
-    devLog.warn("PCHardwareService", "Failed to load cpus.json, using fallback", { error: err });
-    return [
-      { id: "generic-amd-ryzen-5", name: "AMD Ryzen 5 (Mainstream 6-Core)", brand: "AMD", family: "Ryzen 5", tdp: 65, gaming_w: 60, idle_w: 14 },
-      { id: "generic-intel-i5", name: "Intel Core i5 (Mainstream)", brand: "Intel", family: "Core i5", tdp: 65, gaming_w: 65, idle_w: 14 },
-      { id: "generic-amd-ryzen-7", name: "AMD Ryzen 7 (Performance 8-Core)", brand: "AMD", family: "Ryzen 7", tdp: 105, gaming_w: 80, idle_w: 16 },
-      { id: "generic-intel-i7", name: "Intel Core i7 (High-End)", brand: "Intel", family: "Core i7", tdp: 125, gaming_w: 125, idle_w: 18 },
-      { id: "generic-office-cpu", name: "Basic Office CPU (Core i3 / Ryzen 3)", brand: "Generic", family: "Office", tdp: 55, gaming_w: 40, idle_w: 10 },
-    ];
-  }
+  return CPU_CATALOG;
 }
 
 /**
- * Loads the curated GPU catalog from public/pc_data/gpus.json
+ * Loads the curated GPU catalog
  */
 export async function fetchGpuCatalog(): Promise<GpuHardwareItem[]> {
-  if (cachedGpus) return cachedGpus;
-  try {
-    const res = await fetch("/pc_data/gpus.json");
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    cachedGpus = data;
-    return data;
-  } catch (err) {
-    devLog.warn("PCHardwareService", "Failed to load gpus.json, using fallback", { error: err });
-    return [
-      { id: "integrated-graphics", name: "Integrated Graphics (No Dedicated GPU)", brand: "None", series: "Integrated", tgp: 0, gaming_w: 0, idle_w: 0 },
-      { id: "generic-gtx-1650", name: "Entry Gaming (GTX 1650 / RX 6400)", brand: "NVIDIA", series: "Entry", tgp: 75, gaming_w: 70, idle_w: 8 },
-      { id: "generic-rtx-3060", name: "Mid-Range Gaming (RTX 3060 / 4060 / RX 6600)", brand: "NVIDIA", series: "Mainstream", tgp: 160, gaming_w: 150, idle_w: 12 },
-      { id: "generic-rtx-3070", name: "High-End Gaming (RTX 3070 / 4070 / RX 7800)", brand: "NVIDIA", series: "Performance", tgp: 220, gaming_w: 215, idle_w: 15 },
-      { id: "generic-rtx-4080", name: "Enthusiast Flagship (RTX 4080 / 4090)", brand: "NVIDIA", series: "Enthusiast", tgp: 350, gaming_w: 320, idle_w: 22 },
-    ];
-  }
+  return GPU_CATALOG;
 }
 
 /**

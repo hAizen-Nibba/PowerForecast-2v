@@ -26,13 +26,12 @@ import {
 } from "@mui/icons-material";
 import { CpuHardwareItem, GpuHardwareItem } from "../../types";
 import {
-  fetchCpuCatalog,
-  fetchGpuCatalog,
   calculateDesktopPcWatts,
   calculateLaptopRunningWatts,
   resolvePcHwWithAi,
   PcWorkloadProfile,
 } from "../../lib/pcHardwareService";
+import { CPU_CATALOG, GPU_CATALOG } from "../../lib/pcHardwareData";
 
 interface PcSpecBuilderSectionProps {
   initialType?: "laptop" | "desktop_pc";
@@ -66,13 +65,26 @@ export const PcSpecBuilderSection: React.FC<PcSpecBuilderSectionProps> = ({
     initialMetadata?.charger_watts || initialRatedWatts || 120
   );
 
-  // Desktop states
-  const [cpus, setCpus] = useState<CpuHardwareItem[]>([]);
-  const [gpus, setGpus] = useState<GpuHardwareItem[]>([]);
-  const [loadingCatalog, setLoadingCatalog] = useState<boolean>(true);
+  // Desktop hardware catalogs (synchronous local dataset)
+  const [cpus] = useState<CpuHardwareItem[]>(CPU_CATALOG);
+  const [gpus] = useState<GpuHardwareItem[]>(GPU_CATALOG);
 
-  const [selectedCpu, setSelectedCpu] = useState<CpuHardwareItem | null>(null);
-  const [selectedGpu, setSelectedGpu] = useState<GpuHardwareItem | null>(null);
+  const [selectedCpu, setSelectedCpu] = useState<CpuHardwareItem | null>(() => {
+    if (initialMetadata?.cpu) {
+      const match = CPU_CATALOG.find((c) => c.name.toLowerCase() === initialMetadata.cpu.toLowerCase());
+      if (match) return match;
+    }
+    return CPU_CATALOG.find((c) => c.id.includes("5600")) || CPU_CATALOG[0];
+  });
+
+  const [selectedGpu, setSelectedGpu] = useState<GpuHardwareItem | null>(() => {
+    if (initialMetadata?.gpu) {
+      const match = GPU_CATALOG.find((g) => g.name.toLowerCase() === initialMetadata.gpu.toLowerCase());
+      if (match) return match;
+    }
+    return GPU_CATALOG.find((g) => g.id.includes("3060")) || GPU_CATALOG[0];
+  });
+
   const [monitorCount, setMonitorCount] = useState<number>(initialMetadata?.monitors ?? 1);
 
   // AI Prompt lookup state
@@ -80,42 +92,6 @@ export const PcSpecBuilderSection: React.FC<PcSpecBuilderSectionProps> = ({
   const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
   const [aiError, setAiError] = useState<string>("");
   const [aiSuccessMsg, setAiSuccessMsg] = useState<string>("");
-
-  useEffect(() => {
-    let mounted = true;
-    Promise.all([fetchCpuCatalog(), fetchGpuCatalog()])
-      .then(([cpuData, gpuData]) => {
-        if (!mounted) return;
-        setCpus(cpuData);
-        setGpus(gpuData);
-        setLoadingCatalog(false);
-
-        // Pre-select if existing metadata has specs
-        if (initialMetadata?.cpu) {
-          const match = cpuData.find((c) => c.name.toLowerCase() === initialMetadata.cpu.toLowerCase());
-          if (match) setSelectedCpu(match);
-        } else {
-          // Default to mainstream Ryzen 5 5600
-          const defaultCpu = cpuData.find((c) => c.id.includes("5600")) || cpuData[0];
-          if (defaultCpu) setSelectedCpu(defaultCpu);
-        }
-
-        if (initialMetadata?.gpu) {
-          const match = gpuData.find((g) => g.name.toLowerCase() === initialMetadata.gpu.toLowerCase());
-          if (match) setSelectedGpu(match);
-        } else {
-          // Default to mainstream RTX 3060
-          const defaultGpu = gpuData.find((g) => g.id.includes("3060")) || gpuData[0];
-          if (defaultGpu) setSelectedGpu(defaultGpu);
-        }
-      })
-      .catch(() => {
-        if (mounted) setLoadingCatalog(false);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   // Update parent whenever laptop or desktop parameters change
   useEffect(() => {
@@ -391,12 +367,58 @@ export const PcSpecBuilderSection: React.FC<PcSpecBuilderSectionProps> = ({
           <Grid container spacing={2}>
             {/* CPU Autocomplete */}
             <Grid size={{ xs: 12, sm: 6 }}>
-              <Autocomplete
+              <Autocomplete<CpuHardwareItem, false, false, false>
                 options={cpus}
-                loading={loadingCatalog}
-                getOptionLabel={(option) => `${option.name} (${option.tdp}W TDP)`}
                 value={selectedCpu}
                 onChange={(_, newVal) => setSelectedCpu(newVal)}
+                isOptionEqualToValue={(option, value) => option?.id === value?.id || option?.name === value?.name}
+                getOptionLabel={(option) => {
+                  if (typeof option === "string") return option;
+                  if (!option || !option.name) return "";
+                  return `${option.name} (${option.tdp}W TDP)`;
+                }}
+                filterOptions={(options, state) => {
+                  const q = state.inputValue.toLowerCase().trim().replace(/\s+/g, "");
+                  if (!q) return options;
+                  return options.filter((c) => {
+                    const target = `${c.name} ${c.brand} ${c.family}`.toLowerCase().replace(/\s+/g, "");
+                    return target.includes(q);
+                  });
+                }}
+                renderOption={(props, option) => {
+                  const { key, ...otherProps } = props;
+                  return (
+                    <Box
+                      component="li"
+                      key={key || option.id}
+                      {...otherProps}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        width: "100%",
+                        py: 0.75,
+                        px: 1.5,
+                      }}
+                    >
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {option.name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
+                          {option.brand} • {option.family}
+                        </Typography>
+                      </Box>
+                      <Chip
+                        label={`${option.tdp}W TDP`}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                        sx={{ height: 20, fontSize: "0.7rem", fontWeight: 700, ml: 1 }}
+                      />
+                    </Box>
+                  );
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -404,12 +426,13 @@ export const PcSpecBuilderSection: React.FC<PcSpecBuilderSectionProps> = ({
                     size="small"
                     placeholder="Search AMD Ryzen / Intel Core..."
                     slotProps={{
+                      ...params.slotProps,
                       input: {
-                        ...params.slotProps.input,
+                        ...params.slotProps?.input,
                         startAdornment: (
                           <>
                             <CpuIcon fontSize="small" sx={{ color: "primary.main", mr: 0.5 }} />
-                            {params.slotProps.input.startAdornment}
+                            {params.slotProps?.input?.startAdornment}
                           </>
                         ),
                       },
@@ -421,14 +444,58 @@ export const PcSpecBuilderSection: React.FC<PcSpecBuilderSectionProps> = ({
 
             {/* GPU Autocomplete */}
             <Grid size={{ xs: 12, sm: 6 }}>
-              <Autocomplete
+              <Autocomplete<GpuHardwareItem, false, false, false>
                 options={gpus}
-                loading={loadingCatalog}
-                getOptionLabel={(option) =>
-                  option.tgp === 0 ? option.name : `${option.name} (${option.tgp}W)`
-                }
                 value={selectedGpu}
                 onChange={(_, newVal) => setSelectedGpu(newVal)}
+                isOptionEqualToValue={(option, value) => option?.id === value?.id || option?.name === value?.name}
+                getOptionLabel={(option) => {
+                  if (typeof option === "string") return option;
+                  if (!option || !option.name) return "";
+                  return option.tgp === 0 ? option.name : `${option.name} (${option.tgp}W)`;
+                }}
+                filterOptions={(options, state) => {
+                  const q = state.inputValue.toLowerCase().trim().replace(/\s+/g, "");
+                  if (!q) return options;
+                  return options.filter((g) => {
+                    const target = `${g.name} ${g.brand} ${g.series}`.toLowerCase().replace(/\s+/g, "");
+                    return target.includes(q);
+                  });
+                }}
+                renderOption={(props, option) => {
+                  const { key, ...otherProps } = props;
+                  return (
+                    <Box
+                      component="li"
+                      key={key || option.id}
+                      {...otherProps}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        width: "100%",
+                        py: 0.75,
+                        px: 1.5,
+                      }}
+                    >
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {option.name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
+                          {option.brand} • {option.series}
+                        </Typography>
+                      </Box>
+                      <Chip
+                        label={option.tgp === 0 ? "Integrated" : `${option.tgp}W TGP`}
+                        size="small"
+                        color="secondary"
+                        variant="outlined"
+                        sx={{ height: 20, fontSize: "0.7rem", fontWeight: 700, ml: 1 }}
+                      />
+                    </Box>
+                  );
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -436,12 +503,13 @@ export const PcSpecBuilderSection: React.FC<PcSpecBuilderSectionProps> = ({
                     size="small"
                     placeholder="Search NVIDIA RTX / AMD RX..."
                     slotProps={{
+                      ...params.slotProps,
                       input: {
-                        ...params.slotProps.input,
+                        ...params.slotProps?.input,
                         startAdornment: (
                           <>
                             <GpuIcon fontSize="small" sx={{ color: "secondary.main", mr: 0.5 }} />
-                            {params.slotProps.input.startAdornment}
+                            {params.slotProps?.input?.startAdornment}
                           </>
                         ),
                       },
