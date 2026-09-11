@@ -182,7 +182,10 @@ export const resilientDataProvider: DataProvider = {
           break;
         } catch (innerErr: any) {
           attempts++;
-          const colMatch = innerErr?.message?.match(/Could not find the '([^']+)' column/i);
+          const colMatch =
+            innerErr?.message?.match(/Could not find the '([^']+)' column/i) ||
+            innerErr?.message?.match(/column [^.]*\.?([a-zA-Z0-9_]+) does not exist/i) ||
+            innerErr?.message?.match(/column "([^"]+)" of relation/i);
           if (colMatch && colMatch[1] && colMatch[1] in enrichedVariables) {
             const badCol = colMatch[1];
             devLog.warn(
@@ -228,7 +231,10 @@ export const resilientDataProvider: DataProvider = {
           break;
         } catch (innerErr: any) {
           attempts++;
-          const colMatch = innerErr?.message?.match(/Could not find the '([^']+)' column/i);
+          const colMatch =
+            innerErr?.message?.match(/Could not find the '([^']+)' column/i) ||
+            innerErr?.message?.match(/column [^.]*\.?([a-zA-Z0-9_]+) does not exist/i) ||
+            innerErr?.message?.match(/column "([^"]+)" of relation/i);
           if (colMatch && colMatch[1] && colMatch[1] in enrichedVariables) {
             const badCol = colMatch[1];
             devLog.warn(

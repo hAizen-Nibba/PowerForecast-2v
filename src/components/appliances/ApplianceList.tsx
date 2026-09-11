@@ -31,6 +31,7 @@ import {
   Settings as SettingsIcon,
   Create as PenIcon,
   CameraAlt as CameraIcon,
+  Refresh as RefreshIcon,
 } from "@mui/icons-material";
 import { UserAppliance, UserCalendarEvent, ApplianceList as ApplianceSpace, STREAMLINED_CATEGORIES } from "../../types";
 import { useList, useDelete, useUpdate, useCreate } from "@refinedev/core";
@@ -150,13 +151,24 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
     );
   };
 
-  // Filter appliances strictly to the active space
+  // Filter appliances strictly to the active space with smart fallback for unassigned or single spaces
   const currentSpaceAppliances = useMemo(() => {
-    if (!activeSpace) return [];
-    return appliances.filter(
-      (app) => app.list_id === activeSpace.id || (!app.list_id && activeSpace.is_default)
-    );
-  }, [appliances, activeSpace]);
+    if (!activeSpace) return appliances;
+    const hasDefault = spaces.some((s) => s.is_default);
+    const isSingleSpace = spaces.length <= 1;
+
+    return appliances.filter((app) => {
+      // Direct space ID match
+      if (app.list_id && app.list_id === activeSpace.id) return true;
+      // If appliance has no list_id, show in default space or the primary space
+      if (!app.list_id) {
+        if (activeSpace.is_default) return true;
+        if (isSingleSpace) return true;
+        if (!hasDefault && activeSpace.id === spaces[0]?.id) return true;
+      }
+      return false;
+    });
+  }, [appliances, activeSpace, spaces]);
 
   const filteredAppliances = useMemo(() => {
     return currentSpaceAppliances.filter((app: UserAppliance) => {
@@ -479,25 +491,43 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             },
           }}
         >
-          {spaces.map((s) => (
-            <Tab
-              key={s.id}
-              value={s.id}
-              icon={s.tariff_type === "commercial" ? <StoreIcon fontSize="small" /> : <HomeIcon fontSize="small" />}
-              iconPosition="start"
-              label={
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <span>{s.name}</span>
-                  <Chip
-                    label={s.tariff_type === "commercial" ? "Commercial" : "Residential"}
-                    size="small"
-                    color={s.tariff_type === "commercial" ? "secondary" : "primary"}
-                    sx={{ height: 18, fontSize: "0.625rem", fontWeight: 800 }}
-                  />
-                </Box>
+          {spaces.map((s) => {
+            const count = appliances.filter((a) => {
+              if (a.list_id && a.list_id === s.id) return true;
+              if (!a.list_id) {
+                if (s.is_default) return true;
+                if (spaces.length <= 1) return true;
+                if (!spaces.some((sp) => sp.is_default) && s.id === spaces[0]?.id) return true;
               }
-            />
-          ))}
+              return false;
+            }).length;
+            return (
+              <Tab
+                key={s.id}
+                value={s.id}
+                icon={s.tariff_type === "commercial" ? <StoreIcon fontSize="small" /> : <HomeIcon fontSize="small" />}
+                iconPosition="start"
+                label={
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <span>{s.name}</span>
+                    <Chip
+                      label={count}
+                      size="small"
+                      color="primary"
+                      variant={activeSpaceId === s.id ? "filled" : "outlined"}
+                      sx={{ height: 18, minWidth: 22, fontSize: "0.625rem", fontWeight: 800 }}
+                    />
+                    <Chip
+                      label={s.tariff_type === "commercial" ? "Commercial" : "Residential"}
+                      size="small"
+                      color={s.tariff_type === "commercial" ? "secondary" : "default"}
+                      sx={{ height: 18, fontSize: "0.625rem", fontWeight: 800 }}
+                    />
+                  </Box>
+                }
+              />
+            );
+          })}
         </Tabs>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -746,7 +776,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
           sx={{ width: { xs: "100%", sm: 340 } }}
         />
 
-        <Box sx={{ display: "flex", gap: 1.5, width: { xs: "100%", sm: "auto" } }}>
+        <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", width: { xs: "100%", sm: "auto" } }}>
           <TextField
             select
             size="small"
@@ -761,6 +791,20 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               </MenuItem>
             ))}
           </TextField>
+
+          <Tooltip title="Sync & Refresh from Database">
+            <IconButton
+              size="small"
+              onClick={() => {
+                if (appliancesRes?.refetch) appliancesRes.refetch();
+                if (spacesRes?.refetch) spacesRes.refetch();
+                showInfo("Syncing appliances with Supabase database...");
+              }}
+              sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1.25, p: 0.9 }}
+            >
+              <RefreshIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Box>
       </Box>
 
@@ -1073,6 +1117,8 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
           onClose={() => {
             setIsAddModalOpen(false);
             setApplianceToEdit(null);
+            if (appliancesRes?.refetch) appliancesRes.refetch();
+            if (spacesRes?.refetch) spacesRes.refetch();
           }}
           applianceToEdit={applianceToEdit}
           defaultListId={activeSpace?.id || null}
