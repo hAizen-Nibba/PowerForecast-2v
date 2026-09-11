@@ -41,6 +41,16 @@ export interface SystemChangelogEntry {
 // Master compiled GitHub deployment history covering all releases
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.3.2v",
+    version: "3.3.2v",
+    git_commit_tag: "3.3.2v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.3.2v - Add Inverter technology switch, live cruising telemetry, and custom running wattage override to ApplianceRoutineModal for DOE PELP additions.",
+  },
+  {
     id: "3.3.1v",
     version: "3.3.1v",
     git_commit_tag: "3.3.1v",

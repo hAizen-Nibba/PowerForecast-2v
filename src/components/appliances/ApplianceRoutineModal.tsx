@@ -17,6 +17,8 @@ import MenuItem from "@mui/material/MenuItem";
 import InputAdornment from "@mui/material/InputAdornment";
 import CircularProgress from "@mui/material/CircularProgress";
 import Tooltip from "@mui/material/Tooltip";
+import Switch from "@mui/material/Switch";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import {
   Bolt as BoltIcon,
   Close as CloseIcon,
@@ -40,6 +42,7 @@ import {
   batchSaveDailyUsageAcrossRange,
   hmsToDecimalHours,
   decimalHoursToHms,
+  isCompressorInverterCategory,
 } from "../../lib/dailyUsageService";
 import { useToast } from "../common/ToastProvider";
 
@@ -65,6 +68,8 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
   const [roomLocation, setRoomLocation] = useState<string>("Living Room");
   const [hoursPerDay, setHoursPerDay] = useState<number>(8);
   const [hms, setHms] = useState({ hours: 8, minutes: 0, seconds: 0 });
+  const [isInverter, setIsInverter] = useState<boolean>(false);
+  const [customCruisingWatts, setCustomCruisingWatts] = useState<number | "">("");
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   // Month and Date boundaries for the Mini Calendar
@@ -99,6 +104,19 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
       setTargetListId(selectedListId || incomingAppliance.list_id || spaces[0]?.id || "");
       setRoomLocation(incomingAppliance.room_location || "Living Room");
       setActiveTab(0);
+
+      const category = incomingAppliance.category || "";
+      const catLower = category.toLowerCase();
+      const isFridge = catLower.includes("refrig") || catLower.includes("freezer") || catLower.includes("chiller");
+      const isAc = catLower.includes("air condition") || catLower.includes("aircon");
+      const supports = isCompressorInverterCategory(category) || !!incomingAppliance.ai_metadata?.is_inverter;
+      const initialInverter = incomingAppliance.ai_metadata?.is_inverter ?? (supports && (isAc || isFridge));
+      setIsInverter(Boolean(initialInverter));
+      setCustomCruisingWatts(
+        incomingAppliance.ai_metadata?.cruising_watts !== undefined && incomingAppliance.ai_metadata?.cruising_watts !== null
+          ? Number(incomingAppliance.ai_metadata.cruising_watts)
+          : ""
+      );
 
       // Re-initialize past days
       const keys = new Set<string>();
@@ -169,9 +187,41 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
 
   const watts = incomingAppliance?.watts || 100;
   const quantity = incomingAppliance?.quantity || 1;
+  const category = incomingAppliance?.category || "";
+  const catLower = category.toLowerCase();
+  const isFridge = catLower.includes("refrig") || catLower.includes("freezer") || catLower.includes("chiller");
+  const isWasher = catLower.includes("wash") || catLower.includes("laundry");
+  const isAc = catLower.includes("air condition") || catLower.includes("aircon");
+  const supportsInverter = isCompressorInverterCategory(category) || !!incomingAppliance?.ai_metadata?.is_inverter;
 
-  // Real-time calculations
-  const dailyKwh = calculateApplianceKwh(incomingAppliance || { watts, quantity }, hoursPerDay);
+  const defaultCruisingWatts = isFridge
+    ? Math.round(watts / 3)
+    : isWasher
+    ? Math.round(watts * 0.50)
+    : Math.round(watts * 0.42);
+
+  const activeCruisingWatts =
+    customCruisingWatts !== "" && Number(customCruisingWatts) > 0
+      ? Number(customCruisingWatts)
+      : defaultCruisingWatts;
+
+  const isCustomCruising =
+    customCruisingWatts !== "" &&
+    Number(customCruisingWatts) > 0 &&
+    Number(customCruisingWatts) !== defaultCruisingWatts;
+
+  const cruisingPercent =
+    watts > 0 ? ((activeCruisingWatts / watts) * 100).toFixed(1) : "0";
+
+  // Real-time calculations with dynamic Inverter support
+  const dailyKwh = calculateKwh(watts, hoursPerDay, quantity, {
+    isInverter: supportsInverter ? isInverter : false,
+    category,
+    energy_rating: incomingAppliance?.energy_rating,
+    name: incomingAppliance?.name,
+    model: incomingAppliance?.model,
+    cruising_watts: (supportsInverter && isInverter && isCustomCruising) ? activeCruisingWatts : undefined,
+  });
   const dailyCost = calculateCost(dailyKwh, DEFAULT_EFFECTIVE_RATE);
   const monthlyKwh = dailyKwh * 30;
   const monthlyCost = dailyCost * 30;
@@ -195,6 +245,14 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
         room_location: roomLocation,
         hours_per_day: hoursPerDay,
         days_per_month: 30,
+        monthly_kwh: Math.round(monthlyKwh * 10) / 10,
+        ai_metadata: {
+          ...(incomingAppliance.ai_metadata || {}),
+          is_inverter: supportsInverter ? isInverter : false,
+          ...(supportsInverter && isInverter
+            ? { cruising_watts: activeCruisingWatts }
+            : { cruising_watts: null }),
+        },
       };
 
       const res = await createAppliance({
@@ -395,6 +453,167 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
             />
           </Box>
         </Paper>
+
+        {/* INVERTER COMPRESSOR TELEMETRY & FALLBACK TOGGLE (Category-Adaptive) */}
+        {supportsInverter && (
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 2,
+              borderRadius: 1.5,
+              bgcolor: isInverter
+                ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.05)" : "rgba(13, 148, 136, 0.04)")
+                : "action.hover",
+              borderColor: isInverter
+                ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)")
+                : "divider",
+              transition: "all 0.2s ease-in-out",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <BoltIcon sx={{ color: isInverter ? "primary.main" : "text.secondary", fontSize: 22 }} />
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isInverter ? "primary.main" : "text.primary" }}>
+                    ⚡ {isFridge ? "Inverter Compressor & Thermal Duty" : isWasher ? "Inverter Direct Drive Motor" : "Inverter Technology & Duty Cycle"}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    {isInverter
+                      ? isFridge
+                        ? "Smart continuous thermal maintenance & cruising efficiency active"
+                        : isWasher
+                        ? "Smart variable-speed drum motor efficiency active"
+                        : "Smart compressor time-decay & cruising efficiency active"
+                      : "Fixed-speed continuous power draw (100% constant)"}
+                  </Typography>
+                </Box>
+              </Box>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isInverter}
+                    onChange={(e) => setIsInverter(e.target.checked)}
+                    color="primary"
+                    size="medium"
+                  />
+                }
+                label={
+                  <Typography variant="body2" sx={{ fontWeight: 800, color: isInverter ? "primary.main" : "text.secondary" }}>
+                    {isInverter ? "INVERTER ON" : "INVERTER OFF"}
+                  </Typography>
+                }
+                sx={{ m: 0 }}
+              />
+            </Box>
+
+            {/* Live Inverter Telemetry Preview & Manual Cruising Input */}
+            {isInverter && (
+              <Box
+                sx={{
+                  mt: 1.5,
+                  pt: 1.5,
+                  borderTop: "1px dashed",
+                  borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.2)" : "rgba(13, 148, 136, 0.2)"),
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1.5,
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+                  {isFridge ? (
+                    <Chip
+                      size="small"
+                      label="Thermal Duty: Steady Cruising (1/3 Cycle)"
+                      sx={{ fontWeight: 700, fontSize: "0.6875rem", bgcolor: (theme) => theme.palette.mode === "dark" ? "#1e293b" : "#f1f5f9" }}
+                    />
+                  ) : isWasher ? (
+                    <Chip
+                      size="small"
+                      label="Inverter Direct Drive Motor"
+                      sx={{ fontWeight: 700, fontSize: "0.6875rem", bgcolor: (theme) => theme.palette.mode === "dark" ? "#1e293b" : "#f1f5f9" }}
+                    />
+                  ) : (
+                    <Chip
+                      size="small"
+                      label={`1st Hr Cooldown: ${watts}W (100%)`}
+                      sx={{ fontWeight: 700, fontSize: "0.6875rem", bgcolor: (theme) => theme.palette.mode === "dark" ? "#1e293b" : "#f1f5f9" }}
+                    />
+                  )}
+
+                  <Chip
+                    size="small"
+                    label={`Cruising Mode: ~${activeCruisingWatts}W avg${isCustomCruising ? " (Custom)" : isFridge ? " (~33%)" : isWasher ? " (~50%)" : " (~42%)"}`}
+                    color="primary"
+                    variant="outlined"
+                    sx={{ fontWeight: 700, fontSize: "0.6875rem" }}
+                  />
+
+                  <Chip
+                    size="small"
+                    label={`Effective: ~${isFridge ? activeCruisingWatts : Math.round((dailyKwh * 1000) / (hoursPerDay || 1))}W @ ${hoursPerDay}h`}
+                    sx={{ fontWeight: 800, fontSize: "0.6875rem", bgcolor: "primary.main", color: "#ffffff" }}
+                  />
+                </Box>
+
+                {/* Manual Cruising Wattage Input Box */}
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 1.25,
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.04)" : "rgba(13, 148, 136, 0.03)",
+                    border: "1px solid",
+                    borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.15)" : "rgba(13, 148, 136, 0.15)",
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1, mb: 1 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: "text.primary" }}>
+                      🎯 Custom Cruising Power Draw (Optional Override)
+                    </Typography>
+                    {isCustomCruising && (
+                      <Button
+                        size="small"
+                        variant="text"
+                        color="inherit"
+                        onClick={() => setCustomCruisingWatts("")}
+                        sx={{ fontSize: "0.6875rem", py: 0, px: 0.5, textTransform: "none", color: "text.secondary" }}
+                      >
+                        Reset to Smart Default ({defaultCruisingWatts}W)
+                      </Button>
+                    )}
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+                    <TextField
+                      size="small"
+                      type="number"
+                      placeholder={String(defaultCruisingWatts)}
+                      value={customCruisingWatts}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "") {
+                          setCustomCruisingWatts("");
+                        } else {
+                          setCustomCruisingWatts(Math.max(0, Number(val)));
+                        }
+                      }}
+                      sx={{
+                        width: 140,
+                        "& .MuiInputBase-root": { height: 34, fontSize: "0.8125rem", fontWeight: 700 },
+                      }}
+                      slotProps={{
+                        input: {
+                          endAdornment: <InputAdornment position="end">W</InputAdornment>,
+                        },
+                      }}
+                    />
+                    <Typography variant="caption" sx={{ color: "text.secondary", maxWidth: 380, lineHeight: 1.4 }}>
+                      Override the automatic cruising estimate with your measured running wattage or manufacturer sub-rating ({cruisingPercent}% of rated).
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            )}
+          </Paper>
+        )}
 
         {/* TAB 0: QUICK TARGET QUOTA */}
         {activeTab === 0 && (
