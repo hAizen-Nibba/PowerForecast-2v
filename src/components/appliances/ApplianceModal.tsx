@@ -232,11 +232,6 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
       monthly_kwh: monthlyKwh,
       list_id: targetListId,
       tariff_type: targetSpace?.tariff_type || "residential",
-      cruising_watts: isComputer
-        ? activeCruisingWatts
-        : supportsInverter && isInverter && isCustom
-        ? activeCruisingWatts
-        : undefined,
       ai_metadata: {
         ...(applianceToEdit?.ai_metadata || {}),
         is_inverter: supportsInverter ? isInverter : false,

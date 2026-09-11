@@ -204,7 +204,6 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
       monthly_kwh: editMonthlyKwh,
       list_id: targetListId,
       tariff_type: targetSpace?.tariff_type || "residential",
-      cruising_watts: effectiveRunningWatts,
       ai_metadata: {
         is_inverter: editIsInverter,
         is_computer: isComputer,
