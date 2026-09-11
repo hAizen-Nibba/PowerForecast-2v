@@ -52,33 +52,50 @@ export function isCompressorInverterCategory(category: string = ""): boolean {
 }
 
 /**
- * Normalizes legacy category strings into the 7 streamlined everyday categories
+ * Normalizes legacy category strings into the 8 streamlined everyday categories
  */
-export function normalizeApplianceCategory(category: string = ""): string {
+export function normalizeApplianceCategory(category: string = "", name: string = "", model: string = ""): string {
   const c = category.toLowerCase().trim();
+  const extra = `${name} ${model}`.toLowerCase();
+
   if (c.includes("condition") || c.includes("aircon") || c.includes("split") || c.includes("window")) {
     return "Air Conditioners";
   }
   if (c.includes("refrig") || c.includes("freezer") || c.includes("chiller")) {
     return "Refrigerators & Freezers";
   }
+  if (
+    c.includes("computer") ||
+    c.includes("laptop") ||
+    c.includes("pc") ||
+    c.includes("desktop") ||
+    c.includes("workstation") ||
+    extra.includes("laptop") ||
+    extra.includes("pc") ||
+    extra.includes("ryzen") ||
+    extra.includes("geforce") ||
+    extra.includes("rtx") ||
+    extra.includes("macbook")
+  ) {
+    return "Computers & Laptops";
+  }
   if (c.includes("fan") || c.includes("ventilat") || c.includes("exhaust")) {
-    return "Electric Fans & Cooling";
+    return "Electric Fans";
   }
   if (c.includes("cook") || c.includes("rice") || c.includes("microwave") || c.includes("oven") || c.includes("blender") || c.includes("kettle") || c.includes("air fry") || c.includes("kitchen")) {
-    return "Kitchen & Cooking";
+    return "Kitchen Appliances";
   }
   if (c.includes("wash") || c.includes("dryer") || c.includes("laundry") || c.includes("iron") || c.includes("vacuum")) {
     return "Laundry & Cleaning";
   }
-  if (c.includes("tv") || c.includes("televis") || c.includes("screen") || c.includes("computer") || c.includes("laptop") || c.includes("pc") || c.includes("office") || c.includes("sound") || c.includes("entertain")) {
-    return "Entertainment & Work";
+  if (c.includes("tv") || c.includes("televis") || c.includes("screen") || c.includes("sound") || c.includes("entertain") || c.includes("audio") || c.includes("speaker")) {
+    return "TV & Entertainment";
   }
   return "Lighting & Other";
 }
 
 /**
- * Computes energy in kWh given watts and hours, accounting for Inverter compressor time-decay and refrigeration duty cycles.
+ * Computes energy in kWh given watts and hours, accounting for Inverter compressor time-decay, refrigeration duty cycles, and computer workload factors.
  */
 export function calculateKwh(
   watts: number,
@@ -112,8 +129,9 @@ export function calculateKwh(
   const catLower = category.toLowerCase();
   const isFridge = catLower.includes("refrigerat") || catLower.includes("fridge") || catLower.includes("freezer") || catLower.includes("chiller");
   const isWasher = catLower.includes("wash") || catLower.includes("laundry");
+  const isComputer = catLower.includes("computer") || catLower.includes("laptop") || catLower.includes("desktop") || catLower.includes("pc");
 
-  // Custom user cruising wattage if provided (e.g. commercial chest freezer at 250W-350W instead of % of surge)
+  // Custom user cruising wattage if provided (e.g. commercial chest freezer or PC effective running watts)
   const customCruisingWatts =
     options && typeof options === "object"
       ? (Number(options.cruising_watts) > 0
@@ -123,10 +141,14 @@ export function calculateKwh(
           : undefined)
       : undefined;
 
+  // If explicit cruising / effective running wattage is defined, calculate based on that
+  if (customCruisingWatts !== undefined && customCruisingWatts > 0) {
+    return Number(((customCruisingWatts * qty * h) / 1000).toFixed(4));
+  }
+
   if (isInverter) {
     if (isFridge) {
       // 24/7 Linear Inverter Refrigerator / Freezer: steady thermal maintenance (1/3 ~33.3% standard cycle or custom cruising watts)
-      // Without hourly pull-down cooldown spikes because closed fridges/freezers maintain thermal inertia
       const runningWatts = customCruisingWatts !== undefined ? customCruisingWatts : (watts / 3);
       return Number(((runningWatts * qty * h) / 1000).toFixed(4));
     }
@@ -147,6 +169,12 @@ export function calculateKwh(
     const pullDownKwh = (watts * qty * 1) / 1000;
     const cruisingKwh = (cruisingWatts * qty * (h - 1)) / 1000;
     return Number((pullDownKwh + cruisingKwh).toFixed(4));
+  }
+
+  // Computers & Laptops default workload factor (45% of peak/charger rating if no cruising_watts is specified)
+  if (isComputer) {
+    const runningWatts = Math.round(watts * 0.45);
+    return Number(((runningWatts * qty * h) / 1000).toFixed(4));
   }
 
   // Non-inverter standard calculation

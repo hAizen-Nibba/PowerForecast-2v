@@ -167,7 +167,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
 
       const matchesCategory =
         selectedCategory === "all" ||
-        normalizeApplianceCategory(app.category) === selectedCategory ||
+        normalizeApplianceCategory(app.category, app.name, app.model) === selectedCategory ||
         app.category.toLowerCase().includes(selectedCategory.toLowerCase());
 
       const matchesRoom =

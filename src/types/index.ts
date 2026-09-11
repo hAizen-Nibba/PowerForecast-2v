@@ -41,14 +41,35 @@ export interface UserAppliance {
 export const STREAMLINED_CATEGORIES = [
   "Air Conditioners",
   "Refrigerators & Freezers",
-  "Electric Fans & Cooling",
-  "Kitchen & Cooking",
+  "Computers & Laptops",
+  "Electric Fans",
+  "Kitchen Appliances",
   "Laundry & Cleaning",
-  "Entertainment & Work",
+  "TV & Entertainment",
   "Lighting & Other",
 ] as const;
 
 export type StreamlinedCategory = (typeof STREAMLINED_CATEGORIES)[number];
+
+export interface CpuHardwareItem {
+  id: string;
+  name: string;
+  brand: string;
+  family: string;
+  tdp: number;
+  gaming_w: number;
+  idle_w: number;
+}
+
+export interface GpuHardwareItem {
+  id: string;
+  name: string;
+  brand: string;
+  series: string;
+  tgp: number;
+  gaming_w: number;
+  idle_w: number;
+}
 
 export interface ApplianceUsageLog {
   id: string;

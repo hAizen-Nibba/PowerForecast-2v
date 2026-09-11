@@ -29,12 +29,13 @@ export function sanitizeAndReconcileSpecs(d: any): {
 } {
   let cat = String(d.category || 'Other').trim();
   // Normalize categories to standard PowerForecast catalog
-  if (/fan|ventilat|exhaust/i.test(cat)) cat = 'Electric Fans & Cooling';
+  if (/fan|ventilat|exhaust/i.test(cat)) cat = 'Electric Fans';
   else if (/condition|aircon|split|window/i.test(cat)) cat = 'Air Conditioners';
   else if (/refrig|freezer|chiller/i.test(cat)) cat = 'Refrigerators & Freezers';
   else if (/wash|dryer|laundry/i.test(cat)) cat = 'Laundry & Cleaning';
-  else if (/cook|rice|microwave|oven|blender|kettle|air\s*fry|kitchen/i.test(cat)) cat = 'Kitchen & Cooking';
-  else if (/tv|television|screen|display|computer|pc|laptop|printer|monitor/i.test(cat)) cat = 'Entertainment & Work';
+  else if (/cook|rice|microwave|oven|blender|kettle|air\s*fry|kitchen/i.test(cat)) cat = 'Kitchen Appliances';
+  else if (/computer|pc|laptop|workstation/i.test(cat)) cat = 'Computers & Laptops';
+  else if (/tv|television|screen|display|sound|audio|speaker/i.test(cat)) cat = 'TV & Entertainment';
   else cat = 'Lighting & Other';
 
   const isInverter = Boolean(
@@ -69,11 +70,13 @@ export function sanitizeAndReconcileSpecs(d: any): {
     }
   } else if (cat.includes('Electric Fan')) {
     if (rawWatts > 250 || rawWatts < 15) rawWatts = 70;
-  } else if (cat.includes('Television')) {
+  } else if (cat.includes('Television') || cat.includes('TV')) {
     if (rawWatts > 500 || rawWatts < 15) rawWatts = 75;
+  } else if (cat.includes('Computer') || cat.includes('Laptop')) {
+    if (rawWatts > 1200 || rawWatts < 20) rawWatts = 120;
   } else if (cat.includes('Refrigerat')) {
     if (rawWatts > 600 || rawWatts < 20) rawWatts = isInverter ? 95 : 130;
-  } else if (cat.includes('Clothes Washing')) {
+  } else if (cat.includes('Washing') || cat.includes('Laundry')) {
     if (rawWatts > 2500 || rawWatts < 50) rawWatts = 450;
   }
 
@@ -90,9 +93,12 @@ export function sanitizeAndReconcileSpecs(d: any): {
       monthlyKwh = Math.round(((rawWatts * 8 * duty * 30) / 1000) * 10) / 10;
     } else if (cat.includes('Fan')) {
       monthlyKwh = Math.round(((rawWatts * 10 * 30) / 1000) * 10) / 10;
-    } else if (cat.includes('Television')) {
+    } else if (cat.includes('Television') || cat.includes('TV')) {
       monthlyKwh = Math.round(((rawWatts * 5 * 30) / 1000) * 10) / 10;
-    } else if (cat.includes('Washing')) {
+    } else if (cat.includes('Computer') || cat.includes('Laptop')) {
+      // 8h per day with realistic 45% standard running factor
+      monthlyKwh = Math.round(((rawWatts * 0.45 * 8 * 30) / 1000) * 10) / 10;
+    } else if (cat.includes('Washing') || cat.includes('Laundry')) {
       monthlyKwh = Math.round(((rawWatts * 1 * 15) / 1000) * 10) / 10;
     } else {
       monthlyKwh = Math.round(((rawWatts * 6 * 30) / 1000) * 10) / 10;

@@ -41,6 +41,16 @@ export interface SystemChangelogEntry {
 // Master compiled GitHub deployment history covering all releases
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.3.0v",
+    version: "3.3.0v",
+    git_commit_tag: "3.3.0v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.3.0v - Introduce dedicated Computers & Laptops category with modular PC Hardware Spec Builder (CPU, GPU, baseline, and monitor load states), curated local JSON hardware catalog, Gemini AI fallback, and decluttered streamlined categories.",
+  },
+  {
     id: "3.2.6v",
     version: "3.2.6v",
     git_commit_tag: "3.2.6v",

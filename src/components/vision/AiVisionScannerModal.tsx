@@ -47,6 +47,7 @@ import {
 } from "../../lib/dailyUsageService";
 import { devLog } from "../../lib/devLogger";
 import { DuplicateApplianceModal } from "../appliances/DuplicateApplianceModal";
+import { PcSpecBuilderSection } from "../appliances/PcSpecBuilderSection";
 
 interface AiVisionScannerModalProps {
   isOpen: boolean;
@@ -75,10 +76,11 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
   const [editModel, setEditModel] = useState("");
   const [editWatts, setEditWatts] = useState<number>(70);
   const [editMonthlyKwh, setEditMonthlyKwh] = useState<number>(16.8);
-  const [editCategory, setEditCategory] = useState("Electric Fans & Cooling");
+  const [editCategory, setEditCategory] = useState("Electric Fans");
   const [editRoom, setEditRoom] = useState("Living Room");
   const [editIsInverter, setEditIsInverter] = useState<boolean>(true);
   const [editCustomCruisingWatts, setEditCustomCruisingWatts] = useState<number | "">("");
+  const [editPcMetadata, setEditPcMetadata] = useState<Record<string, any>>({});
 
   // Duplicate modal states
   const [duplicateIncoming, setDuplicateIncoming] = useState<Partial<UserAppliance> | null>(null);
@@ -180,8 +182,12 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
   const handleSaveToInventory = () => {
     const targetListId = defaultListId || (spaces[0]?.id ?? null);
     const targetSpace = spaces.find((s) => s.id === targetListId);
-    const normalizedCat = normalizeApplianceCategory(editCategory);
+    const normalizedCat = normalizeApplianceCategory(editCategory, editName, editModel);
+    const isComputer = normalizedCat === "Computers & Laptops";
     const isCustomCruising = editCustomCruisingWatts !== "" && Number(editCustomCruisingWatts) > 0;
+    const effectiveRunningWatts = isComputer
+      ? (Number(editCustomCruisingWatts) > 0 ? Number(editCustomCruisingWatts) : Math.round(editWatts * 0.45))
+      : editIsInverter && isCustomCruising ? Number(editCustomCruisingWatts) : undefined;
 
     const incomingPayload: Partial<UserAppliance> = {
       name: editName || "Scanned Appliance",
@@ -198,10 +204,13 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
       monthly_kwh: editMonthlyKwh,
       list_id: targetListId,
       tariff_type: targetSpace?.tariff_type || "residential",
+      cruising_watts: effectiveRunningWatts,
       ai_metadata: {
         is_inverter: editIsInverter,
+        is_computer: isComputer,
         ...(scanResult?.detected_model ? { detected_model: scanResult.detected_model } : {}),
-        ...(editIsInverter && isCustomCruising ? { cruising_watts: Number(editCustomCruisingWatts) } : {}),
+        ...(isComputer ? editPcMetadata : {}),
+        ...(effectiveRunningWatts ? { cruising_watts: effectiveRunningWatts } : {}),
       },
     };
 
@@ -629,6 +638,24 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
                     helperText="Official DOE test or estimated monthly kWh"
                   />
                 </Grid>
+
+                {/* COMPUTER & LAPTOP SPEC BUILDER */}
+                {normalizeApplianceCategory(editCategory) === "Computers & Laptops" && (
+                  <Grid size={12}>
+                    <PcSpecBuilderSection
+                      initialRatedWatts={editWatts}
+                      initialCruisingWatts={typeof editCustomCruisingWatts === "number" ? editCustomCruisingWatts : undefined}
+                      initialMetadata={editPcMetadata}
+                      onSpecChange={({ ratedWatts, runningWatts, metadata }) => {
+                        setEditWatts(ratedWatts);
+                        setEditCustomCruisingWatts(runningWatts);
+                        setEditPcMetadata(metadata);
+                        // Auto-update monthly kWh estimation (8 hours/day * 30 days)
+                        setEditMonthlyKwh(Math.round(((runningWatts * 8 * 30) / 1000) * 10) / 10);
+                      }}
+                    />
+                  </Grid>
+                )}
 
                 {/* INVERTER FALLBACK INTERACTIVE SWITCH */}
                 {isCompressorInverterCategory(editCategory) && (() => {

@@ -1,0 +1,587 @@
+[
+  {
+    "id": "amd-ryzen-9-9950x",
+    "name": "AMD Ryzen 9 9950X",
+    "brand": "AMD",
+    "family": "Ryzen 9",
+    "tdp": 170,
+    "gaming_w": 140,
+    "idle_w": 22
+  },
+  {
+    "id": "amd-ryzen-9-9900x",
+    "name": "AMD Ryzen 9 9900X",
+    "brand": "AMD",
+    "family": "Ryzen 9",
+    "tdp": 120,
+    "gaming_w": 105,
+    "idle_w": 20
+  },
+  {
+    "id": "amd-ryzen-7-9700x",
+    "name": "AMD Ryzen 7 9700X",
+    "brand": "AMD",
+    "family": "Ryzen 7",
+    "tdp": 65,
+    "gaming_w": 65,
+    "idle_w": 15
+  },
+  {
+    "id": "amd-ryzen-5-9600x",
+    "name": "AMD Ryzen 5 9600X",
+    "brand": "AMD",
+    "family": "Ryzen 5",
+    "tdp": 65,
+    "gaming_w": 58,
+    "idle_w": 14
+  },
+  {
+    "id": "amd-ryzen-9-7950x3d",
+    "name": "AMD Ryzen 9 7950X3D",
+    "brand": "AMD",
+    "family": "Ryzen 9",
+    "tdp": 120,
+    "gaming_w": 90,
+    "idle_w": 18
+  },
+  {
+    "id": "amd-ryzen-9-7950x",
+    "name": "AMD Ryzen 9 7950X",
+    "brand": "AMD",
+    "family": "Ryzen 9",
+    "tdp": 170,
+    "gaming_w": 135,
+    "idle_w": 20
+  },
+  {
+    "id": "amd-ryzen-9-7900x3d",
+    "name": "AMD Ryzen 9 7900X3D",
+    "brand": "AMD",
+    "family": "Ryzen 9",
+    "tdp": 120,
+    "gaming_w": 85,
+    "idle_w": 18
+  },
+  {
+    "id": "amd-ryzen-9-7900x",
+    "name": "AMD Ryzen 9 7900X",
+    "brand": "AMD",
+    "family": "Ryzen 9",
+    "tdp": 170,
+    "gaming_w": 125,
+    "idle_w": 20
+  },
+  {
+    "id": "amd-ryzen-7-7800x3d",
+    "name": "AMD Ryzen 7 7800X3D",
+    "brand": "AMD",
+    "family": "Ryzen 7",
+    "tdp": 120,
+    "gaming_w": 65,
+    "idle_w": 16
+  },
+  {
+    "id": "amd-ryzen-7-7700x",
+    "name": "AMD Ryzen 7 7700X",
+    "brand": "AMD",
+    "family": "Ryzen 7",
+    "tdp": 105,
+    "gaming_w": 85,
+    "idle_w": 17
+  },
+  {
+    "id": "amd-ryzen-7-7700",
+    "name": "AMD Ryzen 7 7700",
+    "brand": "AMD",
+    "family": "Ryzen 7",
+    "tdp": 65,
+    "gaming_w": 65,
+    "idle_w": 15
+  },
+  {
+    "id": "amd-ryzen-5-7600x",
+    "name": "AMD Ryzen 5 7600X",
+    "brand": "AMD",
+    "family": "Ryzen 5",
+    "tdp": 105,
+    "gaming_w": 75,
+    "idle_w": 15
+  },
+  {
+    "id": "amd-ryzen-5-7600",
+    "name": "AMD Ryzen 5 7600",
+    "brand": "AMD",
+    "family": "Ryzen 5",
+    "tdp": 65,
+    "gaming_w": 58,
+    "idle_w": 14
+  },
+  {
+    "id": "amd-ryzen-5-7500f",
+    "name": "AMD Ryzen 5 7500F",
+    "brand": "AMD",
+    "family": "Ryzen 5",
+    "tdp": 65,
+    "gaming_w": 55,
+    "idle_w": 14
+  },
+  {
+    "id": "amd-ryzen-9-5950x",
+    "name": "AMD Ryzen 9 5950X",
+    "brand": "AMD",
+    "family": "Ryzen 9",
+    "tdp": 105,
+    "gaming_w": 110,
+    "idle_w": 18
+  },
+  {
+    "id": "amd-ryzen-9-5900x",
+    "name": "AMD Ryzen 9 5900X",
+    "brand": "AMD",
+    "family": "Ryzen 9",
+    "tdp": 105,
+    "gaming_w": 105,
+    "idle_w": 18
+  },
+  {
+    "id": "amd-ryzen-7-5800x3d",
+    "name": "AMD Ryzen 7 5800X3D",
+    "brand": "AMD",
+    "family": "Ryzen 7",
+    "tdp": 105,
+    "gaming_w": 75,
+    "idle_w": 16
+  },
+  {
+    "id": "amd-ryzen-7-5800x",
+    "name": "AMD Ryzen 7 5800X",
+    "brand": "AMD",
+    "family": "Ryzen 7",
+    "tdp": 105,
+    "gaming_w": 95,
+    "idle_w": 16
+  },
+  {
+    "id": "amd-ryzen-7-5700x3d",
+    "name": "AMD Ryzen 7 5700X3D",
+    "brand": "AMD",
+    "family": "Ryzen 7",
+    "tdp": 105,
+    "gaming_w": 70,
+    "idle_w": 15
+  },
+  {
+    "id": "amd-ryzen-7-5700x",
+    "name": "AMD Ryzen 7 5700X",
+    "brand": "AMD",
+    "family": "Ryzen 7",
+    "tdp": 65,
+    "gaming_w": 65,
+    "idle_w": 14
+  },
+  {
+    "id": "amd-ryzen-7-5700g",
+    "name": "AMD Ryzen 7 5700G (with Radeon Graphics)",
+    "brand": "AMD",
+    "family": "Ryzen 7",
+    "tdp": 65,
+    "gaming_w": 60,
+    "idle_w": 12
+  },
+  {
+    "id": "amd-ryzen-5-5600x",
+    "name": "AMD Ryzen 5 5600X",
+    "brand": "AMD",
+    "family": "Ryzen 5",
+    "tdp": 65,
+    "gaming_w": 65,
+    "idle_w": 13
+  },
+  {
+    "id": "amd-ryzen-5-5600",
+    "name": "AMD Ryzen 5 5600",
+    "brand": "AMD",
+    "family": "Ryzen 5",
+    "tdp": 65,
+    "gaming_w": 60,
+    "idle_w": 13
+  },
+  {
+    "id": "amd-ryzen-5-5600g",
+    "name": "AMD Ryzen 5 5600G (with Radeon Graphics)",
+    "brand": "AMD",
+    "family": "Ryzen 5",
+    "tdp": 65,
+    "gaming_w": 55,
+    "idle_w": 12
+  },
+  {
+    "id": "amd-ryzen-5-5500",
+    "name": "AMD Ryzen 5 5500",
+    "brand": "AMD",
+    "family": "Ryzen 5",
+    "tdp": 65,
+    "gaming_w": 50,
+    "idle_w": 12
+  },
+  {
+    "id": "amd-ryzen-5-4500",
+    "name": "AMD Ryzen 5 4500",
+    "brand": "AMD",
+    "family": "Ryzen 5",
+    "tdp": 65,
+    "gaming_w": 50,
+    "idle_w": 12
+  },
+  {
+    "id": "amd-ryzen-3-4100",
+    "name": "AMD Ryzen 3 4100",
+    "brand": "AMD",
+    "family": "Ryzen 3",
+    "tdp": 65,
+    "gaming_w": 40,
+    "idle_w": 10
+  },
+  {
+    "id": "amd-ryzen-3-3200g",
+    "name": "AMD Ryzen 3 3200G (with Vega 8)",
+    "brand": "AMD",
+    "family": "Ryzen 3",
+    "tdp": 65,
+    "gaming_w": 45,
+    "idle_w": 10
+  },
+  {
+    "id": "amd-ryzen-5-3400g",
+    "name": "AMD Ryzen 5 3400G (with Vega 11)",
+    "brand": "AMD",
+    "family": "Ryzen 5",
+    "tdp": 65,
+    "gaming_w": 50,
+    "idle_w": 11
+  },
+  {
+    "id": "amd-ryzen-9-3900x",
+    "name": "AMD Ryzen 9 3900X",
+    "brand": "AMD",
+    "family": "Ryzen 9",
+    "tdp": 105,
+    "gaming_w": 105,
+    "idle_w": 18
+  },
+  {
+    "id": "amd-ryzen-7-3700x",
+    "name": "AMD Ryzen 7 3700X",
+    "brand": "AMD",
+    "family": "Ryzen 7",
+    "tdp": 65,
+    "gaming_w": 65,
+    "idle_w": 14
+  },
+  {
+    "id": "amd-ryzen-5-3600",
+    "name": "AMD Ryzen 5 3600",
+    "brand": "AMD",
+    "family": "Ryzen 5",
+    "tdp": 65,
+    "gaming_w": 65,
+    "idle_w": 14
+  },
+  {
+    "id": "amd-ryzen-5-2600",
+    "name": "AMD Ryzen 5 2600",
+    "brand": "AMD",
+    "family": "Ryzen 5",
+    "tdp": 65,
+    "gaming_w": 65,
+    "idle_w": 14
+  },
+  {
+    "id": "amd-ryzen-5-1600",
+    "name": "AMD Ryzen 5 1600",
+    "brand": "AMD",
+    "family": "Ryzen 5",
+    "tdp": 65,
+    "gaming_w": 65,
+    "idle_w": 14
+  },
+  {
+    "id": "intel-core-i9-14900k",
+    "name": "Intel Core i9-14900K",
+    "brand": "Intel",
+    "family": "Core i9",
+    "tdp": 125,
+    "gaming_w": 160,
+    "idle_w": 22
+  },
+  {
+    "id": "intel-core-i9-14900f",
+    "name": "Intel Core i9-14900F",
+    "brand": "Intel",
+    "family": "Core i9",
+    "tdp": 65,
+    "gaming_w": 120,
+    "idle_w": 18
+  },
+  {
+    "id": "intel-core-i7-14700k",
+    "name": "Intel Core i7-14700K",
+    "brand": "Intel",
+    "family": "Core i7",
+    "tdp": 125,
+    "gaming_w": 140,
+    "idle_w": 20
+  },
+  {
+    "id": "intel-core-i7-14700f",
+    "name": "Intel Core i7-14700F",
+    "brand": "Intel",
+    "family": "Core i7",
+    "tdp": 65,
+    "gaming_w": 110,
+    "idle_w": 18
+  },
+  {
+    "id": "intel-core-i5-14600k",
+    "name": "Intel Core i5-14600K",
+    "brand": "Intel",
+    "family": "Core i5",
+    "tdp": 125,
+    "gaming_w": 105,
+    "idle_w": 16
+  },
+  {
+    "id": "intel-core-i5-14400",
+    "name": "Intel Core i5-14400 / 14400F",
+    "brand": "Intel",
+    "family": "Core i5",
+    "tdp": 65,
+    "gaming_w": 70,
+    "idle_w": 12
+  },
+  {
+    "id": "intel-core-i3-14100",
+    "name": "Intel Core i3-14100 / 14100F",
+    "brand": "Intel",
+    "family": "Core i3",
+    "tdp": 60,
+    "gaming_w": 45,
+    "idle_w": 10
+  },
+  {
+    "id": "intel-core-i9-13900k",
+    "name": "Intel Core i9-13900K",
+    "brand": "Intel",
+    "family": "Core i9",
+    "tdp": 125,
+    "gaming_w": 155,
+    "idle_w": 22
+  },
+  {
+    "id": "intel-core-i7-13700k",
+    "name": "Intel Core i7-13700K",
+    "brand": "Intel",
+    "family": "Core i7",
+    "tdp": 125,
+    "gaming_w": 135,
+    "idle_w": 20
+  },
+  {
+    "id": "intel-core-i7-13700",
+    "name": "Intel Core i7-13700 / 13700F",
+    "brand": "Intel",
+    "family": "Core i7",
+    "tdp": 65,
+    "gaming_w": 105,
+    "idle_w": 16
+  },
+  {
+    "id": "intel-core-i5-13600k",
+    "name": "Intel Core i5-13600K",
+    "brand": "Intel",
+    "family": "Core i5",
+    "tdp": 125,
+    "gaming_w": 100,
+    "idle_w": 15
+  },
+  {
+    "id": "intel-core-i5-13400",
+    "name": "Intel Core i5-13400 / 13400F",
+    "brand": "Intel",
+    "family": "Core i5",
+    "tdp": 65,
+    "gaming_w": 68,
+    "idle_w": 12
+  },
+  {
+    "id": "intel-core-i3-13100",
+    "name": "Intel Core i3-13100 / 13100F",
+    "brand": "Intel",
+    "family": "Core i3",
+    "tdp": 60,
+    "gaming_w": 45,
+    "idle_w": 10
+  },
+  {
+    "id": "intel-core-i9-12900k",
+    "name": "Intel Core i9-12900K",
+    "brand": "Intel",
+    "family": "Core i9",
+    "tdp": 125,
+    "gaming_w": 145,
+    "idle_w": 22
+  },
+  {
+    "id": "intel-core-i7-12700k",
+    "name": "Intel Core i7-12700K",
+    "brand": "Intel",
+    "family": "Core i7",
+    "tdp": 125,
+    "gaming_w": 125,
+    "idle_w": 18
+  },
+  {
+    "id": "intel-core-i7-12700",
+    "name": "Intel Core i7-12700 / 12700F",
+    "brand": "Intel",
+    "family": "Core i7",
+    "tdp": 65,
+    "gaming_w": 90,
+    "idle_w": 15
+  },
+  {
+    "id": "intel-core-i5-12600k",
+    "name": "Intel Core i5-12600K",
+    "brand": "Intel",
+    "family": "Core i5",
+    "tdp": 125,
+    "gaming_w": 90,
+    "idle_w": 14
+  },
+  {
+    "id": "intel-core-i5-12400",
+    "name": "Intel Core i5-12400 / 12400F",
+    "brand": "Intel",
+    "family": "Core i5",
+    "tdp": 65,
+    "gaming_w": 60,
+    "idle_w": 12
+  },
+  {
+    "id": "intel-core-i3-12100",
+    "name": "Intel Core i3-12100 / 12100F",
+    "brand": "Intel",
+    "family": "Core i3",
+    "tdp": 60,
+    "gaming_w": 42,
+    "idle_w": 10
+  },
+  {
+    "id": "intel-core-i9-10900k",
+    "name": "Intel Core i9-10900K",
+    "brand": "Intel",
+    "family": "Core i9",
+    "tdp": 125,
+    "gaming_w": 130,
+    "idle_w": 20
+  },
+  {
+    "id": "intel-core-i7-10700",
+    "name": "Intel Core i7-10700 / 10700K",
+    "brand": "Intel",
+    "family": "Core i7",
+    "tdp": 65,
+    "gaming_w": 95,
+    "idle_w": 16
+  },
+  {
+    "id": "intel-core-i5-11400",
+    "name": "Intel Core i5-11400 / 11400F",
+    "brand": "Intel",
+    "family": "Core i5",
+    "tdp": 65,
+    "gaming_w": 75,
+    "idle_w": 14
+  },
+  {
+    "id": "intel-core-i5-10400",
+    "name": "Intel Core i5-10400 / 10400F",
+    "brand": "Intel",
+    "family": "Core i5",
+    "tdp": 65,
+    "gaming_w": 55,
+    "idle_w": 12
+  },
+  {
+    "id": "intel-core-i3-10100",
+    "name": "Intel Core i3-10100 / 10105",
+    "brand": "Intel",
+    "family": "Core i3",
+    "tdp": 65,
+    "gaming_w": 40,
+    "idle_w": 10
+  },
+  {
+    "id": "intel-core-i9-9900k",
+    "name": "Intel Core i9-9900K",
+    "brand": "Intel",
+    "family": "Core i9",
+    "tdp": 95,
+    "gaming_w": 110,
+    "idle_w": 18
+  },
+  {
+    "id": "intel-core-i7-9700k",
+    "name": "Intel Core i7-9700K",
+    "brand": "Intel",
+    "family": "Core i7",
+    "tdp": 95,
+    "gaming_w": 95,
+    "idle_w": 16
+  },
+  {
+    "id": "intel-core-i5-9400f",
+    "name": "Intel Core i5-9400F",
+    "brand": "Intel",
+    "family": "Core i5",
+    "tdp": 65,
+    "gaming_w": 55,
+    "idle_w": 12
+  },
+  {
+    "id": "intel-core-i7-8700k",
+    "name": "Intel Core i7-8700K",
+    "brand": "Intel",
+    "family": "Core i7",
+    "tdp": 95,
+    "gaming_w": 90,
+    "idle_w": 16
+  },
+  {
+    "id": "intel-core-i5-8400",
+    "name": "Intel Core i5-8400",
+    "brand": "Intel",
+    "family": "Core i5",
+    "tdp": 65,
+    "gaming_w": 55,
+    "idle_w": 12
+  },
+  {
+    "id": "generic-office-celeron-pentium",
+    "name": "Intel Celeron / Pentium / Core 2 Duo (Office)",
+    "brand": "Intel",
+    "family": "Basic Office",
+    "tdp": 45,
+    "gaming_w": 35,
+    "idle_w": 10
+  },
+  {
+    "id": "generic-amd-athlon",
+    "name": "AMD Athlon / A-Series (Office)",
+    "brand": "AMD",
+    "family": "Basic Office",
+    "tdp": 45,
+    "gaming_w": 35,
+    "idle_w": 10
+  }
+]

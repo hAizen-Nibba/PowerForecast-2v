@@ -59,6 +59,7 @@ export function getDefaultStartHour(category: string): number {
   const cat = (category || '').toLowerCase();
   if (cat.includes('refrigerat') || cat.includes('freezer')) return 0; // 24/7 continuous
   if (cat.includes('air') || cat.includes('ac')) return 13; // 1:00 PM afternoon peak
+  if (cat.includes('computer') || cat.includes('laptop') || cat.includes('pc')) return 9; // 9:00 AM work/study start
   if (cat.includes('fan')) return 9; // 9:00 AM morning/daytime
   if (cat.includes('tv') || cat.includes('television')) return 18; // 6:00 PM evening
   if (cat.includes('light')) return 18; // 6:00 PM evening

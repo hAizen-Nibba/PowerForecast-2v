@@ -22,6 +22,7 @@ import {
   AccessTime as ClockIcon,
   Speed as SpeedIcon,
   Warning as WarningIcon,
+  Laptop as LaptopIcon,
 } from "@mui/icons-material";
 import { UserAppliance, ApplianceList } from "../../types";
 import { useUpdate, useList } from "@refinedev/core";
@@ -79,7 +80,10 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
     if (c.includes("wash") || c.includes("laundry")) {
       return <WashingMachineIcon fontSize="small" sx={{ color: "primary.light" }} />;
     }
-    if (c.includes("tv") || c.includes("televis") || c.includes("computer") || c.includes("entertain") || c.includes("office")) {
+    if (c.includes("computer") || c.includes("laptop") || c.includes("pc")) {
+      return <LaptopIcon fontSize="small" sx={{ color: "#818cf8" }} />;
+    }
+    if (c.includes("tv") || c.includes("televis") || c.includes("entertain") || c.includes("office")) {
       return <TvIcon fontSize="small" sx={{ color: "primary.light" }} />;
     }
     return <LightbulbIcon fontSize="small" sx={{ color: "primary.light" }} />;

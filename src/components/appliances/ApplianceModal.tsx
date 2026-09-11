@@ -45,6 +45,7 @@ import { DuplicateApplianceModal } from "./DuplicateApplianceModal";
 import { SpaceManagementModal } from "./SpaceManagementModal";
 import { PelpCatalogTabContent } from "./PelpCatalogTabContent";
 import { AiVisionScannerTabContent } from "./AiVisionScannerTabContent";
+import { PcSpecBuilderSection } from "./PcSpecBuilderSection";
 
 interface ApplianceModalProps {
   isOpen: boolean;
@@ -78,6 +79,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
   const [energyRating, setEnergyRating] = useState("5-Star Inverter");
   const [isInverter, setIsInverter] = useState<boolean>(true);
   const [customCruisingWatts, setCustomCruisingWatts] = useState<number | "">("");
+  const [pcMetadata, setPcMetadata] = useState<Record<string, any>>({});
   const [selectedListId, setSelectedListId] = useState<string>("");
   const [isSpaceModalOpen, setIsSpaceModalOpen] = useState(false);
 
@@ -104,7 +106,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
     if (applianceToEdit) {
       setActiveTab(0);
       setName(applianceToEdit.name || "");
-      const cat = normalizeApplianceCategory(applianceToEdit.category || "Air Conditioners");
+      const cat = normalizeApplianceCategory(applianceToEdit.category || "Air Conditioners", applianceToEdit.name, applianceToEdit.model);
       setCategory(cat);
       setBrand(applianceToEdit.brand || "");
       setModel(applianceToEdit.model || "");
@@ -125,9 +127,16 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
         )
       );
       setCustomCruisingWatts(
-        applianceToEdit.cruising_watts ?? applianceToEdit.ai_metadata?.cruising_watts ?? ""
+        applianceToEdit.cruising_watts !== undefined && applianceToEdit.cruising_watts !== null
+          ? applianceToEdit.cruising_watts
+          : applianceToEdit.ai_metadata?.cruising_watts !== undefined && applianceToEdit.ai_metadata?.cruising_watts !== null
+          ? applianceToEdit.ai_metadata.cruising_watts
+          : ""
       );
-      setSelectedListId(applianceToEdit.list_id || (spaces[0]?.id || ""));
+      if (applianceToEdit.ai_metadata) {
+        setPcMetadata(applianceToEdit.ai_metadata);
+      }
+      setSelectedListId(applianceToEdit.list_id || defaultListId || (spaces[0]?.id || ""));
       setNameError(false);
     } else {
       setActiveTab(initialTab);
@@ -145,6 +154,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
       setEnergyRating("5-Star Inverter");
       setIsInverter(true);
       setCustomCruisingWatts("");
+      setPcMetadata({});
       setSelectedListId(defaultListId || (spaces[0]?.id || ""));
     }
   }, [applianceToEdit, isOpen, spaces, defaultListId, initialTab]);
@@ -156,10 +166,13 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
   const isFridge = catLower.includes("refrigerat") || catLower.includes("fridge") || catLower.includes("freezer") || catLower.includes("chiller");
   const isWasher = catLower.includes("wash") || catLower.includes("laundry");
   const isAc = catLower.includes("air condition") || catLower.includes("aircon");
+  const isComputer = normalizeApplianceCategory(category) === "Computers & Laptops";
   const supportsInverter = isCompressorInverterCategory(category);
 
-  // Calibrated Smart Auto Cruising Watts: 1/3 (~33.3%) for fridge/freezers, ~50% for washers, ~42% for ACs
-  const defaultCruisingWatts = isFridge
+  // Calibrated Smart Auto Cruising Watts: 1/3 (~33.3%) for fridge/freezers, ~50% for washers, ~42% for ACs, ~45% for computers
+  const defaultCruisingWatts = isComputer
+    ? Math.round(watts * 0.45)
+    : isFridge
     ? Math.round(watts / 3)
     : isWasher
     ? Math.round(watts * 0.50)
@@ -184,7 +197,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
     energy_rating: energyRating,
     name,
     model,
-    cruising_watts: isCustom ? activeCruisingWatts : undefined,
+    cruising_watts: (isCustom || isComputer) ? activeCruisingWatts : undefined,
   });
   const monthlyKwh = Math.round(dailyKwh * daysPerMonth * 10) / 10;
   const billCalc = calculateMeralcoBill(monthlyKwh, undefined, 0, false, tariffType);
@@ -219,10 +232,18 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
       monthly_kwh: monthlyKwh,
       list_id: targetListId,
       tariff_type: targetSpace?.tariff_type || "residential",
+      cruising_watts: isComputer
+        ? activeCruisingWatts
+        : supportsInverter && isInverter && isCustom
+        ? activeCruisingWatts
+        : undefined,
       ai_metadata: {
         ...(applianceToEdit?.ai_metadata || {}),
         is_inverter: supportsInverter ? isInverter : false,
+        ...(isComputer ? pcMetadata : {}),
         ...(supportsInverter && isInverter && isCustom
+          ? { cruising_watts: activeCruisingWatts }
+          : isComputer
           ? { cruising_watts: activeCruisingWatts }
           : { cruising_watts: null }),
       },
@@ -524,7 +545,10 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
                       onChange={(e) => {
                         const newCat = e.target.value;
                         setCategory(newCat);
-                        if (!isCompressorInverterCategory(newCat)) {
+                        if (newCat === "Computers & Laptops") {
+                          setIsInverter(false);
+                          if (watts > 500) setWatts(120);
+                        } else if (!isCompressorInverterCategory(newCat)) {
                           setIsInverter(false);
                         } else {
                           setIsInverter(true);
@@ -567,7 +591,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
                       label="Brand (Optional)"
                       value={brand}
                       onChange={(e) => setBrand(e.target.value)}
-                      placeholder="e.g. Panasonic, Carrier"
+                      placeholder={isComputer ? "e.g. ASUS, Lenovo, Custom Rig" : "e.g. Panasonic, Carrier"}
                     />
                   </Grid>
 
@@ -578,7 +602,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
                       label="Model No. (Optional)"
                       value={model}
                       onChange={(e) => setModel(e.target.value)}
-                      placeholder="e.g. CS-XPU12WKH"
+                      placeholder={isComputer ? "e.g. Legion 5, ROG Strix" : "e.g. CS-XPU12WKH"}
                     />
                   </Grid>
 
@@ -588,9 +612,10 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
                       type="number"
                       fullWidth
                       size="small"
-                      label="Power Draw (Watts)"
+                      label={isComputer ? "Rated / Peak Power (Watts)" : "Power Draw (Watts)"}
                       value={watts}
                       onChange={(e) => setWatts(Number(e.target.value) || 0)}
+                      helperText={isComputer ? "Auto-synced with specs below" : undefined}
                     />
                   </Grid>
 
@@ -605,6 +630,22 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
                       onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
                     />
                   </Grid>
+
+                  {/* COMPUTER & LAPTOP SPEC BUILDER (Category-Adaptive) */}
+                  {isComputer && (
+                    <Grid size={12}>
+                      <PcSpecBuilderSection
+                        initialRatedWatts={watts}
+                        initialCruisingWatts={typeof customCruisingWatts === "number" ? customCruisingWatts : undefined}
+                        initialMetadata={pcMetadata}
+                        onSpecChange={({ ratedWatts, runningWatts, metadata }) => {
+                          setWatts(ratedWatts);
+                          setCustomCruisingWatts(runningWatts);
+                          setPcMetadata(metadata);
+                        }}
+                      />
+                    </Grid>
+                  )}
 
                   {/* INVERTER COMPRESSOR TELEMETRY & FALLBACK TOGGLE (Category-Adaptive) */}
                   {supportsInverter && (
