@@ -151,7 +151,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
     );
   };
 
-  // Filter appliances strictly to the active space with smart fallback for unassigned or single spaces
+  // Filter appliances strictly to the active space with smart fallback for unassigned or orphaned spaces
   const currentSpaceAppliances = useMemo(() => {
     if (!activeSpace) return appliances;
     const hasDefault = spaces.some((s) => s.is_default);
@@ -160,8 +160,9 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
     return appliances.filter((app) => {
       // Direct space ID match
       if (app.list_id && app.list_id === activeSpace.id) return true;
-      // If appliance has no list_id, show in default space or the primary space
-      if (!app.list_id) {
+      // If appliance has no list_id OR points to a space that doesn't exist, show in default or primary space
+      const spaceExists = app.list_id ? spaces.some((s) => s.id === app.list_id) : false;
+      if (!app.list_id || !spaceExists) {
         if (activeSpace.is_default) return true;
         if (isSingleSpace) return true;
         if (!hasDefault && activeSpace.id === spaces[0]?.id) return true;
@@ -172,18 +173,26 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
 
   const filteredAppliances = useMemo(() => {
     return currentSpaceAppliances.filter((app: UserAppliance) => {
+      const appName = String(app.name || "");
+      const appBrand = String(app.brand || "");
+      const appModel = String(app.model || "");
+      const appCategory = String(app.category || "");
+      const appRoom = String(app.room_location || "");
+      const q = searchQuery.toLowerCase().trim();
+
       const matchesSearch =
-        app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (app.brand && app.brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (app.model && app.model.toLowerCase().includes(searchQuery.toLowerCase()));
+        !q ||
+        appName.toLowerCase().includes(q) ||
+        appBrand.toLowerCase().includes(q) ||
+        appModel.toLowerCase().includes(q);
 
       const matchesCategory =
         selectedCategory === "all" ||
-        normalizeApplianceCategory(app.category, app.name, app.model) === selectedCategory ||
-        app.category.toLowerCase().includes(selectedCategory.toLowerCase());
+        normalizeApplianceCategory(appCategory, appName, appModel) === selectedCategory ||
+        appCategory.toLowerCase().includes(selectedCategory.toLowerCase());
 
       const matchesRoom =
-        selectedRoom === "all" || (app.room_location && app.room_location.toLowerCase() === selectedRoom.toLowerCase());
+        selectedRoom === "all" || appRoom.toLowerCase() === selectedRoom.toLowerCase();
 
       return matchesSearch && matchesCategory && matchesRoom;
     });
