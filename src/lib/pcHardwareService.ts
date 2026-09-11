@@ -132,23 +132,16 @@ export interface AiPcResolutionResult {
   explanation: string;
 }
 
+import { executeWithGeminiKeyRotation } from "./geminiKeyService";
+
 /**
  * Fallback to Google Gemini AI to resolve obscure hardware or freeform text queries
+ * Supports automated multi-key rotation and multi-model cascade (gemini-2.5-flash -> 2.0-flash -> 1.5-flash)
  */
 export async function resolvePcHwWithAi(
   query: string,
   apiKey?: string
 ): Promise<AiPcResolutionResult> {
-  const effectiveKey =
-    apiKey ||
-    localStorage.getItem("powerforecast_gemini_api_key") ||
-    (import.meta as any).env?.VITE_GEMINI_API_KEY ||
-    "";
-
-  if (!effectiveKey.trim()) {
-    throw new Error("Gemini API key is required to query AI hardware specifications.");
-  }
-
   const prompt = `You are a PC hardware and electrical engineering expert. Analyze the following computer specification, laptop model, or hardware query:
 "${query}"
 
@@ -175,7 +168,6 @@ Return ONLY valid JSON matching this exact structure:
   "explanation": "..."
 }`;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${effectiveKey.trim()}`;
   const payload = {
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
@@ -184,24 +176,37 @@ Return ONLY valid JSON matching this exact structure:
     },
   };
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  const { result } = await executeWithGeminiKeyRotation<AiPcResolutionResult>(
+    async (activeKey, activeModel) => {
+      const effectiveKey = apiKey || activeKey;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${effectiveKey.trim()}`;
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || `HTTP ${res.status}`);
-  }
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-  const data = await res.json();
-  const textOutput = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-  const jsonMatch = textOutput.match(/```json\s*([\s\S]*?)\s*```/) || textOutput.match(/\{[\s\S]*\}/);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error?.message || `HTTP ${res.status}`);
+      }
 
-  if (!jsonMatch) {
-    throw new Error("Could not parse AI response.");
-  }
+      const data = await res.json();
+      const textOutput = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      const jsonMatch = textOutput.match(/```json\s*([\s\S]*?)\s*```/) || textOutput.match(/\{[\s\S]*\}/);
 
-  return JSON.parse(jsonMatch[1] || jsonMatch[0]);
+      if (!jsonMatch) {
+        throw new Error("Could not parse AI hardware response.");
+      }
+
+      return JSON.parse(jsonMatch[1] || jsonMatch[0]);
+    },
+    {
+      callerName: "PC Spec AI",
+      preferredModels: ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"],
+    }
+  );
+
+  return result;
 }

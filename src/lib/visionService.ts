@@ -1,5 +1,6 @@
 import { VisionScanResult } from '../types';
 import { devLog } from './devLogger';
+import { executeWithGeminiKeyRotation } from './geminiKeyService';
 
 export interface ImageItem {
   id: string;
@@ -11,7 +12,8 @@ export interface ImageItem {
 export interface MultiScanOptions {
   images: ImageItem[];
   apiKey?: string;
-  preset?: 'energy_guide' | 'nameplate' | 'inverter_check';
+  categoryHint?: string;
+  preset?: string; // backwards compatibility
 }
 
 export function sanitizeAndReconcileSpecs(d: any): {
@@ -21,6 +23,9 @@ export function sanitizeAndReconcileSpecs(d: any): {
   voltage: number;
   starRating: number;
   isInverter: boolean;
+  inverterType?: string | null;
+  cruisingWatts?: number | null;
+  pcMetadata?: Record<string, any> | null;
   coolingCapacityKjH?: number;
   coolingCapacityBtu?: number;
   cspf?: number;
@@ -32,17 +37,20 @@ export function sanitizeAndReconcileSpecs(d: any): {
   if (/fan|ventilat|exhaust/i.test(cat)) cat = 'Electric Fans';
   else if (/condition|aircon|split|window/i.test(cat)) cat = 'Air Conditioners';
   else if (/refrig|freezer|chiller/i.test(cat)) cat = 'Refrigerators & Freezers';
-  else if (/wash|dryer|laundry/i.test(cat)) cat = 'Laundry & Cleaning';
+  else if (/wash|dryer|laundry/i.test(cat)) cat = 'Clothes Washing Machines';
   else if (/cook|rice|microwave|oven|blender|kettle|air\s*fry|kitchen/i.test(cat)) cat = 'Kitchen Appliances';
   else if (/computer|pc|laptop|workstation/i.test(cat)) cat = 'Computers & Laptops';
-  else if (/tv|television|screen|display|sound|audio|speaker/i.test(cat)) cat = 'TV & Entertainment';
-  else cat = 'Lighting & Other';
+  else if (/tv|television|screen|display|sound|audio|speaker/i.test(cat)) cat = 'Television Sets';
+  else if (/water\s*heater|shower\s*heater|pump/i.test(cat)) cat = 'Water Heaters & Pumps';
+  else if (/light|bulb|lamp|led/i.test(cat)) cat = 'Lighting Products';
+  else cat = 'Other';
 
   const isInverter = Boolean(
     d.is_inverter === true ||
     /inverter/i.test(d.energy_rating || '') ||
     /inverter/i.test(d.notes || '') ||
-    /inverter/i.test(d.model || '')
+    /inverter/i.test(d.model || '') ||
+    /inverter/i.test(d.inverter_type || '')
   );
 
   let rawWatts = Number(d.power_watts || d.watts || 0);
@@ -82,22 +90,41 @@ export function sanitizeAndReconcileSpecs(d: any): {
 
   if (!rawWatts || rawWatts <= 0) rawWatts = 100;
 
+  // Calibrated Cruising Watts:
+  // For Inverter AC: ~42% of rated watts (e.g. 350W for an 850W unit)
+  // For Inverter Fridge: ~33% (1/3 duty cycle)
+  // For Computers: ~45% standard running factor
+  let cruisingWatts = Number(d.cruising_watts || d.cruisingWatts || 0);
+  if ((!cruisingWatts || cruisingWatts <= 0) && isInverter) {
+    if (cat.includes('Air Condition')) {
+      cruisingWatts = Math.round(rawWatts * 0.42);
+    } else if (cat.includes('Refrigerat')) {
+      cruisingWatts = Math.round(rawWatts / 3);
+    } else if (cat.includes('Computer') || cat.includes('Laptop')) {
+      cruisingWatts = Math.round(rawWatts * 0.45);
+    } else if (cat.includes('Washing') || cat.includes('Laundry')) {
+      cruisingWatts = Math.round(rawWatts * 0.50);
+    }
+  }
+
+  const inverterType = d.inverter_type || (isInverter ? 'Variable Frequency Inverter' : null);
+
   // Monthly kWh calculation
   let monthlyKwh = Number(d.monthly_kwh);
   if (!monthlyKwh || monthlyKwh <= 0) {
     if (cat.includes('Refrigerat')) {
-      const duty = isInverter ? 0.30 : 0.40;
+      const duty = isInverter ? 0.33 : 0.45;
       monthlyKwh = Math.round(((rawWatts * 24 * duty * 30) / 1000) * 10) / 10;
     } else if (cat.includes('Air Condition')) {
-      const duty = isInverter ? 0.65 : 0.85;
-      monthlyKwh = Math.round(((rawWatts * 8 * duty * 30) / 1000) * 10) / 10;
+      // Inverter AC: 1st hr 100%, subsequent hrs cruising at ~42%
+      const effectiveDraw = isInverter ? Math.round(rawWatts * 0.42) : Math.round(rawWatts * 0.85);
+      monthlyKwh = Math.round(((effectiveDraw * 8 * 30) / 1000) * 10) / 10;
     } else if (cat.includes('Fan')) {
       monthlyKwh = Math.round(((rawWatts * 10 * 30) / 1000) * 10) / 10;
     } else if (cat.includes('Television') || cat.includes('TV')) {
       monthlyKwh = Math.round(((rawWatts * 5 * 30) / 1000) * 10) / 10;
     } else if (cat.includes('Computer') || cat.includes('Laptop')) {
-      // 8h per day with realistic 45% standard running factor
-      monthlyKwh = Math.round(((rawWatts * 0.45 * 8 * 30) / 1000) * 10) / 10;
+      monthlyKwh = Math.round((((cruisingWatts || rawWatts * 0.45) * 8 * 30) / 1000) * 10) / 10;
     } else if (cat.includes('Washing') || cat.includes('Laundry')) {
       monthlyKwh = Math.round(((rawWatts * 1 * 15) / 1000) * 10) / 10;
     } else {
@@ -110,6 +137,15 @@ export function sanitizeAndReconcileSpecs(d: any): {
     starRating = isInverter ? 5 : 4;
   }
 
+  const pcMetadata = d.pc_metadata || (cat.includes('Computer') || cat.includes('Laptop') ? {
+    device_type: /laptop/i.test(d.model || '') || /laptop/i.test(d.brand || '') ? 'laptop' : 'desktop_pc',
+    cpu: d.cpu_name || null,
+    gpu: d.gpu_name || null,
+    charger_watts: d.charger_watts || rawWatts,
+    workload_profile: 'standard',
+    running_watts: cruisingWatts || Math.round(rawWatts * 0.45),
+  } : null);
+
   return {
     watts: rawWatts,
     monthlyKwh,
@@ -117,6 +153,9 @@ export function sanitizeAndReconcileSpecs(d: any): {
     voltage,
     starRating,
     isInverter,
+    inverterType,
+    cruisingWatts: cruisingWatts > 0 ? cruisingWatts : null,
+    pcMetadata,
     coolingCapacityKjH: Number(d.cooling_capacity_kj_h) || undefined,
     coolingCapacityBtu: Number(d.cooling_capacity_btu) || undefined,
     cspf: Number(d.cspf) || undefined,
@@ -125,13 +164,17 @@ export function sanitizeAndReconcileSpecs(d: any): {
   };
 }
 
-export function buildVisionPrompt(preset: string, imageCount: number): string {
+export function buildVisionPrompt(categoryHint?: string, imageCount: number = 1): string {
   const multiNotice =
     imageCount > 1
       ? `\nNOTE: The user provided ${imageCount} multi-angle photos (e.g. Energy Guide yellow label, technical nameplate, and full appliance body). Cross-reference all ${imageCount} images to extract the most accurate brand, model, rated electrical wattage, voltage, and energy rating.\n`
       : '';
 
-  return `You are ApplianceSpec AI, an elite electrical engineer and energy auditor specializing in Philippine Department of Energy (DOE) PELP standards, Energy Guide yellow labels, and electrical appliance specification nameplates (e.g. Carrier, Condura, Panasonic, LG, Samsung, Sharp, Daikin, Asahi, Astron, Standard, Hanabishi, TCL, Midea, Kolin, Haier, etc.).${multiNotice}
+  const catNotice = categoryHint && categoryHint !== 'Auto-Detect from Photo'
+    ? `\nTARGET APPLIANCE CATEGORY HINT: The user specified this appliance is "${categoryHint}". Prioritize technical interpretation and specifications typical for this category.\n`
+    : '';
+
+  return `You are ApplianceSpec AI, an elite electrical engineer and energy auditor specializing in Philippine Department of Energy (DOE) PELP standards, Energy Guide yellow labels, and electrical appliance specification nameplates (e.g. Carrier, Condura, Panasonic, LG, Samsung, Sharp, Daikin, Asahi, Astron, Standard, Hanabishi, TCL, Midea, Kolin, Haier, etc.).${multiNotice}${catNotice}
 
 Examine all uploaded appliance photo(s). Extract real, high-precision technical data visible across the image(s) following these strict engineering rules:
 
@@ -153,8 +196,12 @@ Examine all uploaded appliance photo(s). Extract real, high-precision technical 
   * Extract Star Rating (1 to 5 stars displayed on the top yellow banner).
   * Extract CSPF (Cooling Seasonal Performance Factor) or EER (Energy Efficiency Ratio) if visible.
 
-### 3. TECHNOLOGY & INVERTER DETECTION
+### 3. TECHNOLOGY & INVERTER TELEMETRY
 - Check if the appliance has Inverter technology ("Inverter", "Dual Inverter", "DC Inverter", "Digital Inverter", "Smart Inverter", "Direct Drive Inverter"). Set "is_inverter": true if detected.
+- Extract or estimate "cruising_watts":
+  * For Inverter Air Conditioners: estimated cruising draw once room temperature setpoint is satisfied (typically ~35% to 45% of rated input Watts, e.g. 350W for an 850W unit).
+  * For Inverter Refrigerators: steady thermal maintenance cruising draw (typically ~30% to 35% of rated compressor power, e.g. 35W - 75W).
+  * For non-inverter fixed-speed units: set to null or equal to rated power.
 
 ### 4. CATEGORY NORMALIZATION
 Categorize strictly as one of:
@@ -166,11 +213,8 @@ Categorize strictly as one of:
 - "Lighting Products"
 - "Kitchen Appliances"
 - "Water Heaters & Pumps"
-- "Computers & Office"
+- "Computers & Laptops"
 - "Other"
-
-### 5. PRESET MODE
-Current analysis preset: ${preset} (Modes: 'energy_guide' prioritizes yellow DOE labels and monthly kWh; 'nameplate' prioritizes electrical rating plates; 'inverter_check' prioritizes motor/compressor efficiency).
 
 Respond ONLY with a valid JSON object inside a \`\`\`json block with these keys:
 {
@@ -181,6 +225,8 @@ Respond ONLY with a valid JSON object inside a \`\`\`json block with these keys:
   "voltage": number (e.g. 230),
   "current_amps": number or null,
   "is_inverter": boolean,
+  "inverter_type": "string (e.g. Dual Inverter Compressor, DC Inverter, or Fixed Speed)",
+  "cruising_watts": number or null,
   "cooling_capacity_kj_h": number or null,
   "cooling_capacity_btu": number or null,
   "cspf": number or null,
@@ -190,20 +236,22 @@ Respond ONLY with a valid JSON object inside a \`\`\`json block with these keys:
   "star_rating": number between 1 and 5,
   "room_location": "Living Room | Master Bedroom | Kitchen | Laundry Area | Home Office",
   "confidence": "high | medium | low",
-  "notes": "Detailed engineering audit notes: detected rated power, voltage, current, frequency (60Hz), serial number, PELP registration, and energy efficiency summary."
+  "notes": "Detailed engineering audit notes: detected rated power, cruising power, voltage, current, frequency (60Hz), serial number, PELP registration, and energy efficiency summary."
 }`;
 }
 
 export async function analyzeMultipleApplianceImages(options: MultiScanOptions): Promise<VisionScanResult> {
-  const { images, apiKey, preset = 'energy_guide' } = options;
+  const { images, apiKey, categoryHint, preset } = options;
   if (!images || images.length === 0) {
     devLog.error('AI Scanner', 'Analysis failed: No images provided.');
     throw new Error('No images provided for analysis.');
   }
 
-  devLog.info('AI Scanner', `Initiating Google Gemini Multimodal AI Analysis (${images.length} photo(s))`, {
+  const effectiveCategory = categoryHint || preset || 'Auto-Detect from Photo';
+
+  devLog.info('AI Scanner', `Initiating Google Gemini Multimodal AI Analysis (${images.length} photo(s)) [Category: ${effectiveCategory}]`, {
     photoCount: images.length,
-    preset,
+    categoryHint: effectiveCategory,
     files: images.map((i) => i.name || 'Appliance photo'),
   });
 
@@ -222,7 +270,8 @@ export async function analyzeMultipleApplianceImages(options: MultiScanOptions):
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         images: formattedImages,
-        preset,
+        categoryHint: effectiveCategory,
+        model: 'gemini-2.5-flash',
       }),
     });
 
@@ -232,7 +281,7 @@ export async function analyzeMultipleApplianceImages(options: MultiScanOptions):
         const reconciled = sanitizeAndReconcileSpecs(json.data);
 
         devLog.success('AI Scanner', `Vercel Serverless Gemini AI extracted specs successfully`, {
-          model: json.model_used || 'gemini-2.0-flash',
+          model: json.model_used || 'gemini-2.5-flash',
           extracted: json.data,
           reconciled,
         });
@@ -247,6 +296,9 @@ export async function analyzeMultipleApplianceImages(options: MultiScanOptions):
           detected_energy_rating: json.data.energy_rating || (reconciled.isInverter ? 'Inverter Energy Certified' : 'DOE Energy Certified'),
           detected_star_rating: reconciled.starRating,
           is_inverter: reconciled.isInverter,
+          inverter_type: reconciled.inverterType,
+          cruising_watts: reconciled.cruisingWatts,
+          pc_metadata: reconciled.pcMetadata,
           cooling_capacity_kj_h: reconciled.coolingCapacityKjH,
           cooling_capacity_btu: reconciled.coolingCapacityBtu,
           cspf: reconciled.cspf,
@@ -263,40 +315,29 @@ export async function analyzeMultipleApplianceImages(options: MultiScanOptions):
     }
   } catch (err: any) {
     serverlessError = err.message;
-    devLog.warn('AI Scanner', `Serverless endpoint not reachable (${err.message}). Checking client Gemini key...`);
+    devLog.warn('AI Scanner', `Serverless endpoint not reachable (${err.message}). Checking client Gemini key pool...`);
   }
 
-  // 2. Second Priority: Direct Google Gemini Multimodal Vision API (Client Key / Local Dev)
-  const effectiveKey =
-    apiKey ||
-    localStorage.getItem('powerforecast_gemini_api_key') ||
-    (import.meta as any).env?.VITE_GEMINI_API_KEY ||
-    '';
+  // 2. Second Priority: Direct Client Gemini Call with Automatic Multi-Key Rotation Pool
+  try {
+    devLog.info('AI Scanner', 'Invoking direct Gemini Multimodal Vision API with key rotation pool...');
+    return await callGeminiMultiVision(images, effectiveCategory, apiKey);
+  } catch (directErr: any) {
+    devLog.error('AI Scanner', `Direct Google Gemini API rotation failed: ${directErr.message}`, { error: directErr });
+    const failureReason = serverlessError
+      ? `Serverless API: ${serverlessError}. Direct Call: ${directErr.message}`
+      : directErr.message;
 
-  if (effectiveKey.trim()) {
-    try {
-      devLog.info('AI Scanner', 'Calling Google Gemini Multimodal Vision API directly...');
-      return await callGeminiMultiVision(images, effectiveKey.trim(), preset);
-    } catch (err: any) {
-      devLog.error('AI Scanner', `Direct Google Gemini API call failed: ${err.message}`, { error: err });
-      throw new Error(`Google Gemini Vision AI Error: ${err.message}`);
-    }
+    throw new Error(
+      `Gemini AI Spec Extraction Error: ${failureReason}. Please verify GEMINI_API_KEY in Vercel or configure an API key in the scanner.`
+    );
   }
-
-  // 3. Strict Pure AI: Fail explicitly if neither cloud service is configured (Zero Local OCR Guessing)
-  const failureReason = serverlessError
-    ? `Vercel Serverless Error: ${serverlessError}.`
-    : 'No Gemini API key found on Vercel or locally.';
-
-  throw new Error(
-    `${failureReason} Please ensure GEMINI_API_KEY is configured in your Vercel Environment Variables or provide a Gemini API Key in the scanner settings.`
-  );
 }
 
 async function callGeminiMultiVision(
   images: ImageItem[],
-  apiKey: string,
-  preset: string
+  categoryHint: string = 'Auto-Detect from Photo',
+  explicitApiKey?: string
 ): Promise<VisionScanResult> {
   const parts: any[] = [];
 
@@ -311,39 +352,27 @@ async function callGeminiMultiVision(
     });
   });
 
-  const prompt = buildVisionPrompt(preset, images.length);
+  const prompt = buildVisionPrompt(categoryHint, images.length);
   parts.push({ text: prompt });
 
-  const modelsToTry = [
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-2.5-flash',
-    'gemini-1.5-pro',
-    'gemini-3.7-flash',
-  ];
-  let lastError: any = null;
+  const payload = {
+    contents: [
+      {
+        parts: parts,
+      },
+    ],
+    generationConfig: {
+      temperature: 0.1,
+      response_mime_type: 'application/json',
+    },
+  };
 
-  for (const model of modelsToTry) {
-    const startTime = Date.now();
-    try {
-      devLog.api('AI Scanner', `Sending multimodal payload to Google Gemini API [${model}]`, {
-        model,
-        photoCount: images.length,
-        preset,
-      });
+  const { result } = await executeWithGeminiKeyRotation<VisionScanResult>(
+    async (activeKey, activeModel) => {
+      const effectiveKey = explicitApiKey || activeKey;
+      const startTime = Date.now();
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const payload = {
-        contents: [
-          {
-            parts: parts,
-          },
-        ],
-        generationConfig: {
-          temperature: 0.1,
-          response_mime_type: 'application/json',
-        },
-      };
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${effectiveKey.trim()}`;
 
       const res = await fetch(url, {
         method: 'POST',
@@ -355,7 +384,6 @@ async function callGeminiMultiVision(
 
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
-        devLog.warn('AI Scanner', `Gemini model ${model} returned HTTP ${res.status}: ${errJson.error?.message || 'Error'}`, { error: errJson });
         throw new Error(errJson.error?.message || `HTTP ${res.status}`);
       }
 
@@ -363,41 +391,47 @@ async function callGeminiMultiVision(
       const textOutput = resData.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
       const jsonMatch = textOutput.match(/```json\s*([\s\S]*?)\s*```/) || textOutput.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
-        const reconciled = sanitizeAndReconcileSpecs(parsed);
-
-        devLog.success('AI Scanner', `Gemini Multimodal Vision successfully extracted specs (${durationMs}ms)`, {
-          model,
-          durationMs,
-          extracted: parsed,
-          reconciled,
-        }, durationMs);
-
-        return {
-          detected_brand: parsed.brand || 'Detected Appliance',
-          detected_model: parsed.model || 'Standard Unit',
-          detected_category: reconciled.category,
-          detected_watts: reconciled.watts,
-          detected_voltage: reconciled.voltage,
-          detected_monthly_kwh: reconciled.monthlyKwh,
-          detected_energy_rating: parsed.energy_rating || (reconciled.isInverter ? 'Inverter Energy Certified' : 'DOE Certified'),
-          detected_star_rating: reconciled.starRating,
-          is_inverter: reconciled.isInverter,
-          cooling_capacity_kj_h: reconciled.coolingCapacityKjH,
-          cooling_capacity_btu: reconciled.coolingCapacityBtu,
-          cspf: reconciled.cspf,
-          eer: reconciled.eer,
-          rated_current_amps: reconciled.currentAmps,
-          confidence: (parsed.confidence as any) || 'high',
-          raw_markdown: parsed.notes || textOutput,
-        };
+      if (!jsonMatch) {
+        throw new Error('Failed to parse JSON specs from Gemini AI response.');
       }
-    } catch (e: any) {
-      lastError = e;
+
+      const parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+      const reconciled = sanitizeAndReconcileSpecs(parsed);
+
+      devLog.success('AI Scanner', `Gemini Multimodal Vision extracted specs successfully (${durationMs}ms)`, {
+        model: activeModel,
+        durationMs,
+        extracted: parsed,
+        reconciled,
+      }, durationMs);
+
+      return {
+        detected_brand: parsed.brand || 'Detected Appliance',
+        detected_model: parsed.model || 'Standard Unit',
+        detected_category: reconciled.category,
+        detected_watts: reconciled.watts,
+        detected_voltage: reconciled.voltage,
+        detected_monthly_kwh: reconciled.monthlyKwh,
+        detected_energy_rating: parsed.energy_rating || (reconciled.isInverter ? 'Inverter Energy Certified' : 'DOE Certified'),
+        detected_star_rating: reconciled.starRating,
+        is_inverter: reconciled.isInverter,
+        inverter_type: reconciled.inverterType,
+        cruising_watts: reconciled.cruisingWatts,
+        pc_metadata: reconciled.pcMetadata,
+        cooling_capacity_kj_h: reconciled.coolingCapacityKjH,
+        cooling_capacity_btu: reconciled.coolingCapacityBtu,
+        cspf: reconciled.cspf,
+        eer: reconciled.eer,
+        rated_current_amps: reconciled.currentAmps,
+        confidence: (parsed.confidence as any) || 'high',
+        raw_markdown: parsed.notes || textOutput,
+      };
+    },
+    {
+      callerName: 'Vision Scanner AI',
+      preferredModels: ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'],
     }
-  }
+  );
 
-  throw lastError || new Error('Failed to parse Google Gemini AI response');
+  return result;
 }
-

@@ -209,6 +209,9 @@ export interface VisionScanResult {
   detected_energy_rating?: string;
   detected_star_rating?: number;
   is_inverter?: boolean;
+  inverter_type?: string | null;
+  cruising_watts?: number | null;
+  pc_metadata?: Record<string, any> | null;
   cooling_capacity_kj_h?: number;
   cooling_capacity_btu?: number;
   cspf?: number;

@@ -62,16 +62,16 @@ class handler(BaseHTTPRequestHandler):
         raw_mime_type = payload.get('mimeType', 'image/jpeg')
         raw_prompt = payload.get('prompt')
         raw_preset = payload.get('preset', 'specs')
-        raw_model = payload.get('model', 'gemini-2.0-flash')
+        raw_category = payload.get('category') or payload.get('categoryHint')
+        raw_model = payload.get('model', 'gemini-2.5-flash')
 
         # Input Validation & Sanitization
-        allowed_presets = {'specs', 'energy_guide', 'nameplate', 'inverter_check'}
-        preset = raw_preset if isinstance(raw_preset, str) and raw_preset in allowed_presets else 'specs'
+        preset = str(raw_category or raw_preset or 'specs')[:50]
 
         if isinstance(raw_model, str) and re.match(r'^[a-zA-Z0-9.\-_]{1,50}$', raw_model):
             model = raw_model
         else:
-            model = 'gemini-2.0-flash'
+            model = 'gemini-2.5-flash'
 
         allowed_mime_types = {'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'}
         mime_type = raw_mime_type if isinstance(raw_mime_type, str) and raw_mime_type in allowed_mime_types else 'image/jpeg'
@@ -141,6 +141,8 @@ class handler(BaseHTTPRequestHandler):
                 '  "voltage": number (e.g. 230),\n'
                 '  "current_amps": number or null,\n'
                 '  "is_inverter": boolean,\n'
+                '  "inverter_type": "string (e.g. Dual Inverter Compressor, DC Inverter, Digital Inverter, or Fixed Speed)",\n'
+                '  "cruising_watts": number or null (recommended cruising/running power draw once setpoint reached: ~35-45% for AC, ~30-35% for fridge),\n'
                 '  "cooling_capacity_kj_h": number or null,\n'
                 '  "cooling_capacity_btu": number or null,\n'
                 '  "cspf": number or null,\n'
@@ -150,7 +152,7 @@ class handler(BaseHTTPRequestHandler):
                 '  "star_rating": number between 1 and 5,\n'
                 '  "room_location": "Living Room | Master Bedroom | Kitchen | Laundry Area | Home Office",\n'
                 '  "confidence": "high | medium | low",\n'
-                '  "notes": "Detailed engineering audit notes: detected rated power, voltage, current, frequency (60Hz), serial number, PELP registration, and energy efficiency summary."\n'
+                '  "notes": "Detailed engineering audit notes: detected rated power, cruising power, voltage, current, frequency (60Hz), serial number, PELP registration, and energy efficiency summary."\n'
                 "}\n"
             )
             parts.append({"text": default_prompt})
@@ -189,7 +191,7 @@ class handler(BaseHTTPRequestHandler):
         }).encode('utf-8')
 
         # Multi-model and Multi-key fallback execution
-        models_to_try = [model, 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash', 'gemini-1.5-pro']
+        models_to_try = [model, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
         # Deduplicate while preserving order
         ordered_models = []
         for m in models_to_try:

@@ -112,6 +112,10 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
     const targetListId = selectedListId || (spaces[0]?.id ?? null);
     const targetSpace = spaces.find((s) => s.id === targetListId);
 
+    const catLower = item.category.toLowerCase();
+    const isFridge = catLower.includes("refrigerat") || catLower.includes("freezer") || catLower.includes("chiller");
+    const isAc = catLower.includes("air condition") || catLower.includes("aircon");
+
     const isInverter = Boolean(
       (item.cspf && item.cspf > 0) ||
       /inverter/i.test(item.model || "") ||
@@ -120,6 +124,12 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
       /inverter/i.test(item.category || "") ||
       item.star_rating === 5
     );
+
+    const defaultCruisingWatts = isFridge
+      ? Math.round(watts / 3)
+      : isAc
+      ? Math.round(watts * 0.42)
+      : Math.round(watts * 0.50);
 
     const normalizedCat = normalizeApplianceCategory(item.category);
     const incomingPayload: Partial<UserAppliance> = {
@@ -130,7 +140,7 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
       control_no: item.control_no,
       watts: watts,
       quantity: 1,
-      hours_per_day: 8,
+      hours_per_day: isFridge ? 24 : 8,
       days_per_month: 30,
       start_hour: getDefaultStartHour(normalizedCat),
       room_location: room,
@@ -140,6 +150,7 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
       tariff_type: targetSpace?.tariff_type || "residential",
       ai_metadata: {
         is_inverter: isInverter,
+        ...(isInverter ? { cruising_watts: defaultCruisingWatts } : {}),
       },
     };
 
@@ -335,6 +346,17 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
             {items.map((item) => {
               const isImported = importedControlNo === item.control_no;
               const estMonthlyCost = (item.monthly_energy_consumption_kwh || 120) * 14.8261;
+              const catLower = item.category.toLowerCase();
+              const isFridgeItem = catLower.includes("refrigerat") || catLower.includes("freezer") || catLower.includes("chiller");
+              const isAcItem = catLower.includes("air condition") || catLower.includes("aircon");
+              const isInverterItem = Boolean(
+                (item.cspf && item.cspf > 0) ||
+                /inverter/i.test(item.model || "") ||
+                /inverter/i.test(item.type || "") ||
+                /inverter/i.test(item.brand || "") ||
+                /inverter/i.test(item.category || "") ||
+                item.star_rating === 5
+              );
 
               return (
                 <Grid size={{ xs: 12, sm: 6 }} key={item.control_no}>
@@ -374,6 +396,41 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
                           size="small"
                           sx={{ fontWeight: 700, fontFamily: "monospace", height: 20, fontSize: "0.6875rem" }}
                         />
+                        {isInverterItem ? (
+                          <Chip
+                            label="⚡ Inverter"
+                            size="small"
+                            color="success"
+                            sx={{ fontWeight: 700, fontSize: "0.6875rem", height: 20 }}
+                          />
+                        ) : isAcItem || isFridgeItem ? (
+                          <Chip
+                            label="Fixed Speed"
+                            size="small"
+                            variant="outlined"
+                            sx={{ fontSize: "0.6875rem", height: 20 }}
+                          />
+                        ) : null}
+
+                        {isInverterItem && isAcItem && (
+                          <Chip
+                            label={`Cruising: ~${Math.round((item.power_watts || 750) * 0.42)}W (~42%)`}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            sx={{ height: 20, fontSize: "0.6875rem" }}
+                          />
+                        )}
+                        {isInverterItem && isFridgeItem && (
+                          <Chip
+                            label={`Thermal Cruising: ~${Math.round((item.power_watts || 100) / 3)}W (~33%)`}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            sx={{ height: 20, fontSize: "0.6875rem" }}
+                          />
+                        )}
+
                         {(item.cspf || item.energy_efficiency_rating) && (
                           <Chip
                             label={`EER: ${item.cspf || item.energy_efficiency_rating}`}

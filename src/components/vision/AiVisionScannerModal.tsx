@@ -24,6 +24,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Switch from "@mui/material/Switch";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import InputAdornment from "@mui/material/InputAdornment";
+import Tooltip from "@mui/material/Tooltip";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import {
@@ -48,6 +49,8 @@ import {
 import { devLog } from "../../lib/devLogger";
 import { DuplicateApplianceModal } from "../appliances/DuplicateApplianceModal";
 import { PcSpecBuilderSection } from "../appliances/PcSpecBuilderSection";
+import { GeminiKeyConfigModal } from "../common/GeminiKeyConfigModal";
+import { getGeminiKeyStatus } from "../../lib/geminiKeyService";
 
 interface AiVisionScannerModalProps {
   isOpen: boolean;
@@ -60,15 +63,25 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
   onClose,
   defaultListId,
 }) => {
-  const [preset, setPreset] = useState<"energy_guide" | "nameplate" | "inverter_check">("energy_guide");
+  const [categoryHint, setCategoryHint] = useState<string>("Auto-Detect from Photo");
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<VisionScanResult | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
 
   const [stagedImages, setStagedImages] = useState<ImageItem[]>([]);
-  const [apiKey, setApiKey] = useState<string>("");
-  const [showApiKeyInput, setShowApiKeyInput] = useState<boolean>(false);
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>(defaultListId || "");
+  const [isKeyModalOpen, setIsKeyModalOpen] = useState<boolean>(false);
+  const [keyStatus, setKeyStatus] = useState(() => getGeminiKeyStatus());
+
+  useEffect(() => {
+    const handleKeyChange = () => {
+      setKeyStatus(getGeminiKeyStatus());
+    };
+    window.addEventListener("powerforecast_gemini_keys_changed", handleKeyChange);
+    return () => {
+      window.removeEventListener("powerforecast_gemini_keys_changed", handleKeyChange);
+    };
+  }, []);
 
   // Editable fields before saving
   const [editName, setEditName] = useState("");
@@ -102,18 +115,6 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
 
   const { mutate: createAppliance, isLoading: isSaving } = useCreate();
   const { mutate: updateAppliance } = useUpdate();
-
-  useEffect(() => {
-    const envKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || "";
-    const savedKey = localStorage.getItem("powerforecast_gemini_api_key") || envKey;
-    setApiKey(savedKey);
-  }, []);
-
-  const handleSaveApiKey = (keyVal: string) => {
-    setApiKey(keyVal);
-    localStorage.setItem("powerforecast_gemini_api_key", keyVal);
-    devLog.info("AI Scanner", "Updated AI API Key");
-  };
 
   const handleFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -152,11 +153,10 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
     setScanError(null);
 
     try {
-      devLog.info("AI Scanner", `Sending ${stagedImages.length} image(s) to Google Gemini Multimodal AI...`);
+      devLog.info("AI Scanner", `Sending ${stagedImages.length} image(s) to Google Gemini Multimodal AI (Category: ${categoryHint})...`);
       const result = await analyzeMultipleApplianceImages({
         images: stagedImages,
-        apiKey: apiKey.trim(),
-        preset,
+        categoryHint,
       });
       setScanResult(result);
 
@@ -171,6 +171,12 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
         setEditWatts(result.detected_watts || 100);
         setEditMonthlyKwh(result.detected_monthly_kwh || 25);
         setEditIsInverter(Boolean(result.is_inverter));
+        if (result.cruising_watts !== undefined && result.cruising_watts !== null) {
+          setEditCustomCruisingWatts(result.cruising_watts);
+        }
+        if (result.pc_metadata) {
+          setEditPcMetadata(result.pc_metadata);
+        }
         if (result.detected_category) setEditCategory(result.detected_category);
       }
     } catch (err: any) {
@@ -330,18 +336,32 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
           </Alert>
         )}
 
-        {/* Preset Mode Selector & Space / Key Controls */}
+        {/* Category Hint Selector & Space / Key Controls */}
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
-          <FormControl size="small" sx={{ minWidth: 220 }}>
-            <InputLabel>Scan Mode / Preset</InputLabel>
+          <FormControl size="small" sx={{ minWidth: 260 }}>
+            <InputLabel>Appliance Category</InputLabel>
             <Select
-              value={preset}
-              label="Scan Mode / Preset"
-              onChange={(e) => setPreset(e.target.value as any)}
+              value={categoryHint}
+              label="Appliance Category"
+              onChange={(e) => {
+                const val = e.target.value;
+                setCategoryHint(val);
+                if (val !== "Auto-Detect from Photo") {
+                  setEditCategory(val);
+                  if (isCompressorInverterCategory(val)) {
+                    setEditIsInverter(true);
+                  }
+                }
+              }}
             >
-              <MenuItem value="energy_guide">🟡 DOE Yellow Energy Guide</MenuItem>
-              <MenuItem value="nameplate">⚙️ Technical Specification Plate</MenuItem>
-              <MenuItem value="inverter_check">⚡ Inverter & Efficiency Audit</MenuItem>
+              <MenuItem value="Auto-Detect from Photo">
+                <em>✨ Auto-Detect from Photo</em>
+              </MenuItem>
+              {STREAMLINED_CATEGORIES.map((cat) => (
+                <MenuItem key={cat} value={cat}>
+                  {cat}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 
@@ -363,34 +383,127 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
               </FormControl>
             )}
 
-            <Button
-              size="small"
-              variant="text"
-              color="inherit"
-              startIcon={<KeyIcon fontSize="small" />}
-              onClick={() => setShowApiKeyInput((prev) => !prev)}
-              sx={{ fontSize: "0.75rem" }}
-            >
-              {apiKey ? "Custom Key Configured" : "Enter API Key"}
-            </Button>
+            <Tooltip title={keyStatus.hasKeys ? `${keyStatus.keyCount} key(s) active (${keyStatus.fallbackCount} fallback pool). Click to manage.` : "No Gemini API key detected. Click to configure."}>
+              <Button
+                size="small"
+                variant="outlined"
+                color={keyStatus.hasKeys ? "primary" : "inherit"}
+                startIcon={<KeyIcon fontSize="small" />}
+                onClick={() => setIsKeyModalOpen(true)}
+                sx={{ fontSize: "0.75rem", textTransform: "none", fontWeight: 700 }}
+              >
+                {keyStatus.hasKeys ? (keyStatus.fallbackCount > 0 ? `API Keys (${keyStatus.keyCount} Failover)` : "Key Active") : "Configure Key"}
+              </Button>
+            </Tooltip>
           </Box>
         </Box>
 
-        {showApiKeyInput && (
-          <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.25 }}>
-            <Typography variant="caption" sx={{ fontWeight: 700, display: "block", mb: 1 }}>
-              Google Gemini API Key (Optional Override)
-            </Typography>
-            <TextField
-              fullWidth
-              size="small"
-              type="password"
-              value={apiKey}
-              onChange={(e) => handleSaveApiKey(e.target.value)}
-              placeholder="AIzaSy..."
+        {/* Category-Adaptive Inverter Pre-Scan Telemetry & Switch */}
+        {isCompressorInverterCategory(categoryHint) && (() => {
+          const isFridge = categoryHint.toLowerCase().includes("refrig") || categoryHint.toLowerCase().includes("freezer");
+          return (
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 1.5,
+                borderRadius: 1.5,
+                bgcolor: editIsInverter
+                  ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.05)" : "rgba(13, 148, 136, 0.04)")
+                  : "action.hover",
+                borderColor: editIsInverter
+                  ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)")
+                  : "divider",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 1.5,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <BoltIcon color={editIsInverter ? "primary" : "action"} />
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: editIsInverter ? "primary.main" : "text.primary" }}>
+                    ⚡ {isFridge ? "Inverter Refrigerator / Freezer" : "Inverter Air Conditioner"}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                    {editIsInverter
+                      ? `AI Vision will calibrate for variable-speed compressor and cruising wattage (${isFridge ? "~33% continuous draw" : "~42% steady-state"})`
+                      : "Fixed-speed continuous rated draw mode"}
+                  </Typography>
+                </Box>
+              </Box>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={editIsInverter}
+                    onChange={(e) => setEditIsInverter(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label={
+                  <Typography variant="body2" sx={{ fontWeight: 800, color: editIsInverter ? "primary.main" : "text.secondary" }}>
+                    {editIsInverter ? "INVERTER ON" : "INVERTER OFF"}
+                  </Typography>
+                }
+                sx={{ m: 0 }}
+              />
+            </Paper>
+          );
+        })()}
+
+        {/* Category-Adaptive Computer & Laptop Spec Builder (Parity with Manual Entry) */}
+        {normalizeApplianceCategory(categoryHint) === "Computers & Laptops" && !scanResult && (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+            <PcSpecBuilderSection
+              initialRatedWatts={editWatts > 0 ? editWatts : 350}
+              initialCruisingWatts={typeof editCustomCruisingWatts === "number" ? editCustomCruisingWatts : undefined}
+              initialMetadata={editPcMetadata}
+              onSpecChange={({ ratedWatts, runningWatts, metadata }) => {
+                setEditWatts(ratedWatts);
+                setEditCustomCruisingWatts(runningWatts);
+                setEditPcMetadata(metadata);
+                if (!editName || editName === "Scanned Appliance") {
+                  setEditName(`${metadata?.pc_type || "PC"} System`);
+                }
+                setEditMonthlyKwh(Math.round(((runningWatts * 8 * 30) / 1000) * 10) / 10);
+              }}
             />
-          </Paper>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1, px: 0.5 }}>
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                💡 Configured PC: <strong>{editWatts > 0 ? editWatts : 350}W Rated</strong> / <strong>{editCustomCruisingWatts || Math.round((editWatts > 0 ? editWatts : 350) * 0.45)}W Running</strong>. You can upload photos below to scan labels, or save this rig directly.
+              </Typography>
+              <Button
+                variant="contained"
+                size="small"
+                onClick={handleSaveToInventory}
+                startIcon={<CheckCircleIcon />}
+                sx={{ fontWeight: 700, textTransform: "none" }}
+              >
+                Save Configured PC to Space
+              </Button>
+            </Box>
+          </Box>
         )}
+
+        {/* English AI Scanning Advisory / Notice Banner */}
+        <Alert
+          severity="info"
+          icon={<InfoIcon fontSize="small" />}
+          sx={{
+            borderRadius: 1.5,
+            border: "1px solid",
+            borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.3)" : "rgba(99, 102, 241, 0.2)",
+            bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(99, 102, 241, 0.08)" : "rgba(99, 102, 241, 0.04)",
+          }}
+        >
+          <Typography variant="caption" sx={{ fontWeight: 700, display: "block", color: "primary.main" }}>
+            💡 AI Optical Recognition & Accuracy Notice
+          </Typography>
+          <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.25, lineHeight: 1.5 }}>
+            Optical recognition accuracy depends heavily on photo quality and label condition. Harsh reflective glare, blurry or angled captures, occluded text, or peeling nameplates may result in estimated or incomplete figures. For best results, ensure well-lit, flat-angle photos displaying the full DOE yellow Energy Guide or manufacturer specification plate. Always review and verify the extracted wattage and inverter settings before saving.
+          </Typography>
+        </Alert>
 
         {/* Upload & Camera Actions Dropzone */}
         <Paper
@@ -622,10 +735,10 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
                     type="number"
                     fullWidth
                     size="small"
-                    label="Rated Electric Power (Watts)"
+                    label={normalizeApplianceCategory(editCategory) === "Computers & Laptops" ? "Rated / Peak Power (Watts)" : "Rated Electric Power (Watts)"}
                     value={editWatts}
                     onChange={(e) => setEditWatts(Number(e.target.value) || 0)}
-                    helperText="Actual electric input wattage"
+                    helperText={normalizeApplianceCategory(editCategory) === "Computers & Laptops" ? "Auto-synced with specs below" : "Actual electric input wattage"}
                   />
                 </Grid>
                 <Grid size={6}>
@@ -875,6 +988,12 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
         onAddDistinct={handleAddDistinct}
       />
     )}
+
+    {/* Gemini AI Multi-Key Manager Modal */}
+    <GeminiKeyConfigModal
+      open={isKeyModalOpen}
+      onClose={() => setIsKeyModalOpen(false)}
+    />
     </>
   );
 };

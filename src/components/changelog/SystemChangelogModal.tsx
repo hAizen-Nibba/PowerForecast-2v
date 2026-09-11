@@ -41,6 +41,16 @@ export interface SystemChangelogEntry {
 // Master compiled GitHub deployment history covering all releases
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.3.1v",
+    version: "3.3.1v",
+    git_commit_tag: "3.3.1v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.3.1v - Centralize Gemini AI multi-key rotation and automated failover pool; replace Scan Mode with streamlined categories, dynamic inverter switch, and cruising telemetry; extract cruising draw via gemini-2.5-flash; add English scanning advisory notice banner; and integrate inverter telemetry into DOE PELP catalog.",
+  },
+  {
     id: "3.3.0v",
     version: "3.3.0v",
     git_commit_tag: "3.3.0v",
