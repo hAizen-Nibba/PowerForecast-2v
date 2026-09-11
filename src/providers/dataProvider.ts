@@ -130,7 +130,16 @@ export const resilientDataProvider: DataProvider = {
       return localDataProvider.getList<TData>(params);
     }
     try {
-      const res = await rawSupabaseDataProvider.getList<TData>(params);
+      // Default pagination to mode: "off" if not specified so appliances, spaces, and logs are NEVER capped at 10 items
+      const enrichedParams = { ...params };
+      if (
+        !enrichedParams.pagination ||
+        (!enrichedParams.pagination.current && !enrichedParams.pagination.pageSize && enrichedParams.pagination.mode !== "client")
+      ) {
+        enrichedParams.pagination = { ...enrichedParams.pagination, mode: "off" };
+      }
+
+      const res = await rawSupabaseDataProvider.getList<TData>(enrichedParams);
       devLog.api("Supabase DataProvider", `Fetched ${res?.data?.length || 0} records from [${params.resource}]`, res);
       
       // Mirror to local cache

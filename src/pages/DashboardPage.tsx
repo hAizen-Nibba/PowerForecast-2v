@@ -50,10 +50,12 @@ export const DashboardPage: React.FC = () => {
 
   const listResponse = useList<UserAppliance>({
     resource: "user_appliances",
+    pagination: { mode: "off" },
   }) as any;
 
   const spacesResponse = useList<ApplianceList>({
     resource: "appliance_lists",
+    pagination: { mode: "off" },
   }) as any;
 
   const appliances: UserAppliance[] = listResponse?.data?.data || listResponse?.result?.data || [];

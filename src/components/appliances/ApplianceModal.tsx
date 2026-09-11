@@ -90,10 +90,12 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
 
   const listsRes = useList<ApplianceList>({
     resource: "appliance_lists",
+    pagination: { mode: "off" },
   }) as any;
 
   const appliancesRes = useList<UserAppliance>({
     resource: "user_appliances",
+    pagination: { mode: "off" },
   }) as any;
 
   const spaces: ApplianceList[] = listsRes?.data?.data || listsRes?.result?.data || [];

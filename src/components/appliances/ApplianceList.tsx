@@ -82,14 +82,17 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
 
   const appliancesRes = useList<UserAppliance>({
     resource: "user_appliances",
+    pagination: { mode: "off" },
   }) as any;
 
   const spacesRes = useList<ApplianceSpace>({
     resource: "appliance_lists",
+    pagination: { mode: "off" },
   }) as any;
 
   const eventsRes = useList<UserCalendarEvent>({
     resource: "user_calendar_events",
+    pagination: { mode: "off" },
   }) as any;
 
   const { mutate: deleteAppliance } = useDelete();

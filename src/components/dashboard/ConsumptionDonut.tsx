@@ -41,6 +41,7 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
 
   const spacesRes = useList<ApplianceList>({
     resource: "appliance_lists",
+    pagination: { mode: "off" },
   }) as any;
 
   const spaces: ApplianceList[] = spacesRes?.data?.data || spacesRes?.result?.data || [];

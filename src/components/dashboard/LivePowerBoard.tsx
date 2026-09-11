@@ -38,10 +38,12 @@ interface LivePowerBoardProps {
 export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }) => {
   const appliancesRes = useList<UserAppliance>({
     resource: "user_appliances",
+    pagination: { mode: "off" },
   }) as any;
 
   const spacesRes = useList<ApplianceList>({
     resource: "appliance_lists",
+    pagination: { mode: "off" },
   }) as any;
 
   const { mutate: updateAppliance } = useUpdate();

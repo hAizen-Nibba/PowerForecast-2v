@@ -50,18 +50,22 @@ export const ForecastingView: React.FC = () => {
   // 1. Fetch Real User Inventory, Spaces, Daily Usage Records, and Stopwatch Logs
   const appliancesRes = useList<UserAppliance>({
     resource: "user_appliances",
+    pagination: { mode: "off" },
   }) as any;
 
   const spacesRes = useList<ApplianceList>({
     resource: "appliance_lists",
+    pagination: { mode: "off" },
   }) as any;
 
   const dailyUsageRes = useList<DailyApplianceUsage>({
     resource: "daily_appliance_usage",
+    pagination: { mode: "off" },
   }) as any;
 
   const usageLogsRes = useList<ApplianceUsageLog>({
     resource: "appliance_usage_logs",
+    pagination: { mode: "off" },
   }) as any;
 
   const appliances: UserAppliance[] = appliancesRes?.data?.data || appliancesRes?.result?.data || [];

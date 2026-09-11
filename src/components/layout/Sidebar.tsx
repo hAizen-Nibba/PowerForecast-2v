@@ -75,6 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const appliancesRes = useList<UserAppliance>({
     resource: "user_appliances",
+    pagination: { mode: "off" },
   }) as any;
 
   const appliances: UserAppliance[] = appliancesRes?.data?.data || appliancesRes?.result?.data || [];
