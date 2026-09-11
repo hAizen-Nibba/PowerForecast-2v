@@ -24,10 +24,7 @@ import {
   Bolt as BoltIcon,
   Speed as SpeedIcon,
   InfoOutlined as InfoIcon,
-  Key as KeyIcon,
 } from "@mui/icons-material";
-import { GeminiKeyConfigModal } from "../common/GeminiKeyConfigModal";
-import { getGeminiKeyStatus } from "../../lib/geminiKeyService";
 import { CpuHardwareItem, GpuHardwareItem } from "../../types";
 import {
   calculateDesktopPcWatts,
@@ -96,18 +93,6 @@ export const PcSpecBuilderSection: React.FC<PcSpecBuilderSectionProps> = ({
   const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
   const [aiError, setAiError] = useState<string>("");
   const [aiSuccessMsg, setAiSuccessMsg] = useState<string>("");
-  const [isKeyModalOpen, setIsKeyModalOpen] = useState<boolean>(false);
-  const [keyStatus, setKeyStatus] = useState(() => getGeminiKeyStatus());
-
-  useEffect(() => {
-    const handleKeyChange = () => {
-      setKeyStatus(getGeminiKeyStatus());
-    };
-    window.addEventListener("powerforecast_gemini_keys_changed", handleKeyChange);
-    return () => {
-      window.removeEventListener("powerforecast_gemini_keys_changed", handleKeyChange);
-    };
-  }, []);
 
   // Update parent whenever laptop or desktop parameters change
   useEffect(() => {
@@ -345,19 +330,6 @@ export const PcSpecBuilderSection: React.FC<PcSpecBuilderSectionProps> = ({
               <Typography variant="caption" sx={{ fontWeight: 700, color: "#818cf8", display: "flex", alignItems: "center", gap: 0.5 }}>
                 <SparklesIcon sx={{ fontSize: 16 }} /> Quick Spec Detection via AI:
               </Typography>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <Tooltip title={keyStatus.hasKeys ? `${keyStatus.keyCount} key(s) active (${keyStatus.fallbackCount} fallback). Click to manage.` : "No Gemini API key detected. Click to configure."}>
-                  <Chip
-                    size="small"
-                    icon={<KeyIcon sx={{ fontSize: "12px !important" }} />}
-                    label={keyStatus.hasKeys ? (keyStatus.fallbackCount > 0 ? `${keyStatus.keyCount} Keys (Failover)` : "Key Active") : "Set API Key"}
-                    color={keyStatus.hasKeys ? "primary" : "default"}
-                    variant={keyStatus.hasKeys ? "outlined" : "filled"}
-                    onClick={() => setIsKeyModalOpen(true)}
-                    sx={{ fontSize: "0.65rem", height: 20, cursor: "pointer", fontWeight: 700 }}
-                  />
-                </Tooltip>
-              </Box>
             </Box>
             <Box sx={{ display: "flex", gap: 1 }}>
               <TextField
@@ -389,23 +361,9 @@ export const PcSpecBuilderSection: React.FC<PcSpecBuilderSectionProps> = ({
               </Typography>
             )}
             {aiError && (
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 0.5, flexWrap: "wrap", gap: 1 }}>
-                <Typography variant="caption" sx={{ color: "error.light" }}>
-                  {aiError}
-                </Typography>
-                {aiError.toLowerCase().includes("key") && (
-                  <Button
-                    size="small"
-                    variant="text"
-                    color="primary"
-                    onClick={() => setIsKeyModalOpen(true)}
-                    startIcon={<KeyIcon fontSize="small" />}
-                    sx={{ fontSize: "0.7rem", py: 0 }}
-                  >
-                    Configure Gemini API Key
-                  </Button>
-                )}
-              </Box>
+              <Typography variant="caption" sx={{ color: "error.light", display: "block", mt: 0.5 }}>
+                {aiError}
+              </Typography>
             )}
           </Box>
 
@@ -617,12 +575,6 @@ export const PcSpecBuilderSection: React.FC<PcSpecBuilderSectionProps> = ({
           </Grid>
         </Paper>
       )}
-
-      {/* Gemini AI Multi-Key Manager Modal */}
-      <GeminiKeyConfigModal
-        open={isKeyModalOpen}
-        onClose={() => setIsKeyModalOpen(false)}
-      />
     </Box>
   );
 };

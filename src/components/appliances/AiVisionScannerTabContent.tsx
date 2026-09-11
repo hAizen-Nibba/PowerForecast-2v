@@ -26,7 +26,6 @@ import {
   CloudUpload as UploadIcon,
   AutoAwesome as SparklesIcon,
   CheckCircle as CheckCircleIcon,
-  Key as KeyIcon,
   Delete as TrashIcon,
   Bolt as BoltIcon,
   InfoOutlined as InfoIcon,
@@ -42,8 +41,6 @@ import {
 import { devLog } from "../../lib/devLogger";
 import { DuplicateApplianceModal } from "./DuplicateApplianceModal";
 import { PcSpecBuilderSection } from "./PcSpecBuilderSection";
-import { GeminiKeyConfigModal } from "../common/GeminiKeyConfigModal";
-import { getGeminiKeyStatus } from "../../lib/geminiKeyService";
 
 interface AiVisionScannerTabContentProps {
   selectedListId: string;
@@ -62,18 +59,6 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
   const [scanError, setScanError] = useState<string | null>(null);
 
   const [stagedImages, setStagedImages] = useState<ImageItem[]>([]);
-  const [isKeyModalOpen, setIsKeyModalOpen] = useState<boolean>(false);
-  const [keyStatus, setKeyStatus] = useState(() => getGeminiKeyStatus());
-
-  useEffect(() => {
-    const handleKeyChange = () => {
-      setKeyStatus(getGeminiKeyStatus());
-    };
-    window.addEventListener("powerforecast_gemini_keys_changed", handleKeyChange);
-    return () => {
-      window.removeEventListener("powerforecast_gemini_keys_changed", handleKeyChange);
-    };
-  }, []);
 
   // Editable fields before saving
   const [editName, setEditName] = useState("");
@@ -348,19 +333,6 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
               </Select>
             </FormControl>
           )}
-
-          <Tooltip title={keyStatus.hasKeys ? `${keyStatus.keyCount} key(s) active (${keyStatus.fallbackCount} fallback pool). Click to manage.` : "No Gemini API key detected. Click to configure."}>
-            <Button
-              size="small"
-              variant="outlined"
-              color={keyStatus.hasKeys ? "primary" : "inherit"}
-              startIcon={<KeyIcon fontSize="small" />}
-              onClick={() => setIsKeyModalOpen(true)}
-              sx={{ fontSize: "0.75rem", textTransform: "none", fontWeight: 700 }}
-            >
-              {keyStatus.hasKeys ? (keyStatus.fallbackCount > 0 ? `API Keys (${keyStatus.keyCount} Failover)` : "Key Active") : "Configure Key"}
-            </Button>
-          </Tooltip>
         </Box>
       </Box>
 
@@ -912,12 +884,6 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
           onAddDistinct={handleAddDistinct}
         />
       )}
-
-      {/* Gemini AI Multi-Key Manager Modal */}
-      <GeminiKeyConfigModal
-        open={isKeyModalOpen}
-        onClose={() => setIsKeyModalOpen(false)}
-      />
     </Box>
   );
 };

@@ -168,6 +168,24 @@ Return ONLY valid JSON matching this exact structure:
   "explanation": "..."
 }`;
 
+  // 1. Primary: Serverless endpoint (Keys remain 100% secure in Vercel environment variables)
+  try {
+    const sRes = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, category: "Computers & Laptops" }),
+    });
+    if (sRes.ok) {
+      const json = await sRes.json();
+      if (json.data && (json.data.cpu_name || json.data.device_type || json.data.total_estimated_running_watts)) {
+        return json.data as AiPcResolutionResult;
+      }
+    }
+  } catch {
+    // Proceed to client rotation pool if serverless unavailable
+  }
+
+  // 2. Secondary: Client execution (keys never rendered or shown in UI)
   const payload = {
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {

@@ -1,19 +1,22 @@
 import { devLog } from './devLogger';
 
-export interface GeminiKeyStatus {
-  hasKeys: boolean;
-  keyCount: number;
-  primaryKey: string;
-  primarySource: 'localStorage' | 'env' | 'none';
-  fallbackCount: number;
-  maskedKeys: { label: string; masked: string; source: string }[];
+/**
+ * SECURITY ENFORCEMENT:
+ * Immediately wipe any previously stored API keys from client localStorage.
+ * Credentials must NEVER be stored or exposed on the client browser.
+ */
+if (typeof window !== 'undefined' && window.localStorage) {
+  try {
+    localStorage.removeItem('powerforecast_gemini_api_key');
+    localStorage.removeItem('powerforecast_gemini_fallback_keys');
+    localStorage.removeItem('powerforecast_gemini_api_keys');
+  } catch {
+    // Ignore storage access errors
+  }
 }
 
-const STORAGE_PRIMARY_KEY = 'powerforecast_gemini_api_key';
-const STORAGE_FALLBACK_KEY = 'powerforecast_gemini_fallback_keys';
-
 /**
- * Clean & validate API key string
+ * Clean & validate key format internally
  */
 function cleanKey(val?: string | null): string {
   if (!val || typeof val !== 'string') return '';
@@ -23,20 +26,8 @@ function cleanKey(val?: string | null): string {
 }
 
 /**
- * Mask key for safe UI presentation (e.g. AIzaSy...9xyz)
- */
-export function maskGeminiKey(key: string): string {
-  if (!key || key.length < 8) return '****';
-  return `${key.slice(0, 6)}...${key.slice(-4)}`;
-}
-
-/**
- * Returns an ordered pool of available Gemini API keys.
- * Priority:
- * 1. User LocalStorage Primary Override
- * 2. Environment Primary Key (VITE_GEMINI_API_KEY or GEMINI_API_KEY)
- * 3. User LocalStorage Fallback Keys
- * 4. Environment Secondary / Fallback Keys (GEMINI_API_KEY_2, VITE_GEMINI_API_KEY_2, etc.)
+ * Returns build-time developer fallback keys if explicitly defined with VITE_ prefix.
+ * Production deployments use Vercel Serverless /api/analyze where keys stay 100% server-side.
  */
 export function getGeminiApiKeyPool(): string[] {
   const keys: string[] = [];
@@ -54,228 +45,77 @@ export function getGeminiApiKeyPool(): string[] {
     }
   };
 
-  // 1. Primary: Browser Local Storage Override
-  if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      addKey(localStorage.getItem(STORAGE_PRIMARY_KEY));
-    } catch {
-      // Ignore storage errors
-    }
-  }
-
-  // 2. Primary: Vite / Vercel Environment Variables
   const env = (import.meta as any).env || {};
   addKey(env.VITE_GEMINI_API_KEY);
-  addKey(env.GEMINI_API_KEY);
-
-  // 3. Fallbacks: Browser Local Storage Fallback Pool
-  if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      const storedFallbacks = localStorage.getItem(STORAGE_FALLBACK_KEY);
-      if (storedFallbacks) {
-        try {
-          const parsed = JSON.parse(storedFallbacks);
-          if (Array.isArray(parsed)) {
-            parsed.forEach((k) => addKey(k));
-          } else {
-            addKey(storedFallbacks);
-          }
-        } catch {
-          addKey(storedFallbacks);
-        }
-      }
-    } catch {
-      // Ignore storage errors
-    }
-  }
-
-  // 4. Fallbacks: Environment Backup Keys
   addKey(env.VITE_GEMINI_API_KEY_2);
-  addKey(env.GEMINI_API_KEY_2);
   addKey(env.VITE_GEMINI_API_KEY_3);
-  addKey(env.GEMINI_API_KEY_3);
-  addKey(env.VITE_GEMINI_API_KEY_4);
-  addKey(env.GEMINI_API_KEY_4);
   addKey(env.VITE_GEMINI_API_KEY_FALLBACK);
-  addKey(env.GEMINI_API_KEY_FALLBACK);
-  addKey(env.GEMINI_API_KEYS);
 
   return keys;
 }
 
-/**
- * Returns real-time status of Gemini keys configured in the client
- */
-export function getGeminiKeyStatus(): GeminiKeyStatus {
-  const pool = getGeminiApiKeyPool();
-  const env = (import.meta as any).env || {};
-
-  let primaryKey = '';
-  let primarySource: 'localStorage' | 'env' | 'none' = 'none';
-
-  const storedPrimary = cleanKey(typeof window !== 'undefined' ? localStorage?.getItem(STORAGE_PRIMARY_KEY) : null);
-  const envPrimary = cleanKey(env.VITE_GEMINI_API_KEY || env.GEMINI_API_KEY);
-
-  if (storedPrimary) {
-    primaryKey = storedPrimary;
-    primarySource = 'localStorage';
-  } else if (envPrimary) {
-    primaryKey = envPrimary;
-    primarySource = 'env';
-  } else if (pool.length > 0) {
-    primaryKey = pool[0];
-    primarySource = 'env';
-  }
-
-  const maskedKeys = pool.map((k, idx) => ({
-    label: idx === 0 ? 'Primary Key' : `Fallback Key #${idx}`,
-    masked: maskGeminiKey(k),
-    source: k === storedPrimary ? 'Browser Storage' : 'Environment / Config',
-  }));
-
-  return {
-    hasKeys: pool.length > 0,
-    keyCount: pool.length,
-    primaryKey,
-    primarySource,
-    fallbackCount: Math.max(0, pool.length - 1),
-    maskedKeys,
-  };
-}
-
-/**
- * Saves primary & fallback keys to browser localStorage and notifies listeners
- */
-export function saveGeminiApiKeys(primary: string, fallbacks: string[] = []): void {
-  if (typeof window === 'undefined') return;
-
-  const cleanPrimary = cleanKey(primary);
-  if (cleanPrimary) {
-    localStorage.setItem(STORAGE_PRIMARY_KEY, cleanPrimary);
-  } else {
-    localStorage.removeItem(STORAGE_PRIMARY_KEY);
-  }
-
-  const cleanFallbacks = fallbacks.map(cleanKey).filter(Boolean);
-  if (cleanFallbacks.length > 0) {
-    localStorage.setItem(STORAGE_FALLBACK_KEY, JSON.stringify(cleanFallbacks));
-  } else {
-    localStorage.removeItem(STORAGE_FALLBACK_KEY);
-  }
-
-  window.dispatchEvent(new Event('powerforecast_gemini_keys_changed'));
-}
-
-/**
- * Test connectivity for a given Gemini API Key
- */
-export async function testGeminiApiKey(key: string, model: string = 'gemini-2.5-flash'): Promise<{ success: boolean; message: string }> {
-  const clean = cleanKey(key);
-  if (!clean) return { success: false, message: 'API key is empty or invalid format.' };
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${clean}`;
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: 'Respond with OK' }] }],
-        generationConfig: { maxOutputTokens: 5 },
-      }),
-    });
-
-    if (res.ok) {
-      return { success: true, message: `Connected successfully with ${model}!` };
-    }
-
-    const err = await res.json().catch(() => ({}));
-    const msg = err.error?.message || `HTTP ${res.status}`;
-    return { success: false, message: msg };
-  } catch (err: any) {
-    return { success: false, message: err.message || 'Network request failed' };
-  }
+export interface ExecuteRotationOptions {
+  callerName?: string;
+  preferredModels?: string[];
+  maxRetriesPerKey?: number;
 }
 
 /**
  * Executes a Gemini request with automatic multi-key rotation and multi-model cascade.
- * If Key 1 throws 429 (ResourceExhausted / Rate Limit), 403 (Invalid/Quota), or 400 (API_KEY_INVALID),
- * it immediately switches to Key 2, Key 3, etc.
+ * Raw keys are never stored, logged in full, or surfaced to user-facing UI.
  */
 export async function executeWithGeminiKeyRotation<T>(
-  operation: (apiKey: string, model: string) => Promise<T>,
-  options?: {
-    preferredModels?: string[];
-    callerName?: string;
-  }
-): Promise<{ result: T; keyUsed: string; modelUsed: string }> {
-  const keyPool = getGeminiApiKeyPool();
-  const caller = options?.callerName || 'Gemini AI';
+  requestFn: (activeKey: string, activeModel: string) => Promise<T>,
+  options: ExecuteRotationOptions = {}
+): Promise<{ result: T; usedKeyIndex: number; usedModel: string }> {
+  const caller = options.callerName || 'GeminiAI';
+  const models = options.preferredModels && options.preferredModels.length > 0
+    ? options.preferredModels
+    : ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
 
-  if (keyPool.length === 0) {
+  const keys = getGeminiApiKeyPool();
+
+  if (keys.length === 0) {
     throw new Error(
-      'Gemini API key is required. Please set GEMINI_API_KEY in Vercel / .env or configure a key in the settings.'
+      `No Gemini API key available on client. Serverless /api/analyze is used on production where keys remain secure in Vercel environment variables.`
     );
   }
 
-  const models = options?.preferredModels || [
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-pro',
-  ];
+  let lastError: Error | null = null;
 
-  let lastError: any = null;
+  for (let keyIdx = 0; keyIdx < keys.length; keyIdx++) {
+    const currentKey = keys[keyIdx];
 
-  // Outer loop: Try each API key in the pool (Primary -> Fallback 1 -> Fallback 2)
-  for (let keyIdx = 0; keyIdx < keyPool.length; keyIdx++) {
-    const currentKey = keyPool[keyIdx];
-    const keyLabel = keyIdx === 0 ? 'Primary Key' : `Fallback Key #${keyIdx}`;
-
-    // Inner loop: Try prioritized models for this key
     for (const currentModel of models) {
       try {
-        devLog.info(caller, `Attempting query with ${keyLabel} [${maskGeminiKey(currentKey)}] on model [${currentModel}]`);
-
-        const result = await operation(currentKey, currentModel);
-
-        devLog.success(caller, `Query successful using ${keyLabel} on [${currentModel}]`);
-        return {
-          result,
-          keyUsed: currentKey,
-          modelUsed: currentModel,
-        };
+        const result = await requestFn(currentKey, currentModel);
+        return { result, usedKeyIndex: keyIdx, usedModel: currentModel };
       } catch (err: any) {
-        lastError = err;
-        const msg = (err.message || '').toLowerCase();
-        const isQuotaOrRateLimit =
-          msg.includes('429') ||
-          msg.includes('resource_exhausted') ||
-          msg.includes('quota') ||
-          msg.includes('rate limit');
-        const isKeyInvalid =
-          msg.includes('403') ||
-          msg.includes('400') ||
-          msg.includes('api_key_invalid') ||
-          msg.includes('forbidden') ||
-          msg.includes('unregistered');
+        const errMsg = err?.message || String(err);
+        lastError = err instanceof Error ? err : new Error(errMsg);
 
-        if (isQuotaOrRateLimit || isKeyInvalid) {
+        const isQuotaExhausted =
+          errMsg.includes('429') ||
+          errMsg.toLowerCase().includes('quota') ||
+          errMsg.toLowerCase().includes('resource has been exhausted') ||
+          errMsg.toLowerCase().includes('rate limit');
+
+        const isAuthError =
+          errMsg.includes('403') ||
+          errMsg.includes('400') ||
+          errMsg.toLowerCase().includes('api_key_invalid') ||
+          errMsg.toLowerCase().includes('key not valid');
+
+        if (isQuotaExhausted || isAuthError) {
           devLog.warn(
             caller,
-            `${keyLabel} failed (${err.message}). Quota or key issue detected. Rotating to next key in pool...`
+            `Key #${keyIdx + 1} rejected (${isQuotaExhausted ? 'Quota/Rate-Limit' : 'Auth error'}). Rotating to next key in pool...`
           );
-          // Break out of model loop for this key, switch to NEXT key immediately!
-          break;
+          break; // Break inner model loop to rotate to the next key
         }
-
-        // If it's a 404 model not found or temporary model error, try next model with same key
-        devLog.warn(caller, `Model [${currentModel}] failed: ${err.message}. Trying next model...`);
       }
     }
   }
 
-  const keyCountNotice = keyPool.length > 1 ? `across ${keyPool.length} configured keys` : 'with the configured key';
-  throw new Error(
-    `All Gemini API attempts failed ${keyCountNotice}: ${lastError?.message || 'Unknown error'}. Please verify your API key or configure a fallback key.`
-  );
+  throw lastError || new Error(`All ${keys.length} Gemini API keys exhausted.`);
 }
