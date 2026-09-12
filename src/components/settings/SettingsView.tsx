@@ -1011,15 +1011,22 @@ export const SettingsView: React.FC = () => {
           p: { xs: 2.5, sm: 3 },
           borderRadius: 1.5,
           border: "1px solid",
-          borderColor: "rgba(248, 113, 113, 0.3)",
-          bgcolor: "rgba(127, 29, 29, 0.12)",
+          borderColor: (theme) =>
+            theme.palette.mode === "dark" ? "rgba(248, 113, 113, 0.3)" : "rgba(239, 68, 68, 0.35)",
+          bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(127, 29, 29, 0.12)" : "rgba(254, 242, 242, 0.8)"),
         }}
       >
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 2 }}>
           <Box sx={{ flex: 1, minWidth: 260 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
               <WarningIcon sx={{ color: "error.main" }} />
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "error.light" }}>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 800,
+                  color: (theme) => (theme.palette.mode === "dark" ? "error.light" : "error.dark"),
+                }}
+              >
                 {t("settings.dangerTitle", "Danger Zone: Account Deletion")}
               </Typography>
             </Box>

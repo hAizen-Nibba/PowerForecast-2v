@@ -41,6 +41,16 @@ export interface SystemChangelogEntry {
 // Master compiled GitHub deployment history covering all releases
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.3.5v",
+    version: "3.3.5v",
+    git_commit_tag: "3.3.5v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.3.5v - System-wide UI layout responsiveness & fluidity overhaul, complete dark & light mode color harmony, theme-adaptive modal papers, tooltips, dialogs, and filters",
+  },
+  {
     id: "3.3.4v",
     version: "3.3.4v",
     git_commit_tag: "3.3.4v",
@@ -750,6 +760,7 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
   // Filter options for fast version series navigation
   const filterOptions = [
     { id: "all", label: "All Deployments" },
+    { id: "3.3", label: "v3.3.x" },
     { id: "3.2", label: "v3.2.x" },
     { id: "3.1", label: "v3.1.x" },
     { id: "3.0", label: "v3.0.x" },
@@ -782,7 +793,7 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
   }, [changelogs, searchQuery, selectedTagFilter]);
 
   const openGitHubTag = (tag?: string) => {
-    if (tag && tag.startsWith("2.")) {
+    if (tag && (tag.startsWith("2.") || tag.startsWith("3."))) {
       window.open(`${GITHUB_REPO_URL}/releases/tag/${tag}`, "_blank", "noopener,noreferrer");
     } else {
       window.open(GITHUB_REPO_URL, "_blank", "noopener,noreferrer");

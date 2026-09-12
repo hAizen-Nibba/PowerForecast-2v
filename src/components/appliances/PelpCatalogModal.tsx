@@ -224,13 +224,13 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
               height: 36,
               borderRadius: 2,
               bgcolor: "primary.main",
-              color: "#ffffff",
+              color: "primary.contrastText",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <DatabaseIcon sx={{ color: "#ffd54f" }} />
+            <DatabaseIcon sx={{ color: "primary.contrastText" }} />
           </Box>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 800 }}>
@@ -253,7 +253,7 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
         <Grid container spacing={2} sx={{ mb: 3 }}>
           {spaces.length > 0 && (
             <Grid size={12}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.5, bgcolor: "action.hover", borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.5, bgcolor: "action.hover", borderRadius: 2, border: "1px solid", borderColor: "divider", flexWrap: "wrap" }}>
                 <Typography variant="caption" sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>
                   IMPORT DESTINATION:
                 </Typography>
@@ -262,7 +262,7 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
                   size="small"
                   value={selectedListId}
                   onChange={(e) => setSelectedListId(e.target.value)}
-                  sx={{ minWidth: 260 }}
+                  sx={{ minWidth: { xs: "100%", sm: 220, md: 260 } }}
                 >
                   {spaces.map((s) => (
                     <MenuItem key={s.id} value={s.id}>

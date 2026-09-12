@@ -123,13 +123,17 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onClose }) =
               width: 42,
               height: 42,
               borderRadius: "12px",
-              bgcolor: "rgba(0, 229, 201, 0.15)",
-              border: "1px solid rgba(0, 229, 201, 0.4)",
-              color: "#00e5c9",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.15)" : "rgba(13, 148, 136, 0.12)",
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.4)" : "rgba(13, 148, 136, 0.35)",
+              color: "primary.main",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 0 16px rgba(0, 229, 201, 0.25)",
+              boxShadow: (theme) =>
+                theme.palette.mode === "dark" ? "0 0 16px rgba(0, 229, 201, 0.25)" : "none",
             }}
           >
             <SupportIcon sx={{ fontSize: 24 }} />
@@ -148,7 +152,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ open, onClose }) =
         </IconButton>
       </DialogTitle>
 
-      <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)", mb: 2 }} />
+      <Divider sx={{ borderColor: "divider", mb: 2 }} />
 
       <DialogContent sx={{ px: { xs: 1, sm: 1.5 }, py: 0.5 }}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>

@@ -445,25 +445,35 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
           sx={{
             p: 2,
             borderRadius: 1.25,
-            bgcolor: "rgba(24, 27, 32, 0.75)",
-            borderColor: "rgba(0, 229, 201, 0.25)",
+            bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.75)" : "background.paper"),
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(13, 148, 136, 0.25)",
             display: "flex",
             flexDirection: "column",
             gap: 1.25,
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
-            <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.light", display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.main", display: "flex", alignItems: "center", gap: 0.5 }}>
               <BoltIcon sx={{ fontSize: 16 }} />
               Calculated Routine Projection:
             </Typography>
-            <Typography variant="caption" sx={{ fontWeight: 800, color: "#ffd54f" }}>
+            <Typography
+              variant="caption"
+              sx={{ fontWeight: 800, color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "warning.dark") }}
+            >
               {rangeLabel} ({dateCount} day{dateCount > 1 ? "s" : ""})
             </Typography>
           </Box>
 
           <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1.5, textAlign: "center" }}>
-            <Box sx={{ p: 1, borderRadius: 1, bgcolor: "rgba(0, 0, 0, 0.25)" }}>
+            <Box
+              sx={{
+                p: 1,
+                borderRadius: 1,
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.25)" : "action.hover"),
+              }}
+            >
               <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
                 Active Devices
               </Typography>
@@ -472,20 +482,39 @@ export const RoutineAutofillModal: React.FC<RoutineAutofillModalProps> = ({
               </Typography>
             </Box>
 
-            <Box sx={{ p: 1, borderRadius: 1, bgcolor: "rgba(0, 0, 0, 0.25)" }}>
+            <Box
+              sx={{
+                p: 1,
+                borderRadius: 1,
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.25)" : "action.hover"),
+              }}
+            >
               <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
                 Daily Estimate
               </Typography>
-              <Typography variant="subtitle2" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.light" }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.main" }}>
                 ₱{dailyMetrics.dailyCost.toFixed(2)}/day
               </Typography>
             </Box>
 
-            <Box sx={{ p: 1, borderRadius: 1, bgcolor: "rgba(0, 0, 0, 0.25)" }}>
+            <Box
+              sx={{
+                p: 1,
+                borderRadius: 1,
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.25)" : "action.hover"),
+              }}
+            >
               <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
                 Total Range Cost
               </Typography>
-              <Typography variant="subtitle2" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#ffd54f" }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: 900,
+                  fontFamily: "monospace",
+                  color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "warning.main"),
+                }}
+              >
                 ₱{dailyMetrics.totalCost.toFixed(2)}
               </Typography>
             </Box>

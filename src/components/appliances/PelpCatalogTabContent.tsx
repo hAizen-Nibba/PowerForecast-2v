@@ -194,16 +194,16 @@ export const PelpCatalogTabContent: React.FC<PelpCatalogTabContentProps> = ({
 
         {spaces.length > 0 && onSelectedListIdChange && (
           <Grid size={12}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.5, bgcolor: "action.hover", borderRadius: 1.5, border: "1px solid", borderColor: "divider" }}>
-              <Typography variant="caption" sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>
-                IMPORT DESTINATION:
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap", width: { xs: "100%", sm: "auto" } }}>
+              <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 700 }}>
+                Adding to Space:
               </Typography>
               <TextField
                 select
                 size="small"
                 value={selectedListId || spaces[0]?.id || ""}
                 onChange={(e) => onSelectedListIdChange(e.target.value)}
-                sx={{ minWidth: 260 }}
+                sx={{ minWidth: { xs: "100%", sm: 220, md: 260 } }}
               >
                 {spaces.map((s) => (
                   <MenuItem key={s.id} value={s.id}>

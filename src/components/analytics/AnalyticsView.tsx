@@ -982,10 +982,13 @@ export const AnalyticsView: React.FC = () => {
                         sx={{
                           p: 1.5,
                           borderRadius: 1.25,
-                          bgcolor: "#17191d",
-                          border: "1px solid rgba(0, 229, 201, 0.35)",
-                          color: "#ffffff",
-                          boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+                          bgcolor: (theme) => (theme.palette.mode === "dark" ? "#17191d" : "background.paper"),
+                          border: "1px solid",
+                          borderColor: (theme) =>
+                            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.35)" : "rgba(13, 148, 136, 0.35)",
+                          color: "text.primary",
+                          boxShadow: (theme) =>
+                            theme.palette.mode === "dark" ? "0 8px 32px rgba(0,0,0,0.6)" : "0 8px 24px rgba(0,0,0,0.12)",
                           maxWidth: 260,
                         }}
                       >
@@ -999,7 +1002,7 @@ export const AnalyticsView: React.FC = () => {
                         </Box>
                         <Typography
                           variant="caption"
-                          sx={{ display: "block", color: "#00e5c9", fontWeight: 800, fontFamily: "monospace", fontSize: "0.95rem" }}
+                          sx={{ display: "block", color: "primary.main", fontWeight: 800, fontFamily: "monospace", fontSize: "0.95rem" }}
                         >
                           {d.watts} Watts
                         </Typography>
@@ -1008,12 +1011,12 @@ export const AnalyticsView: React.FC = () => {
                         </Typography>
 
                         {d.activeDevices && d.activeDevices.length > 0 && (
-                          <Box sx={{ mt: 1, pt: 1, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-                            <Typography variant="caption" sx={{ display: "block", fontWeight: 700, color: "primary.light", mb: 0.5 }}>
+                          <Box sx={{ mt: 1, pt: 1, borderTop: "1px solid", borderTopColor: "divider" }}>
+                            <Typography variant="caption" sx={{ display: "block", fontWeight: 700, color: "primary.main", mb: 0.5 }}>
                               Active Devices ({d.activeDevices.length}):
                             </Typography>
                             {d.activeDevices.slice(0, 4).map((dev: any, idx: number) => (
-                              <Typography key={idx} variant="caption" sx={{ display: "block", fontSize: "0.7rem", color: "#f1f5f9" }}>
+                              <Typography key={idx} variant="caption" sx={{ display: "block", fontSize: "0.7rem", color: "text.primary" }}>
                                 • {dev.name} ({dev.watts}W)
                               </Typography>
                             ))}

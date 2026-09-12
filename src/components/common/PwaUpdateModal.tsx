@@ -127,10 +127,11 @@ export const PwaUpdateModal: React.FC = () => {
                 justifyContent: "center",
                 background: "linear-gradient(135deg, rgba(0, 229, 201, 0.25) 0%, rgba(99, 102, 241, 0.35) 100%)",
                 border: "1px solid rgba(0, 229, 201, 0.5)",
-                boxShadow: "0 0 20px rgba(0, 229, 201, 0.3)",
+                boxShadow: (theme) =>
+                  theme.palette.mode === "dark" ? "0 0 20px rgba(0, 229, 201, 0.3)" : "none",
               }}
             >
-              <RocketIcon sx={{ fontSize: 26, color: "#00e5c9" }} />
+              <RocketIcon sx={{ fontSize: 26, color: "primary.main" }} />
             </Box>
 
             <Box>
@@ -155,9 +156,12 @@ export const PwaUpdateModal: React.FC = () => {
                     fontFamily: "monospace",
                     fontWeight: 800,
                     fontSize: "0.75rem",
-                    bgcolor: "rgba(0, 229, 201, 0.15)",
-                    color: "#00e5c9",
-                    border: "1px solid rgba(0, 229, 201, 0.4)",
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.15)" : "rgba(13, 148, 136, 0.12)",
+                    color: "primary.main",
+                    border: "1px solid",
+                    borderColor: (theme) =>
+                      theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.4)" : "rgba(13, 148, 136, 0.35)",
                   }}
                 />
               </Box>
@@ -173,7 +177,7 @@ export const PwaUpdateModal: React.FC = () => {
         </Box>
       </DialogTitle>
 
-      <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)", mb: 2 }} />
+      <Divider sx={{ borderColor: "divider", mb: 2 }} />
 
       {/* Changelog & Release Notes Card */}
       <DialogContent sx={{ p: 0, py: 1 }}>
@@ -192,7 +196,7 @@ export const PwaUpdateModal: React.FC = () => {
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
-            <ChangelogIcon sx={{ fontSize: 18, color: "#00e5c9" }} />
+            <ChangelogIcon sx={{ fontSize: 18, color: "primary.main" }} />
             <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
               {t("pwa.changelogTitle", "Log of Changes & Release Notes")}
             </Typography>
@@ -201,7 +205,7 @@ export const PwaUpdateModal: React.FC = () => {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             {changelogItems.map((item, idx) => (
               <Box key={idx} sx={{ display: "flex", alignItems: "flex-start", gap: 1.25 }}>
-                <CheckIcon sx={{ fontSize: 16, color: "#00e5c9", mt: 0.25, flexShrink: 0 }} />
+                <CheckIcon sx={{ fontSize: 16, color: "primary.main", mt: 0.25, flexShrink: 0 }} />
                 <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.875rem", lineHeight: 1.5 }}>
                   {item}
                 </Typography>
@@ -211,7 +215,7 @@ export const PwaUpdateModal: React.FC = () => {
         </Paper>
       </DialogContent>
 
-      <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)", mt: 2.5, mb: 2 }} />
+      <Divider sx={{ borderColor: "divider", mt: 2.5, mb: 2 }} />
 
       {/* Action Buttons */}
       <DialogActions sx={{ p: 0, display: "flex", gap: 1.5, justifyContent: "flex-end" }}>
@@ -246,7 +250,7 @@ export const PwaUpdateModal: React.FC = () => {
             isUpdating ? (
               <CircularProgress size={16} color="inherit" />
             ) : (
-              <SparklesIcon sx={{ fontSize: 18, color: "#0b0d1b !important" }} />
+              <SparklesIcon sx={{ fontSize: 18, color: "primary.contrastText !important" }} />
             )
           }
           sx={{
@@ -256,12 +260,14 @@ export const PwaUpdateModal: React.FC = () => {
             textTransform: "none",
             fontWeight: 800,
             fontSize: "0.9375rem",
-            bgcolor: "#00e5c9",
-            color: "#0b0d1b",
-            boxShadow: "0 0 20px rgba(0, 229, 201, 0.4)",
+            bgcolor: "primary.main",
+            color: "primary.contrastText",
+            boxShadow: (theme) =>
+              theme.palette.mode === "dark" ? "0 0 20px rgba(0, 229, 201, 0.4)" : "0 4px 14px rgba(13, 148, 136, 0.3)",
             "&:hover": {
-              bgcolor: "#00c4ab",
-              boxShadow: "0 0 28px rgba(0, 229, 201, 0.6)",
+              bgcolor: "primary.dark",
+              boxShadow: (theme) =>
+                theme.palette.mode === "dark" ? "0 0 28px rgba(0, 229, 201, 0.6)" : "0 6px 20px rgba(13, 148, 136, 0.4)",
               transform: "translateY(-1px)",
             },
             transition: "all 0.2s ease-in-out",

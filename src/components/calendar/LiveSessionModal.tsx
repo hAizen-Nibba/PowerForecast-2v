@@ -239,9 +239,20 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
 
               {/* Editable Duration Segmented Inputs */}
               {isAdjusting && (
-                <Paper variant="outlined" sx={{ p: 2, borderRadius: 2.5, bgcolor: "rgba(0, 0, 0, 0.3)" }}>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: 2.5,
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.3)" : "action.hover"),
+                    borderColor: "divider",
+                  }}
+                >
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: "#ffd54f" }}>
+                    <Typography
+                      variant="caption"
+                      sx={{ fontWeight: 800, color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "warning.dark") }}
+                    >
                       Edit Stopwatch Runtime (Over-run Correction)
                     </Typography>
                     <Button
@@ -449,15 +460,17 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
               sx={{
                 p: 3,
                 borderRadius: 1.25,
-                bgcolor: "rgba(24, 27, 32, 0.75)",
-                border: "1px solid rgba(0, 229, 201, 0.25)",
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.75)" : "background.paper"),
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(13, 148, 136, 0.25)",
                 display: "flex",
                 flexDirection: "column",
                 gap: 2,
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <ReceiptIcon sx={{ color: "#ffd54f", fontSize: 28 }} />
+                <ReceiptIcon sx={{ color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "warning.main"), fontSize: 28 }} />
                 <Box>
                   <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
                     Audited Energy Receipt
@@ -468,7 +481,7 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
                 </Box>
               </Box>
 
-              <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)" }} />
+              <Divider sx={{ borderColor: "divider" }} />
 
               <Grid container spacing={2}>
               <Grid size={{ xs: 6 }}>
@@ -479,7 +492,7 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
               </Grid>
               <Grid size={{ xs: 6 }}>
                 <Typography variant="caption" sx={{ color: "text.secondary" }}>Energy Consumed</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 800, color: "#fbbf24" }}>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: "secondary.main" }}>
                   {(receiptLog.kwh_consumed || 0).toFixed(3)} kWh
                 </Typography>
               </Grid>
@@ -497,13 +510,13 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({
               </Grid>
             </Grid>
 
-            <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)" }} />
+            <Divider sx={{ borderColor: "divider" }} />
 
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Typography variant="body2" sx={{ fontWeight: 800, color: "text.primary" }}>
                 Total Incurred Cost:
               </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 900, color: "#00e5c9" }}>
+              <Typography variant="h5" sx={{ fontWeight: 900, color: "primary.main" }}>
                 ₱{(receiptLog.estimated_cost || 0).toFixed(2)}
               </Typography>
             </Box>

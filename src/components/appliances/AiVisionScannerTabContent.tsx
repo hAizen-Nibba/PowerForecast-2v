@@ -289,7 +289,7 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
       {/* Preset Mode Selector & Space / Key Controls */}
       {/* Category Hint Selector & Space / Key Controls */}
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
-        <FormControl size="small" sx={{ minWidth: 260 }}>
+        <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 220, md: 260 }, flex: { xs: "1 1 100%", sm: "auto" } }}>
           <InputLabel>Appliance Category</InputLabel>
           <Select
             value={categoryHint}
@@ -316,9 +316,9 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
           </Select>
         </FormControl>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: { xs: "100%", sm: "auto" } }}>
           {spaces.length > 0 && onSelectedListIdChange && (
-            <FormControl size="small" sx={{ minWidth: 160 }}>
+            <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 160 }, flex: { xs: "1 1 100%", sm: "auto" } }}>
               <InputLabel>Target Space</InputLabel>
               <Select
                 value={selectedListId || spaces[0]?.id || ""}

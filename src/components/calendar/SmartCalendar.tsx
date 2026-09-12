@@ -490,9 +490,9 @@ return (
           sx={{
             p: { xs: 0.75, sm: 1 },
             borderRadius: 2,
-            bgcolor: (theme) => (theme.palette.mode === "dark" ? "#14171c" : "#ffffff"),
+            bgcolor: (theme) => (theme.palette.mode === "dark" ? "#14171c" : "background.paper"),
             border: "1px solid",
-            borderColor: (theme) => (theme.palette.mode === "dark" ? "#222732" : "#e2e8f0"),
+            borderColor: "divider",
             boxShadow: (theme) =>
               theme.palette.mode === "dark" ? "none" : "0 2px 8px rgba(15, 23, 42, 0.04)",
             display: "flex",
@@ -500,7 +500,7 @@ return (
             gap: { xs: 0.75, sm: 1 },
             overflowX: "auto",
             "&::-webkit-scrollbar": { height: 4 },
-            "&::-webkit-scrollbar-thumb": { bgcolor: "#2e3544", borderRadius: 2 },
+            "&::-webkit-scrollbar-thumb": { bgcolor: "divider", borderRadius: 2 },
           }}
         >
           <Button
