@@ -104,10 +104,10 @@ export const SmartCalendar: React.FC = () => {
   const dailyUsageList: DailyApplianceUsage[] = dailyUsageRes?.data?.data || dailyUsageRes?.result?.data || [];
   const spaces: ApplianceList[] = spacesRes?.data?.data || spacesRes?.result?.data || [];
 
-  // Filter appliances by selected space
+  // Filter appliances by selected space (excluding blacklisted appliances)
   const appliances = useMemo(() => {
-    if (selectedSpaceId === "all") return allAppliances;
-    return allAppliances.filter((a) => a.list_id === selectedSpaceId);
+    const spaceFiltered = selectedSpaceId === "all" ? allAppliances : allAppliances.filter((a) => a.list_id === selectedSpaceId);
+    return spaceFiltered.filter((a) => a.is_active !== false);
   }, [allAppliances, selectedSpaceId]);
 
   // Group daily usage by dateKey

@@ -32,6 +32,7 @@ import {
   Create as PenIcon,
   CameraAlt as CameraIcon,
   Refresh as RefreshIcon,
+  Block as BlockIcon,
 } from "@mui/icons-material";
 import { UserAppliance, UserCalendarEvent, ApplianceList as ApplianceSpace, STREAMLINED_CATEGORIES } from "../../types";
 import { useList, useDelete, useUpdate, useCreate } from "@refinedev/core";
@@ -201,13 +202,16 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
     });
   }, [currentSpaceAppliances, searchQuery, selectedCategory, selectedRoom]);
 
-  // Space-specific stats
-  const spaceTotalWatts = currentSpaceAppliances.reduce(
+  // Space-specific stats (excluding blacklisted / inactive appliances)
+  const activeSpaceAppliances = currentSpaceAppliances.filter((a) => a.is_active !== false);
+  const blacklistedCount = currentSpaceAppliances.filter((a) => a.is_active === false).length;
+
+  const spaceTotalWatts = activeSpaceAppliances.reduce(
     (acc, curr) => acc + curr.watts * (curr.quantity || 1),
     0
   );
 
-  const spaceMonthlyKwh = currentSpaceAppliances.reduce((acc, curr) => {
+  const spaceMonthlyKwh = activeSpaceAppliances.reduce((acc, curr) => {
     const w = Number(curr.watts) || 0;
     const h = Number(curr.hours_per_day) || 0;
     const q = Number(curr.quantity) || 1;
@@ -297,6 +301,39 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
     });
 
     showInfo(`${app.name} stopwatch ${newState ? "started" : "stopped and saved"}.`);
+  };
+
+  const handleToggleBlacklist = async (app: UserAppliance) => {
+    const isCurrentlyBlacklisted = app.is_active === false;
+    const willBeBlacklisted = !isCurrentlyBlacklisted;
+
+    // If appliance is currently running on live stopwatch and will be blacklisted, stop and save it first
+    if (willBeBlacklisted && app.is_currently_on) {
+      await togglePower(app);
+    }
+
+    updateAppliance(
+      {
+        resource: "user_appliances",
+        id: app.id,
+        values: {
+          is_active: !willBeBlacklisted,
+          ...(willBeBlacklisted ? { is_currently_on: false, last_turned_on_at: null } : {}),
+        },
+      },
+      {
+        onSuccess: () => {
+          if (willBeBlacklisted) {
+            showInfo(`"${app.name}" blacklisted from Smart Calendar & Forecasting calculations.`);
+          } else {
+            showSuccess(`"${app.name}" restored to active Forecasting & Smart Calendar.`);
+          }
+        },
+        onError: (err: any) => {
+          showError(`Failed to update appliance status: ${err?.message || "Unknown error"}`);
+        },
+      }
+    );
   };
 
   const getRunningDuration = (turnedOnAt?: string | null) => {
@@ -616,11 +653,27 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             sx={{ fontWeight: 800, bgcolor: "rgba(0, 229, 201, 0.08)", border: "1px solid rgba(0, 229, 201, 0.25)", color: "#00e5c9" }}
           />
           <Chip
-            label={`${currentSpaceAppliances.length} Appliances`}
+            label={`${activeSpaceAppliances.length} Active${blacklistedCount > 0 ? ` • ${blacklistedCount} Excluded` : " Appliances"}`}
             color="primary"
             variant="outlined"
             sx={{ fontWeight: 700 }}
           />
+          {blacklistedCount > 0 && (
+            <Tooltip title={`${blacklistedCount} appliance(s) are currently blacklisted and excluded from Smart Calendar and Forecasting calculations.`}>
+              <Chip
+                icon={<BlockIcon sx={{ fontSize: "14px !important", color: "#f59e0b !important" }} />}
+                label={`${blacklistedCount} Blacklisted`}
+                size="small"
+                sx={{
+                  fontWeight: 800,
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.12)" : "rgba(245, 158, 11, 0.08)"),
+                  color: (theme) => (theme.palette.mode === "dark" ? "#fbbf24" : "#b45309"),
+                  border: "1px solid",
+                  borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.35)" : "rgba(245, 158, 11, 0.3)"),
+                }}
+              />
+            </Tooltip>
+          )}
           <Chip
             label={`₱${spaceBillCalc.totalBill.toFixed(2)} / mo`}
             color={spaceTariffType === "commercial" ? "secondary" : "default"}
@@ -836,7 +889,8 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
           </Grid>
         ) : (
           filteredAppliances.map((app: UserAppliance, appIdx: number) => {
-            const isOn = app.is_currently_on;
+            const isBlacklisted = app.is_active === false;
+            const isOn = app.is_currently_on && !isBlacklisted;
             const liveSpent = getAccumulatedPesos(app);
             const w = Number(app.watts) || 0;
             const h = Number(app.hours_per_day) || 0;
@@ -881,9 +935,13 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                     sx={{
                       p: { xs: 2.25, sm: 2.5 },
                       borderRadius: 1.5,
-                      border: "1px solid",
+                      border: isBlacklisted ? "1px dashed" : "1px solid",
                       borderColor: (theme) =>
-                        isOn
+                        isBlacklisted
+                          ? theme.palette.mode === "dark"
+                            ? "rgba(245, 158, 11, 0.45)"
+                            : "rgba(217, 119, 6, 0.4)"
+                          : isOn
                           ? theme.palette.mode === "dark"
                             ? "rgba(0, 229, 201, 0.28)"
                             : "rgba(13, 148, 136, 0.25)"
@@ -891,13 +949,18 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                           ? "rgba(255, 255, 255, 0.06)"
                           : "#e2e8f0",
                       bgcolor: (theme) =>
-                        isOn
+                        isBlacklisted
+                          ? theme.palette.mode === "dark"
+                            ? "rgba(22, 24, 28, 0.88)"
+                            : "rgba(254, 243, 199, 0.12)"
+                          : isOn
                           ? theme.palette.mode === "dark"
                             ? "rgba(24, 30, 34, 0.88)"
                             : "rgba(13, 148, 136, 0.04)"
                           : theme.palette.mode === "dark"
                           ? "rgba(20, 24, 28, 0.75)"
                           : "background.paper",
+                      opacity: isBlacklisted ? 0.82 : 1,
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
@@ -905,7 +968,11 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                       transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                       "&:hover": {
                         borderColor: (theme) =>
-                          theme.palette.mode === "dark"
+                          isBlacklisted
+                            ? theme.palette.mode === "dark"
+                              ? "rgba(245, 158, 11, 0.7)"
+                              : "rgba(217, 119, 6, 0.6)"
+                            : theme.palette.mode === "dark"
                             ? "rgba(0, 229, 201, 0.45)"
                             : "rgba(13, 148, 136, 0.4)",
                         transform: "translateY(-3px)",
@@ -917,56 +984,81 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                     }}
                   >
                     <Box>
-                      {/* Top Row: Category & Power Toggle */}
+                      {/* Top Row: Category, Blacklist badge & Power Toggle */}
                       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5, gap: 1 }}>
-                        <Chip
-                          label={app.category}
-                          size="small"
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: "0.7rem",
-                            bgcolor: (theme) =>
-                              theme.palette.mode === "dark"
-                                ? "rgba(0, 229, 201, 0.1)"
-                                : "rgba(13, 148, 136, 0.08)",
-                            color: (theme) =>
-                              theme.palette.mode === "dark" ? "#00e5c9" : "#0f766e",
-                          }}
-                        />
-                        <IconButton
-                          size="small"
-                          onClick={() => togglePower(app)}
-                          sx={{
-                            bgcolor: (theme) =>
-                              isOn
-                                ? theme.palette.mode === "dark"
-                                  ? "primary.main"
-                                  : "#0d9488"
-                                : theme.palette.mode === "dark"
-                                ? "rgba(255, 255, 255, 0.06)"
-                                : "#f1f5f9",
-                            color: (theme) =>
-                              isOn
-                                ? theme.palette.mode === "dark"
-                                  ? "#0c1b18"
-                                  : "#ffffff"
-                                : "text.secondary",
-                            "&:hover": {
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
+                          <Chip
+                            label={app.category}
+                            size="small"
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: "0.7rem",
                               bgcolor: (theme) =>
-                                isOn
-                                  ? theme.palette.mode === "dark"
-                                    ? "primary.dark"
-                                    : "#0f766e"
-                                  : theme.palette.mode === "dark"
-                                  ? "rgba(0, 229, 201, 0.2)"
-                                  : "#e2e8f0",
-                              transform: "scale(1.08)",
-                            },
-                            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                          }}
-                        >
-                          <PowerIcon fontSize="small" />
-                        </IconButton>
+                                theme.palette.mode === "dark"
+                                  ? "rgba(0, 229, 201, 0.1)"
+                                  : "rgba(13, 148, 136, 0.08)",
+                              color: (theme) =>
+                                theme.palette.mode === "dark" ? "#00e5c9" : "#0f766e",
+                            }}
+                          />
+                          {isBlacklisted && (
+                            <Tooltip title="Blacklisted: Excluded from Smart Calendar, Forecasting, and Monthly Projections.">
+                              <Chip
+                                icon={<BlockIcon sx={{ fontSize: "13px !important", color: "#f59e0b !important" }} />}
+                                label="Blacklisted"
+                                size="small"
+                                sx={{
+                                  fontWeight: 800,
+                                  fontSize: "0.6875rem",
+                                  bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.16)" : "rgba(245, 158, 11, 0.1)"),
+                                  color: (theme) => (theme.palette.mode === "dark" ? "#fbbf24" : "#b45309"),
+                                  border: "1px solid",
+                                  borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.4)" : "rgba(245, 158, 11, 0.3)"),
+                                }}
+                              />
+                            </Tooltip>
+                          )}
+                        </Box>
+                        <Tooltip title={isBlacklisted ? "Appliance is blacklisted — click restore below to enable stopwatch" : isOn ? "Stop Live Stopwatch" : "Start Live Stopwatch"}>
+                          <span>
+                            <IconButton
+                              size="small"
+                              disabled={isBlacklisted}
+                              onClick={() => togglePower(app)}
+                              sx={{
+                                opacity: isBlacklisted ? 0.4 : 1,
+                                bgcolor: (theme) =>
+                                  isOn
+                                    ? theme.palette.mode === "dark"
+                                      ? "primary.main"
+                                      : "#0d9488"
+                                    : theme.palette.mode === "dark"
+                                    ? "rgba(255, 255, 255, 0.06)"
+                                    : "#f1f5f9",
+                                color: (theme) =>
+                                  isOn
+                                    ? theme.palette.mode === "dark"
+                                      ? "#0c1b18"
+                                      : "#ffffff"
+                                    : "text.secondary",
+                                "&:hover": {
+                                  bgcolor: (theme) =>
+                                    isOn
+                                      ? theme.palette.mode === "dark"
+                                        ? "primary.dark"
+                                        : "#0f766e"
+                                      : theme.palette.mode === "dark"
+                                      ? "rgba(0, 229, 201, 0.2)"
+                                      : "#e2e8f0",
+                                  transform: "scale(1.08)",
+                                },
+                                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                              }}
+                            >
+                              <PowerIcon fontSize="small" />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
                       </Box>
 
                     {/* Appliance Name & Details */}
@@ -1065,6 +1157,36 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                     )}
 
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                      {/* Blacklist / Exclude Toggle Action */}
+                      <Tooltip
+                        title={
+                          isBlacklisted
+                            ? "Restore appliance to Forecast & Calendar calculations"
+                            : "Blacklist appliance (Exclude from Calendar & Forecast)"
+                        }
+                      >
+                        <IconButton
+                          size="small"
+                          onClick={() => handleToggleBlacklist(app)}
+                          sx={{
+                            color: isBlacklisted ? "#f59e0b" : "text.secondary",
+                            bgcolor: isBlacklisted
+                              ? (theme) =>
+                                  theme.palette.mode === "dark"
+                                    ? "rgba(245, 158, 11, 0.16)"
+                                    : "rgba(245, 158, 11, 0.1)"
+                              : "transparent",
+                            border: isBlacklisted ? "1px solid rgba(245, 158, 11, 0.35)" : "none",
+                            "&:hover": {
+                              bgcolor: isBlacklisted ? "rgba(245, 158, 11, 0.25)" : "action.hover",
+                              color: isBlacklisted ? "#fbbf24" : "warning.main",
+                            },
+                          }}
+                        >
+                          <BlockIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+
                       <Tooltip title="Manage Schedule Queue">
                         <IconButton
                           size="small"

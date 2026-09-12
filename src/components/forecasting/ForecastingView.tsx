@@ -34,6 +34,7 @@ import {
   CheckCircle as CheckIcon,
   WarningAmber as WarningIcon,
   Timeline as TimelineIcon,
+  Block as BlockIcon,
 } from "@mui/icons-material";
 import { UserAppliance, ApplianceList, DailyApplianceUsage, ApplianceUsageLog } from "../../types";
 import { useList } from "@refinedev/core";
@@ -73,11 +74,19 @@ export const ForecastingView: React.FC = () => {
   const dailyRecords: DailyApplianceUsage[] = dailyUsageRes?.data?.data || dailyUsageRes?.result?.data || [];
   const sessionLogs: ApplianceUsageLog[] = usageLogsRes?.data?.data || usageLogsRes?.result?.data || [];
 
-  // Filter target appliances based on space selection
-  const targetAppliances = useMemo(() => {
+  // Filter target appliances based on space selection (excluding blacklisted / inactive appliances)
+  const allSpaceAppliances = useMemo(() => {
     if (selectedSpaceId === "all") return appliances;
     return appliances.filter((a) => a.list_id === selectedSpaceId);
   }, [appliances, selectedSpaceId]);
+
+  const targetAppliances = useMemo(() => {
+    return allSpaceAppliances.filter((a) => a.is_active !== false);
+  }, [allSpaceAppliances]);
+
+  const blacklistedCount = useMemo(() => {
+    return allSpaceAppliances.filter((a) => a.is_active === false).length;
+  }, [allSpaceAppliances]);
 
   const targetApplianceIds = useMemo(() => {
     return new Set(targetAppliances.map((a) => a.id));
@@ -347,7 +356,7 @@ export const ForecastingView: React.FC = () => {
         </Box>
       )}
 
-      {/* 3. Zero Appliances Empty State */}
+      {/* 3. Zero Active Appliances Empty State */}
       {targetAppliances.length === 0 ? (
         <Paper
           variant="outlined"
@@ -363,12 +372,26 @@ export const ForecastingView: React.FC = () => {
             gap: 2,
           }}
         >
-          <ElectricBoltIcon sx={{ fontSize: 52, color: "primary.light", opacity: 0.8 }} />
+          {blacklistedCount > 0 ? (
+            <BlockIcon sx={{ fontSize: 52, color: "warning.main", opacity: 0.9 }} />
+          ) : (
+            <ElectricBoltIcon sx={{ fontSize: 52, color: "primary.light", opacity: 0.8 }} />
+          )}
           <Typography variant="h6" sx={{ fontWeight: 800 }}>
-            {language === "tl" ? "Walang Rehistradong Kagamitan" : "No Registered Appliances Found"}
+            {blacklistedCount > 0
+              ? language === "tl"
+                ? "Lahat ng Kagamitan ay Naka-Blacklist"
+                : "All Appliances in this Space are Blacklisted"
+              : language === "tl"
+              ? "Walang Rehistradong Kagamitan"
+              : "No Registered Appliances Found"}
           </Typography>
           <Typography variant="body2" sx={{ color: "text.secondary", maxWidth: 460 }}>
-            {language === "tl"
+            {blacklistedCount > 0
+              ? language === "tl"
+                ? `Kasalukuyang may ${blacklistedCount} kagamitan na naka-blacklist at hindi kasama sa kalkulasyon ng prediksyon. I-unblock ang mga ito sa Sentro ng Kagamitan upang makita ang forecast.`
+                : `You currently have ${blacklistedCount} appliance(s) blacklisted and excluded from forecasting calculations. Restore them in the Appliances Hub to generate a forecast.`
+              : language === "tl"
               ? "Magrehistro ng iyong mga kagamitan sa bahay o negosyo sa Sentro ng Kagamitan para magsimulang makatanggap ng data-driven na prediksyon sa bill."
               : "Register your household or business appliances in the Appliances Hub to start receiving real-time data-driven energy forecasts and Meralco bill projections."}
           </Typography>
@@ -376,8 +399,8 @@ export const ForecastingView: React.FC = () => {
             component={Link}
             to="/appliances"
             variant="contained"
-            color="primary"
-            startIcon={<BoltIcon />}
+            color={blacklistedCount > 0 ? "warning" : "primary"}
+            startIcon={blacklistedCount > 0 ? <BlockIcon /> : <BoltIcon />}
             sx={{ borderRadius: 1, fontWeight: 800, px: 3, py: 1, mt: 1 }}
           >
             {language === "tl" ? "Pumunta sa Sentro ng Kagamitan" : "Go to Appliances Hub"}
@@ -385,6 +408,47 @@ export const ForecastingView: React.FC = () => {
         </Paper>
       ) : (
         <>
+          {/* Blacklisted Appliances Exclusion Notice Banner */}
+          {blacklistedCount > 0 && (
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 1.75,
+                mb: 2.5,
+                borderRadius: 1.5,
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.06)"),
+                borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.3)" : "rgba(245, 158, 11, 0.25)"),
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 1.5,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                <BlockIcon sx={{ color: "warning.main", fontSize: 22 }} />
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                    {blacklistedCount} appliance{blacklistedCount > 1 ? "s are" : " is"} currently blacklisted
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    Excluded from routine baseline, energy hog ranking, what-if simulations, and month-end projected bill calculations.
+                  </Typography>
+                </Box>
+              </Box>
+              <Button
+                component={Link}
+                to="/appliances"
+                size="small"
+                variant="outlined"
+                color="warning"
+                sx={{ fontSize: "0.75rem", textTransform: "none", fontWeight: 700 }}
+              >
+                Manage in Appliances Hub
+              </Button>
+            </Paper>
+          )}
+
           {/* 4. Active Billing Cycle Run-Rate Telemetry Banner */}
           <Card
             sx={{

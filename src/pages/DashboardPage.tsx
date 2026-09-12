@@ -71,18 +71,19 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
-  const runningAppliances = appliances.filter((a: UserAppliance) => a.is_currently_on);
+  const activeAppliances = appliances.filter((a: UserAppliance) => a.is_active !== false);
+  const runningAppliances = activeAppliances.filter((a: UserAppliance) => a.is_currently_on);
   const activeWattage = runningAppliances.reduce(
     (acc: number, curr: UserAppliance) => acc + curr.watts * (curr.quantity || 1),
     0
   );
 
-  const totalMonthlyKwh = appliances.reduce(
+  const totalMonthlyKwh = activeAppliances.reduce(
     (acc: number, curr: UserAppliance) => acc + (Number(curr.monthly_kwh) || ((curr.watts * curr.hours_per_day * (curr.quantity || 1) * 30) / 1000)),
     0
   );
 
-  // Calculate space-by-space bills and cost split
+  // Calculate space-by-space bills and cost split (strictly active appliances)
   const spaceAnalytics = useMemo(() => {
     let resTotalKwh = 0;
     let resTotalBill = 0;
@@ -90,7 +91,7 @@ export const DashboardPage: React.FC = () => {
     let comTotalBill = 0;
 
     const breakdownBySpace = spaces.map((space) => {
-      const spaceApps = appliances.filter((a) => a.list_id === space.id || (!a.list_id && space.is_default));
+      const spaceApps = activeAppliances.filter((a) => a.list_id === space.id || (!a.list_id && space.is_default));
       const kwh = spaceApps.reduce((acc, curr) => {
         return acc + (Number(curr.monthly_kwh) || ((curr.watts * curr.hours_per_day * (curr.quantity || 1) * 30) / 1000));
       }, 0);
@@ -129,7 +130,7 @@ export const DashboardPage: React.FC = () => {
 
   // Activate smart energy notification monitors
   useNotifications({
-    appliances,
+    appliances: activeAppliances,
     projectedBill: spaceAnalytics.consolidatedTotalBill,
   });
 

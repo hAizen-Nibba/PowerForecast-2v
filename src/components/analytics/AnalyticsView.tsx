@@ -86,12 +86,15 @@ export const AnalyticsView: React.FC = () => {
   const events: UserCalendarEvent[] = eventsRes?.data?.data || eventsRes?.result?.data || [];
   const dailyUsageRecords: DailyApplianceUsage[] = dailyUsageRes?.data?.data || dailyUsageRes?.result?.data || [];
 
-  // Filter target appliances based on active space selection
+  // Filter target appliances based on active space selection (excluding blacklisted appliances)
   const targetAppliances = useMemo(() => {
-    if (selectedSpaceId === "all") return appliances;
-    return appliances.filter(
-      (a) => a.list_id === selectedSpaceId || (!a.list_id && spaces.find((s) => s.id === selectedSpaceId)?.is_default)
-    );
+    const list =
+      selectedSpaceId === "all"
+        ? appliances
+        : appliances.filter(
+            (a) => a.list_id === selectedSpaceId || (!a.list_id && spaces.find((s) => s.id === selectedSpaceId)?.is_default)
+          );
+    return list.filter((a) => a.is_active !== false);
   }, [appliances, spaces, selectedSpaceId]);
 
   const activeSpace = spaces.find((s) => s.id === selectedSpaceId);
@@ -110,7 +113,7 @@ export const AnalyticsView: React.FC = () => {
     return (watts * hours * days * qty) / 1000;
   };
 
-  // 1. Calculate space-by-space and consolidated monthly energy
+  // 1. Calculate space-by-space and consolidated monthly energy (strictly active appliances)
   const spaceAnalytics = useMemo(() => {
     let resTotalKwh = 0;
     let resTotalBill = 0;
@@ -119,7 +122,7 @@ export const AnalyticsView: React.FC = () => {
 
     const breakdownBySpace = spaces.map((space) => {
       const spaceApps = appliances.filter(
-        (a) => a.list_id === space.id || (!a.list_id && space.is_default)
+        (a) => (a.list_id === space.id || (!a.list_id && space.is_default)) && a.is_active !== false
       );
       const kwh = spaceApps.reduce((acc, curr) => acc + getApplianceMonthlyKwh(curr), 0);
       const billResult = calculateMeralcoBill(kwh, undefined, 0, false, space.tariff_type);

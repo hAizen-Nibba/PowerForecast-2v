@@ -1173,8 +1173,10 @@ export function computeDayMetrics(
   const dayStr = dayOfWeekMap[date.getDay()];
   const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
-  // Baseline routine consumption
-  let projectedKwh = appliances.reduce((acc, app) => {
+  // Baseline routine consumption (strictly active appliances)
+  const activeAppliances = appliances.filter((a) => a.is_active !== false);
+
+  let projectedKwh = activeAppliances.reduce((acc, app) => {
     const defaultHours = Number(app.hours_per_day) || 0;
     const hours = isWeekend ? Math.min(24, defaultHours * 1.15) : defaultHours;
     return acc + calculateApplianceKwh(app, hours);
@@ -1184,9 +1186,9 @@ export function computeDayMetrics(
   const dayEvents = events.filter((e) => e.day === dayStr || e.is_recurring);
   dayEvents.forEach((ev) => {
     const app = appliances.find((a) => a.id === ev.appliance_id);
-    if (app) {
+    if (app && app.is_active !== false) {
       projectedKwh += calculateApplianceKwh(app, ev.duration_hours || 1);
-    } else {
+    } else if (!app) {
       projectedKwh += calculateKwh(500, ev.duration_hours || 1, 1);
     }
   });
@@ -1198,7 +1200,7 @@ export function computeDayMetrics(
     cost: Number(projectedCost.toFixed(2)),
     isLogged: false,
     isPeak: projectedKwh > 18 || projectedCost > 270,
-    applianceCount: appliances.length,
+    applianceCount: activeAppliances.length,
     source: dayEvents.length > 0 ? "projected_schedule" : "projected_routine",
   };
 }
