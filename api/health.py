@@ -86,7 +86,7 @@ class handler(BaseHTTPRequestHandler):
             "keyNameDetected": key_name,
             "detectedSources": detected_sources,
             "maxImagesSupported": 3,
-            "defaultModel": "gemini-2.5-flash",
-            "supportedModels": ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+            "defaultModel": "gemini-2.0-flash",
+            "supportedModels": ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-1.5-flash"]
         }
         self.wfile.write(json.dumps(res).encode('utf-8'))
