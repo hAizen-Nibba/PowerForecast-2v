@@ -65,8 +65,17 @@ class handler(BaseHTTPRequestHandler):
         raw_category = payload.get('category') or payload.get('categoryHint')
         raw_model = payload.get('model', 'gemini-2.5-flash')
 
-        # Input Validation & Sanitization
-        preset = str(raw_category or raw_preset or 'specs')[:50]
+        # Input Validation & Sanitization - Strict Preset Allowlist (prevents Prompt Injection)
+        allowed_presets = {
+            'specs', 'audit', 'general', 'appliance',
+            'Air Conditioners', 'Refrigerators & Freezers', 'Television Sets',
+            'Electric Fans', 'Clothes Washing Machines', 'Lighting Products',
+            'Kitchen Appliances', 'Water Heaters & Pumps', 'Computers & Office',
+            'Computers & Laptops', 'Other'
+        }
+        preset_candidate = str(raw_category or raw_preset or 'specs').strip()
+        matched_preset = next((p for p in allowed_presets if p.lower() == preset_candidate.lower()), None)
+        preset = matched_preset if matched_preset else 'specs'
 
         if isinstance(raw_model, str) and re.match(r'^[a-zA-Z0-9.\-_]{1,50}$', raw_model):
             model = raw_model
