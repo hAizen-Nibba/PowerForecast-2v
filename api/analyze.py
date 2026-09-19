@@ -66,7 +66,11 @@ class handler(BaseHTTPRequestHandler):
         raw_model = payload.get('model', 'gemini-2.5-flash')
 
         # Input Validation & Sanitization
-        preset = str(raw_category or raw_preset or 'specs')[:50]
+        raw_preset_str = str(raw_category or raw_preset or 'specs')[:50]
+        if re.match(r'^[a-zA-Z0-9\s\-_&]{1,50}$', raw_preset_str):
+            preset = raw_preset_str
+        else:
+            preset = 'specs'
 
         if isinstance(raw_model, str) and re.match(r'^[a-zA-Z0-9.\-_]{1,50}$', raw_model):
             model = raw_model
