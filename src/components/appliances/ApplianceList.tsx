@@ -52,6 +52,7 @@ import {
   calculateApplianceKwh,
   calculateCost,
   normalizeApplianceCategory,
+  isCompressorInverterCategory,
 } from "../../lib/dailyUsageService";
 
 interface ApplianceListProps {
@@ -897,7 +898,8 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             const q = Number(app.quantity) || 1;
             const d = Number(app.days_per_month) || 30;
 
-            const isInverter = Boolean(
+            const supportsInverter = isCompressorInverterCategory(app.category);
+            const isInverter = supportsInverter && Boolean(
               app.is_inverter === true ||
               (app.energy_rating && /inverter/i.test(app.energy_rating)) ||
               (app.name && /inverter/i.test(app.name)) ||
@@ -907,7 +909,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
 
             const dailyKwh = calculateApplianceKwh(app, h);
             const monthlyKwh = Number(app.monthly_kwh) > 0 ? Number(app.monthly_kwh) : Number((dailyKwh * d).toFixed(2));
-            
+
             // Calculate deterministic unbundled monthly cost with this space's tariff
             const appBill = calculateMeralcoBill(monthlyKwh, undefined, 0, false, spaceTariffType);
             const monthlyCost = appBill.totalBill;
@@ -918,148 +920,148 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             const defaultCruisingWatts = isFridge
               ? Math.round(w / 3)
               : isWasher
-              ? Math.round(w * 0.50)
-              : Math.round(w * 0.42);
+                ? Math.round(w * 0.50)
+                : Math.round(w * 0.42);
             const cruisingWatts = isCustomCruising ? Number(customCruising) : defaultCruisingWatts;
             const effectiveWatts = isFridge
               ? cruisingWatts
               : h > 0
-              ? Math.round((dailyKwh * 1000) / h)
-              : (isInverter ? cruisingWatts : w);
+                ? Math.round((dailyKwh * 1000) / h)
+                : (isInverter ? cruisingWatts : w);
             const hourlyRate = (effectiveWatts / 1000) * (appBill.effectiveRatePerKwh || 14.82);
 
             return (
               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={app.id}>
-                  <Card
-                    data-tour={appIdx === 0 ? "appliance-card" : undefined}
-                    sx={{
-                      p: { xs: 2.25, sm: 2.5 },
-                      borderRadius: 1.5,
-                      border: isBlacklisted ? "1px dashed" : "1px solid",
-                      borderColor: (theme) =>
-                        isBlacklisted
-                          ? theme.palette.mode === "dark"
-                            ? "rgba(245, 158, 11, 0.45)"
-                            : "rgba(217, 119, 6, 0.4)"
-                          : isOn
+                <Card
+                  data-tour={appIdx === 0 ? "appliance-card" : undefined}
+                  sx={{
+                    p: { xs: 2.25, sm: 2.5 },
+                    borderRadius: 1.5,
+                    border: isBlacklisted ? "1px dashed" : "1px solid",
+                    borderColor: (theme) =>
+                      isBlacklisted
+                        ? theme.palette.mode === "dark"
+                          ? "rgba(245, 158, 11, 0.45)"
+                          : "rgba(217, 119, 6, 0.4)"
+                        : isOn
                           ? theme.palette.mode === "dark"
                             ? "rgba(0, 229, 201, 0.28)"
                             : "rgba(13, 148, 136, 0.25)"
                           : theme.palette.mode === "dark"
-                          ? "rgba(255, 255, 255, 0.06)"
-                          : "#e2e8f0",
-                      bgcolor: (theme) =>
-                        isBlacklisted
-                          ? theme.palette.mode === "dark"
-                            ? "rgba(22, 24, 28, 0.88)"
-                            : "rgba(254, 243, 199, 0.12)"
-                          : isOn
+                            ? "rgba(255, 255, 255, 0.06)"
+                            : "#e2e8f0",
+                    bgcolor: (theme) =>
+                      isBlacklisted
+                        ? theme.palette.mode === "dark"
+                          ? "rgba(22, 24, 28, 0.88)"
+                          : "rgba(254, 243, 199, 0.12)"
+                        : isOn
                           ? theme.palette.mode === "dark"
                             ? "rgba(24, 30, 34, 0.88)"
                             : "rgba(13, 148, 136, 0.04)"
                           : theme.palette.mode === "dark"
-                          ? "rgba(20, 24, 28, 0.75)"
-                          : "background.paper",
-                      opacity: isBlacklisted ? 0.82 : 1,
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                      position: "relative",
-                      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                      "&:hover": {
-                        borderColor: (theme) =>
-                          isBlacklisted
-                            ? theme.palette.mode === "dark"
-                              ? "rgba(245, 158, 11, 0.7)"
-                              : "rgba(217, 119, 6, 0.6)"
-                            : theme.palette.mode === "dark"
+                            ? "rgba(20, 24, 28, 0.75)"
+                            : "background.paper",
+                    opacity: isBlacklisted ? 0.82 : 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    position: "relative",
+                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                    "&:hover": {
+                      borderColor: (theme) =>
+                        isBlacklisted
+                          ? theme.palette.mode === "dark"
+                            ? "rgba(245, 158, 11, 0.7)"
+                            : "rgba(217, 119, 6, 0.6)"
+                          : theme.palette.mode === "dark"
                             ? "rgba(0, 229, 201, 0.45)"
                             : "rgba(13, 148, 136, 0.4)",
-                        transform: "translateY(-3px)",
-                        boxShadow: (theme) =>
-                          theme.palette.mode === "dark"
-                            ? "0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(0, 229, 201, 0.08)"
-                            : "0 8px 24px rgba(13, 148, 136, 0.1)",
-                      },
-                    }}
-                  >
-                    <Box>
-                      {/* Top Row: Category, Blacklist badge & Power Toggle */}
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5, gap: 1 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
-                          <Chip
-                            label={app.category}
-                            size="small"
-                            sx={{
-                              fontWeight: 700,
-                              fontSize: "0.7rem",
-                              bgcolor: (theme) =>
-                                theme.palette.mode === "dark"
-                                  ? "rgba(0, 229, 201, 0.1)"
-                                  : "rgba(13, 148, 136, 0.08)",
-                              color: (theme) =>
-                                theme.palette.mode === "dark" ? "#00e5c9" : "#0f766e",
-                            }}
-                          />
-                          {isBlacklisted && (
-                            <Tooltip title="Blacklisted: Excluded from Smart Calendar, Forecasting, and Monthly Projections.">
-                              <Chip
-                                icon={<BlockIcon sx={{ fontSize: "13px !important", color: "#f59e0b !important" }} />}
-                                label="Blacklisted"
-                                size="small"
-                                sx={{
-                                  fontWeight: 800,
-                                  fontSize: "0.6875rem",
-                                  bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.16)" : "rgba(245, 158, 11, 0.1)"),
-                                  color: (theme) => (theme.palette.mode === "dark" ? "#fbbf24" : "#b45309"),
-                                  border: "1px solid",
-                                  borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.4)" : "rgba(245, 158, 11, 0.3)"),
-                                }}
-                              />
-                            </Tooltip>
-                          )}
-                        </Box>
-                        <Tooltip title={isBlacklisted ? "Appliance is blacklisted — click restore below to enable stopwatch" : isOn ? "Stop Live Stopwatch" : "Start Live Stopwatch"}>
-                          <span>
-                            <IconButton
+                      transform: "translateY(-3px)",
+                      boxShadow: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(0, 229, 201, 0.08)"
+                          : "0 8px 24px rgba(13, 148, 136, 0.1)",
+                    },
+                  }}
+                >
+                  <Box>
+                    {/* Top Row: Category, Blacklist badge & Power Toggle */}
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5, gap: 1 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
+                        <Chip
+                          label={app.category}
+                          size="small"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: "0.7rem",
+                            bgcolor: (theme) =>
+                              theme.palette.mode === "dark"
+                                ? "rgba(0, 229, 201, 0.1)"
+                                : "rgba(13, 148, 136, 0.08)",
+                            color: (theme) =>
+                              theme.palette.mode === "dark" ? "#00e5c9" : "#0f766e",
+                          }}
+                        />
+                        {isBlacklisted && (
+                          <Tooltip title="Blacklisted: Excluded from Smart Calendar, Forecasting, and Monthly Projections.">
+                            <Chip
+                              icon={<BlockIcon sx={{ fontSize: "13px !important", color: "#f59e0b !important" }} />}
+                              label="Blacklisted"
                               size="small"
-                              disabled={isBlacklisted}
-                              onClick={() => togglePower(app)}
                               sx={{
-                                opacity: isBlacklisted ? 0.4 : 1,
+                                fontWeight: 800,
+                                fontSize: "0.6875rem",
+                                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.16)" : "rgba(245, 158, 11, 0.1)"),
+                                color: (theme) => (theme.palette.mode === "dark" ? "#fbbf24" : "#b45309"),
+                                border: "1px solid",
+                                borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.4)" : "rgba(245, 158, 11, 0.3)"),
+                              }}
+                            />
+                          </Tooltip>
+                        )}
+                      </Box>
+                      <Tooltip title={isBlacklisted ? "Appliance is blacklisted — click restore below to enable stopwatch" : isOn ? "Stop Live Stopwatch" : "Start Live Stopwatch"}>
+                        <span>
+                          <IconButton
+                            size="small"
+                            disabled={isBlacklisted}
+                            onClick={() => togglePower(app)}
+                            sx={{
+                              opacity: isBlacklisted ? 0.4 : 1,
+                              bgcolor: (theme) =>
+                                isOn
+                                  ? theme.palette.mode === "dark"
+                                    ? "primary.main"
+                                    : "#0d9488"
+                                  : theme.palette.mode === "dark"
+                                    ? "rgba(255, 255, 255, 0.06)"
+                                    : "#f1f5f9",
+                              color: (theme) =>
+                                isOn
+                                  ? theme.palette.mode === "dark"
+                                    ? "#0c1b18"
+                                    : "#ffffff"
+                                  : "text.secondary",
+                              "&:hover": {
                                 bgcolor: (theme) =>
                                   isOn
                                     ? theme.palette.mode === "dark"
-                                      ? "primary.main"
-                                      : "#0d9488"
+                                      ? "primary.dark"
+                                      : "#0f766e"
                                     : theme.palette.mode === "dark"
-                                    ? "rgba(255, 255, 255, 0.06)"
-                                    : "#f1f5f9",
-                                color: (theme) =>
-                                  isOn
-                                    ? theme.palette.mode === "dark"
-                                      ? "#0c1b18"
-                                      : "#ffffff"
-                                    : "text.secondary",
-                                "&:hover": {
-                                  bgcolor: (theme) =>
-                                    isOn
-                                      ? theme.palette.mode === "dark"
-                                        ? "primary.dark"
-                                        : "#0f766e"
-                                      : theme.palette.mode === "dark"
                                       ? "rgba(0, 229, 201, 0.2)"
                                       : "#e2e8f0",
-                                  transform: "scale(1.08)",
-                                },
-                                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                              }}
-                            >
-                              <PowerIcon fontSize="small" />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                      </Box>
+                                transform: "scale(1.08)",
+                              },
+                              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                            }}
+                          >
+                            <PowerIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    </Box>
 
                     {/* Appliance Name & Details */}
                     <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
@@ -1073,10 +1075,10 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                     <Box sx={{ display: "flex", gap: 0.75, mt: 1.5, flexWrap: "wrap", alignItems: "center" }}>
                       {isInverter ? (
                         <>
-                          <Tooltip title={`⚡ Inverter Cruising: ~${cruisingWatts}W ${isFridge ? "steady continuous maintenance (1/3 duty cycle)" : "maintenance mode after cooldown"}${isCustomCruising ? " (Custom User Override)" : ""}`}>
+                          <Tooltip title={`Inverter Cruising: ~${cruisingWatts}W ${isFridge ? "steady continuous maintenance (1/3 duty cycle)" : "maintenance mode after cooldown"}${isCustomCruising ? " (Custom User Override)" : ""}`}>
                             <Chip
                               icon={<BoltIcon sx={{ fontSize: "14px !important", color: "#00e5c9 !important" }} />}
-                              label={`⚡ Inverter (${isCustomCruising ? `Custom ~${cruisingWatts}W` : `~${cruisingWatts}W avg`})`}
+                              label={`Inverter (${isCustomCruising ? `Custom ~${cruisingWatts}W` : `~${cruisingWatts}W avg`})`}
                               size="small"
                               sx={{
                                 fontWeight: 800,
@@ -1172,9 +1174,9 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                             color: isBlacklisted ? "#f59e0b" : "text.secondary",
                             bgcolor: isBlacklisted
                               ? (theme) =>
-                                  theme.palette.mode === "dark"
-                                    ? "rgba(245, 158, 11, 0.16)"
-                                    : "rgba(245, 158, 11, 0.1)"
+                                theme.palette.mode === "dark"
+                                  ? "rgba(245, 158, 11, 0.16)"
+                                  : "rgba(245, 158, 11, 0.1)"
                               : "transparent",
                             border: isBlacklisted ? "1px solid rgba(245, 158, 11, 0.35)" : "none",
                             "&:hover": {

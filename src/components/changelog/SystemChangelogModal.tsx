@@ -41,10 +41,20 @@ export interface SystemChangelogEntry {
 // Master compiled GitHub deployment history covering all releases
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.3.6v",
+    version: "3.3.6v",
+    git_commit_tag: "3.3.6v",
+    created_at: "2026-09-20T12:00:00.000Z",
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.3.6v - Align Inverter status with category-adaptive switch (isCompressorInverterCategory), remove redundant bolt emojis across UI in favor of SVG icons, implement SemVer sorting for changelogs, and replace dynamic dates with fixed timestamps",
+  },
+  {
     id: "3.3.5v",
     version: "3.3.5v",
     git_commit_tag: "3.3.5v",
-    created_at: new Date().toISOString(),
+    created_at: "2026-09-12T14:14:00.000Z",
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
@@ -54,7 +64,7 @@ const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
     id: "3.3.4v",
     version: "3.3.4v",
     git_commit_tag: "3.3.4v",
-    created_at: new Date().toISOString(),
+    created_at: "2026-09-12T13:39:00.000Z",
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
@@ -64,7 +74,7 @@ const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
     id: "3.3.3v",
     version: "3.3.3v",
     git_commit_tag: "3.3.3v",
-    created_at: new Date().toISOString(),
+    created_at: "2026-09-11T19:25:00.000Z",
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
@@ -74,7 +84,7 @@ const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
     id: "3.3.2v",
     version: "3.3.2v",
     git_commit_tag: "3.3.2v",
-    created_at: new Date().toISOString(),
+    created_at: "2026-09-10T12:00:00.000Z",
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
@@ -84,7 +94,7 @@ const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
     id: "3.3.1v",
     version: "3.3.1v",
     git_commit_tag: "3.3.1v",
-    created_at: new Date().toISOString(),
+    created_at: "2026-09-09T14:30:00.000Z",
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
@@ -94,7 +104,7 @@ const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
     id: "3.3.0v",
     version: "3.3.0v",
     git_commit_tag: "3.3.0v",
-    created_at: new Date().toISOString(),
+    created_at: "2026-09-08T10:00:00.000Z",
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
@@ -104,7 +114,7 @@ const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
     id: "3.2.6v",
     version: "3.2.6v",
     git_commit_tag: "3.2.6v",
-    created_at: new Date().toISOString(),
+    created_at: "2026-09-07T16:00:00.000Z",
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
@@ -114,7 +124,7 @@ const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
     id: "3.2.5v",
     version: "3.2.5v",
     git_commit_tag: "3.2.5v",
-    created_at: new Date().toISOString(),
+    created_at: "2026-09-07T12:00:00.000Z",
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
@@ -124,7 +134,7 @@ const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
     id: "3.2.4v",
     version: "3.2.4v",
     git_commit_tag: "3.2.4v",
-    created_at: new Date().toISOString(),
+    created_at: "2026-09-07T08:00:00.000Z",
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
@@ -134,7 +144,7 @@ const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
     id: "3.2.2v",
     version: "3.2.2v",
     git_commit_tag: "3.2.2v",
-    created_at: new Date().toISOString(),
+    created_at: "2026-09-06T15:00:00.000Z",
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
@@ -226,7 +236,7 @@ const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
     description: "3.0.0v - PowerForecast Mobile & PWA Generation: Implement Web App Manifest, Service Worker offline caching, fluid glassmorphic mobile bottom navigation dock, Android native camera capture for AI scanner, 100dvh dynamic viewport, and persistent state lifecycle reconciliation",
     git_commit_tag: "3.0.0v",
     deployed_by: "hAizen-Nibba",
-    created_at: new Date().toISOString(),
+    created_at: "2026-08-31T20:00:00.000Z",
     source: "github",
   },
   {
@@ -629,6 +639,22 @@ const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
 
 const GITHUB_REPO_URL = "https://github.com/hAizen-Nibba/PowerForecast-2v";
 
+function parseVersion(v: string): [number, number, number, string] {
+  const clean = v.replace(/^v/i, "").replace(/v$/i, "");
+  const match = clean.match(/^(\d+)\.(\d+)\.(\d+)(.*)$/);
+  if (!match) return [0, 0, 0, clean];
+  return [Number(match[1]), Number(match[2]), Number(match[3]), match[4] || ""];
+}
+
+function compareVersions(vA: string, vB: string): number {
+  const [majA, minA, patchA, sufA] = parseVersion(vA);
+  const [majB, minB, patchB, sufB] = parseVersion(vB);
+  if (majA !== majB) return majB - majA;
+  if (minA !== minB) return minB - minA;
+  if (patchA !== patchB) return patchB - patchA;
+  return sufB.localeCompare(sufA);
+}
+
 interface SystemChangelogModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -717,20 +743,22 @@ export const SystemChangelogModal: React.FC<SystemChangelogModalProps> = ({
         }
       });
 
-      // Ensure active APP_VERSION is always top if newer
+      // Ensure active APP_VERSION is always in the map
       if (!mergedMap.has(APP_VERSION)) {
         mergedMap.set(APP_VERSION, {
           id: "current-runtime",
           version: APP_VERSION,
           description: `${APP_VERSION} - Active runtime development version with live database and GitHub synchronization`,
           git_commit_tag: APP_VERSION,
-          deployed_by: "hAizen-Nibba",
-          created_at: new Date().toISOString(),
+          deployed_by: "Antigravity Pair Programmer",
+          created_at: "2026-09-20T12:00:00.000Z",
           source: "local",
         });
       }
 
       const sorted = Array.from(mergedMap.values()).sort((a, b) => {
+        const verDiff = compareVersions(a.version, b.version);
+        if (verDiff !== 0) return verDiff;
         const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
         const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
         return timeB - timeA;

@@ -24,12 +24,13 @@ import {
   CheckCircle as CheckCircleIcon,
   Home as HomeIcon,
   Store as StoreIcon,
+  Bolt as BoltIcon,
 } from "@mui/icons-material";
 import { PELP_CATEGORIES, searchPelpDatabase } from "../../lib/pelpService";
 import { PelpItem, ApplianceList, UserAppliance } from "../../types";
 import { useCreate, useList, useUpdate } from "@refinedev/core";
 import { getDefaultStartHour } from "../../lib/loadCurveService";
-import { normalizeApplianceCategory } from "../../lib/dailyUsageService";
+import { normalizeApplianceCategory, isCompressorInverterCategory } from "../../lib/dailyUsageService";
 import { DuplicateApplianceModal } from "./DuplicateApplianceModal";
 import { ApplianceRoutineModal } from "./ApplianceRoutineModal";
 
@@ -115,13 +116,14 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
     const catLower = item.category.toLowerCase();
     const isFridge = catLower.includes("refrigerat") || catLower.includes("freezer") || catLower.includes("chiller");
     const isAc = catLower.includes("air condition") || catLower.includes("aircon");
+    const normalizedCat = normalizeApplianceCategory(item.category);
+    const supportsInverter = isCompressorInverterCategory(item.category) || isCompressorInverterCategory(normalizedCat);
 
-    const isInverter = Boolean(
+    const isInverter = supportsInverter && Boolean(
       (item.cspf && item.cspf > 0) ||
       /inverter/i.test(item.model || "") ||
       /inverter/i.test(item.type || "") ||
       /inverter/i.test(item.brand || "") ||
-      /inverter/i.test(item.category || "") ||
       item.star_rating === 5
     );
 
@@ -131,7 +133,6 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
       ? Math.round(watts * 0.42)
       : Math.round(watts * 0.50);
 
-    const normalizedCat = normalizeApplianceCategory(item.category);
     const incomingPayload: Partial<UserAppliance> = {
       name: `${item.brand} ${item.model}`,
       category: normalizedCat,
@@ -349,14 +350,15 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
               const catLower = item.category.toLowerCase();
               const isFridgeItem = catLower.includes("refrigerat") || catLower.includes("freezer") || catLower.includes("chiller");
               const isAcItem = catLower.includes("air condition") || catLower.includes("aircon");
-              const isInverterItem = Boolean(
-                (item.cspf && item.cspf > 0) ||
-                /inverter/i.test(item.model || "") ||
-                /inverter/i.test(item.type || "") ||
-                /inverter/i.test(item.brand || "") ||
-                /inverter/i.test(item.category || "") ||
-                item.star_rating === 5
-              );
+              const normalizedCat = normalizeApplianceCategory(item.category);
+            const supportsInverterItem = isCompressorInverterCategory(item.category) || isCompressorInverterCategory(normalizedCat);
+            const isInverterItem = supportsInverterItem && Boolean(
+              (item.cspf && item.cspf > 0) ||
+              /inverter/i.test(item.model || "") ||
+              /inverter/i.test(item.type || "") ||
+              /inverter/i.test(item.brand || "") ||
+              item.star_rating === 5
+            );
 
               return (
                 <Grid size={{ xs: 12, sm: 6 }} key={item.control_no}>
@@ -398,7 +400,8 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
                         />
                         {isInverterItem ? (
                           <Chip
-                            label="⚡ Inverter"
+                            icon={<BoltIcon sx={{ fontSize: "14px !important" }} />}
+                            label="Inverter"
                             size="small"
                             color="success"
                             sx={{ fontWeight: 700, fontSize: "0.6875rem", height: 20 }}

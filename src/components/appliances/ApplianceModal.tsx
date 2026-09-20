@@ -666,7 +666,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
                             <BoltIcon sx={{ color: isInverter ? "primary.main" : "text.secondary", fontSize: 22 }} />
                             <Box>
                               <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isInverter ? "primary.main" : "text.primary" }}>
-                                ⚡ {isFridge ? "Inverter Compressor & Thermal Duty" : isWasher ? "Inverter Direct Drive Motor" : "Inverter Technology & Duty Cycle"}
+                                {isFridge ? "Inverter Compressor & Thermal Duty" : isWasher ? "Inverter Direct Drive Motor" : "Inverter Technology & Duty Cycle"}
                               </Typography>
                               <Typography variant="caption" sx={{ color: "text.secondary" }}>
                                 {isInverter

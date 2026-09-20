@@ -1,6 +1,7 @@
 import { VisionScanResult } from '../types';
 import { devLog } from './devLogger';
 import { executeWithGeminiKeyRotation } from './geminiKeyService';
+import { isCompressorInverterCategory } from './dailyUsageService';
 
 export interface ImageItem {
   id: string;
@@ -45,7 +46,7 @@ export function sanitizeAndReconcileSpecs(d: any): {
   else if (/light|bulb|lamp|led/i.test(cat)) cat = 'Lighting Products';
   else cat = 'Other';
 
-  const isInverter = Boolean(
+  const isInverter = isCompressorInverterCategory(cat) && Boolean(
     d.is_inverter === true ||
     /inverter/i.test(d.energy_rating || '') ||
     /inverter/i.test(d.notes || '') ||

@@ -114,10 +114,11 @@ export function calculateKwh(
     isInverter = options;
   } else if (typeof options === "string") {
     category = options;
-    isInverter = /inverter/i.test(category);
+    isInverter = isCompressorInverterCategory(category);
   } else if (options && typeof options === "object") {
     category = options.category || "";
-    isInverter = Boolean(
+    const supports = isCompressorInverterCategory(category);
+    isInverter = supports && Boolean(
       options.isInverter === true ||
       (options.energy_rating && /inverter/i.test(options.energy_rating)) ||
       (options.ai_metadata?.is_inverter === true) ||
@@ -192,8 +193,10 @@ export function calculateApplianceKwh(
   const qty = app.quantity || 1;
   const watts = app.watts || 0;
 
+  const supports = isCompressorInverterCategory(app.category);
+
   return calculateKwh(watts, h, qty, {
-    isInverter: app.is_inverter ?? (app.ai_metadata?.is_inverter === true),
+    isInverter: supports && Boolean(app.is_inverter ?? (app.ai_metadata?.is_inverter === true)),
     category: app.category,
     energy_rating: app.energy_rating,
     name: app.name,

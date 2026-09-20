@@ -109,8 +109,8 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
       const catLower = category.toLowerCase();
       const isFridge = catLower.includes("refrig") || catLower.includes("freezer") || catLower.includes("chiller");
       const isAc = catLower.includes("air condition") || catLower.includes("aircon");
-      const supports = isCompressorInverterCategory(category) || !!incomingAppliance.ai_metadata?.is_inverter;
-      const initialInverter = incomingAppliance.ai_metadata?.is_inverter ?? (supports && (isAc || isFridge));
+      const supports = isCompressorInverterCategory(category);
+      const initialInverter = supports && (incomingAppliance.ai_metadata?.is_inverter ?? (isAc || isFridge));
       setIsInverter(Boolean(initialInverter));
       setCustomCruisingWatts(
         incomingAppliance.ai_metadata?.cruising_watts !== undefined && incomingAppliance.ai_metadata?.cruising_watts !== null
@@ -191,8 +191,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
   const catLower = category.toLowerCase();
   const isFridge = catLower.includes("refrig") || catLower.includes("freezer") || catLower.includes("chiller");
   const isWasher = catLower.includes("wash") || catLower.includes("laundry");
-  const isAc = catLower.includes("air condition") || catLower.includes("aircon");
-  const supportsInverter = isCompressorInverterCategory(category) || !!incomingAppliance?.ai_metadata?.is_inverter;
+  const supportsInverter = isCompressorInverterCategory(category);
 
   const defaultCruisingWatts = isFridge
     ? Math.round(watts / 3)
@@ -475,7 +474,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                 <BoltIcon sx={{ color: isInverter ? "primary.main" : "text.secondary", fontSize: 22 }} />
                 <Box>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isInverter ? "primary.main" : "text.primary" }}>
-                    ⚡ {isFridge ? "Inverter Compressor & Thermal Duty" : isWasher ? "Inverter Direct Drive Motor" : "Inverter Technology & Duty Cycle"}
+                    {isFridge ? "Inverter Compressor & Thermal Duty" : isWasher ? "Inverter Direct Drive Motor" : "Inverter Technology & Duty Cycle"}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     {isInverter

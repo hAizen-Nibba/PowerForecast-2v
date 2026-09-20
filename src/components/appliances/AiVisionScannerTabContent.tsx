@@ -68,7 +68,7 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
   const [editMonthlyKwh, setEditMonthlyKwh] = useState<number>(16.8);
   const [editCategory, setEditCategory] = useState("Electric Fans");
   const [editRoom, setEditRoom] = useState("Living Room");
-  const [editIsInverter, setEditIsInverter] = useState<boolean>(true);
+  const [editIsInverter, setEditIsInverter] = useState<boolean>(false);
   const [editCustomCruisingWatts, setEditCustomCruisingWatts] = useState<number | "">("");
   const [editPcMetadata, setEditPcMetadata] = useState<Record<string, any>>({});
 
@@ -362,7 +362,7 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
               <BoltIcon color={editIsInverter ? "primary" : "action"} />
               <Box>
                 <Typography variant="body2" sx={{ fontWeight: 700, color: editIsInverter ? "primary.main" : "text.primary" }}>
-                  ⚡ {isFridge ? "Inverter Refrigerator / Freezer" : "Inverter Air Conditioner"}
+                  {isFridge ? "Inverter Refrigerator / Freezer" : "Inverter Air Conditioner"}
                 </Typography>
                 <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
                   {editIsInverter
@@ -548,7 +548,7 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
               </Typography>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
                 {scanResult.is_inverter && (
-                  <Chip label="⚡ Inverter" size="small" color="success" sx={{ fontWeight: 700, height: 22 }} />
+                  <Chip icon={<BoltIcon sx={{ fontSize: "14px !important" }} />} label="Inverter" size="small" color="success" sx={{ fontWeight: 700, height: 22 }} />
                 )}
                 {scanResult.detected_star_rating && (
                   <Chip label={`⭐ ${scanResult.detected_star_rating}-Star`} size="small" color="warning" sx={{ fontWeight: 700, height: 22 }} />
@@ -715,7 +715,7 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
                           <BoltIcon sx={{ color: editIsInverter ? "primary.main" : "text.secondary", fontSize: 20 }} />
                           <Box>
                             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: editIsInverter ? "primary.main" : "text.primary" }}>
-                              ⚡ {isFridge ? "Inverter Compressor & Thermal Duty" : isWasher ? "Inverter Direct Drive Motor" : "Inverter Technology & Duty Cycle"}
+                              {isFridge ? "Inverter Compressor & Thermal Duty" : isWasher ? "Inverter Direct Drive Motor" : "Inverter Technology & Duty Cycle"}
                             </Typography>
                             <Typography variant="caption" sx={{ color: "text.secondary" }}>
                               {editIsInverter
