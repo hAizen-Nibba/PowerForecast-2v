@@ -3,7 +3,7 @@ import { supabaseClient } from "../lib/supabaseClient";
 import { devLog } from "../lib/devLogger";
 
 export const authProvider: AuthProvider = {
-  login: async ({ email, password }) => {
+  login: async ({ email, password, rememberMe }: any) => {
     if (!email || !password) {
       return {
         success: false,

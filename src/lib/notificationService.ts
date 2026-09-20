@@ -239,7 +239,10 @@ export function triggerNotificationVibration(urgency: AlertUrgency = "normal"): 
 }
 
 /**
- * Sends a native browser notification if permission is granted and feature is enabled
+ * Sends a native browser notification if permission is granted and feature is enabled.
+ * Prefers navigator.serviceWorker.ready.showNotification(...) so notifications persist
+ * in the Windows Action Center / Android notification tray even when the app is minimized or closed.
+ * Falls back to standard window Notification if Service Worker is unavailable.
  */
 export function sendNotification(options: {
   title: string;
@@ -249,9 +252,10 @@ export function sendNotification(options: {
   urgency?: AlertUrgency;
   soundType?: "chime" | "warning" | "urgent";
   onClick?: () => void;
-}): Notification | null {
+  data?: any;
+}): void {
   const prefs = getNotificationPreferences();
-  if (!prefs.enabled) return null;
+  if (!prefs.enabled) return;
 
   const urgency = options.urgency || "normal";
   const soundType = options.soundType || (urgency === "critical" ? "urgent" : urgency === "high" ? "warning" : "chime");
@@ -266,17 +270,48 @@ export function sendNotification(options: {
     triggerNotificationVibration(urgency);
   }
 
-  if (!isNotificationSupported()) return null;
-  if (Notification.permission !== "granted") return null;
+  if (!isNotificationSupported()) return;
+  if (Notification.permission !== "granted") return;
 
-  try {
-    const notif = new Notification(options.title, {
-      body: options.body,
-      icon: options.icon || "/Assets/LOGO.png",
+  const notifOptions: NotificationOptions = {
+    body: options.body,
+    icon: options.icon || "/Assets/LOGO.png",
+    tag: options.tag,
+    badge: "/Assets/LOGO.png",
+    requireInteraction: urgency === "critical" || urgency === "high",
+    data: options.data || {
+      url: "/dashboard",
       tag: options.tag,
-      badge: "/Assets/LOGO.png",
-    });
+      timestamp: Date.now(),
+    },
+  };
 
+  // If Service Worker is supported, route via registration.showNotification
+  // for persistence in Windows Action Center & background click-to-focus
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.ready
+      .then((registration) => {
+        return registration.showNotification(options.title, notifOptions);
+      })
+      .then(() => {
+        devLog.info("Notifications", `Dispatched persistent SW notification (${urgency}): "${options.title}"`, options);
+      })
+      .catch((err) => {
+        devLog.warn("Notifications", `SW showNotification failed, falling back to window Notification: ${err?.message}`);
+        fallbackWindowNotification(options, notifOptions);
+      });
+    return;
+  }
+
+  fallbackWindowNotification(options, notifOptions);
+}
+
+function fallbackWindowNotification(
+  options: { title: string; onClick?: () => void },
+  notifOptions: NotificationOptions
+): void {
+  try {
+    const notif = new Notification(options.title, notifOptions);
     if (options.onClick) {
       notif.onclick = () => {
         window.focus();
@@ -284,11 +319,8 @@ export function sendNotification(options: {
         notif.close();
       };
     }
-
-    devLog.info("Notifications", `Triggered browser notification (${urgency}): "${options.title}"`, options);
-    return notif;
+    devLog.info("Notifications", `Triggered fallback browser notification: "${options.title}"`);
   } catch (err: any) {
-    devLog.warn("Notifications", `Failed to display notification: ${err?.message}`);
-    return null;
+    devLog.warn("Notifications", `Failed to display fallback notification: ${err?.message}`);
   }
 }

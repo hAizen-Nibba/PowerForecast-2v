@@ -31,10 +31,14 @@ export const LoginPage: React.FC = () => {
   const { showError, showSuccess } = useToast();
   const isDark = mode === "dark";
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => {
+    return localStorage.getItem("powerforecast_remembered_email") || "";
+  });
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
+  const [rememberMe, setRememberMe] = useState(() => {
+    return localStorage.getItem("powerforecast_remember_me") !== "false";
+  });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -70,6 +74,15 @@ export const LoginPage: React.FC = () => {
             showError(msg);
             return;
           }
+
+          if (rememberMe) {
+            localStorage.setItem("powerforecast_remembered_email", trimmedEmail);
+            localStorage.setItem("powerforecast_remember_me", "true");
+          } else {
+            localStorage.removeItem("powerforecast_remembered_email");
+            localStorage.setItem("powerforecast_remember_me", "false");
+          }
+
           showSuccess("Welcome back! Signed in successfully.");
           navigate("/dashboard");
         },

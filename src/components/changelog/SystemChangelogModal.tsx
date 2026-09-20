@@ -41,6 +41,16 @@ export interface SystemChangelogEntry {
 // Master compiled GitHub deployment history covering all releases
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.3.7v",
+    version: "3.3.7v",
+    git_commit_tag: "3.3.7v",
+    created_at: "2026-09-20T12:20:00.000Z",
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.3.7v - Implement persistent Remember Me login credentials, upgrade PWA notifications to Service Worker registration with Windows Action Center persistence, and add background notificationclick window focus handler",
+  },
+  {
     id: "3.3.6v",
     version: "3.3.6v",
     git_commit_tag: "3.3.6v",

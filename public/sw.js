@@ -102,3 +102,53 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+// Push Event: Handle background web push notifications even when PWA window is closed
+self.addEventListener('push', (event) => {
+  let data = {};
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch {
+      data = { body: event.data.text() };
+    }
+  }
+
+  const title = data.title || 'PowerForecast Alert';
+  const options = {
+    body: data.body || 'Smart Energy Notification',
+    icon: data.icon || '/Assets/LOGO.png',
+    badge: '/Assets/LOGO.png',
+    tag: data.tag || `powerforecast-alert-${Date.now()}`,
+    requireInteraction: data.urgency === 'critical' || data.urgency === 'high' || data.requireInteraction === true,
+    data: data,
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Notification Click Event: Focus existing window or open dashboard when clicked from Windows Action Center
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const urlToOpen = (event.notification.data && event.notification.data.url) || '/dashboard';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          if (client.url && client.url.includes(urlToOpen)) {
+            return client.focus();
+          }
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
+
+// Notification Close Event
+self.addEventListener('notificationclose', (event) => {
+  // Cleanly close notification
+});
