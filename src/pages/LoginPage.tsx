@@ -20,9 +20,12 @@ import {
   VisibilityOff as VisibilityOffIcon,
   LightMode as SunIcon,
   DarkMode as MoonIcon,
+  BugReport as BugReportIcon,
 } from "@mui/icons-material";
 import { useColorMode } from "../theme/AppTheme";
 import { useToast } from "../components/common/ToastProvider";
+import { AuthDiagnosticModal } from "../components/common/AuthDiagnosticModal";
+import { runAuthDiagnostics, DiagnosticReport } from "../lib/diagnostics";
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -40,6 +43,9 @@ export const LoginPage: React.FC = () => {
     return localStorage.getItem("powerforecast_remember_me") !== "false";
   });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [diagnosticOpen, setDiagnosticOpen] = useState(false);
+  const [diagnosticReport, setDiagnosticReport] = useState<DiagnosticReport | null>(null);
+  const [lastRawError, setLastRawError] = useState<any>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,31 +72,46 @@ export const LoginPage: React.FC = () => {
     login(
       { email: trimmedEmail, password: trimmedPassword, rememberMe },
       {
-        onSuccess: (data: any) => {
+        onSuccess: async (data: any) => {
           if (data?.success === false || data?.error) {
+            const rawErr = data?.error?.rawError || data?.error;
             const msg =
               data?.error?.message || "Invalid credentials. Please verify your email and password.";
             setErrorMessage(msg);
-            showError(msg);
+            setLastRawError(rawErr);
+
+            // Automatically run diagnostic sweep and pop up modal on failure
+            const report = await runAuthDiagnostics(rawErr);
+            setDiagnosticReport(report);
+            setDiagnosticOpen(true);
             return;
           }
 
-          if (rememberMe) {
-            localStorage.setItem("powerforecast_remembered_email", trimmedEmail);
-            localStorage.setItem("powerforecast_remember_me", "true");
-          } else {
-            localStorage.removeItem("powerforecast_remembered_email");
-            localStorage.setItem("powerforecast_remember_me", "false");
+          try {
+            if (rememberMe) {
+              localStorage.setItem("powerforecast_remembered_email", trimmedEmail);
+              localStorage.setItem("powerforecast_remember_me", "true");
+            } else {
+              localStorage.removeItem("powerforecast_remembered_email");
+              localStorage.setItem("powerforecast_remember_me", "false");
+            }
+          } catch (storageErr) {
+            console.warn("Storage restricted, skipping rememberMe persistence:", storageErr);
           }
 
           showSuccess("Welcome back! Signed in successfully.");
           navigate("/dashboard");
         },
-        onError: (err: any) => {
+        onError: async (err: any) => {
+          const rawErr = err?.rawError || err;
           const msg =
             err?.message || "Invalid credentials. Please verify your email and password.";
           setErrorMessage(msg);
-          showError(msg);
+          setLastRawError(rawErr);
+
+          const report = await runAuthDiagnostics(rawErr);
+          setDiagnosticReport(report);
+          setDiagnosticOpen(true);
         },
       }
     );
@@ -255,20 +276,30 @@ export const LoginPage: React.FC = () => {
                   severity="error"
                   sx={{ mb: 3, borderRadius: 1 }}
                   action={
-                    errorMessage.toLowerCase().includes("no account found") ||
-                    errorMessage.toLowerCase().includes("does not exist") ||
-                    errorMessage.toLowerCase().includes("create an account") ||
-                    errorMessage.toLowerCase().includes("sign up") ? (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <Button
-                        component={Link}
-                        to="/signup"
                         color="inherit"
                         size="small"
-                        sx={{ fontWeight: 700, textDecoration: "underline", textTransform: "none" }}
+                        onClick={() => setDiagnosticOpen(true)}
+                        sx={{ fontWeight: 700, textTransform: "none", textDecoration: "underline" }}
                       >
-                        Sign Up
+                        Inspect Error
                       </Button>
-                    ) : undefined
+                      {(errorMessage.toLowerCase().includes("no account found") ||
+                        errorMessage.toLowerCase().includes("does not exist") ||
+                        errorMessage.toLowerCase().includes("create an account") ||
+                        errorMessage.toLowerCase().includes("sign up")) && (
+                        <Button
+                          component={Link}
+                          to="/signup"
+                          color="inherit"
+                          size="small"
+                          sx={{ fontWeight: 700, textDecoration: "underline", textTransform: "none" }}
+                        >
+                          Sign Up
+                        </Button>
+                      )}
+                    </Box>
                   }
                 >
                   {errorMessage}
@@ -370,8 +401,37 @@ export const LoginPage: React.FC = () => {
                   </Typography>
                 </Typography>
               </Box>
+
+              <Box sx={{ mt: 2, textAlign: "center" }}>
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={async () => {
+                    const report = await runAuthDiagnostics();
+                    setDiagnosticReport(report);
+                    setDiagnosticOpen(true);
+                  }}
+                  sx={{ fontSize: "0.75rem", color: "text.secondary", textTransform: "none" }}
+                  startIcon={<BugReportIcon fontSize="inherit" />}
+                >
+                  Diagnose Mobile & Supabase Connection
+                </Button>
+              </Box>
             </Card>
       </Container>
+
+      <AuthDiagnosticModal
+        open={diagnosticOpen}
+        onClose={() => setDiagnosticOpen(false)}
+        initialReport={diagnosticReport}
+        rawError={lastRawError}
+        onRetry={() => {
+          setDiagnosticOpen(false);
+          if (email && password) {
+            handleSubmit(new Event("submit") as any);
+          }
+        }}
+      />
     </Box>
   );
 };

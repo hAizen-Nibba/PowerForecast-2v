@@ -1,5 +1,5 @@
-// PowerForecast v3.3.0v Service Worker — High-Performance Mobile Caching & Offline Resilience
-const SW_VERSION = '3.3.0v';
+// PowerForecast v3.3.8v Service Worker — High-Performance Mobile Caching & Offline Resilience
+const SW_VERSION = '3.3.8v';
 const CACHE_NAME = `powerforecast-${SW_VERSION}-cache`;
 
 const STATIC_ASSETS = [
@@ -57,6 +57,11 @@ self.addEventListener('fetch', (event) => {
   // Ignore non-GET requests and browser extensions
   if (request.method !== 'GET' || url.protocol.startsWith('chrome-extension')) {
     return;
+  }
+
+  // Supabase Auth Endpoints: Strictly bypass Service Worker to prevent synthetic offline errors & token corruption
+  if (url.hostname.includes('supabase.co') && url.pathname.includes('/auth/v1/')) {
+    return; // Pass through directly to browser network stack
   }
 
   // Supabase & external APIs: Network-first with cache fallback

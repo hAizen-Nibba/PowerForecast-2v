@@ -41,6 +41,16 @@ export interface SystemChangelogEntry {
 // Master compiled GitHub deployment history covering all releases
 const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.3.8v",
+    version: "3.3.8v",
+    git_commit_tag: "3.3.8v",
+    created_at: "2026-09-21T13:10:00.000Z",
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.3.8v - Implement Mobile & Supabase Auth Diagnostic Suite, Service Worker auth bypass, and storage-hardened session resilience",
+  },
+  {
     id: "3.3.7v",
     version: "3.3.7v",
     git_commit_tag: "3.3.7v",

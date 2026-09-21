@@ -40,8 +40,11 @@ export const authProvider: AuthProvider = {
         return {
           success: false,
           error: {
-            name: "LoginError",
+            name: error.name || "LoginError",
             message: formattedMessage,
+            status: error.status,
+            code: (error as any).code,
+            rawError: error,
           },
         };
       }
@@ -78,7 +81,11 @@ export const authProvider: AuthProvider = {
         householdType: data.user.user_metadata?.householdType || accountProfile?.household_type || "Residential",
       };
 
-      localStorage.setItem("powerforecast_active_user", JSON.stringify(activeUser));
+      try {
+        localStorage.setItem("powerforecast_active_user", JSON.stringify(activeUser));
+      } catch (storageErr) {
+        devLog.warn("Auth", "Could not cache active user to localStorage (storage restricted):", storageErr);
+      }
       devLog.info("Auth", "Authentication successful", activeUser);
 
       return {
@@ -234,7 +241,11 @@ export const authProvider: AuthProvider = {
           role: "authenticated",
           householdType: householdType || "Residential",
         };
-        localStorage.setItem("powerforecast_active_user", JSON.stringify(activeUser));
+        try {
+          localStorage.setItem("powerforecast_active_user", JSON.stringify(activeUser));
+        } catch (storageErr) {
+          devLog.warn("Auth", "Could not cache active user during registration:", storageErr);
+        }
       }
 
       devLog.info("Auth", "User registered successfully. Proceeding to dashboard.");
@@ -272,8 +283,19 @@ export const authProvider: AuthProvider = {
     try {
       const { data, error } = await supabaseClient.auth.getSession();
       if (error || !data?.session?.user) {
-        // Clear cached user if Supabase session is absent or expired
-        localStorage.removeItem("powerforecast_active_user");
+        // If offline during check, preserve session if cached user exists
+        if (typeof navigator !== "undefined" && !navigator.onLine) {
+          devLog.warn("Auth", "Device is offline during session check; preserving cached session");
+          try {
+            const cached = localStorage.getItem("powerforecast_active_user");
+            if (cached) {
+              return { authenticated: true };
+            }
+          } catch {}
+        }
+        try {
+          localStorage.removeItem("powerforecast_active_user");
+        } catch {}
         return {
           authenticated: false,
           redirectTo: "/login",
@@ -285,7 +307,9 @@ export const authProvider: AuthProvider = {
         authenticated: true,
       };
     } catch {
-      localStorage.removeItem("powerforecast_active_user");
+      try {
+        localStorage.removeItem("powerforecast_active_user");
+      } catch {}
       return {
         authenticated: false,
         redirectTo: "/login",
