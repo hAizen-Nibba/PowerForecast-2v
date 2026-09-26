@@ -61,12 +61,16 @@ class handler(BaseHTTPRequestHandler):
         image_base64 = payload.get('imageBase64')
         raw_mime_type = payload.get('mimeType', 'image/jpeg')
         raw_prompt = payload.get('prompt')
-        raw_preset = payload.get('preset', 'specs')
+        raw_preset = payload.get('preset')
         raw_category = payload.get('category') or payload.get('categoryHint')
         raw_model = payload.get('model', 'gemini-2.5-flash')
 
-        # Input Validation & Sanitization
-        preset = str(raw_category or raw_preset or 'specs')[:50]
+        # Input Validation & Sanitization: restrict preset/category to safe alphanumeric strings to prevent prompt injection
+        candidate_preset = str(raw_category or raw_preset or 'specs').strip()
+        if candidate_preset and re.match(r'^[a-zA-Z0-9 &_\-]{1,50}$', candidate_preset):
+            preset = candidate_preset
+        else:
+            preset = 'specs'
 
         if isinstance(raw_model, str) and re.match(r'^[a-zA-Z0-9.\-_]{1,50}$', raw_model):
             model = raw_model
