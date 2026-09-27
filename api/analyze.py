@@ -63,15 +63,23 @@ class handler(BaseHTTPRequestHandler):
         raw_prompt = payload.get('prompt')
         raw_preset = payload.get('preset', 'specs')
         raw_category = payload.get('category') or payload.get('categoryHint')
-        raw_model = payload.get('model', 'gemini-2.5-flash')
+        raw_model = payload.get('model', 'gemini-2.0-flash')
 
         # Input Validation & Sanitization
-        preset = str(raw_category or raw_preset or 'specs')[:50]
+        allowed_presets = {
+            'specs', 'Air Conditioners', 'Refrigerators & Freezers', 'Television Sets',
+            'Electric Fans', 'Clothes Washing Machines', 'Lighting Products',
+            'Kitchen Appliances', 'Water Heaters & Pumps', 'Computers & Office',
+            'Computers & Laptops', 'Auto-Detect from Photo', 'Other'
+        }
+        candidate_preset = str(raw_category or raw_preset or 'specs').strip()
+        preset = candidate_preset if candidate_preset in allowed_presets else 'specs'
 
-        if isinstance(raw_model, str) and re.match(r'^[a-zA-Z0-9.\-_]{1,50}$', raw_model):
+        allowed_models = {'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'}
+        if isinstance(raw_model, str) and raw_model in allowed_models:
             model = raw_model
         else:
-            model = 'gemini-2.5-flash'
+            model = 'gemini-2.0-flash'
 
         allowed_mime_types = {'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'}
         mime_type = raw_mime_type if isinstance(raw_mime_type, str) and raw_mime_type in allowed_mime_types else 'image/jpeg'
