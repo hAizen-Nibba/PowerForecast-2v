@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import urllib.request
 import urllib.error
 from http.server import BaseHTTPRequestHandler
@@ -291,12 +292,12 @@ class handler(BaseHTTPRequestHandler):
 
         try:
             payload = json.loads(raw_body) if raw_body else {}
-        except Exception as e:
+        except Exception:
             self.send_response(400)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({"success": False, "error": f"Invalid JSON body: {str(e)}"}).encode('utf-8'))
+            self.wfile.write(json.dumps({"success": False, "error": "Invalid JSON body payload."}).encode('utf-8'))
             return
 
         api_key = get_resend_api_key()
@@ -312,8 +313,8 @@ class handler(BaseHTTPRequestHandler):
             }).encode('utf-8'))
             return
 
-        to_recipient = payload.get('to')
-        if not to_recipient:
+        raw_to = payload.get('to')
+        if not raw_to:
             self.send_response(400)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
@@ -321,8 +322,28 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({"success": False, "error": "Missing 'to' recipient parameter."}).encode('utf-8'))
             return
 
-        recipients = [to_recipient] if isinstance(to_recipient, str) else to_recipient
-        from_email = payload.get('from') or get_sender_email()
+        # Security: Validate and sanitize email recipient(s) to prevent spam relaying
+        email_regex = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
+        candidates = [raw_to] if isinstance(raw_to, str) else (raw_to if isinstance(raw_to, list) else [])
+
+        recipients = []
+        for item in candidates:
+            if isinstance(item, str) and email_regex.match(item.strip()):
+                recipients.append(item.strip())
+
+        if not recipients:
+            self.send_response(400)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": False, "error": "Invalid recipient email address format."}).encode('utf-8'))
+            return
+
+        # Security: Limit maximum recipients per request to prevent bulk spam abuse
+        recipients = recipients[:5]
+
+        # Security: Enforce server-controlled sender email to prevent email spoofing
+        from_email = get_sender_email()
         template_type = payload.get('type')
         template_data = payload.get('data', {})
 
@@ -374,30 +395,23 @@ class handler(BaseHTTPRequestHandler):
                 }).encode('utf-8'))
 
         except urllib.error.HTTPError as http_err:
-            error_body = http_err.read().decode('utf-8') if http_err.fp else str(http_err)
-            try:
-                error_json = json.loads(error_body)
-            except Exception:
-                error_json = {"message": error_body}
-
             self.send_response(http_err.code if http_err.code in [400, 401, 403, 422, 500] else 500)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(json.dumps({
                 "success": False,
-                "error": error_json.get("message") or f"Resend API error: {http_err.reason}",
-                "details": error_json,
+                "error": "Failed to send email via Resend delivery engine.",
                 "code": "RESEND_HTTP_ERROR"
             }).encode('utf-8'))
 
-        except Exception as e:
+        except Exception:
             self.send_response(500)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(json.dumps({
                 "success": False,
-                "error": f"Internal email dispatcher error: {str(e)}",
+                "error": "Internal email dispatcher error. Please try again later.",
                 "code": "DISPATCHER_ERROR"
             }).encode('utf-8'))

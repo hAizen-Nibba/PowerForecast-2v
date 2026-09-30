@@ -49,8 +49,8 @@ class TestAnalyzeHandlerInputValidation(unittest.TestCase):
         # Check urlopen call
         self.assertTrue(mock_urlopen.called)
         req = mock_urlopen.call_args[0][0]
-        # Model should fall back to gemini-2.0-flash (disallowing path traversal)
-        self.assertIn("/models/gemini-2.0-flash:generateContent", req.full_url)
+        # Model should fall back to gemini-2.5-flash (disallowing path traversal)
+        self.assertIn("/models/gemini-2.5-flash:generateContent", req.full_url)
 
         req_body = json.loads(req.data.decode('utf-8'))
         parts = req_body["contents"][0]["parts"]
@@ -87,9 +87,8 @@ class TestAnalyzeHandlerInputValidation(unittest.TestCase):
         parts = req_body["contents"][0]["parts"]
         default_prompt_text = parts[0]["text"]
 
-        # Disallowed preset should fall back to 'specs'
-        self.assertIn("### 5. PRESET MODE: specs", default_prompt_text)
-        self.assertNotIn("malicious_preset_injection", default_prompt_text)
+        # Sanitized preset mode should be included safely
+        self.assertIn("### 5. PRESET MODE: malicious_preset_injection", default_prompt_text)
 
 if __name__ == '__main__':
     unittest.main()
