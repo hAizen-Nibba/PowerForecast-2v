@@ -1,8 +1,27 @@
 import json
 import os
+import re
 import urllib.request
 import urllib.error
 from http.server import BaseHTTPRequestHandler
+
+EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+
+def sanitize_email(email_input):
+    """
+    Validates email formatting and rejects any input containing control characters
+    or newlines (CRLF) to prevent email header/payload injection.
+    """
+    if not email_input or not isinstance(email_input, str):
+        return ""
+    if re.search(r'[\r\n\x00-\x1f\x7f-\x9f]', email_input):
+        return ""
+    cleaned = email_input.strip()
+    match = re.search(r'<([^>]+)>$', cleaned)
+    addr = match.group(1) if match else cleaned
+    if not EMAIL_REGEX.match(addr):
+        return ""
+    return cleaned
 
 def get_resend_api_key():
     """
@@ -321,8 +340,18 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({"success": False, "error": "Missing 'to' recipient parameter."}).encode('utf-8'))
             return
 
-        recipients = [to_recipient] if isinstance(to_recipient, str) else to_recipient
-        from_email = payload.get('from') or get_sender_email()
+        recipients_raw = [to_recipient] if isinstance(to_recipient, str) else to_recipient
+        recipients = [sanitize_email(r) for r in recipients_raw if sanitize_email(r)]
+        if not recipients:
+            self.send_response(400)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": False, "error": "Invalid 'to' recipient email address."}).encode('utf-8'))
+            return
+
+        raw_from = payload.get('from')
+        from_email = sanitize_email(raw_from) or get_sender_email()
         template_type = payload.get('type')
         template_data = payload.get('data', {})
 
