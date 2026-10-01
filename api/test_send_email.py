@@ -1,7 +1,15 @@
 import unittest
-from api.send_email import render_template, get_sender_email
+from api.send_email import render_template, get_sender_email, sanitize_email
 
 class TestSendEmailAPI(unittest.TestCase):
+
+    def test_sanitize_email(self):
+        self.assertEqual(sanitize_email("  user@example.com  "), "user@example.com")
+        self.assertEqual(sanitize_email("PowerForecast <noreply@comugallery.me>"), "PowerForecast <noreply@comugallery.me>")
+        # Rejects control characters / newlines / CRLF injection attempts
+        self.assertEqual(sanitize_email("attacker@example.com\nBcc: victim@example.com"), "")
+        self.assertEqual(sanitize_email("invalid-email"), "")
+        self.assertEqual(sanitize_email(None), "")
 
     def test_household_invite_template(self):
         data = {
