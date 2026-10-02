@@ -57,5 +57,17 @@ class TestSendEmailAPI(unittest.TestCase):
         self.assertTrue(len(sender) > 0)
         self.assertIn("@", sender)
 
+    def test_html_sanitization_in_templates(self):
+        malicious_data = {
+            "inviterName": "<script>alert('xss')</script>",
+            "inviteCode": "<b>PF-123</b>",
+            "inviteLink": "https://powerforecast.ph/\">malicious_link"
+        }
+        subject, html = render_template("household_invite", malicious_data)
+        self.assertNotIn("<script>", html)
+        self.assertNotIn("<script>", subject)
+        self.assertIn("&lt;script&gt;", html)
+        self.assertIn("&lt;b&gt;PF-123&lt;/b&gt;", html)
+
 if __name__ == '__main__':
     unittest.main()
