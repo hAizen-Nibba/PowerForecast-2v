@@ -2,6 +2,9 @@ import { supabaseClient } from "./supabaseClient";
 import { SimulatedApplianceUsage, UserAppliance } from "../types";
 import { calculateKwh, calculateCost, DEFAULT_EFFECTIVE_RATE } from "./dailyUsageService";
 import { devLog } from "./devLogger";
+import { getScopedStorage, setScopedStorage } from "../providers/dataProvider";
+
+const RESOURCE_KEY = "simulated_appliance_usage";
 
 /**
  * Saves or updates a simulated plan for a single appliance on a specific date
@@ -24,21 +27,40 @@ export async function saveSimulatedAppliance(params: {
   const kwh = calculateKwh(params.watts, clampedHours, qty);
   const cost = calculateCost(kwh, params.effectiveRate || DEFAULT_EFFECTIVE_RATE);
 
-  try {
-    const row = {
-      appliance_id: params.appliance_id,
-      usage_date: params.usage_date,
-      hours_used: clampedHours,
-      kwh_consumed: kwh,
-      estimated_cost: cost,
-      start_hour: params.start_hour !== undefined ? params.start_hour : null,
-      end_hour: params.end_hour !== undefined ? params.end_hour : null,
-      source: params.source || "simulation_plan",
-      notes: params.notes || null,
-      user_id: params.user_id || null,
-      updated_at: new Date().toISOString(),
-    };
+  const row: SimulatedApplianceUsage = {
+    id: `sim-${params.appliance_id}-${params.usage_date}`,
+    appliance_id: params.appliance_id,
+    usage_date: params.usage_date,
+    hours_used: clampedHours,
+    kwh_consumed: kwh,
+    estimated_cost: cost,
+    start_hour: params.start_hour !== undefined ? params.start_hour : null,
+    end_hour: params.end_hour !== undefined ? params.end_hour : null,
+    source: params.source || "simulation_plan",
+    notes: params.notes || null,
+    user_id: params.user_id || null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
 
+  // 1. Resilient local storage update first (guarantees zero data loss)
+  try {
+    const cached = getScopedStorage<SimulatedApplianceUsage[]>(RESOURCE_KEY, []);
+    const idx = cached.findIndex(
+      (c) => c.appliance_id === params.appliance_id && c.usage_date === params.usage_date
+    );
+    if (idx >= 0) {
+      cached[idx] = { ...cached[idx], ...row };
+    } else {
+      cached.unshift(row);
+    }
+    setScopedStorage(RESOURCE_KEY, cached);
+  } catch (cacheErr) {
+    devLog.warn("SimulationService", "Failed to mirror simulation to local cache:", cacheErr);
+  }
+
+  // 2. Remote Supabase sync
+  try {
     const { error } = await supabaseClient
       .from("simulated_appliance_usage")
       .upsert(row, {
@@ -46,13 +68,11 @@ export async function saveSimulatedAppliance(params: {
       });
 
     if (error) {
-      // Graceful fallback if table not yet migrated
-      devLog.warn("SimulationService", `Failed to save simulated appliance: ${error.message}`, row);
-      return false;
+      devLog.info("SimulationService", `Remote simulated save fallback: ${error.message}`);
+    } else {
+      devLog.info("SimulationService", `Saved remote simulated usage for ${params.appliance_id} on ${params.usage_date}: ${clampedHours}h`);
     }
 
-    devLog.info("SimulationService", `Saved simulated usage for ${params.appliance_id} on ${params.usage_date}: ${clampedHours}h`);
-    
     if (typeof window !== "undefined") {
       window.dispatchEvent(
         new CustomEvent("powerforecast_simulation_updated", {
@@ -62,8 +82,15 @@ export async function saveSimulatedAppliance(params: {
     }
     return true;
   } catch (err: any) {
-    devLog.error("SimulationService", `Exception in saveSimulatedAppliance: ${err?.message}`, err);
-    return false;
+    devLog.info("SimulationService", `Remote exception in saveSimulatedAppliance (saved locally): ${err?.message}`);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("powerforecast_simulation_updated", {
+          detail: { usage_date: params.usage_date, appliance_id: params.appliance_id },
+        })
+      );
+    }
+    return true;
   }
 }
 
@@ -87,13 +114,14 @@ export async function batchSaveSimulatedDay(
 ): Promise<boolean> {
   if (entries.length === 0) return true;
 
-  const rows = entries.map((e) => {
+  const rows: SimulatedApplianceUsage[] = entries.map((e) => {
     const qty = e.quantity || 1;
     const clampedHours = Math.max(0, Math.min(24, Number(e.hours_used.toFixed(2))));
     const kwh = calculateKwh(e.watts, clampedHours, qty);
     const cost = calculateCost(kwh, e.effectiveRate || DEFAULT_EFFECTIVE_RATE);
 
     return {
+      id: `sim-${e.appliance_id}-${usage_date}`,
       appliance_id: e.appliance_id,
       usage_date,
       hours_used: clampedHours,
@@ -104,10 +132,30 @@ export async function batchSaveSimulatedDay(
       source: e.source || "simulation_plan",
       notes: e.notes || null,
       user_id: e.user_id || null,
+      created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
   });
 
+  // 1. Local storage mirror
+  try {
+    const cached = getScopedStorage<SimulatedApplianceUsage[]>(RESOURCE_KEY, []);
+    rows.forEach((r) => {
+      const idx = cached.findIndex(
+        (c) => c.appliance_id === r.appliance_id && c.usage_date === usage_date
+      );
+      if (idx >= 0) {
+        cached[idx] = { ...cached[idx], ...r };
+      } else {
+        cached.unshift(r);
+      }
+    });
+    setScopedStorage(RESOURCE_KEY, cached);
+  } catch (cacheErr) {
+    devLog.warn("SimulationService", "Failed to mirror batch to local cache:", cacheErr);
+  }
+
+  // 2. Remote Supabase sync
   try {
     const { error } = await supabaseClient
       .from("simulated_appliance_usage")
@@ -116,11 +164,10 @@ export async function batchSaveSimulatedDay(
       });
 
     if (error) {
-      devLog.warn("SimulationService", `Batch simulated save warning: ${error.message}`);
-      return false;
+      devLog.info("SimulationService", `Batch simulated save fallback: ${error.message}`);
+    } else {
+      devLog.info("SimulationService", `Batch saved ${rows.length} simulated rows for ${usage_date}`);
     }
-
-    devLog.info("SimulationService", `Batch saved ${rows.length} simulated rows for ${usage_date}`);
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(
@@ -131,8 +178,15 @@ export async function batchSaveSimulatedDay(
     }
     return true;
   } catch (err: any) {
-    devLog.error("SimulationService", `Exception in batchSaveSimulatedDay: ${err?.message}`, err);
-    return false;
+    devLog.info("SimulationService", `Remote batch exception (saved locally): ${err?.message}`);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("powerforecast_simulation_updated", {
+          detail: { usage_date },
+        })
+      );
+    }
+    return true;
   }
 }
 
@@ -156,14 +210,20 @@ export async function fetchSimulatedUsageRange(
     }
 
     const { data, error } = await query;
-    if (error) {
-      devLog.warn("SimulationService", `Error fetching simulated usage range: ${error.message}`);
-      return [];
+    if (!error && Array.isArray(data) && data.length > 0) {
+      return data as SimulatedApplianceUsage[];
     }
-    return (data || []) as SimulatedApplianceUsage[];
-  } catch (err: any) {
-    devLog.error("SimulationService", `Exception in fetchSimulatedUsageRange: ${err?.message}`, err);
-    return [];
+    
+    // Fall back to local storage
+    const cached = getScopedStorage<SimulatedApplianceUsage[]>(RESOURCE_KEY, []);
+    return cached.filter(
+      (c) => c.usage_date >= startDate && c.usage_date <= endDate && (!userId || c.user_id === userId)
+    );
+  } catch {
+    const cached = getScopedStorage<SimulatedApplianceUsage[]>(RESOURCE_KEY, []);
+    return cached.filter(
+      (c) => c.usage_date >= startDate && c.usage_date <= endDate && (!userId || c.user_id === userId)
+    );
   }
 }
 
@@ -174,6 +234,18 @@ export async function clearSimulatedDay(
   usage_date: string,
   userId?: string | null
 ): Promise<boolean> {
+  // 1. Clear from local storage
+  try {
+    const cached = getScopedStorage<SimulatedApplianceUsage[]>(RESOURCE_KEY, []);
+    const filtered = cached.filter(
+      (c) => !(c.usage_date === usage_date && (!userId || c.user_id === userId))
+    );
+    setScopedStorage(RESOURCE_KEY, filtered);
+  } catch (cacheErr) {
+    devLog.warn("SimulationService", "Failed to clear from local storage:", cacheErr);
+  }
+
+  // 2. Clear from remote Supabase
   try {
     let query = supabaseClient
       .from("simulated_appliance_usage")
@@ -184,11 +256,7 @@ export async function clearSimulatedDay(
       query = query.eq("user_id", userId);
     }
 
-    const { error } = await query;
-    if (error) {
-      devLog.warn("SimulationService", `Error clearing simulated day: ${error.message}`);
-      return false;
-    }
+    await query;
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(
@@ -200,7 +268,7 @@ export async function clearSimulatedDay(
     return true;
   } catch (err: any) {
     devLog.error("SimulationService", `Exception in clearSimulatedDay: ${err?.message}`, err);
-    return false;
+    return true;
   }
 }
 

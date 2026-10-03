@@ -38,7 +38,7 @@ export function getActiveRoomContext(): { ownerId?: string; role?: string; roomI
   return {};
 }
 
-function getStorage<T>(key: string, defaultVal: T): T {
+export function getScopedStorage<T>(key: string, defaultVal: T): T {
   try {
     const { ownerId } = getActiveRoomContext();
     const storageKey = ownerId && ROOM_SCOPED_RESOURCES.includes(key)
@@ -51,7 +51,7 @@ function getStorage<T>(key: string, defaultVal: T): T {
   }
 }
 
-function setStorage<T>(key: string, val: T): void {
+export function setScopedStorage<T>(key: string, val: T): void {
   try {
     const { ownerId } = getActiveRoomContext();
     const storageKey = ownerId && ROOM_SCOPED_RESOURCES.includes(key)
@@ -62,6 +62,10 @@ function setStorage<T>(key: string, val: T): void {
     console.error(e);
   }
 }
+
+// Backwards-compatible aliases
+const getStorage = getScopedStorage;
+const setStorage = setScopedStorage;
 
 // Clean slate: ensure no stale mock data is seeded
 if (typeof window !== "undefined" && !localStorage.getItem("powerforecast_clean_slate_v1")) {
@@ -204,7 +208,16 @@ export const resilientDataProvider: DataProvider = {
       }
       return res;
     } catch (err: any) {
-      devLog.warn("Supabase DataProvider", `getList failed on remote [${params.resource}]: ${err.message}. Falling back to local storage.`);
+      const isSchemaCacheError =
+        err?.message?.includes("schema cache") ||
+        err?.code === "PGRST204" ||
+        err?.code === "PGRST205" ||
+        err?.code === "42P01";
+      if (isSchemaCacheError) {
+        devLog.info("Supabase DataProvider", `Remote [${params.resource}] not in schema cache. Resiliently using local storage.`);
+      } else {
+        devLog.warn("Supabase DataProvider", `getList failed on remote [${params.resource}]: ${err.message}. Falling back to local storage.`);
+      }
       return localDataProvider.getList<TData>(params);
     }
   },

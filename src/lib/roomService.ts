@@ -219,14 +219,27 @@ async function fallbackListRoomMembers(roomId: string): Promise<RoomMember[]> {
   }
 }
 
+// In-memory circuit breakers to prevent repeated failing RPC network calls if remote SQL is unmigrated
+let isListMyRoomsRpcKnownBroken = false;
+let isListRoomMembersRpcKnownBroken = false;
+
 /**
  * Fetches all rooms accessible to the authenticated user (owned + joined).
  */
 export async function listMyRooms(): Promise<RoomSummary[]> {
+  if (isListMyRoomsRpcKnownBroken) {
+    return await fallbackListMyRooms();
+  }
+
   try {
     const { data, error } = await supabaseClient.rpc('list_my_rooms');
     if (error) {
-      devLog.warn('RoomService', 'list_my_rooms RPC failed, activating resilient direct query fallback:', error);
+      if (error.code === '42703' || error.code === '42883' || error.message?.includes('acc.name')) {
+        isListMyRoomsRpcKnownBroken = true;
+        devLog.info('RoomService', 'list_my_rooms RPC requires schema patch; routing to resilient direct query fallback.');
+      } else {
+        devLog.warn('RoomService', 'list_my_rooms RPC failed, activating resilient direct query fallback:', error);
+      }
       return await fallbackListMyRooms();
     }
 
@@ -255,13 +268,23 @@ export async function listMyRooms(): Promise<RoomSummary[]> {
  */
 export async function listRoomMembers(roomId: string): Promise<RoomMember[]> {
   if (!roomId) return [];
+
+  if (isListRoomMembersRpcKnownBroken) {
+    return await fallbackListRoomMembers(roomId);
+  }
+
   try {
     const { data, error } = await supabaseClient.rpc('list_room_members', {
       p_room_id: roomId,
     });
 
     if (error) {
-      devLog.warn('RoomService', 'list_room_members RPC failed, activating direct fallback query:', error);
+      if (error.code === '42703' || error.code === '42883' || error.message?.includes('acc.name')) {
+        isListRoomMembersRpcKnownBroken = true;
+        devLog.info('RoomService', 'list_room_members RPC requires column schema patch; routing to direct fallback query.');
+      } else {
+        devLog.warn('RoomService', 'list_room_members RPC failed, activating direct fallback query:', error);
+      }
       return await fallbackListRoomMembers(roomId);
     }
 

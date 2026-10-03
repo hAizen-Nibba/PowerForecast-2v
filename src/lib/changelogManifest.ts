@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.7.1av",
+    version: "3.7.1av",
+    git_commit_tag: "3.7.1av",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Developer",
+    source: "github",
+    description:
+      "3.7.1av - Hotfix: Resolve stopwatch and simulation plan persistence with resilient dual-write room-scoped storage, add unified SQL patch migration for simulated_appliance_usage and room member RPCs, and add smart circuit breakers to suppress repeated 42703 RPC console errors",
+  },
+  {
     id: "3.7.1v",
     version: "3.7.1v",
     git_commit_tag: "3.7.1v",

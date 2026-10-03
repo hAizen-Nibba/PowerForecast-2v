@@ -2,7 +2,6 @@ import { supabaseClient } from "./supabaseClient";
 import { UserAppliance } from "../types";
 import { devLog } from "./devLogger";
 import {
-  splitSessionAcrossDays,
   calculateApplianceKwh,
   calculateCost,
   accumulateLiveSessionDailyUsage,
@@ -10,6 +9,7 @@ import {
   savePastSessionWithAllocation,
   DEFAULT_EFFECTIVE_RATE,
 } from "./dailyUsageService";
+import { getScopedStorage, setScopedStorage } from "../providers/dataProvider";
 
 // In-flight locking mechanism to prevent race conditions & double-clicks
 const activeSessionLocks = new Set<string>();
@@ -39,18 +39,39 @@ export async function switchOnCircuit(
   const nowIso = new Date().toISOString();
 
   try {
-    const { error } = await supabaseClient
-      .from("user_appliances")
-      .update({
-        is_currently_on: true,
-        last_turned_on_at: nowIso,
-        updated_at: nowIso,
-      })
-      .eq("id", app.id);
+    // 1. Resilient local storage update first so UI reflects energized state immediately
+    try {
+      const appliances = getScopedStorage<UserAppliance[]>("user_appliances", []);
+      const idx = appliances.findIndex((a) => a.id === app.id);
+      if (idx >= 0) {
+        appliances[idx] = {
+          ...appliances[idx],
+          is_currently_on: true,
+          last_turned_on_at: nowIso,
+          updated_at: nowIso,
+        };
+        setScopedStorage("user_appliances", appliances);
+      }
+    } catch (cacheErr) {
+      devLog.warn("SessionService", "Failed to update user_appliances local cache:", cacheErr);
+    }
 
-    if (error) {
-      devLog.error("SessionService", `Failed to energize circuit: ${error.message}`, error);
-      return { success: false, last_turned_on_at: null };
+    // 2. Remote Supabase synchronization
+    try {
+      const { error } = await supabaseClient
+        .from("user_appliances")
+        .update({
+          is_currently_on: true,
+          last_turned_on_at: nowIso,
+          updated_at: nowIso,
+        })
+        .eq("id", app.id);
+
+      if (error) {
+        devLog.info("SessionService", `Remote energize sync notice: ${error.message}`);
+      }
+    } catch (remoteErr: any) {
+      devLog.info("SessionService", `Remote exception in switchOnCircuit: ${remoteErr?.message}`);
     }
 
     devLog.telemetry("Telemetry", `Circuit ENERGIZED [ACTIVE]: "${app.name}" (${app.watts}W @ 230V)`, {
@@ -113,23 +134,48 @@ export async function switchOffCircuit(
         appKwh = calculateApplianceKwh(app, durationHours);
         appCost = calculateCost(appKwh, rate);
 
-        // 1. Insert detailed session log
-        const { error: logErr } = await supabaseClient.from("appliance_usage_logs").insert({
-          appliance_id: app.id,
-          user_id: app.user_id || null,
-          started_at: start.toISOString(),
-          ended_at: end.toISOString(),
-          duration_minutes: durationMinutes,
-          kwh_consumed: appKwh,
-          estimated_cost: appCost,
-          source: "calendar_timeline_stopwatch",
-        });
-
-        if (logErr) {
-          devLog.warn("SessionService", `Warning writing session log: ${logErr.message}`);
+        // 1. Mirror detailed session log to local scoped storage
+        try {
+          const logs = getScopedStorage<any[]>("appliance_usage_logs", []);
+          const newLog = {
+            id: `log-${app.id}-${Date.now()}`,
+            appliance_id: app.id,
+            user_id: app.user_id || null,
+            started_at: start.toISOString(),
+            ended_at: end.toISOString(),
+            duration_minutes: durationMinutes,
+            kwh_consumed: appKwh,
+            estimated_cost: appCost,
+            source: "calendar_timeline_stopwatch",
+            created_at: new Date().toISOString(),
+          };
+          logs.unshift(newLog);
+          setScopedStorage("appliance_usage_logs", logs);
+        } catch (cacheLogErr) {
+          devLog.warn("SessionService", "Failed to cache session log locally:", cacheLogErr);
         }
 
-        // 2. Accumulate in daily_appliance_usage across midnight boundaries
+        // 2. Insert detailed session log to Supabase
+        try {
+          const { error: logErr } = await supabaseClient.from("appliance_usage_logs").insert({
+            appliance_id: app.id,
+            user_id: app.user_id || null,
+            started_at: start.toISOString(),
+            ended_at: end.toISOString(),
+            duration_minutes: durationMinutes,
+            kwh_consumed: appKwh,
+            estimated_cost: appCost,
+            source: "calendar_timeline_stopwatch",
+          });
+
+          if (logErr) {
+            devLog.info("SessionService", `Supabase log insert notice: ${logErr.message}`);
+          }
+        } catch (remoteLogErr: any) {
+          devLog.info("SessionService", `Remote log insert exception: ${remoteLogErr?.message}`);
+        }
+
+        // 3. Accumulate in daily_appliance_usage across midnight boundaries
         await accumulateLiveSessionDailyUsage({
           appliance_id: app.id,
           durationMinutes,
@@ -148,21 +194,42 @@ export async function switchOffCircuit(
       }
     }
 
-    // 3. Update appliance status to OFF in database
-    const { error: appErr } = await supabaseClient
-      .from("user_appliances")
-      .update({
-        is_currently_on: false,
-        last_turned_on_at: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", app.id);
-
-    if (appErr) {
-      devLog.error("SessionService", `Error de-energizing appliance record: ${appErr.message}`);
+    // 4. Update appliance status to OFF in local storage
+    try {
+      const appliances = getScopedStorage<UserAppliance[]>("user_appliances", []);
+      const idx = appliances.findIndex((a) => a.id === app.id);
+      if (idx >= 0) {
+        appliances[idx] = {
+          ...appliances[idx],
+          is_currently_on: false,
+          last_turned_on_at: null,
+          updated_at: new Date().toISOString(),
+        };
+        setScopedStorage("user_appliances", appliances);
+      }
+    } catch (cacheOffErr) {
+      devLog.warn("SessionService", "Failed to de-energize appliance in local cache:", cacheOffErr);
     }
 
-    // 4. Dispatch global sync events
+    // 5. Update appliance status to OFF in remote database
+    try {
+      const { error: appErr } = await supabaseClient
+        .from("user_appliances")
+        .update({
+          is_currently_on: false,
+          last_turned_on_at: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", app.id);
+
+      if (appErr) {
+        devLog.info("SessionService", `Remote de-energize notice: ${appErr.message}`);
+      }
+    } catch (remoteAppErr: any) {
+      devLog.info("SessionService", `Remote de-energize exception: ${remoteAppErr?.message}`);
+    }
+
+    // 6. Dispatch global sync events
     if (typeof window !== "undefined") {
       const syncDetail = {
         rolledOverCount: 1,

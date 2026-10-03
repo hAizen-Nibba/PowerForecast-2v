@@ -9,6 +9,7 @@ import {
   CycleEndOffset,
 } from "../types";
 import { devLog } from "./devLogger";
+import { getScopedStorage, setScopedStorage } from "../providers/dataProvider";
 
 export const DEFAULT_EFFECTIVE_RATE = 14.8261;
 
@@ -577,6 +578,33 @@ export async function accumulateLiveSessionDailyUsage(params: {
         }
       );
 
+      // Mirror to local scoped storage for instant hydration & offline persistence
+      try {
+        const cachedUsage = getScopedStorage<any[]>("daily_appliance_usage", []);
+        const idx = cachedUsage.findIndex(
+          (u) => u.appliance_id === params.appliance_id && u.usage_date === slice.dateKey
+        );
+        const updatedRow = {
+          id: idx >= 0 ? cachedUsage[idx].id : `daily-${params.appliance_id}-${slice.dateKey}`,
+          appliance_id: params.appliance_id,
+          user_id: params.user_id || null,
+          usage_date: slice.dateKey,
+          hours_used: totalHours,
+          kwh_consumed: kwh,
+          estimated_cost: cost,
+          source: "live_session",
+          updated_at: new Date().toISOString(),
+        };
+        if (idx >= 0) {
+          cachedUsage[idx] = updatedRow;
+        } else {
+          cachedUsage.unshift(updatedRow);
+        }
+        setScopedStorage("daily_appliance_usage", cachedUsage);
+      } catch (cacheErr) {
+        devLog.warn("DailyUsageService", "Failed to mirror live slice to local storage:", cacheErr);
+      }
+
       devLog.info(
         "DailyUsageService",
         `Accumulated live slice for ${params.appliance_id} on ${slice.dateKey}: +${slice.hours.toFixed(2)}h -> Total: ${totalHours}h`
@@ -643,6 +671,26 @@ export async function deductSessionDailyUsage(params: {
           onConflict: "user_id,appliance_id,usage_date",
         }
       );
+
+      // Mirror deduction to local scoped storage
+      try {
+        const cachedUsage = getScopedStorage<any[]>("daily_appliance_usage", []);
+        const idx = cachedUsage.findIndex(
+          (u) => u.appliance_id === params.appliance_id && u.usage_date === slice.dateKey
+        );
+        if (idx >= 0) {
+          cachedUsage[idx] = {
+            ...cachedUsage[idx],
+            hours_used: totalHours,
+            kwh_consumed: kwh,
+            estimated_cost: cost,
+            updated_at: new Date().toISOString(),
+          };
+          setScopedStorage("daily_appliance_usage", cachedUsage);
+        }
+      } catch (cacheErr) {
+        devLog.warn("DailyUsageService", "Failed to mirror deduction to local storage:", cacheErr);
+      }
 
       devLog.info(
         "DailyUsageService",
