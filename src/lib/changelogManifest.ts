@@ -20,7 +20,7 @@ export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
-      "3.6.0cv - Synchronize upstream household multi-user access (invite codes, roles, and appliance approval workflow) and Gemini AI Energy Auditor with the local Stack Template design system, neutral zinc auth cards, Inter typography, and distraction-free Hero layout",
+      "3.6.0cv - Fix Vercel build failures: migrate HouseholdAccessModal Dialog PaperProps to slotProps.paper and TextField inputProps to slotProps.input, integrate HouseholdContext addMember dispatch in SettingsView, and sanitize household storage keys upon account deletion",
   },
   {
     id: "3.6.0bv",

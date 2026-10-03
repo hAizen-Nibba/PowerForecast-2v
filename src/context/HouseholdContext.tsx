@@ -20,6 +20,7 @@ import {
   approveApplianceRequest,
   rejectApplianceRequest,
   purgeLegacyTesterAccountData,
+  addHouseholdMember,
   UserBasicInfo,
 } from '../lib/householdService';
 
@@ -36,13 +37,13 @@ interface HouseholdContextType {
   members: HouseholdMember[];
   pendingRequests: PendingApplianceRequest[];
   createInvite: () => Promise<{ inviteCode: string; inviteLink: string }>;
+  addMember: (member: HouseholdMember) => void;
   joinWithCode: (code: string) => Promise<{ success: boolean; message: string }>;
   leaveHousehold: () => void;
   submitAppliance: (appliance: Partial<UserAppliance>) => Promise<PendingApplianceRequest>;
   approveAppliance: (requestId: string) => Promise<boolean>;
   rejectAppliance: (requestId: string) => Promise<boolean>;
   removeMember: (memberId: string) => void;
-  addMember: (member: HouseholdMember) => void;
   isHouseholdModalOpen: boolean;
   householdModalTab: number;
   openHouseholdModal: (tab?: number) => void;
@@ -195,17 +196,10 @@ export const HouseholdProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setMembers(profile.members);
   };
 
-  const handleAddMember = (newMember: HouseholdMember) => {
+  const handleAddMember = (member: HouseholdMember) => {
     const user = getResolvedUser();
-    const profile = getHouseholdProfile(user);
-    const existingIndex = profile.members.findIndex((m) => m.id === newMember.id || m.email === newMember.email);
-    if (existingIndex !== -1) {
-      profile.members[existingIndex] = newMember;
-    } else {
-      profile.members.push(newMember);
-    }
-    saveHouseholdProfile(profile);
-    setMembers(profile.members);
+    addHouseholdMember(user, member);
+    refreshHouseholdState();
   };
 
   const openHouseholdModal = (tab: number = 0) => {
@@ -237,13 +231,13 @@ export const HouseholdProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         members,
         pendingRequests,
         createInvite: handleCreateInvite,
+        addMember: handleAddMember,
         joinWithCode: handleJoinWithCode,
         leaveHousehold: handleLeaveHousehold,
         submitAppliance: handleSubmitAppliance,
         approveAppliance: handleApproveAppliance,
         rejectAppliance: handleRejectAppliance,
         removeMember: handleRemoveMember,
-        addMember: handleAddMember,
         isHouseholdModalOpen,
         householdModalTab,
         openHouseholdModal,
