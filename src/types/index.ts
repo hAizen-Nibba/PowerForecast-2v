@@ -33,6 +33,8 @@ export interface UserAppliance {
   last_turned_on_at?: string | null;
   is_inverter?: boolean;
   cruising_watts?: number;
+  active_workload_mode?: 'light' | 'standard' | 'heavy' | string | null;
+  active_session_watts?: number | null;
   ai_metadata?: Record<string, any>;
   approval_status?: 'approved' | 'pending' | 'rejected';
   requested_by?: string;

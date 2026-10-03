@@ -10,6 +10,10 @@ import Divider from "@mui/material/Divider";
 import Tooltip from "@mui/material/Tooltip";
 import LinearProgress from "@mui/material/LinearProgress";
 import Paper from "@mui/material/Paper";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import ListItemText from "@mui/material/ListItemText";
+import ListItemIcon from "@mui/material/ListItemIcon";
 import {
   PowerSettingsNew as PowerIcon,
   Bolt as BoltIcon,
@@ -23,14 +27,30 @@ import {
   Speed as SpeedIcon,
   Warning as WarningIcon,
   Laptop as LaptopIcon,
+  Spa as LightModeIcon,
+  WorkOutlined as OfficeModeIcon,
+  VideogameAsset as GamingModeIcon,
 } from "@mui/icons-material";
 import { UserAppliance, ApplianceList } from "../../types";
 import { useUpdate, useList } from "@refinedev/core";
 import { devLog } from "../../lib/devLogger";
 import { calculateSimultaneousDemand } from "../../lib/meralcoCalculator";
 import { supabaseClient } from "../../lib/supabaseClient";
-import { calculateKwh, calculateApplianceKwh, calculateCost } from "../../lib/dailyUsageService";
-import { switchOnCircuit, switchOffCircuit, getEffectiveApplianceRate } from "../../lib/sessionService";
+import {
+  calculateKwh,
+  calculateApplianceKwh,
+  calculateCost,
+  isComputerCategory,
+  getApplianceEffectiveRunningWatts,
+} from "../../lib/dailyUsageService";
+import {
+  switchOnCircuit,
+  switchOffCircuit,
+  switchApplianceWorkloadMode,
+  getEffectiveApplianceRate,
+} from "../../lib/sessionService";
+import { PcWorkloadProfile, getApplianceWorkloadWatts } from "../../lib/pcHardwareService";
+import { PcWorkloadModeModal } from "../appliances/PcWorkloadModeModal";
 import { useRoom } from "../../context/RoomContext";
 
 interface LivePowerBoardProps {
@@ -103,11 +123,35 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
     return <LightbulbIcon fontSize="small" sx={{ color: "primary.light" }} />;
   };
 
+  const [pcModeAppliance, setPcModeAppliance] = useState<UserAppliance | null>(null);
+  const [modeMenuAnchor, setModeMenuAnchor] = useState<{ el: HTMLElement; app: UserAppliance } | null>(null);
+
+  const handleSelectPcMode = async (mode: PcWorkloadProfile, watts: number) => {
+    if (!pcModeAppliance) return;
+    const app = pcModeAppliance;
+    setPcModeAppliance(null);
+    await switchOnCircuit(app, { workloadMode: mode, sessionWatts: watts });
+    if (appliancesRes?.refetch) appliancesRes.refetch();
+  };
+
+  const handleSwitchModeOnTheFly = async (mode: PcWorkloadProfile) => {
+    if (!modeMenuAnchor) return;
+    const { app } = modeMenuAnchor;
+    setModeMenuAnchor(null);
+    const watts = getApplianceWorkloadWatts(app, mode);
+    await switchApplianceWorkloadMode(app, mode, watts);
+    if (appliancesRes?.refetch) appliancesRes.refetch();
+  };
+
   const togglePower = async (app: UserAppliance) => {
     if (!canEdit) return;
     if (app.is_currently_on) {
       await switchOffCircuit(app);
     } else {
+      if (isComputerCategory(app.category, app.name)) {
+        setPcModeAppliance(app);
+        return;
+      }
       await switchOnCircuit(app);
     }
     if (appliancesRes?.refetch) appliancesRes.refetch();
@@ -127,8 +171,8 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
     if (!app.is_currently_on || !app.last_turned_on_at) return 0;
     const start = new Date(app.last_turned_on_at).getTime();
     const diffSeconds = Math.max(0, (now - start) / 1000);
-    const totalWatts = app.watts * (app.quantity || 1);
-    const accumulatedKwh = (totalWatts / 1000) * (diffSeconds / 3600);
+    const telemetry = getApplianceEffectiveRunningWatts(app, diffSeconds / 60);
+    const accumulatedKwh = (telemetry.effectiveWatts / 1000) * (diffSeconds / 3600);
     const effectiveRate = getEffectiveApplianceRate(app);
     return accumulatedKwh * effectiveRate;
   };
@@ -335,11 +379,51 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
                         </Typography>
 
                         {isOn && (
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.5 }}>
-                            <ClockIcon sx={{ fontSize: 12, color: "success.main" }} />
-                            <Typography variant="caption" sx={{ color: "success.main", fontWeight: 700, fontFamily: "monospace", fontSize: "0.6875rem" }}>
-                              {getRunningDuration(app.last_turned_on_at)} (₱{liveSpent.toFixed(3)})
-                            </Typography>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.5, flexWrap: "wrap" }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                              <ClockIcon sx={{ fontSize: 12, color: "success.main" }} />
+                              <Typography variant="caption" sx={{ color: "success.main", fontWeight: 700, fontFamily: "monospace", fontSize: "0.6875rem" }}>
+                                {getRunningDuration(app.last_turned_on_at)} (₱{liveSpent.toFixed(3)})
+                              </Typography>
+                            </Box>
+                            {(() => {
+                              const start = new Date(app.last_turned_on_at!).getTime();
+                              const diffMinutes = Math.max(0, (now - start) / 60000);
+                              const telemetry = getApplianceEffectiveRunningWatts(app, diffMinutes);
+                              const isPc = isComputerCategory(app.category, app.name);
+
+                              return (
+                                <Tooltip title={isPc && canEdit ? "Click to switch workload mode on the fly" : ""}>
+                                  <Chip
+                                    label={telemetry.badgeText}
+                                    color={telemetry.badgeColor as any}
+                                    size="small"
+                                    onClick={
+                                      isPc && canEdit
+                                        ? (e) => {
+                                            e.stopPropagation();
+                                            setModeMenuAnchor({ el: e.currentTarget, app });
+                                          }
+                                        : undefined
+                                    }
+                                    sx={{
+                                      height: 18,
+                                      fontSize: "0.625rem",
+                                      fontWeight: 700,
+                                      cursor: isPc && canEdit ? "pointer" : "default",
+                                      ...(isPc && canEdit
+                                        ? {
+                                            "&:hover": {
+                                              filter: "brightness(1.15)",
+                                              boxShadow: "0 0 6px rgba(96, 165, 250, 0.4)",
+                                            },
+                                          }
+                                        : {}),
+                                    }}
+                                  />
+                                </Tooltip>
+                              );
+                            })()}
                           </Box>
                         )}
                       </Box>
@@ -390,6 +474,68 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
           </Grid>
         )}
       </Box>
+
+      {/* On-the-fly PC Workload Mode Switcher Menu */}
+      <Menu
+        anchorEl={modeMenuAnchor?.el}
+        open={Boolean(modeMenuAnchor)}
+        onClose={() => setModeMenuAnchor(null)}
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 2,
+              minWidth: 190,
+              boxShadow: 8,
+              border: "1px solid",
+              borderColor: "divider",
+            },
+          },
+        }}
+      >
+        <Box sx={{ px: 2, py: 0.75 }}>
+          <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary" }}>
+            Switch Workload Mode
+          </Typography>
+        </Box>
+        <Divider sx={{ my: 0.5 }} />
+        <MenuItem onClick={() => handleSwitchModeOnTheFly("light")}>
+          <ListItemIcon>
+            <LightModeIcon fontSize="small" sx={{ color: "#34d399" }} />
+          </ListItemIcon>
+          <ListItemText
+            primary={<Typography variant="body2" sx={{ fontWeight: 700 }}>Idle / Light</Typography>}
+            secondary={modeMenuAnchor ? `~${getApplianceWorkloadWatts(modeMenuAnchor.app, "light")}W` : undefined}
+          />
+        </MenuItem>
+        <MenuItem onClick={() => handleSwitchModeOnTheFly("standard")}>
+          <ListItemIcon>
+            <OfficeModeIcon fontSize="small" sx={{ color: "#60a5fa" }} />
+          </ListItemIcon>
+          <ListItemText
+            primary={<Typography variant="body2" sx={{ fontWeight: 700 }}>Office / Standard</Typography>}
+            secondary={modeMenuAnchor ? `~${getApplianceWorkloadWatts(modeMenuAnchor.app, "standard")}W` : undefined}
+          />
+        </MenuItem>
+        <MenuItem onClick={() => handleSwitchModeOnTheFly("heavy")}>
+          <ListItemIcon>
+            <GamingModeIcon fontSize="small" sx={{ color: "#f87171" }} />
+          </ListItemIcon>
+          <ListItemText
+            primary={<Typography variant="body2" sx={{ fontWeight: 700 }}>Gaming / Heavy</Typography>}
+            secondary={modeMenuAnchor ? `~${getApplianceWorkloadWatts(modeMenuAnchor.app, "heavy")}W` : undefined}
+          />
+        </MenuItem>
+      </Menu>
+
+      {/* PC Workload Mode 1-Tap Picker Modal */}
+      {pcModeAppliance && (
+        <PcWorkloadModeModal
+          open={Boolean(pcModeAppliance)}
+          onClose={() => setPcModeAppliance(null)}
+          appliance={pcModeAppliance}
+          onSelectMode={handleSelectPcMode}
+        />
+      )}
     </Card>
   );
 };

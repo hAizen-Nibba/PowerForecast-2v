@@ -10,6 +10,7 @@ import {
 } from "../types";
 import { devLog } from "./devLogger";
 import { getScopedStorage, setScopedStorage } from "../providers/dataProvider";
+import { getApplianceWorkloadWatts, PcWorkloadProfile } from "./pcHardwareService";
 
 export const DEFAULT_EFFECTIVE_RATE = 14.8261;
 
@@ -101,6 +102,135 @@ export function normalizeApplianceCategory(category: string = "", name: string =
     return "TV & Entertainment";
   }
   return "Lighting & Other";
+}
+
+/**
+ * Checks if an appliance belongs to Computers & Laptops category based on category or name
+ */
+export function isComputerCategory(category?: string | null, name?: string | null): boolean {
+  const c = (category || "").toLowerCase();
+  const n = (name || "").toLowerCase();
+  return (
+    c.includes("computer") ||
+    c.includes("laptop") ||
+    c.includes("desktop") ||
+    c.includes("pc") ||
+    c.includes("workstation") ||
+    n.includes("laptop") ||
+    n.includes("macbook") ||
+    n.includes("desktop") ||
+    n.includes("gaming rig") ||
+    n.includes("strix") ||
+    n.includes("legion")
+  );
+}
+
+export interface ApplianceRunningWattsTelemetry {
+  effectiveWatts: number;
+  stage: "pull_down" | "cruising" | "workload_mode" | "constant";
+  badgeText: string;
+  badgeColor: "warning" | "success" | "info" | "default";
+}
+
+/**
+ * Returns dynamic real-time running wattage, stage label, and badge info
+ * for Inverter time-decay (Pull-down vs Cruising) and Computer workload profiles.
+ */
+export function getApplianceEffectiveRunningWatts(
+  app: Partial<UserAppliance>,
+  elapsedMinutes: number = 0
+): ApplianceRunningWattsTelemetry {
+  const watts = Number(app.watts) || 0;
+  const qty = app.quantity || 1;
+  const category = (app.category || "").toLowerCase();
+  const isComputer = isComputerCategory(category, app.name);
+
+  // 1. Computers & Laptops: Scale by active workload mode
+  if (isComputer) {
+    const activeWatts = app.active_session_watts ?? app.ai_metadata?.active_session_watts;
+    const mode = (app.active_workload_mode ?? app.ai_metadata?.active_workload_mode ?? "standard") as PcWorkloadProfile;
+
+    let chosenWatts = activeWatts;
+    if (!chosenWatts || chosenWatts <= 0) {
+      chosenWatts = getApplianceWorkloadWatts(app, mode);
+    }
+    const finalWatts = chosenWatts * qty;
+    const modeLabel =
+      mode === "heavy" ? "Gaming" : mode === "light" ? "Idle / Light" : "Office";
+
+    return {
+      effectiveWatts: finalWatts,
+      stage: "workload_mode",
+      badgeText: `${modeLabel} (${finalWatts}W)`,
+      badgeColor: mode === "heavy" ? "warning" : mode === "light" ? "info" : "success",
+    };
+  }
+
+  // 2. Inverter Compressor Appliances
+  const supports = isCompressorInverterCategory(app.category);
+  const isInverter =
+    supports &&
+    Boolean(
+      app.is_inverter === true ||
+      (app.energy_rating && /inverter/i.test(app.energy_rating)) ||
+      (app.ai_metadata?.is_inverter === true) ||
+      (app.name && /inverter/i.test(app.name)) ||
+      (app.model && /inverter/i.test(app.model))
+    );
+
+  const isFridge =
+    category.includes("refrigerat") ||
+    category.includes("fridge") ||
+    category.includes("freezer") ||
+    category.includes("chiller");
+
+  if (isInverter) {
+    const customCruisingWatts =
+      Number(app.cruising_watts) > 0
+        ? Number(app.cruising_watts)
+        : Number(app.ai_metadata?.cruising_watts) > 0
+        ? Number(app.ai_metadata?.cruising_watts)
+        : undefined;
+
+    if (isFridge) {
+      const runningWatts = customCruisingWatts !== undefined ? customCruisingWatts : Math.round(watts / 3);
+      return {
+        effectiveWatts: runningWatts * qty,
+        stage: "cruising",
+        badgeText: `Cycling (~${runningWatts * qty}W)`,
+        badgeColor: "success",
+      };
+    }
+
+    // Inverter Aircon & other compressors:
+    // First 60 mins is Pull-Down at 100% capacity
+    // 60 mins onwards is Cruising at ~42% (or custom user cruising wattage)
+    const cruisingWatts = customCruisingWatts !== undefined ? customCruisingWatts : Math.round(watts * 0.42);
+
+    if (elapsedMinutes < 60) {
+      return {
+        effectiveWatts: watts * qty,
+        stage: "pull_down",
+        badgeText: `Pull-down (${watts * qty}W)`,
+        badgeColor: "warning",
+      };
+    }
+
+    return {
+      effectiveWatts: cruisingWatts * qty,
+      stage: "cruising",
+      badgeText: `Cruising (~${cruisingWatts * qty}W)`,
+      badgeColor: "success",
+    };
+  }
+
+  // 3. Fallback standard constant draw
+  return {
+    effectiveWatts: watts * qty,
+    stage: "constant",
+    badgeText: `${watts * qty}W`,
+    badgeColor: "default",
+  };
 }
 
 /**
@@ -203,6 +333,16 @@ export function calculateApplianceKwh(
   const watts = app.watts || 0;
 
   const supports = isCompressorInverterCategory(app.category);
+  const isComputer = isComputerCategory(app.category, app.name);
+
+  // If active_session_watts is set for this session (e.g. PC in Gaming mode @ 320W):
+  let activeSessionWatts = app.active_session_watts ?? app.ai_metadata?.active_session_watts;
+  if (!activeSessionWatts && isComputer && (app.active_workload_mode || app.ai_metadata?.active_workload_mode)) {
+    const mode = (app.active_workload_mode || app.ai_metadata?.active_workload_mode) as PcWorkloadProfile;
+    activeSessionWatts = getApplianceWorkloadWatts(app, mode);
+  }
+
+  const customCruising = activeSessionWatts ?? app.cruising_watts ?? app.ai_metadata?.cruising_watts;
 
   return calculateKwh(watts, h, qty, {
     isInverter: supports && Boolean(app.is_inverter ?? (app.ai_metadata?.is_inverter === true)),
@@ -211,7 +351,7 @@ export function calculateApplianceKwh(
     name: app.name,
     model: app.model,
     ai_metadata: app.ai_metadata,
-    cruising_watts: app.cruising_watts ?? app.ai_metadata?.cruising_watts,
+    cruising_watts: customCruising,
   });
 }
 
@@ -534,6 +674,7 @@ export async function accumulateLiveSessionDailyUsage(params: {
   user_id?: string | null;
   startTime?: Date;
   endTime?: Date;
+  appliance?: Partial<UserAppliance>;
 }): Promise<void> {
   const quantity = params.quantity || 1;
   const rate = params.effectiveRate || DEFAULT_EFFECTIVE_RATE;
@@ -559,7 +700,9 @@ export async function accumulateLiveSessionDailyUsage(params: {
 
       const currentHours = existing ? Number(existing.hours_used || 0) : 0;
       const totalHours = Math.max(0, Math.min(24, Number((currentHours + slice.hours).toFixed(2))));
-      const kwh = calculateKwh(params.watts, totalHours, quantity);
+      const kwh = params.appliance
+        ? calculateApplianceKwh(params.appliance, totalHours)
+        : calculateKwh(params.watts, totalHours, quantity);
       const cost = calculateCost(kwh, rate);
 
       await supabaseClient.from("daily_appliance_usage").upsert(

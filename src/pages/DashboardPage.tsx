@@ -37,7 +37,7 @@ import { calculateMeralcoBill } from "../lib/meralcoCalculator";
 import { useNotifications } from "../hooks/useNotifications";
 import { useLanguage } from "../context/LanguageContext";
 import { useToast } from "../components/common/ToastProvider";
-import { formatDateToKey, DEFAULT_EFFECTIVE_RATE } from "../lib/dailyUsageService";
+import { formatDateToKey, DEFAULT_EFFECTIVE_RATE, getApplianceEffectiveRunningWatts } from "../lib/dailyUsageService";
 import { getMeralcoTariff, MeralcoTariffData, DEFAULT_MERALCO_TARIFF } from "../lib/meralcoRateService";
 import { getEffectiveApplianceRate } from "../lib/sessionService";
 
@@ -116,18 +116,21 @@ export const DashboardPage: React.FC = () => {
 
   const activeAppliances = appliances.filter((a: UserAppliance) => a.is_active !== false);
   const runningAppliances = activeAppliances.filter((a: UserAppliance) => a.is_currently_on);
-  const activeWattage = runningAppliances.reduce(
-    (acc: number, curr: UserAppliance) => acc + curr.watts * (curr.quantity || 1),
-    0
-  );
+  const activeWattage = runningAppliances.reduce((acc: number, curr: UserAppliance) => {
+    if (!curr.last_turned_on_at) return acc + curr.watts * (curr.quantity || 1);
+    const start = new Date(curr.last_turned_on_at).getTime();
+    const diffMinutes = Math.max(0, (now - start) / 60000);
+    const telemetry = getApplianceEffectiveRunningWatts(curr, diffMinutes);
+    return acc + telemetry.effectiveWatts;
+  }, 0);
 
   // Today's Measured Spend = saved daily_appliance_usage records today + live running stopwatches
   const liveSessionCost = runningAppliances.reduce((acc, curr) => {
     if (!curr.last_turned_on_at) return acc;
     const start = new Date(curr.last_turned_on_at).getTime();
     const diffSeconds = Math.max(0, (now - start) / 1000);
-    const totalWatts = curr.watts * (curr.quantity || 1);
-    const accumulatedKwh = (totalWatts / 1000) * (diffSeconds / 3600);
+    const telemetry = getApplianceEffectiveRunningWatts(curr, diffSeconds / 60);
+    const accumulatedKwh = (telemetry.effectiveWatts / 1000) * (diffSeconds / 3600);
     const rate = getEffectiveApplianceRate(curr);
     return acc + accumulatedKwh * rate;
   }, 0);
@@ -136,8 +139,8 @@ export const DashboardPage: React.FC = () => {
     if (!curr.last_turned_on_at) return acc;
     const start = new Date(curr.last_turned_on_at).getTime();
     const diffSeconds = Math.max(0, (now - start) / 1000);
-    const totalWatts = curr.watts * (curr.quantity || 1);
-    return acc + (totalWatts / 1000) * (diffSeconds / 3600);
+    const telemetry = getApplianceEffectiveRunningWatts(curr, diffSeconds / 60);
+    return acc + (telemetry.effectiveWatts / 1000) * (diffSeconds / 3600);
   }, 0);
 
   const loggedTodayCost = todayUsageRecords.reduce((acc, curr) => acc + (Number(curr.estimated_cost) || 0), 0);

@@ -34,6 +34,7 @@ import {
   calculateApplianceKwh,
   calculateCost,
   DEFAULT_EFFECTIVE_RATE,
+  isComputerCategory,
 } from "../../lib/dailyUsageService";
 import {
   switchOnCircuit,
@@ -42,6 +43,8 @@ import {
   deleteSessionLog,
   getEffectiveApplianceRate,
 } from "../../lib/sessionService";
+import { PcWorkloadProfile } from "../../lib/pcHardwareService";
+import { PcWorkloadModeModal } from "../appliances/PcWorkloadModeModal";
 import { useToast } from "../common/ToastProvider";
 import { useLiveTicker, formatElapsedHms } from "../../hooks/useLiveTicker";
 import { useRoom } from "../../context/RoomContext";
@@ -239,6 +242,20 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
     };
   }, [timelineData]);
 
+  const [pcModeAppliance, setPcModeAppliance] = useState<UserAppliance | null>(null);
+
+  const handleSelectPcMode = async (mode: PcWorkloadProfile, watts: number) => {
+    if (!pcModeAppliance) return;
+    const app = pcModeAppliance;
+    setPcModeAppliance(null);
+    const res = await switchOnCircuit(app, { workloadMode: mode, sessionWatts: watts });
+    if (res.success) {
+      const modeLabel = mode === "heavy" ? "Gaming" : mode === "light" ? "Idle / Light" : "Office / Standard";
+      showInfo(`Started stopwatch for ${app.name} (${modeLabel} mode, ~${watts}W). Live tracking active.`);
+      if (onUsageSaved) onUsageSaved();
+    }
+  };
+
   // Live Power Switch Toggle
   const handleTogglePower = async (app: UserAppliance) => {
     if (!canEdit) {
@@ -260,6 +277,10 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         if (onUsageSaved) onUsageSaved();
       }
     } else {
+      if (isComputerCategory(app.category, app.name)) {
+        setPcModeAppliance(app);
+        return;
+      }
       const res = await switchOnCircuit(app);
       if (res.success) {
         showInfo(`Started stopwatch for ${app.name}. Live tracking active.`);
@@ -778,6 +799,16 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
           <Button onClick={() => setInspectingSession(null)}>Done</Button>
         </DialogActions>
       </Dialog>
+
+      {/* PC Workload Mode 1-Tap Picker Modal */}
+      {pcModeAppliance && (
+        <PcWorkloadModeModal
+          open={Boolean(pcModeAppliance)}
+          onClose={() => setPcModeAppliance(null)}
+          appliance={pcModeAppliance}
+          onSelectMode={handleSelectPcMode}
+        />
+      )}
     </Dialog>
   );
 };

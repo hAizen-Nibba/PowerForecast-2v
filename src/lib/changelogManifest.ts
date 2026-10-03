@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.7.2v",
+    version: "3.7.2v",
+    git_commit_tag: "3.7.2v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Developer",
+    source: "github",
+    description:
+      "3.7.2v - Implement Smart 1-Tap PC & Laptop Workload Mode Picker (Idle / Office / Gaming), dynamic Inverter AC Pull-down vs Cruising stage telemetry, on-the-fly mode switching, and real-time live stopwatch cruising alerts",
+  },
+  {
     id: "3.7.1av",
     version: "3.7.1av",
     git_commit_tag: "3.7.1av",

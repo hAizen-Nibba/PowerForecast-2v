@@ -1,4 +1,4 @@
-import { CpuHardwareItem, GpuHardwareItem } from "../types";
+import { CpuHardwareItem, GpuHardwareItem, UserAppliance } from "../types";
 import { devLog } from "./devLogger";
 import { CPU_CATALOG, GPU_CATALOG } from "./pcHardwareData";
 
@@ -227,4 +227,84 @@ Return ONLY valid JSON matching this exact structure:
   );
 
   return result;
+}
+
+/**
+ * Calculates the expected running wattage of a computer/laptop appliance for a given workload profile.
+ */
+export function getApplianceWorkloadWatts(
+  app: Partial<UserAppliance>,
+  workload: PcWorkloadProfile = "standard"
+): number {
+  const meta = app.ai_metadata || {};
+  const ratedWatts = Number(app.watts) || 100;
+  const isLaptop =
+    meta.device_type === "laptop" ||
+    /laptop|notebook|macbook/i.test(`${app.name || ""} ${app.model || ""}`);
+
+  if (isLaptop) {
+    const chargerWatts = Number(meta.charger_watts) || ratedWatts;
+    return calculateLaptopRunningWatts(chargerWatts, workload);
+  }
+
+  // Check if desktop CPU/GPU specs exist in metadata
+  if (meta.device_type === "desktop_pc" || meta.cpu || meta.gpu) {
+    const cpuItem = meta.cpu
+      ? CPU_CATALOG.find((c) => c.name.toLowerCase() === String(meta.cpu).toLowerCase()) || null
+      : null;
+    const gpuItem = meta.gpu
+      ? GPU_CATALOG.find((g) => g.name.toLowerCase() === String(meta.gpu).toLowerCase()) || null
+      : null;
+
+    const desktopCalc = calculateDesktopPcWatts(
+      cpuItem,
+      gpuItem,
+      Number(meta.monitors ?? 1),
+      workload,
+      meta.cpu_tdp ? Number(meta.cpu_tdp) : undefined,
+      meta.gpu_tgp ? Number(meta.gpu_tgp) : undefined
+    );
+    return desktopCalc.totalRunningWatts;
+  }
+
+  // Generic fallback if no deep hardware metadata exists
+  const factor = workload === "light" ? 0.25 : workload === "standard" ? 0.45 : 0.80;
+  return Math.max(15, Math.round(ratedWatts * factor));
+}
+
+export interface WorkloadOptionPreset {
+  id: PcWorkloadProfile;
+  label: string;
+  sublabel: string;
+  icon: string;
+  watts: number;
+}
+
+/**
+ * Returns available workload option presets for a given computer/laptop appliance
+ */
+export function getApplianceWorkloadPresets(app: Partial<UserAppliance>): WorkloadOptionPreset[] {
+  return [
+    {
+      id: "light",
+      label: "Idle / Light",
+      sublabel: "Browsing, music, background downloads",
+      icon: "🍃",
+      watts: getApplianceWorkloadWatts(app, "light"),
+    },
+    {
+      id: "standard",
+      label: "Office / Standard",
+      sublabel: "Productivity, spreadsheets, video calls",
+      icon: "💼",
+      watts: getApplianceWorkloadWatts(app, "standard"),
+    },
+    {
+      id: "heavy",
+      label: "Gaming / Heavy",
+      sublabel: "AAA games, 3D rendering, video export",
+      icon: "🎮",
+      watts: getApplianceWorkloadWatts(app, "heavy"),
+    },
+  ];
 }

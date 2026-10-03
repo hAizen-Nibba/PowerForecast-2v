@@ -49,7 +49,11 @@ import {
   calculateCost,
   normalizeApplianceCategory,
   isCompressorInverterCategory,
+  isComputerCategory,
+  getApplianceEffectiveRunningWatts,
 } from "../../lib/dailyUsageService";
+import { PcWorkloadProfile } from "../../lib/pcHardwareService";
+import { PcWorkloadModeModal } from "./PcWorkloadModeModal";
 import { useRoom } from "../../context/RoomContext";
 
 interface ApplianceListProps {
@@ -125,6 +129,23 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
     return () => window.removeEventListener("powerforecast_circuit_toggled", handleCircuitToggled);
   }, [appliancesRes]);
 
+  // PC Workload Mode Modal state
+  const [pcModeAppliance, setPcModeAppliance] = useState<UserAppliance | null>(null);
+
+  const handleSelectPcMode = async (mode: PcWorkloadProfile, watts: number) => {
+    if (!pcModeAppliance) return;
+    const app = pcModeAppliance;
+    setPcModeAppliance(null);
+    const res = await switchOnCircuit(app, { workloadMode: mode, sessionWatts: watts });
+    if (res.success) {
+      const modeLabel = mode === "heavy" ? "Gaming" : mode === "light" ? "Idle / Light" : "Office / Standard";
+      showSuccess(`Stopwatch started for ${app.name} (${modeLabel} mode, ~${watts}W)! Real-time tracking active.`);
+      if (appliancesRes?.refetch) appliancesRes.refetch();
+    } else {
+      showError(`Failed to start stopwatch for ${app.name}`);
+    }
+  };
+
   const togglePower = async (app: UserAppliance) => {
     if (!canEdit) {
       showError("View-only members cannot toggle circuits.");
@@ -144,6 +165,12 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
         showError(`Failed to stop stopwatch for ${app.name}`);
       }
     } else {
+      // If it's a computer or laptop, trigger the 1-tap mode picker
+      if (isComputerCategory(app.category, app.name)) {
+        setPcModeAppliance(app);
+        return;
+      }
+
       const res = await switchOnCircuit(app);
       if (res.success) {
         showSuccess(`Stopwatch started for ${app.name}! Real-time energy tracking active.`);
@@ -168,8 +195,8 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
     if (!app.is_currently_on || !app.last_turned_on_at) return 0;
     const start = new Date(app.last_turned_on_at).getTime();
     const diffSeconds = Math.max(0, (now - start) / 1000);
-    const totalWatts = app.watts * (app.quantity || 1);
-    const accumulatedKwh = (totalWatts / 1000) * (diffSeconds / 3600);
+    const telemetry = getApplianceEffectiveRunningWatts(app, diffSeconds / 60);
+    const accumulatedKwh = (telemetry.effectiveWatts / 1000) * (diffSeconds / 3600);
     const rate = getEffectiveApplianceRate(app);
     return accumulatedKwh * rate;
   };
@@ -1197,7 +1224,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                   {/* Card Footer with Rate & Actions */}
                   <Box sx={{ mt: 2, pt: 1.5, borderTop: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     {isOn ? (
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "success.main" }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "success.main", flexWrap: "wrap" }}>
                         <Box
                           sx={{
                             width: 8,
@@ -1211,6 +1238,19 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                         <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace", fontSize: "0.75rem" }}>
                           {getRunningDuration(app.last_turned_on_at)} <span style={{ opacity: 0.8 }}>• ₱{liveSpent.toFixed(4)}</span>
                         </Typography>
+                        {(() => {
+                          const start = new Date(app.last_turned_on_at!).getTime();
+                          const diffMinutes = Math.max(0, (now - start) / 60000);
+                          const telemetry = getApplianceEffectiveRunningWatts(app, diffMinutes);
+                          return (
+                            <Chip
+                              label={telemetry.badgeText}
+                              color={telemetry.badgeColor}
+                              size="small"
+                              sx={{ height: 18, fontSize: "0.625rem", fontWeight: 700 }}
+                            />
+                          );
+                        })()}
                       </Box>
                     ) : (
                       <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
@@ -1340,6 +1380,16 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             if (appliancesRes?.refetch) appliancesRes.refetch();
             showInfo("Space deleted and appliances reassigned.");
           }}
+        />
+      )}
+
+      {/* PC Workload Mode 1-Tap Picker Modal */}
+      {pcModeAppliance && (
+        <PcWorkloadModeModal
+          open={Boolean(pcModeAppliance)}
+          onClose={() => setPcModeAppliance(null)}
+          appliance={pcModeAppliance}
+          onSelectMode={handleSelectPcMode}
         />
       )}
     </Box>
