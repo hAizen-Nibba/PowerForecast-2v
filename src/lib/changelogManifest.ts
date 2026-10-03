@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.7.0dv",
+    version: "3.7.0dv",
+    git_commit_tag: "3.7.0dv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.7.0dv - Fix rapid-fire infinite fetching loop: convert Sidebar room-change synchronization into an isolated event listener to eliminate re-render cascading refetches",
+  },
+  {
     id: "3.7.0cv",
     version: "3.7.0cv",
     git_commit_tag: "3.7.0cv",

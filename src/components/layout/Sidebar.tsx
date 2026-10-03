@@ -104,10 +104,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return () => window.removeEventListener("powerforecast_circuit_toggled", handleCircuitToggled);
   }, [appliancesRes]);
 
-  // Synchronize room changes
+  // Synchronize room changes via event listener
   useEffect(() => {
-    if (appliancesRes?.refetch) appliancesRes.refetch();
-  }, [activeRoom?.room_id, appliancesRes]);
+    const handleRoomChanged = () => {
+      if (appliancesRes?.refetch) appliancesRes.refetch();
+    };
+    window.addEventListener("powerforecast_room_changed", handleRoomChanged);
+    return () => window.removeEventListener("powerforecast_room_changed", handleRoomChanged);
+  }, [appliancesRes]);
 
   // Fetch Meralco Tariff & DB Status for mobile telemetry
   useEffect(() => {
