@@ -36,11 +36,21 @@ export function cleanupLegacyHouseholdStorage(): void {
  */
 export async function getOrCreateMyRoom(displayName?: string): Promise<RoomSummary | null> {
   try {
+    const { data: authData } = await supabaseClient.auth.getSession();
+    if (!authData?.session?.user) {
+      devLog.info('RoomService', 'getOrCreateMyRoom skipped: no active authenticated session.');
+      return null;
+    }
+
     const { data, error } = await supabaseClient.rpc('get_or_create_my_room', {
       p_display_name: displayName || null,
     });
 
     if (error) {
+      if (error.code === 'P0001' && error.message?.includes('Not authenticated')) {
+        devLog.warn('RoomService', 'get_or_create_my_room skipped: user session not established.');
+        return null;
+      }
       devLog.error('RoomService', 'get_or_create_my_room error:', error);
       return null;
     }
@@ -227,6 +237,15 @@ let isListRoomMembersRpcKnownBroken = false;
  * Fetches all rooms accessible to the authenticated user (owned + joined).
  */
 export async function listMyRooms(): Promise<RoomSummary[]> {
+  try {
+    const { data: authData } = await supabaseClient.auth.getSession();
+    if (!authData?.session?.user) {
+      return [];
+    }
+  } catch {
+    return [];
+  }
+
   if (isListMyRoomsRpcKnownBroken) {
     return await fallbackListMyRooms();
   }
@@ -234,6 +253,10 @@ export async function listMyRooms(): Promise<RoomSummary[]> {
   try {
     const { data, error } = await supabaseClient.rpc('list_my_rooms');
     if (error) {
+      if (error.code === 'P0001' && error.message?.includes('Not authenticated')) {
+        devLog.warn('RoomService', 'list_my_rooms skipped: user not authenticated.');
+        return [];
+      }
       if (error.code === '42703' || error.code === '42883' || error.message?.includes('acc.name')) {
         isListMyRoomsRpcKnownBroken = true;
         devLog.info('RoomService', 'list_my_rooms RPC requires schema patch; routing to resilient direct query fallback.');
@@ -268,6 +291,15 @@ export async function listMyRooms(): Promise<RoomSummary[]> {
  */
 export async function listRoomMembers(roomId: string): Promise<RoomMember[]> {
   if (!roomId) return [];
+
+  try {
+    const { data: authData } = await supabaseClient.auth.getSession();
+    if (!authData?.session?.user) {
+      return [];
+    }
+  } catch {
+    return [];
+  }
 
   if (isListRoomMembersRpcKnownBroken) {
     return await fallbackListRoomMembers(roomId);

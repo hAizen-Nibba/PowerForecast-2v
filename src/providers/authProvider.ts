@@ -209,7 +209,27 @@ export const authProvider: AuthProvider = {
         }
       }
 
-      if (userId) {
+      // Check if email confirmation is required by Supabase Auth
+      const requiresEmailConfirmation = !userSession && Boolean(data?.user);
+
+      if (requiresEmailConfirmation) {
+        // Clear any stale cached user so an unverified signup does not trigger authenticated room lookups
+        try {
+          localStorage.removeItem("powerforecast_active_user");
+          sessionStorage.removeItem("powerforecast_session_active");
+          sessionStorage.setItem("powerforecast_registered_at", Date.now().toString());
+        } catch (storageErr) {
+          devLog.warn("Auth", "Could not update registration storage flags:", storageErr);
+        }
+
+        devLog.info("Auth", `Registration requires email verification for ${trimmedEmail}. Redirecting to /verify-email.`);
+        return {
+          success: true,
+          redirectTo: `/verify-email?email=${encodeURIComponent(trimmedEmail)}`,
+        } as any;
+      }
+
+      if (userSession && userId) {
         const activeUser = {
           id: userId,
           email: trimmedEmail,
@@ -220,20 +240,10 @@ export const authProvider: AuthProvider = {
         };
         try {
           localStorage.setItem("powerforecast_active_user", JSON.stringify(activeUser));
+          sessionStorage.setItem("powerforecast_session_active", "true");
         } catch (storageErr) {
           devLog.warn("Auth", "Could not cache active user during registration:", storageErr);
         }
-      }
-
-      // Check if email confirmation is required by Supabase Auth
-      const requiresEmailConfirmation = !userSession && Boolean(data?.user);
-
-      if (requiresEmailConfirmation) {
-        devLog.info("Auth", `Registration requires email verification for ${trimmedEmail}. Redirecting to /verify-email.`);
-        return {
-          success: true,
-          redirectTo: `/verify-email?email=${encodeURIComponent(trimmedEmail)}`,
-        } as any;
       }
 
       devLog.info("Auth", "User registered successfully with active session. Proceeding to dashboard.");

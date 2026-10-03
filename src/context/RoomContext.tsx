@@ -85,6 +85,18 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Fetch or create user's rooms
   const refreshRooms = useCallback(async () => {
     if (!resolvedUser.id) return;
+
+    try {
+      const { data: authData } = await supabaseClient.auth.getSession();
+      if (!authData?.session?.user) {
+        setIsLoading(false);
+        return;
+      }
+    } catch {
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -122,6 +134,11 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (resolvedUser.id) {
       refreshRooms();
+    } else {
+      setRooms([]);
+      setActiveRoomId('');
+      setMembers([]);
+      setIsLoading(false);
     }
   }, [resolvedUser.id, refreshRooms]);
 

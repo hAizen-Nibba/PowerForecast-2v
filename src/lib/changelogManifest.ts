@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.7.2av",
+    version: "3.7.2av",
+    git_commit_tag: "3.7.2av",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Developer",
+    source: "github",
+    description:
+      "3.7.2av - Hotfix: Guard RoomService RPC and RoomContext room sync against unauthenticated invocations during new account registration, prevent premature active user caching on unconfirmed signups, and stamp email verification registration timestamp",
+  },
+  {
     id: "3.7.2v",
     version: "3.7.2v",
     git_commit_tag: "3.7.2v",
