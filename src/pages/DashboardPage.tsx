@@ -256,6 +256,7 @@ export const DashboardPage: React.FC = () => {
                 Create Your First Space
               </Button>
             ) : (
+              <>
                 <Tooltip title={isViewer ? "View-Only Mode: Adding appliances is restricted to Admins" : ""}>
                   <span>
                     <Button

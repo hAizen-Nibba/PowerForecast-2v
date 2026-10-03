@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.7.0av",
+    version: "3.7.0av",
+    git_commit_tag: "3.7.0av",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.7.0av - Fix deployment build failure: restore missing JSX fragment in DashboardPage, add missing Tooltip and icon imports in PelpCatalog and Sidebar, fix DeleteOutlined import in RoomMembersPanel, and prune orphaned invite code in SettingsView",
+  },
+  {
     id: "3.7.0v",
     version: "3.7.0v",
     git_commit_tag: "3.7.0v",

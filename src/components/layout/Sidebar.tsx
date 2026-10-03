@@ -37,6 +37,8 @@ import {
   AccessTime as ClockIcon,
   PowerSettingsNew as PowerIcon,
   ArrowForward as ArrowForwardIcon,
+  Visibility as VisibilityIcon,
+  Add as AddIcon,
 } from "@mui/icons-material";
 import Tooltip from "@mui/material/Tooltip";
 import { useList, useGetIdentity, useLogout } from "@refinedev/core";

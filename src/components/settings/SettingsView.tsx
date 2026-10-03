@@ -357,20 +357,6 @@ export const SettingsView: React.FC = () => {
     );
   };
 
-  const handleCopyLink = () => {
-    if (!generatedInvite?.link) return;
-    navigator.clipboard.writeText(generatedInvite.link);
-    setCopiedLink(true);
-    showSuccess(
-      language === "tl" ? "Nakopya na ang invite link sa clipboard!" : "Invite link copied to clipboard! Ready to share on Messenger or Viber.",
-      language === "tl" ? "Nakopya ang Link" : "Link Copied"
-    );
-    setTimeout(() => setCopiedLink(false), 3000);
-  };
-
-
-
-
   // ── Web Push & Background OS Notifications ────────────────
   const [isPushSubscribed, setIsPushSubscribed] = useState(false);
   const [isPushLoading, setIsPushLoading] = useState(false);

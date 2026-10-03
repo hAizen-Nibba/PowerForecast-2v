@@ -26,7 +26,7 @@ import {
   Visibility as VisibilityIcon,
   ContentCopy as CopyIcon,
   Refresh as RefreshIcon,
-  DeleteOutline as DeleteIcon,
+  DeleteOutlined as DeleteIcon,
   ExitToApp as LeaveIcon,
   Key as KeyIcon,
   Check as CheckIcon,
