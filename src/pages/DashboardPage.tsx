@@ -41,8 +41,12 @@ import { formatDateToKey, DEFAULT_EFFECTIVE_RATE } from "../lib/dailyUsageServic
 import { getMeralcoTariff, MeralcoTariffData, DEFAULT_MERALCO_TARIFF } from "../lib/meralcoRateService";
 import { getEffectiveApplianceRate } from "../lib/sessionService";
 
+import Tooltip from "@mui/material/Tooltip";
+import { useRoom } from "../context/RoomContext";
+
 export const DashboardPage: React.FC = () => {
   const { t } = useLanguage();
+  const { isViewer, canEdit } = useRoom();
   const { showSuccess } = useToast();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPelpModalOpen, setIsPelpModalOpen] = useState(false);
@@ -252,15 +256,19 @@ export const DashboardPage: React.FC = () => {
                 Create Your First Space
               </Button>
             ) : (
-              <>
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={() => setIsAddModalOpen(true)}
-                  startIcon={<PlusIcon />}
-                >
-                  {t("dash.addAppliance", "Add Appliance")}
-                </Button>
+                <Tooltip title={isViewer ? "View-Only Mode: Adding appliances is restricted to Admins" : ""}>
+                  <span>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      disabled={isViewer}
+                      onClick={() => setIsAddModalOpen(true)}
+                      startIcon={<PlusIcon />}
+                    >
+                      {t("dash.addAppliance", "Add Appliance")}
+                    </Button>
+                  </span>
+                </Tooltip>
                 <Button
                   variant="outlined"
                   size="small"

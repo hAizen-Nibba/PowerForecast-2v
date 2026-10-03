@@ -35,6 +35,7 @@ import {
 } from "../../lib/dailyUsageService";
 import { batchSaveSimulatedDay, clearSimulatedDay } from "../../lib/simulationService";
 import { useToast } from "../common/ToastProvider";
+import { useRoom } from "../../context/RoomContext";
 
 interface SimulatedDayModalProps {
   isOpen: boolean;
@@ -62,6 +63,7 @@ export const SimulatedDayModal: React.FC<SimulatedDayModalProps> = ({
   selectedSpaceId = "all",
   onSimulationSaved,
 }) => {
+  const { canEdit } = useRoom();
   const [activeTab, setActiveTab] = useState<number>(0);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const { showSuccess, showError, showInfo } = useToast();
@@ -118,6 +120,7 @@ export const SimulatedDayModal: React.FC<SimulatedDayModalProps> = ({
   };
 
   const handleResetToBaseline = async () => {
+    if (!canEdit) return;
     const baselineMap: Record<string, number> = {};
     activeAppliances.forEach((app) => {
       baselineMap[app.id] = Number(app.hours_per_day) || 0;
@@ -200,6 +203,7 @@ export const SimulatedDayModal: React.FC<SimulatedDayModalProps> = ({
   }, [activeAppliances, simulatedHours]);
 
   const handleSaveSimulation = async () => {
+    if (!canEdit) return;
     setIsSaving(true);
     try {
       const entriesToSave = activeAppliances.map((app) => {
@@ -372,9 +376,13 @@ export const SimulatedDayModal: React.FC<SimulatedDayModalProps> = ({
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
                 Fine-tune appliance target hours for {formattedDate} to test what-if scenarios
               </Typography>
-              <Button size="small" variant="outlined" startIcon={<ResetIcon />} onClick={handleResetToBaseline}>
-                Reset to Baseline
-              </Button>
+              <Tooltip title={!canEdit ? "View-only members cannot reset simulation plans" : ""}>
+                <span>
+                  <Button size="small" variant="outlined" startIcon={<ResetIcon />} disabled={!canEdit} onClick={handleResetToBaseline}>
+                    Reset to Baseline
+                  </Button>
+                </span>
+              </Tooltip>
             </Box>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, maxHeight: 380, overflowY: "auto", pr: 0.5 }}>
@@ -414,13 +422,13 @@ export const SimulatedDayModal: React.FC<SimulatedDayModalProps> = ({
                     {/* Steppers & Presets */}
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                        <IconButton size="small" onClick={() => handleUpdateHours(item.app.id, -0.5)} disabled={currentH <= 0}>
+                        <IconButton size="small" onClick={() => handleUpdateHours(item.app.id, -0.5)} disabled={!canEdit || currentH <= 0}>
                           <MinusIcon fontSize="small" />
                         </IconButton>
                         <Typography variant="subtitle2" sx={{ width: 50, textAlign: "center", fontWeight: 900, fontFamily: "monospace" }}>
                           {currentH}h
                         </Typography>
-                        <IconButton size="small" onClick={() => handleUpdateHours(item.app.id, 0.5)} disabled={currentH >= 24}>
+                        <IconButton size="small" onClick={() => handleUpdateHours(item.app.id, 0.5)} disabled={!canEdit || currentH >= 24}>
                           <PlusIcon fontSize="small" />
                         </IconButton>
                       </Box>
@@ -433,7 +441,11 @@ export const SimulatedDayModal: React.FC<SimulatedDayModalProps> = ({
                             size="small"
                             variant={currentH === preset ? "filled" : "outlined"}
                             color={currentH === preset ? "primary" : "default"}
-                            onClick={() => handleSetExactHours(item.app.id, preset)}
+                            disabled={!canEdit}
+                            onClick={() => {
+                              if (!canEdit) return;
+                              handleSetExactHours(item.app.id, preset);
+                            }}
                             sx={{ height: 24, fontSize: "0.6875rem", fontWeight: 700 }}
                           />
                         ))}
@@ -515,16 +527,20 @@ export const SimulatedDayModal: React.FC<SimulatedDayModalProps> = ({
         <Button variant="outlined" onClick={onClose} sx={{ borderRadius: 1.25, fontWeight: 700 }}>
           Close
         </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<SaveIcon />}
-          onClick={handleSaveSimulation}
-          disabled={isSaving}
-          sx={{ borderRadius: 1.25, fontWeight: 800, px: 3 }}
-        >
-          {isSaving ? "Saving Plan..." : "Commit Simulation Plan"}
-        </Button>
+        <Tooltip title={!canEdit ? "View-only members cannot save simulation plans" : ""}>
+          <span>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<SaveIcon />}
+              onClick={handleSaveSimulation}
+              disabled={isSaving || !canEdit}
+              sx={{ borderRadius: 1.25, fontWeight: 800, px: 3 }}
+            >
+              {isSaving ? "Saving Plan..." : "Commit Simulation Plan"}
+            </Button>
+          </span>
+        </Tooltip>
       </DialogActions>
     </Dialog>
   );

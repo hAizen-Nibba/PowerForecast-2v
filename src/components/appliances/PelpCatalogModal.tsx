@@ -33,6 +33,7 @@ import { getDefaultStartHour } from "../../lib/loadCurveService";
 import { normalizeApplianceCategory, isCompressorInverterCategory } from "../../lib/dailyUsageService";
 import { DuplicateApplianceModal } from "./DuplicateApplianceModal";
 import { ApplianceRoutineModal } from "./ApplianceRoutineModal";
+import { useRoom } from "../../context/RoomContext";
 
 interface PelpCatalogModalProps {
   isOpen: boolean;
@@ -45,6 +46,7 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
   onClose,
   defaultListId,
 }) => {
+  const { canEdit } = useRoom();
   const [selectedCategory, setSelectedCategory] = useState<string>("air-conditioners");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [items, setItems] = useState<PelpItem[]>([]);
@@ -104,6 +106,7 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
   };
 
   const handleImport = (item: PelpItem) => {
+    if (!canEdit) return;
     const monthlyKwh = item.monthly_energy_consumption_kwh || 120;
     const watts = item.power_watts || 750;
 
@@ -456,16 +459,21 @@ export const PelpCatalogModal: React.FC<PelpCatalogModalProps> = ({
                         ~₱{estMonthlyCost.toFixed(2)}/mo
                       </Typography>
 
-                      <Button
-                        size="small"
-                        variant={isImported ? "contained" : "outlined"}
-                        color={isImported ? "success" : "primary"}
-                        onClick={() => handleImport(item)}
-                        startIcon={isImported ? <CheckCircleIcon /> : <ImportIcon />}
-                        sx={{ fontSize: "0.75rem", py: "2px", px: 1.5 }}
-                      >
-                        {isImported ? "Imported!" : "Add to Inventory"}
-                      </Button>
+                      <Tooltip title={!canEdit ? "View-only members cannot add appliances" : ""}>
+                        <span>
+                          <Button
+                            size="small"
+                            variant={isImported ? "contained" : "outlined"}
+                            color={isImported ? "success" : "primary"}
+                            disabled={!canEdit}
+                            onClick={() => handleImport(item)}
+                            startIcon={isImported ? <CheckCircleIcon /> : <ImportIcon />}
+                            sx={{ fontSize: "0.75rem", py: "2px", px: 1.5 }}
+                          >
+                            {isImported ? "Imported!" : "Add to Inventory"}
+                          </Button>
+                        </span>
+                      </Tooltip>
                     </Box>
                   </Card>
                 </Grid>

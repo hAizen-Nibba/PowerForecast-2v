@@ -11,6 +11,7 @@ import { SystemTestingBanner } from "../common/SystemTestingBanner";
 import { useColorMode } from "../../theme/AppTheme";
 import { TourProvider } from "../tour/TourProvider";
 import { useStopwatchMidnightRollover } from "../../hooks/useStopwatchMidnightRollover";
+import { ViewOnlyBanner } from "../rooms/ViewOnlyBanner";
 
 export const Layout: React.FC = () => {
   const location = useLocation();
@@ -65,6 +66,9 @@ export const Layout: React.FC = () => {
 
         {/* HubSpot-Style Testing Phase Announcement Banner Strip */}
         <SystemTestingBanner variant="app" />
+
+        {/* View-Only Mode Banner */}
+        <ViewOnlyBanner />
 
         <Box
           component="main"

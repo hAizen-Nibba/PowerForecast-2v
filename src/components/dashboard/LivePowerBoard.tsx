@@ -31,12 +31,14 @@ import { calculateSimultaneousDemand } from "../../lib/meralcoCalculator";
 import { supabaseClient } from "../../lib/supabaseClient";
 import { calculateKwh, calculateApplianceKwh, calculateCost } from "../../lib/dailyUsageService";
 import { switchOnCircuit, switchOffCircuit, getEffectiveApplianceRate } from "../../lib/sessionService";
+import { useRoom } from "../../context/RoomContext";
 
 interface LivePowerBoardProps {
   onOpenAddModal: () => void;
 }
 
 export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }) => {
+  const { canEdit, isViewer } = useRoom();
   const appliancesRes = useList<UserAppliance>({
     resource: "user_appliances",
     pagination: { mode: "off" },
@@ -102,6 +104,7 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
   };
 
   const togglePower = async (app: UserAppliance) => {
+    if (!canEdit) return;
     if (app.is_currently_on) {
       await switchOffCircuit(app);
     } else {
@@ -161,15 +164,20 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
             </Box>
           </Box>
 
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={onOpenAddModal}
-            startIcon={<PlusIcon />}
-            sx={{ fontWeight: 700 }}
-          >
-            Add Appliance
-          </Button>
+          <Tooltip title={!canEdit ? "View-only members cannot add appliances" : ""}>
+            <span>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={onOpenAddModal}
+                disabled={!canEdit}
+                startIcon={<PlusIcon />}
+                sx={{ fontWeight: 700 }}
+              >
+                Add Appliance
+              </Button>
+            </span>
+          </Tooltip>
         </Box>
 
         {/* Real-time Simultaneous Demand Gauge */}
@@ -245,9 +253,27 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
                 ? "Set up your first space to start adding appliances."
                 : "No appliances configured in your household yet."}
             </Typography>
-            <Button variant="contained" size="small" onClick={onOpenAddModal} startIcon={<PlusIcon />}>
-              {spaces.length === 0 ? "Set Up Space & Add Appliance" : "Add First Appliance"}
-            </Button>
+            {spaces.length === 0 ? (
+              canEdit ? (
+                <Button variant="contained" size="small" onClick={onOpenAddModal} startIcon={<PlusIcon />}>
+                  Set Up Space & Add Appliance
+                </Button>
+              ) : (
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  Ask a Room Admin to set up spaces and add appliances.
+                </Typography>
+              )
+            ) : (
+              canEdit ? (
+                <Button variant="contained" size="small" onClick={onOpenAddModal} startIcon={<PlusIcon />}>
+                  Add First Appliance
+                </Button>
+              ) : (
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  Ask a Room Admin to register appliances to this room.
+                </Typography>
+              )
+            )}
           </Box>
         ) : (
           <Grid container spacing={{ xs: 1.5, sm: 2 }}>
@@ -326,24 +352,35 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
                         sx={{ fontWeight: 700, fontFamily: "monospace", height: 20, fontSize: "0.6875rem" }}
                       />
 
-                      <Tooltip title={isOn ? "Power OFF Circuit" : "Power ON Circuit"}>
-                        <IconButton
-                          size="small"
-                          onClick={() => togglePower(app)}
-                          sx={{
-                            bgcolor: isOn ? "success.main" : "action.hover",
-                            color: isOn ? "#ffffff" : "text.secondary",
-                            border: "1px solid",
-                            borderColor: isOn ? "success.dark" : "divider",
-                            "&:hover": {
-                              bgcolor: isOn ? "success.dark" : "action.selected",
-                              transform: "scale(1.08)",
-                            },
-                            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                          }}
-                        >
-                          <PowerIcon fontSize="small" />
-                        </IconButton>
+                      <Tooltip
+                        title={
+                          !canEdit
+                            ? "View-only members cannot toggle circuits"
+                            : isOn
+                            ? "Power OFF Circuit"
+                            : "Power ON Circuit"
+                        }
+                      >
+                        <span>
+                          <IconButton
+                            size="small"
+                            disabled={!canEdit}
+                            onClick={() => togglePower(app)}
+                            sx={{
+                              bgcolor: isOn ? "success.main" : "action.hover",
+                              color: isOn ? "#ffffff" : "text.secondary",
+                              border: "1px solid",
+                              borderColor: isOn ? "success.dark" : "divider",
+                              "&:hover": {
+                                bgcolor: isOn ? "success.dark" : "action.selected",
+                                transform: canEdit ? "scale(1.08)" : "none",
+                              },
+                              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                            }}
+                          >
+                            <PowerIcon fontSize="small" />
+                          </IconButton>
+                        </span>
                       </Tooltip>
                     </Box>
                   </Card>

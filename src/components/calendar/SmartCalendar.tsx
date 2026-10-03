@@ -49,8 +49,10 @@ import {
   setStoredBillingPeriodConfig,
   resolveBillingPeriodWindow,
 } from "../../lib/dailyUsageService";
+import { useRoom } from "../../context/RoomContext";
 
 export const SmartCalendar: React.FC = () => {
+  const { canEdit, isViewer } = useRoom();
   // Calendar Tab: Actual Tracker vs Simulation Plan
   const [calendarTab, setCalendarTab] = useState<"actual" | "simulation">(() => {
     if (typeof window !== "undefined") {
@@ -327,23 +329,28 @@ export const SmartCalendar: React.FC = () => {
 
           {/* Simulate Appliance Button (Visible in Simulation Tab) */}
           {calendarTab === "simulation" && (
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<ScienceIcon />}
-              onClick={() => setIsSimulateApplianceOpen(true)}
-              sx={{
-                borderRadius: 1.25,
-                fontWeight: 800,
-                px: 2,
-                py: 0.8,
-                bgcolor: "primary.main",
-                color: "#ffffff",
-                boxShadow: "0 4px 14px rgba(0, 229, 201, 0.25)",
-              }}
-            >
-              Simulate Appliance
-            </Button>
+            <Tooltip title={!canEdit ? "View-only members cannot create simulation schedules" : ""}>
+              <span>
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<ScienceIcon />}
+                  disabled={!canEdit}
+                  onClick={() => setIsSimulateApplianceOpen(true)}
+                  sx={{
+                    borderRadius: 1.25,
+                    fontWeight: 800,
+                    px: 2,
+                    py: 0.8,
+                    bgcolor: "primary.main",
+                    color: "#ffffff",
+                    boxShadow: canEdit ? "0 4px 14px rgba(0, 229, 201, 0.25)" : "none",
+                  }}
+                >
+                  Simulate Appliance
+                </Button>
+              </span>
+            </Tooltip>
           )}
         </Box>
       </Box>

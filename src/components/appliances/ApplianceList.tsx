@@ -50,12 +50,14 @@ import {
   normalizeApplianceCategory,
   isCompressorInverterCategory,
 } from "../../lib/dailyUsageService";
+import { useRoom } from "../../context/RoomContext";
 
 interface ApplianceListProps {
   onOpenAiScanner?: () => void;
 }
 
 export const ApplianceList: React.FC<ApplianceListProps> = () => {
+  const { canEdit, isViewer } = useRoom();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedRoom, setSelectedRoom] = useState("all");
@@ -124,6 +126,10 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
   }, [appliancesRes]);
 
   const togglePower = async (app: UserAppliance) => {
+    if (!canEdit) {
+      showError("View-only members cannot toggle circuits.");
+      return;
+    }
     if (app.is_active === false) {
       showError("Appliance is blacklisted. Restore it first to enable the stopwatch.");
       return;
@@ -265,6 +271,10 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
   const spaceBillCalc = calculateMeralcoBill(spaceMonthlyKwh, undefined, 0, false, spaceTariffType);
 
   const handleToggleBlacklist = async (app: UserAppliance) => {
+    if (!canEdit) {
+      showError("View-only members cannot modify appliance configuration.");
+      return;
+    }
     const isCurrentlyBlacklisted = app.is_active === false;
     const willBeBlacklisted = !isCurrentlyBlacklisted;
 
@@ -298,6 +308,10 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
   };
 
   const handleClearAll = async () => {
+    if (!canEdit) {
+      showError("View-only members cannot clear appliances.");
+      return;
+    }
     const ok = await confirm({
       title: "Clear All Registered Appliances?",
       message: `Are you sure you want to remove all ${currentSpaceAppliances.length} appliance(s) from "${activeSpace?.name}"?`,
@@ -318,6 +332,43 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
   // 1. FIRST-TIME ONBOARDING (ZERO SPACES GATE)
   // -------------------------------------------------------------
   if (spaces.length === 0) {
+    if (!canEdit) {
+      return (
+        <Box sx={{ maxWidth: 640, mx: "auto", py: { xs: 4, sm: 6 } }}>
+          <Card
+            sx={{
+              p: { xs: 3, sm: 4.5 },
+              borderRadius: 1.5,
+              textAlign: "center",
+              border: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            <Box
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: "50%",
+                bgcolor: "rgba(0, 229, 201, 0.15)",
+                color: "primary.main",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                mb: 2,
+              }}
+            >
+              <BoltIcon sx={{ fontSize: 32 }} />
+            </Box>
+            <Typography variant="h5" sx={{ fontWeight: 900, mb: 1 }}>
+              No Spaces Configured Yet
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6 }}>
+              You are currently viewing this room in <strong>View-only</strong> mode. Please ask a Room Admin or the Room Owner to set up spaces and add appliances.
+            </Typography>
+          </Card>
+        </Box>
+      );
+    }
     return (
       <Box sx={{ maxWidth: 640, mx: "auto", py: { xs: 4, sm: 6 } }}>
         <Card sx={{
@@ -520,19 +571,24 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
         </Tabs>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Button
-            variant="contained"
-            size="small"
-            color="secondary"
-            startIcon={<PlusIcon />}
-            onClick={() => {
-              setSpaceToEdit(null);
-              setIsSpaceModalOpen(true);
-            }}
-            sx={{ borderRadius: 2, fontWeight: 800 }}
-          >
-            Add Space
-          </Button>
+          <Tooltip title={!canEdit ? "View-only members cannot add spaces" : ""}>
+            <span>
+              <Button
+                variant="contained"
+                size="small"
+                color="secondary"
+                disabled={!canEdit}
+                startIcon={<PlusIcon />}
+                onClick={() => {
+                  setSpaceToEdit(null);
+                  setIsSpaceModalOpen(true);
+                }}
+                sx={{ borderRadius: 2, fontWeight: 800 }}
+              >
+                Add Space
+              </Button>
+            </span>
+          </Tooltip>
         </Box>
       </Box>
 
@@ -619,20 +675,25 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             color={spaceTariffType === "commercial" ? "secondary" : "default"}
             sx={{ fontWeight: 800, fontFamily: "monospace" }}
           />
-          <Button
-            data-tour="appliance-space-manage"
-            variant="outlined"
-            size="small"
-            startIcon={<SettingsIcon />}
-            onClick={() => {
-              setSpaceToEdit(activeSpace);
-              setIsSpaceModalOpen(true);
-            }}
-            sx={{ borderRadius: 1, fontWeight: 700 }}
-          >
-            Configure
-          </Button>
-          {spaces.length > 1 && (
+          <Tooltip title={!canEdit ? "View-only members cannot configure spaces" : ""}>
+            <span>
+              <Button
+                data-tour="appliance-space-manage"
+                variant="outlined"
+                size="small"
+                disabled={!canEdit}
+                startIcon={<SettingsIcon />}
+                onClick={() => {
+                  setSpaceToEdit(activeSpace);
+                  setIsSpaceModalOpen(true);
+                }}
+                sx={{ borderRadius: 1, fontWeight: 700 }}
+              >
+                Configure
+              </Button>
+            </span>
+          </Tooltip>
+          {spaces.length > 1 && canEdit && (
             <Button
               variant="outlined"
               color="error"
@@ -647,7 +708,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               Delete Space
             </Button>
           )}
-          {currentSpaceAppliances.length > 0 && (
+          {currentSpaceAppliances.length > 0 && canEdit && (
             <Button
               variant="outlined"
               color="error"
@@ -688,28 +749,33 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-          <Button
-            variant="contained"
-            color="primary"
-            size="large"
-            startIcon={<PlusIcon />}
-            onClick={() => {
-              setApplianceToEdit(null);
-              setAddModalInitialTab(0);
-              setIsAddModalOpen(true);
-            }}
-            sx={{
-              fontWeight: 800,
-              px: 3,
-              py: 1.1,
-              borderRadius: 1.25,
-              boxShadow: "0 4px 16px rgba(0, 229, 201, 0.25)",
-              fontSize: "0.9375rem",
-              textTransform: "none",
-            }}
-          >
-            + Add Appliance
-          </Button>
+          <Tooltip title={!canEdit ? "View-only members cannot add appliances" : ""}>
+            <span>
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                disabled={!canEdit}
+                startIcon={<PlusIcon />}
+                onClick={() => {
+                  setApplianceToEdit(null);
+                  setAddModalInitialTab(0);
+                  setIsAddModalOpen(true);
+                }}
+                sx={{
+                  fontWeight: 800,
+                  px: 3,
+                  py: 1.1,
+                  borderRadius: 1.25,
+                  boxShadow: canEdit ? "0 4px 16px rgba(0, 229, 201, 0.25)" : "none",
+                  fontSize: "0.9375rem",
+                  textTransform: "none",
+                }}
+              >
+                + Add Appliance
+              </Button>
+            </span>
+          </Tooltip>
           <Box sx={{ display: { xs: "none", md: "block" } }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
               Add custom devices, import from 12k+ certified PELP models, or scan energy stickers
@@ -726,24 +792,28 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             label="Manual"
             size="small"
             variant="outlined"
+            disabled={!canEdit}
             onClick={() => {
+              if (!canEdit) return;
               setApplianceToEdit(null);
               setAddModalInitialTab(0);
               setIsAddModalOpen(true);
             }}
-            sx={{ cursor: "pointer", fontWeight: 600 }}
+            sx={{ cursor: canEdit ? "pointer" : "default", fontWeight: 600 }}
           />
           <Chip
             icon={<DatabaseIcon sx={{ fontSize: "14px !important" }} />}
             label="PELP Catalog"
             size="small"
             variant="outlined"
+            disabled={!canEdit}
             onClick={() => {
+              if (!canEdit) return;
               setApplianceToEdit(null);
               setAddModalInitialTab(1);
               setIsAddModalOpen(true);
             }}
-            sx={{ cursor: "pointer", fontWeight: 600 }}
+            sx={{ cursor: canEdit ? "pointer" : "default", fontWeight: 600 }}
           />
           <Chip
             icon={<CameraIcon sx={{ fontSize: "14px !important" }} />}
@@ -751,12 +821,14 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             size="small"
             color="primary"
             variant="outlined"
+            disabled={!canEdit}
             onClick={() => {
+              if (!canEdit) return;
               setApplianceToEdit(null);
               setAddModalInitialTab(2);
               setIsAddModalOpen(true);
             }}
-            sx={{ cursor: "pointer", fontWeight: 700 }}
+            sx={{ cursor: canEdit ? "pointer" : "default", fontWeight: 700 }}
           />
         </Box>
       </Paper>
@@ -988,7 +1060,9 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                       {/* Start / Stop Live Stopwatch Button */}
                       <Tooltip
                         title={
-                          isBlacklisted
+                          !canEdit
+                            ? "View-only members cannot toggle circuits"
+                            : isBlacklisted
                             ? "Appliance is blacklisted — click restore below to enable stopwatch"
                             : isOn
                             ? "Stop Live Stopwatch (Auto-logs duration and energy into today's session records)"
@@ -1000,7 +1074,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                             size="small"
                             variant={isOn ? "contained" : "outlined"}
                             color={isOn ? "error" : "primary"}
-                            disabled={isBlacklisted}
+                            disabled={isBlacklisted || !canEdit}
                             onClick={() => togglePower(app)}
                             startIcon={
                               isOn ? (
@@ -1148,67 +1222,78 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                       {/* Blacklist / Exclude Toggle Action */}
                       <Tooltip
                         title={
-                          isBlacklisted
+                          !canEdit
+                            ? "View-only members cannot modify appliances"
+                            : isBlacklisted
                             ? "Restore appliance to Forecast & Calendar calculations"
                             : "Blacklist appliance (Exclude from Calendar & Forecast)"
                         }
                       >
-                        <IconButton
-                          size="small"
-                          onClick={() => handleToggleBlacklist(app)}
-                          sx={{
-                            color: isBlacklisted ? "#f59e0b" : "text.secondary",
-                            bgcolor: isBlacklisted
-                              ? (theme) =>
-                                theme.palette.mode === "dark"
-                                  ? "rgba(245, 158, 11, 0.16)"
-                                  : "rgba(245, 158, 11, 0.1)"
-                              : "transparent",
-                            border: isBlacklisted ? "1px solid rgba(245, 158, 11, 0.35)" : "none",
-                            "&:hover": {
-                              bgcolor: isBlacklisted ? "rgba(245, 158, 11, 0.25)" : "action.hover",
-                              color: isBlacklisted ? "#fbbf24" : "warning.main",
-                            },
-                          }}
-                        >
-                          <BlockIcon fontSize="small" />
-                        </IconButton>
+                        <span>
+                          <IconButton
+                            size="small"
+                            disabled={!canEdit}
+                            onClick={() => handleToggleBlacklist(app)}
+                            sx={{
+                              color: isBlacklisted ? "#f59e0b" : "text.secondary",
+                              bgcolor: isBlacklisted
+                                ? (theme) =>
+                                  theme.palette.mode === "dark"
+                                    ? "rgba(245, 158, 11, 0.16)"
+                                    : "rgba(245, 158, 11, 0.1)"
+                                : "transparent",
+                              border: isBlacklisted ? "1px solid rgba(245, 158, 11, 0.35)" : "none",
+                              "&:hover": {
+                                bgcolor: isBlacklisted ? "rgba(245, 158, 11, 0.25)" : "action.hover",
+                                color: isBlacklisted ? "#fbbf24" : "warning.main",
+                              },
+                            }}
+                          >
+                            <BlockIcon fontSize="small" />
+                          </IconButton>
+                        </span>
                       </Tooltip>
 
-                      <Tooltip title="Edit Appliance">
-                        <IconButton
-                          size="small"
-                          onClick={() => {
-                            setApplianceToEdit(app);
-                            setIsAddModalOpen(true);
-                          }}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
+                      <Tooltip title={!canEdit ? "View-only members cannot edit appliances" : "Edit Appliance"}>
+                        <span>
+                          <IconButton
+                            size="small"
+                            disabled={!canEdit}
+                            onClick={() => {
+                              setApplianceToEdit(app);
+                              setIsAddModalOpen(true);
+                            }}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </span>
                       </Tooltip>
 
-                      <Tooltip title="Delete Appliance">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={async () => {
-                            const ok = await confirm({
-                              title: "Delete Appliance?",
-                              message: `Are you sure you want to remove "${app.name}" (${app.watts}W)?`,
-                              detail: "Historical usage data and saved session logs for this device will remain archived in your audit records.",
-                              itemName: `${app.name} • ${app.category || "General"}`,
-                              confirmText: "Yes, Delete",
-                              cancelText: "Cancel",
-                              severity: "error",
-                            });
-                            if (ok) {
-                              deleteAppliance({ resource: "user_appliances", id: app.id });
-                              showInfo(`Removed ${app.name}`);
-                            }
-                          }}
-                        >
-                          <TrashIcon fontSize="small" />
-                        </IconButton>
+                      <Tooltip title={!canEdit ? "View-only members cannot delete appliances" : "Delete Appliance"}>
+                        <span>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            disabled={!canEdit}
+                            onClick={async () => {
+                              const ok = await confirm({
+                                title: "Delete Appliance?",
+                                message: `Are you sure you want to remove "${app.name}" (${app.watts}W)?`,
+                                detail: "Historical usage data and saved session logs for this device will remain archived in your audit records.",
+                                itemName: `${app.name} • ${app.category || "General"}`,
+                                confirmText: "Yes, Delete",
+                                cancelText: "Cancel",
+                                severity: "error",
+                              });
+                              if (ok) {
+                                deleteAppliance({ resource: "user_appliances", id: app.id });
+                                showInfo(`Removed ${app.name}`);
+                              }
+                            }}
+                          >
+                            <TrashIcon fontSize="small" />
+                          </IconButton>
+                        </span>
                       </Tooltip>
                     </Box>
                   </Box>

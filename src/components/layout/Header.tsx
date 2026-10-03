@@ -41,6 +41,8 @@ import { useTour } from "../../hooks/useTour";
 import { ROUTE_TO_TOUR_PAGE } from "../tour/tourSteps";
 import { useLanguage } from "../../context/LanguageContext";
 import { MeralcoRatePopover } from "./MeralcoRatePopover";
+import { RoomSwitcher } from "../rooms/RoomSwitcher";
+import { useRoom } from "../../context/RoomContext";
 
 interface HeaderProps {
   onOpenSidebar: () => void;
@@ -202,6 +204,9 @@ export const Header: React.FC<HeaderProps> = ({
           <Box data-tour="header-rate-popover">
             <MeralcoRatePopover />
           </Box>
+
+          {/* Active Room Code & Room Switcher */}
+          <RoomSwitcher />
         </Box>
 
         {/* Center: Live Time / Date */}

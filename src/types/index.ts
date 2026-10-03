@@ -41,38 +41,29 @@ export interface UserAppliance {
   updated_at?: string;
 }
 
-export type HouseholdRole = 'owner' | 'member';
+export type RoomRole = 'owner' | 'admin' | 'viewer';
 
-export interface HouseholdMember {
-  id: string;
-  name: string;
-  email: string;
-  role: HouseholdRole;
-  status: 'active' | 'pending';
-  joinedAt: string;
-  inviteCode?: string;
-}
-
-export interface PendingApplianceRequest {
-  id: string;
-  household_id: string;
-  requested_by_id: string;
-  requested_by_name: string;
-  requested_by_email: string;
-  requested_at: string;
-  status: 'pending' | 'approved' | 'rejected';
-  appliance_data: Partial<UserAppliance>;
-}
-
-export interface HouseholdProfile {
-  household_id: string;
+export interface RoomSummary {
+  room_id: string;
+  room_name: string;
+  room_code: string;
   owner_id: string;
   owner_name: string;
   owner_email: string;
-  invite_code: string;
-  created_at: string;
-  members: HouseholdMember[];
+  role: RoomRole;
+  is_owner: boolean;
+  created_at?: string;
 }
+
+export interface RoomMember {
+  user_id: string;
+  display_name: string;
+  email: string;
+  role: RoomRole;
+  is_owner: boolean;
+  joined_at: string;
+}
+
 
 export const STREAMLINED_CATEGORIES = [
   "Air Conditioners",

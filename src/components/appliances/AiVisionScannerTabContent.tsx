@@ -44,6 +44,7 @@ import {
 import { devLog } from "../../lib/devLogger";
 import { DuplicateApplianceModal } from "./DuplicateApplianceModal";
 import { PcSpecBuilderSection } from "./PcSpecBuilderSection";
+import { useRoom } from "../../context/RoomContext";
 
 interface AiVisionScannerTabContentProps {
   selectedListId: string;
@@ -56,6 +57,7 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
   onSelectedListIdChange,
   onClose,
 }) => {
+  const { canEdit } = useRoom();
   const [categoryHint, setCategoryHint] = useState<string>("Auto-Detect from Photo");
   const [isScanning, setIsScanning] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
@@ -201,6 +203,7 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
   };
 
   const handleSaveToInventory = () => {
+    if (!canEdit) return;
     const targetListId = selectedListId || (spaces[0]?.id ?? null);
     if (!targetListId) {
       setScanError("A space is required to save appliances. Please create a space first in the Manual Entry tab.");
@@ -447,15 +450,20 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
               Configured PC: <strong>{editWatts > 0 ? editWatts : 350}W Rated</strong> / <strong>{editCustomCruisingWatts || Math.round((editWatts > 0 ? editWatts : 350) * 0.45)}W Running</strong>. You can upload photos below to scan labels, or save this rig directly.
             </Typography>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={handleSaveToInventory}
-              startIcon={<CheckCircleIcon />}
-              sx={{ fontWeight: 700, textTransform: "none" }}
-            >
-              Save Configured PC to Space
-            </Button>
+            <Tooltip title={!canEdit ? "View-only members cannot add appliances" : ""}>
+              <span>
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={handleSaveToInventory}
+                  disabled={!canEdit}
+                  startIcon={<CheckCircleIcon />}
+                  sx={{ fontWeight: 700, textTransform: "none" }}
+                >
+                  Save Configured PC to Space
+                </Button>
+              </span>
+            </Tooltip>
           </Box>
         </Box>
       )}
@@ -974,15 +982,19 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
             <Button variant="outlined" onClick={() => setScanResult(null)}>
               Rescan / Reset
             </Button>
-            <Button
-              variant="contained"
-              color="success"
-              onClick={handleSaveToInventory}
-              disabled={isSaving}
-              startIcon={<CheckCircleIcon />}
-            >
-              Save Scanned Appliance
-            </Button>
+            <Tooltip title={!canEdit ? "View-only members cannot add appliances" : ""}>
+              <span>
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={handleSaveToInventory}
+                  disabled={isSaving || !canEdit}
+                  startIcon={<CheckCircleIcon />}
+                >
+                  Save Scanned Appliance
+                </Button>
+              </span>
+            </Tooltip>
           </Box>
         </Box>
       )}

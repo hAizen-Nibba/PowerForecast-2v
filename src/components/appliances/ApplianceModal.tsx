@@ -46,6 +46,7 @@ import { SpaceManagementModal } from "./SpaceManagementModal";
 import { PelpCatalogTabContent } from "./PelpCatalogTabContent";
 import { AiVisionScannerTabContent } from "./AiVisionScannerTabContent";
 import { PcSpecBuilderSection } from "./PcSpecBuilderSection";
+import { useRoom } from "../../context/RoomContext";
 
 interface ApplianceModalProps {
   isOpen: boolean;
@@ -62,6 +63,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
   defaultListId,
   initialTab = 0,
 }) => {
+  const { canEdit } = useRoom();
   const [activeTab, setActiveTab] = useState<number>(initialTab);
 
   // Manual Entry Form states
@@ -207,6 +209,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
 
   const handleSubmitManual = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canEdit) return;
     if (!name.trim()) {
       setNameError(true);
       return;
@@ -924,23 +927,31 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
               <Button variant="outlined" onClick={onClose} disabled={isCreating || isUpdating}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                form="manual-appliance-form"
-                onClick={(e) => {
-                  // Direct trigger fallback in case browser doesn't associate external form attribute
-                  if (!name.trim()) {
-                    setNameError(true);
-                    e.preventDefault();
-                  }
-                }}
-                variant="contained"
-                disabled={isCreating || isUpdating}
-                startIcon={<SaveIcon />}
-                sx={{ fontWeight: 700 }}
-              >
-                {isEditing ? "Save Changes" : "Save Appliance"}
-              </Button>
+              <Tooltip title={!canEdit ? "View-only members cannot add or edit appliances" : ""}>
+                <span>
+                  <Button
+                    type="submit"
+                    form="manual-appliance-form"
+                    onClick={(e) => {
+                      if (!canEdit) {
+                        e.preventDefault();
+                        return;
+                      }
+                      // Direct trigger fallback in case browser doesn't associate external form attribute
+                      if (!name.trim()) {
+                        setNameError(true);
+                        e.preventDefault();
+                      }
+                    }}
+                    variant="contained"
+                    disabled={isCreating || isUpdating || !canEdit}
+                    startIcon={<SaveIcon />}
+                    sx={{ fontWeight: 700 }}
+                  >
+                    {isEditing ? "Save Changes" : "Save Appliance"}
+                  </Button>
+                </span>
+              </Tooltip>
             </Box>
           </DialogActions>
         )}

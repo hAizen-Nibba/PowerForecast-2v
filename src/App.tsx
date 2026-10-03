@@ -42,18 +42,12 @@ import {
   HistoryEdu as ChangelogIcon,
   Settings as SettingsIcon,
 } from "@mui/icons-material";
-import { HouseholdProvider, useHousehold } from "./context/HouseholdContext";
-import { HouseholdAccessModal } from "./components/household/HouseholdAccessModal";
+import { RoomProvider, useRoom } from "./context/RoomContext";
+import { JoinRoomModal } from "./components/rooms/JoinRoomModal";
 
-const HouseholdAccessModalConsumer: React.FC = () => {
-  const { isHouseholdModalOpen, closeHouseholdModal, householdModalTab } = useHousehold();
-  return (
-    <HouseholdAccessModal
-      isOpen={isHouseholdModalOpen}
-      onClose={closeHouseholdModal}
-      initialTab={householdModalTab}
-    />
-  );
+const JoinRoomModalConsumer: React.FC = () => {
+  const { isJoinModalOpen, closeJoinModal } = useRoom();
+  return <JoinRoomModal open={isJoinModalOpen} onClose={closeJoinModal} />;
 };
 
 /**
@@ -220,7 +214,7 @@ export const App: React.FC = () => {
               warnWhenUnsavedChanges: true,
             }}
           >
-            <HouseholdProvider>
+            <RoomProvider>
               <Routes>
                 {/* Public Landing / Marketing Page (With Intelligent Auth Redirect) */}
                 <Route path="/" element={<RootGate />} />
@@ -254,12 +248,12 @@ export const App: React.FC = () => {
                 {/* Catch-all fallback */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
-              <HouseholdAccessModalConsumer />
+              <JoinRoomModalConsumer />
               <UnsavedChangesNotifier />
               <VersionBadge />
               <PwaUpdateModal />
               <WhatsNewModal />
-            </HouseholdProvider>
+            </RoomProvider>
           </Refine>
           </HashRouter>
           </ConfirmProvider>

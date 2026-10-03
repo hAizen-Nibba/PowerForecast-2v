@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.7.0v",
+    version: "3.7.0v",
+    git_commit_tag: "3.7.0v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.7.0v - Revamp Household Multi-User into Supabase Room-Code system: automatic Main Room provisioning (<<Username>>'s Room), header Room Switcher with dropdown and join code modal, Admin vs View-only role hierarchy, real-time RLS widening with loophole mitigation, and interactive members management panel",
+  },
+  {
     id: "3.6.0cv",
     version: "3.6.0cv",
     git_commit_tag: "3.6.0cv",
