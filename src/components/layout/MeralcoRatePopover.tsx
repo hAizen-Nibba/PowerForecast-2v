@@ -190,7 +190,8 @@ export const MeralcoRatePopover: React.FC = () => {
             sx: {
               pointerEvents: "auto",
               mt: 1.25,
-              width: { xs: 340, sm: 460 },
+              width: { xs: "calc(100vw - 32px)", sm: 460 },
+              maxWidth: 480,
               borderRadius: 1.5,
               bgcolor: (theme) =>
                 theme.palette.mode === "dark" ? "rgba(20, 23, 28, 0.98)" : "#ffffff",

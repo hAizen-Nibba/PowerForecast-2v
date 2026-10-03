@@ -660,11 +660,34 @@ export const SmartCalendar: React.FC = () => {
                     {/* Header */}
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                        <Typography variant="body2" sx={{ fontWeight: isCurrentToday ? 900 : 700, color: isCurrentToday ? "#34d399" : "text.primary" }}>
+                        <Typography variant="body2" sx={{ fontWeight: isCurrentToday ? 900 : 700, color: isCurrentToday ? "success.main" : "text.primary" }}>
                           {dayNum}
                         </Typography>
                         {isCurrentToday && (
-                          <Chip label="TODAY" size="small" sx={{ height: 16, fontSize: "0.5rem", fontWeight: 900, bgcolor: "#34d399", color: "#fff" }} />
+                          <>
+                            <Chip
+                              label="TODAY"
+                              size="small"
+                              sx={{
+                                height: 16,
+                                fontSize: "0.5rem",
+                                fontWeight: 900,
+                                bgcolor: "success.main",
+                                color: "#fff",
+                                display: { xs: "none", sm: "inline-flex" },
+                              }}
+                            />
+                            <Box
+                              sx={{
+                                display: { xs: "block", sm: "none" },
+                                width: 5,
+                                height: 5,
+                                borderRadius: "50%",
+                                bgcolor: "success.main",
+                                boxShadow: "0 0 6px rgba(52, 211, 153, 0.8)",
+                              }}
+                            />
+                          </>
                         )}
                       </Box>
                       {actualMetrics.hasActiveLiveCircuits && (
@@ -746,7 +769,30 @@ export const SmartCalendar: React.FC = () => {
                         {dayNum}
                       </Typography>
                       {isCurrentToday && (
-                        <Chip label="TODAY" size="small" sx={{ height: 16, fontSize: "0.5rem", fontWeight: 900, bgcolor: "primary.main", color: "#fff" }} />
+                        <>
+                          <Chip
+                            label="TODAY"
+                            size="small"
+                            sx={{
+                              height: 16,
+                              fontSize: "0.5rem",
+                              fontWeight: 900,
+                              bgcolor: "primary.main",
+                              color: "#fff",
+                              display: { xs: "none", sm: "inline-flex" },
+                            }}
+                          />
+                          <Box
+                            sx={{
+                              display: { xs: "block", sm: "none" },
+                              width: 5,
+                              height: 5,
+                              borderRadius: "50%",
+                              bgcolor: "primary.main",
+                              boxShadow: "0 0 6px rgba(0, 229, 201, 0.8)",
+                            }}
+                          />
+                        </>
                       )}
                     </Box>
                     {simMetrics.isCustomSimulated && (

@@ -141,7 +141,7 @@ export const LoginPage: React.FC = () => {
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        bgcolor: isDark ? "#17191d" : "#f4f6f8",
+        bgcolor: isDark ? "#17191d" : "#f8fafc",
         color: "text.primary",
         position: "relative",
         overflowX: "hidden",
@@ -158,9 +158,9 @@ export const LoginPage: React.FC = () => {
           alignItems: "center",
           justifyContent: "space-between",
           borderBottom: "1px solid",
-          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+          borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "divider",
           backdropFilter: "blur(12px)",
-          bgcolor: isDark ? "rgba(8, 7, 32, 0.7)" : "rgba(244, 246, 251, 0.7)",
+          bgcolor: isDark ? "rgba(23, 25, 29, 0.85)" : "rgba(255, 255, 255, 0.88)",
         }}
       >
         <Box component={Link} to="/" sx={{ display: "flex", alignItems: "center", gap: 1.5, textDecoration: "none", color: "inherit" }}>

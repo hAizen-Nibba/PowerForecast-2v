@@ -101,7 +101,7 @@ export const MeralcoCalculator: React.FC = () => {
                 height: 40,
                 borderRadius: 1,
                 bgcolor: "primary.main",
-                color: "#ffffff",
+                color: "primary.contrastText",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -632,15 +632,16 @@ export const MeralcoCalculator: React.FC = () => {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
+                        gap: 1.5,
                         py: 0.75,
                         borderBottom: "1px solid",
                         borderColor: "divider",
                       }}
                     >
-                      <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                      <Typography variant="caption" sx={{ color: "text.secondary", minWidth: 0 }}>
                         {row.label}
                       </Typography>
-                      <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: "monospace" }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: "monospace", flexShrink: 0 }}>
                         ₱{row.val.toFixed(2)}
                       </Typography>
                     </Box>

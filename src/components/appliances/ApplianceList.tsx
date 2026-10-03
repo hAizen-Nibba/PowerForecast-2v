@@ -417,7 +417,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                   Select Tariff Classification
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid size={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <Paper
                       variant="outlined"
                       onClick={() => setInitialTariffType("residential")}
@@ -452,7 +452,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                     </Paper>
                   </Grid>
 
-                  <Grid size={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <Paper
                       variant="outlined"
                       onClick={() => setInitialTariffType("commercial")}

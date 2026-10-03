@@ -254,7 +254,7 @@ export const VersionBadge: React.FC = () => {
           color: "text.primary",
           border: "1px solid",
           borderColor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.45)" : "rgba(0, 229, 201, 0.3)",
+            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.45)" : "rgba(13, 148, 136, 0.35)",
           boxShadow: "0 4px 16px rgba(0, 0, 0, 0.25)",
           backdropFilter: "blur(12px)",
           cursor: "pointer",
@@ -262,7 +262,10 @@ export const VersionBadge: React.FC = () => {
           "&:hover": {
             borderColor: "primary.main",
             transform: "translateY(-1px)",
-            boxShadow: "0 6px 20px rgba(0, 229, 201, 0.25)",
+            boxShadow: (theme) =>
+              theme.palette.mode === "dark"
+                ? "0 6px 20px rgba(0, 229, 201, 0.25)"
+                : "0 6px 20px rgba(13, 148, 136, 0.2)",
           },
         }}
         title="Click to view version & database connection telemetry"
@@ -291,16 +294,27 @@ export const VersionBadge: React.FC = () => {
         </Typography>
 
         <Chip
-          icon={<WifiIcon sx={{ fontSize: "12px !important", color: "#00e5c9 !important" }} />}
+          icon={
+            <WifiIcon
+              sx={{
+                fontSize: "12px !important",
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? "#00e5c9 !important" : "#0d9488 !important",
+              }}
+            />
+          }
           label="MUI"
           size="small"
           sx={{
             height: 18,
             fontSize: "0.625rem",
             fontWeight: 700,
-            bgcolor: "rgba(0, 229, 201, 0.12)",
-            color: "primary.light",
-            border: "1px solid rgba(0, 229, 201, 0.25)",
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(13, 148, 136, 0.1)",
+            color: "primary.main",
+            border: "1px solid",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(13, 148, 136, 0.25)",
             "& .MuiChip-icon": { ml: "4px" },
           }}
         />

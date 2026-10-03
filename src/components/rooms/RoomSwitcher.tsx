@@ -95,7 +95,7 @@ export const RoomSwitcher: React.FC = () => {
                 sx={{
                   fontWeight: 700,
                   fontSize: '0.75rem',
-                  maxWidth: { xs: 90, sm: 140, md: 180 },
+                  maxWidth: { xs: 80, sm: 130, md: 180 },
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -115,6 +115,7 @@ export const RoomSwitcher: React.FC = () => {
                   py: 0.1,
                   borderRadius: 0.75,
                   letterSpacing: '0.04em',
+                  display: { xs: 'none', sm: 'inline-block' },
                 }}
               >
                 {activeRoom.room_code}

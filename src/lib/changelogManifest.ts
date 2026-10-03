@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.7.1v",
+    version: "3.7.1v",
+    git_commit_tag: "3.7.1v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Developer",
+    source: "github",
+    description:
+      "3.7.1v - Enhance UI fluidity across all resolutions (compact mobile 320px-480px, tablet 640px-1024px, and ultrawide monitors) and harmonize light mode consistency across all views, charts, and navigation components",
+  },
+  {
     id: "3.7.0dv",
     version: "3.7.0dv",
     git_commit_tag: "3.7.0dv",

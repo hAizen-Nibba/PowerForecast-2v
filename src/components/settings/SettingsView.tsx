@@ -627,10 +627,16 @@ export const SettingsView: React.FC = () => {
                 borderRadius: 1,
                 fontSize: "0.75rem",
                 textTransform: "none",
-                bgcolor: "#00e5c9",
-                color: "#0c1b18",
-                boxShadow: "0 2px 10px rgba(0, 229, 201, 0.3)",
-                "&:hover": { bgcolor: "#00c7ae" },
+                bgcolor: "primary.main",
+                color: "primary.contrastText",
+                boxShadow: (theme) =>
+                  theme.palette.mode === "dark"
+                    ? "0 2px 10px rgba(0, 229, 201, 0.3)"
+                    : "0 2px 10px rgba(13, 148, 136, 0.25)",
+                "&:hover": {
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? "#00c7ae" : "primary.dark",
+                },
               }}
             >
               {language === "tl" ? "Simulan ang Buong Gabay" : "Start Full App Tour"}
@@ -1379,11 +1385,25 @@ export const SettingsView: React.FC = () => {
             sx={{ fontWeight: 800, fontSize: "0.72rem" }}
           />
           <Chip
-            icon={<CheckCircleIcon sx={{ fontSize: "14px !important", color: "#00e5c9 !important" }} />}
+            icon={
+              <CheckCircleIcon
+                sx={{
+                  fontSize: "14px !important",
+                  color: (theme) =>
+                    theme.palette.mode === "dark" ? "#00e5c9 !important" : "primary.main !important",
+                }}
+              />
+            }
             label="Domain: comugallery.me (Verified)"
             size="small"
             variant="outlined"
-            sx={{ fontWeight: 800, fontSize: "0.72rem", color: "#00e5c9", borderColor: "rgba(0, 229, 201, 0.4)" }}
+            sx={{
+              fontWeight: 800,
+              fontSize: "0.72rem",
+              color: "primary.main",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.4)" : "rgba(13, 148, 136, 0.4)",
+            }}
           />
           <Chip
             icon={<EmailReadIcon sx={{ fontSize: "14px !important" }} />}

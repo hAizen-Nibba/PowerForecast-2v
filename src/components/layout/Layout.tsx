@@ -77,12 +77,12 @@ export const Layout: React.FC = () => {
           component="main"
           sx={{
             flexGrow: 1,
-            px: { xs: 2, sm: 3, md: 4, lg: 4.5 },
-            py: { xs: 2.5, sm: 3.5, md: 4 },
-            maxWidth: 1360,
+            px: { xs: 1.5, sm: 2.5, md: 3.5, lg: 4 },
+            py: { xs: 2, sm: 3, md: 3.5 },
+            maxWidth: 1440,
             width: "100%",
             mx: "auto",
-            pb: { xs: "calc(110px + env(safe-area-inset-bottom, 20px))", sm: "calc(120px + env(safe-area-inset-bottom, 20px))", lg: 8 },
+            pb: { xs: "calc(88px + env(safe-area-inset-bottom, 16px))", sm: "calc(96px + env(safe-area-inset-bottom, 16px))", lg: 6 },
             boxSizing: "border-box",
           }}
         >

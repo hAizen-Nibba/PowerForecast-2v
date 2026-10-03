@@ -168,7 +168,7 @@ export const LandingPage: React.FC = () => {
         sx={{
           backdropFilter: "blur(20px)",
           bgcolor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(10, 10, 36, 0.82)" : "rgba(255, 255, 255, 0.88)",
+            theme.palette.mode === "dark" ? "rgba(23, 25, 29, 0.85)" : "rgba(255, 255, 255, 0.88)",
           borderBottom: "1px solid",
           borderColor: "divider",
           zIndex: 1100,
