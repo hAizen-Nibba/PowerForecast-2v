@@ -58,12 +58,10 @@ import {
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
   OpenInNew as OpenInNewIcon,
-  Verified as VerifiedIcon,
   Email as EmailIcon,
   Send as SendIcon,
   MarkEmailRead as EmailReadIcon,
   CheckCircle as CheckCircleIcon,
-  MarkEmailUnread as EmailUnreadIcon,
   NotificationsActive as NotificationsActiveIcon,
   MobileFriendly as DeviceIcon,
   Sensors as SensorsIcon,
@@ -114,6 +112,7 @@ import {
   saveNotificationPreferences,
 } from "../../lib/notificationService";
 import { useHousehold } from "../../context/HouseholdContext";
+import { clearUserHouseholdData } from "../../lib/householdService";
 import { HouseholdMember } from "../../types";
 
 export const SettingsView: React.FC = () => {
@@ -233,13 +232,9 @@ export const SettingsView: React.FC = () => {
   // ── 4. Household Members State from HouseholdContext ───────
   const {
     members,
-    role: householdRole,
-    isOwner,
-    isFamilyMember,
-    ownerInfo,
-    inviteCode: hhInviteCode,
-    openHouseholdModal,
     removeMember,
+    addMember,
+    createInvite,
   } = useHousehold();
 
   const handleRemoveMember = (id: string, name: string) => {
@@ -308,9 +303,10 @@ export const SettingsView: React.FC = () => {
       return;
     }
 
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const code = `PF-HH-${randomSuffix}`;
-    const link = `${window.location.origin}/#/signup?invite=${code}&owner=${encodeURIComponent(identity?.email || "admin")}`;
+    // Get or create the official registered invite code & link
+    const inv = await createInvite();
+    const code = inv.inviteCode;
+    const link = inv.inviteLink;
 
     const newMember: HouseholdMember = {
       id: `member-${Date.now()}`,
@@ -322,7 +318,7 @@ export const SettingsView: React.FC = () => {
       joinedAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
     };
 
-    setMembers((prev) => [...prev, newMember]);
+    addMember(newMember);
     setGeneratedInvite({ code, link });
 
     // Automatically dispatch email invitation via Resend
@@ -650,7 +646,9 @@ export const SettingsView: React.FC = () => {
 
       // 3. Clear local storage caches
       localStorage.removeItem("powerforecast_active_user");
-      localStorage.removeItem(householdStorageKey);
+      if (userId) {
+        clearUserHouseholdData(userId);
+      }
 
       showSuccess(
         language === "tl"

@@ -20,6 +20,7 @@ import {
   approveApplianceRequest,
   rejectApplianceRequest,
   purgeLegacyTesterAccountData,
+  addHouseholdMember,
   UserBasicInfo,
 } from '../lib/householdService';
 
@@ -36,6 +37,7 @@ interface HouseholdContextType {
   members: HouseholdMember[];
   pendingRequests: PendingApplianceRequest[];
   createInvite: () => Promise<{ inviteCode: string; inviteLink: string }>;
+  addMember: (member: HouseholdMember) => void;
   joinWithCode: (code: string) => Promise<{ success: boolean; message: string }>;
   leaveHousehold: () => void;
   submitAppliance: (appliance: Partial<UserAppliance>) => Promise<PendingApplianceRequest>;
@@ -194,6 +196,12 @@ export const HouseholdProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setMembers(profile.members);
   };
 
+  const handleAddMember = (member: HouseholdMember) => {
+    const user = getResolvedUser();
+    addHouseholdMember(user, member);
+    refreshHouseholdState();
+  };
+
   const openHouseholdModal = (tab: number = 0) => {
     setHouseholdModalTab(tab);
     setIsHouseholdModalOpen(true);
@@ -223,6 +231,7 @@ export const HouseholdProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         members,
         pendingRequests,
         createInvite: handleCreateInvite,
+        addMember: handleAddMember,
         joinWithCode: handleJoinWithCode,
         leaveHousehold: handleLeaveHousehold,
         submitAppliance: handleSubmitAppliance,

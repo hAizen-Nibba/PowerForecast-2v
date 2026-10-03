@@ -15,6 +15,7 @@ import IconButton from '@mui/material/IconButton';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
+import { type Theme } from '@mui/material/styles';
 import {
   AdminPanelSettings as ShieldIcon,
   Group as FamilyIcon,
@@ -177,14 +178,16 @@ export const HouseholdAccessModal: React.FC<HouseholdAccessModalProps> = ({
       onClose={onClose}
       maxWidth="sm"
       fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 3.5,
-          bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#181b20' : '#ffffff'),
-          backgroundImage: 'none',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.45)',
-          border: '1px solid',
-          borderColor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)'),
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: 3.5,
+            bgcolor: (theme: Theme) => (theme.palette.mode === 'dark' ? '#181b20' : '#ffffff'),
+            backgroundImage: 'none',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.45)',
+            border: '1px solid',
+            borderColor: (theme: Theme) => (theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)'),
+          },
         },
       }}
     >
@@ -510,8 +513,15 @@ export const HouseholdAccessModal: React.FC<HouseholdAccessModalProps> = ({
                     onChange={(e) => setInputCode(e.target.value.toUpperCase())}
                     fullWidth
                     size="medium"
-                    inputProps={{
-                      style: { fontFamily: 'monospace', fontWeight: 800, fontSize: '1.1rem', letterSpacing: '0.08em' },
+                    slotProps={{
+                      input: {
+                        sx: {
+                          fontFamily: 'monospace',
+                          fontWeight: 800,
+                          fontSize: '1.1rem',
+                          letterSpacing: '0.08em',
+                        },
+                      },
                     }}
                   />
                   <Button

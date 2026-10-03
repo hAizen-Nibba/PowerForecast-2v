@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.6.0cv",
+    version: "3.6.0cv",
+    git_commit_tag: "3.6.0cv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.6.0cv - Fix Vercel build failures: migrate HouseholdAccessModal Dialog PaperProps to slotProps.paper and TextField inputProps to slotProps.input, integrate HouseholdContext addMember dispatch in SettingsView, and sanitize household storage keys upon account deletion",
+  },
+  {
     id: "3.6.0bv",
     version: "3.6.0bv",
     git_commit_tag: "3.6.0bv",

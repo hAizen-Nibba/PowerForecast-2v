@@ -362,3 +362,35 @@ export function purgeLegacyTesterAccountData(): void {
     }
   } catch {}
 }
+
+/**
+ * Adds or updates a member in the owner's household profile.
+ */
+export function addHouseholdMember(ownerUser: UserBasicInfo, member: HouseholdMember): void {
+  const profile = getHouseholdProfile(ownerUser);
+  const existingIdx = profile.members.findIndex(
+    (m) => m.id === member.id || m.email.toLowerCase() === member.email.toLowerCase()
+  );
+  if (existingIdx !== -1) {
+    profile.members[existingIdx] = member;
+  } else {
+    profile.members.push(member);
+  }
+  saveHouseholdProfile(profile);
+}
+
+/**
+ * Clears all household-related localStorage entries for a user upon account deletion.
+ */
+export function clearUserHouseholdData(userId: string): void {
+  try {
+    localStorage.removeItem(`powerforecast_household_${userId}`);
+    localStorage.removeItem(`${ROLE_STORAGE_PREFIX}${userId}`);
+    localStorage.removeItem(`${LINKED_OWNER_PREFIX}${userId}`);
+    localStorage.removeItem(`${PROFILE_STORAGE_PREFIX}${userId}`);
+    localStorage.removeItem(`${PENDING_APPLIANCES_PREFIX}${userId}`);
+  } catch (err) {
+    devLog.warn('Household', 'Failed to clear user household data:', err);
+  }
+}
+
