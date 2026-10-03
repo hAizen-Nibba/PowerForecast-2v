@@ -104,6 +104,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return () => window.removeEventListener("powerforecast_circuit_toggled", handleCircuitToggled);
   }, [appliancesRes]);
 
+  // Synchronize room changes
+  useEffect(() => {
+    if (appliancesRes?.refetch) appliancesRes.refetch();
+  }, [activeRoom?.room_id, appliancesRes]);
+
   // Fetch Meralco Tariff & DB Status for mobile telemetry
   useEffect(() => {
     let isMounted = true;

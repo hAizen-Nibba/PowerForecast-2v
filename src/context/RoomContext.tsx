@@ -6,7 +6,7 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
-import { useGetIdentity } from '@refinedev/core';
+import { useGetIdentity, useInvalidate } from '@refinedev/core';
 import { RoomSummary, RoomMember, RoomRole } from '../types';
 import {
   getOrCreateMyRoom,
@@ -49,6 +49,7 @@ const RoomContext = createContext<RoomContextType | undefined>(undefined);
 
 export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { data: identity } = useGetIdentity<any>();
+  const invalidate = useInvalidate();
 
   // Synchronously resolve current user identity (supporting offline cached user fallback)
   const resolvedUser = useMemo(() => {
@@ -204,6 +205,15 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem(`powerforecast_active_room_role_${resolvedUser.id}`, target.role);
       }
 
+      // Invalidate all query caches in Refine / React Query so active queries refetch for the new room owner
+      try {
+        invalidate({
+          invalidates: ["all"],
+        });
+      } catch (e) {
+        devLog.warn('RoomContext', 'Could not invalidate all queries on room switch:', e);
+      }
+
       // Dispatch global window event to trigger data refetch
       window.dispatchEvent(
         new CustomEvent('powerforecast_room_changed', {
@@ -211,7 +221,7 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({ children
         })
       );
     },
-    [rooms, resolvedUser.id]
+    [rooms, resolvedUser.id, invalidate]
   );
 
   // Join room by code

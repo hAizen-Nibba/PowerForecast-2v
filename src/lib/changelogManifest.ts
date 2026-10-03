@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.7.0cv",
+    version: "3.7.0cv",
+    git_commit_tag: "3.7.0cv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.7.0cv - Fix room data overlap across room switching: enforce strict active room owner scoping in DataProvider, partition local fallback storage per room owner, trigger global React Query cache invalidation in switchRoom, and key layout viewports by active room ID for clean component remounts",
+  },
+  {
     id: "3.7.0bv",
     version: "3.7.0bv",
     git_commit_tag: "3.7.0bv",

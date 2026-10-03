@@ -3,9 +3,48 @@ import { dataProvider as refineSupabaseDataProvider } from "@refinedev/supabase"
 import { supabaseClient } from "../lib/supabaseClient";
 import { devLog } from "../lib/devLogger";
 
+export const ROOM_SCOPED_RESOURCES = [
+  "user_appliances",
+  "appliance_usage_logs",
+  "daily_appliance_usage",
+  "user_calendar_events",
+  "simulated_appliance_usage",
+  "appliance_lists",
+];
+
+export function getActiveRoomContext(): { ownerId?: string; role?: string; roomId?: string } {
+  try {
+    const rawUser = localStorage.getItem("powerforecast_active_user");
+    const user = rawUser ? JSON.parse(rawUser) : null;
+    let userId = user?.id;
+
+    if (!userId && typeof window !== "undefined") {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("powerforecast_active_room_owner_")) {
+          userId = key.replace("powerforecast_active_room_owner_", "");
+          break;
+        }
+      }
+    }
+
+    if (userId) {
+      const ownerId = localStorage.getItem(`powerforecast_active_room_owner_${userId}`);
+      const role = localStorage.getItem(`powerforecast_active_room_role_${userId}`);
+      const roomId = localStorage.getItem(`powerforecast_active_room_${userId}`);
+      return { ownerId: ownerId || userId, role: role || "owner", roomId: roomId || "" };
+    }
+  } catch {}
+  return {};
+}
+
 function getStorage<T>(key: string, defaultVal: T): T {
   try {
-    const item = localStorage.getItem(`powerforecast_${key}`);
+    const { ownerId } = getActiveRoomContext();
+    const storageKey = ownerId && ROOM_SCOPED_RESOURCES.includes(key)
+      ? `powerforecast_${ownerId}_${key}`
+      : `powerforecast_${key}`;
+    const item = localStorage.getItem(storageKey);
     return item ? JSON.parse(item) : defaultVal;
   } catch {
     return defaultVal;
@@ -14,7 +53,11 @@ function getStorage<T>(key: string, defaultVal: T): T {
 
 function setStorage<T>(key: string, val: T): void {
   try {
-    localStorage.setItem(`powerforecast_${key}`, JSON.stringify(val));
+    const { ownerId } = getActiveRoomContext();
+    const storageKey = ownerId && ROOM_SCOPED_RESOURCES.includes(key)
+      ? `powerforecast_${ownerId}_${key}`
+      : `powerforecast_${key}`;
+    localStorage.setItem(storageKey, JSON.stringify(val));
   } catch (e) {
     console.error(e);
   }
@@ -117,28 +160,6 @@ export const localDataProvider: DataProvider = {
 
 const rawSupabaseDataProvider = refineSupabaseDataProvider(supabaseClient);
 
-const ROOM_SCOPED_RESOURCES = [
-  "user_appliances",
-  "appliance_usage_logs",
-  "daily_appliance_usage",
-  "user_calendar_events",
-  "simulated_appliance_usage",
-  "appliance_lists",
-];
-
-function getActiveRoomContext(): { ownerId?: string; role?: string } {
-  try {
-    const rawUser = localStorage.getItem("powerforecast_active_user");
-    const user = rawUser ? JSON.parse(rawUser) : null;
-    if (user?.id) {
-      const ownerId = localStorage.getItem(`powerforecast_active_room_owner_${user.id}`);
-      const role = localStorage.getItem(`powerforecast_active_room_role_${user.id}`);
-      return { ownerId: ownerId || user.id, role: role || "owner" };
-    }
-  } catch {}
-  return {};
-}
-
 /**
  * Resilient Hybrid DataProvider:
  * - Attempts Supabase Cloud database first
@@ -165,14 +186,13 @@ export const resilientDataProvider: DataProvider = {
       // Automatically scope room-specific resources to the active room owner
       const { ownerId } = getActiveRoomContext();
       if (ownerId && ROOM_SCOPED_RESOURCES.includes(params.resource)) {
-        const existingFilters = enrichedParams.filters || [];
-        const hasUserIdFilter = existingFilters.some((f: any) => f.field === "user_id");
-        if (!hasUserIdFilter) {
-          enrichedParams.filters = [
-            ...existingFilters,
-            { field: "user_id", operator: "eq", value: ownerId },
-          ];
-        }
+        const existingFilters = (enrichedParams.filters || []).filter(
+          (f: any) => f.field !== "user_id"
+        );
+        enrichedParams.filters = [
+          ...existingFilters,
+          { field: "user_id", operator: "eq", value: ownerId },
+        ];
       }
 
       const res = await rawSupabaseDataProvider.getList<TData>(enrichedParams);
