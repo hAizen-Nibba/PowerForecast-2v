@@ -119,14 +119,115 @@ export async function joinRoomByCode(
 }
 
 /**
+ * Fallback direct table query for rooms if list_my_rooms RPC is temporarily unavailable.
+ */
+async function fallbackListMyRooms(): Promise<RoomSummary[]> {
+  try {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    const userId = authData?.user?.id;
+    if (!userId) return [];
+
+    const { data: roomsData, error: roomsError } = await supabaseClient
+      .from('rooms')
+      .select('id, name, code, owner_id, created_at');
+
+    if (roomsError || !roomsData) {
+      devLog.warn('RoomService', 'fallbackListMyRooms direct select failed:', roomsError);
+      return [];
+    }
+
+    const { data: membersData } = await supabaseClient
+      .from('room_members')
+      .select('room_id, role, joined_at')
+      .eq('user_id', userId);
+
+    const memberRoleMap = new Map<string, { role: RoomRole; joined_at: string }>();
+    if (Array.isArray(membersData)) {
+      membersData.forEach((m: any) => memberRoleMap.set(m.room_id, { role: m.role as RoomRole, joined_at: m.joined_at }));
+    }
+
+    return roomsData.map((r: any) => {
+      const isOwner = r.owner_id === userId;
+      const memberInfo = memberRoleMap.get(r.id);
+      const role: RoomRole = isOwner ? 'owner' : (memberInfo?.role || 'viewer');
+      return {
+        room_id: r.id,
+        room_name: r.name,
+        room_code: r.code,
+        owner_id: r.owner_id,
+        owner_name: isOwner ? (authData?.user?.user_metadata?.name || 'You') : 'Owner',
+        owner_email: isOwner ? (authData?.user?.email || '') : '',
+        role,
+        is_owner: isOwner,
+        created_at: memberInfo?.joined_at || r.created_at,
+      };
+    }).sort((a, b) => (b.is_owner ? 1 : 0) - (a.is_owner ? 1 : 0));
+  } catch (err) {
+    devLog.error('RoomService', 'Unexpected error in fallbackListMyRooms:', err);
+    return [];
+  }
+}
+
+/**
+ * Fallback direct table query for room members if list_room_members RPC fails.
+ */
+async function fallbackListRoomMembers(roomId: string): Promise<RoomMember[]> {
+  try {
+    const { data: authData } = await supabaseClient.auth.getUser();
+    const currentUserId = authData?.user?.id;
+
+    const { data: roomData } = await supabaseClient
+      .from('rooms')
+      .select('owner_id, created_at')
+      .eq('id', roomId)
+      .maybeSingle();
+
+    const { data: membersData } = await supabaseClient
+      .from('room_members')
+      .select('user_id, role, display_name, email, joined_at')
+      .eq('room_id', roomId);
+
+    const members: RoomMember[] = [];
+    if (roomData) {
+      members.push({
+        user_id: roomData.owner_id,
+        display_name: roomData.owner_id === currentUserId ? (authData?.user?.user_metadata?.name || 'You (Owner)') : 'Room Owner',
+        email: roomData.owner_id === currentUserId ? (authData?.user?.email || '') : '',
+        role: 'owner',
+        is_owner: true,
+        joined_at: roomData.created_at,
+      });
+    }
+
+    if (Array.isArray(membersData)) {
+      membersData.forEach((m: any) => {
+        members.push({
+          user_id: m.user_id,
+          display_name: m.display_name || 'Member',
+          email: m.email || '',
+          role: m.role as RoomRole,
+          is_owner: false,
+          joined_at: m.joined_at,
+        });
+      });
+    }
+
+    return members;
+  } catch (err) {
+    devLog.error('RoomService', 'Unexpected error in fallbackListRoomMembers:', err);
+    return [];
+  }
+}
+
+/**
  * Fetches all rooms accessible to the authenticated user (owned + joined).
  */
 export async function listMyRooms(): Promise<RoomSummary[]> {
   try {
     const { data, error } = await supabaseClient.rpc('list_my_rooms');
     if (error) {
-      devLog.error('RoomService', 'list_my_rooms error:', error);
-      return [];
+      devLog.warn('RoomService', 'list_my_rooms RPC failed, activating resilient direct query fallback:', error);
+      return await fallbackListMyRooms();
     }
 
     if (Array.isArray(data)) {
@@ -144,8 +245,8 @@ export async function listMyRooms(): Promise<RoomSummary[]> {
     }
     return [];
   } catch (err) {
-    devLog.error('RoomService', 'Unexpected error in listMyRooms:', err);
-    return [];
+    devLog.error('RoomService', 'Unexpected error in listMyRooms, attempting fallback:', err);
+    return await fallbackListMyRooms();
   }
 }
 
@@ -160,8 +261,8 @@ export async function listRoomMembers(roomId: string): Promise<RoomMember[]> {
     });
 
     if (error) {
-      devLog.error('RoomService', 'list_room_members error:', error);
-      return [];
+      devLog.warn('RoomService', 'list_room_members RPC failed, activating direct fallback query:', error);
+      return await fallbackListRoomMembers(roomId);
     }
 
     if (Array.isArray(data)) {
@@ -176,8 +277,8 @@ export async function listRoomMembers(roomId: string): Promise<RoomMember[]> {
     }
     return [];
   } catch (err) {
-    devLog.error('RoomService', 'Unexpected error in listRoomMembers:', err);
-    return [];
+    devLog.error('RoomService', 'Unexpected error in listRoomMembers, attempting fallback:', err);
+    return await fallbackListRoomMembers(roomId);
   }
 }
 

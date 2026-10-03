@@ -298,7 +298,7 @@ BEGIN
             r.name AS room_name,
             r.code AS room_code,
             r.owner_id,
-            coalesce(acc.name, 'You') AS owner_name,
+            coalesce(nullif(acc.full_name, ''), 'You') AS owner_name,
             coalesce(acc.email, '') AS owner_email,
             'owner' AS role,
             true AS is_owner,
@@ -315,7 +315,7 @@ BEGIN
             r.name AS room_name,
             r.code AS room_code,
             r.owner_id,
-            coalesce(acc.name, 'Owner') AS owner_name,
+            coalesce(nullif(acc.full_name, ''), 'Owner') AS owner_name,
             coalesce(acc.email, '') AS owner_email,
             rm.role AS role,
             false AS is_owner,
@@ -352,7 +352,7 @@ BEGIN
         -- Owner
         SELECT
             r.owner_id AS user_id,
-            coalesce(acc.name, 'Room Owner') AS display_name,
+            coalesce(nullif(acc.full_name, ''), 'Room Owner') AS display_name,
             coalesce(acc.email, '') AS email,
             'owner' AS role,
             true AS is_owner,
@@ -366,8 +366,8 @@ BEGIN
         -- Members
         SELECT
             rm.user_id,
-            coalesce(rm.display_name, acc.name, 'Member') AS display_name,
-            coalesce(rm.email, acc.email, '') AS email,
+            coalesce(nullif(rm.display_name, ''), nullif(acc.full_name, ''), 'Member') AS display_name,
+            coalesce(nullif(rm.email, ''), nullif(acc.email, ''), '') AS email,
             rm.role,
             false AS is_owner,
             rm.joined_at

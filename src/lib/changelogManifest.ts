@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.7.0bv",
+    version: "3.7.0bv",
+    git_commit_tag: "3.7.0bv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.7.0bv - Fix list_my_rooms SQL column reference from non-existent acc.name to acc.full_name, provide standalone patch migration, and implement resilient direct-table query fallback in RoomService",
+  },
+  {
     id: "3.7.0av",
     version: "3.7.0av",
     git_commit_tag: "3.7.0av",
