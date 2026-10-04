@@ -203,39 +203,67 @@ export const AnalyticsView: React.FC = () => {
     };
   }, [dailyUsageRecords, targetAppliances, activeMonthKey, liveNow]);
 
-  // Aggregated Simulated Plan Data for target appliances (Filtered to active billing month)
-  const simulatedAggregates = useMemo(() => {
-    const targetIds = new Set(targetAppliances.map((a) => a.id));
-    let totalKwh = 0;
-    let totalCost = 0;
-    const catMap: Record<string, number> = {};
-    const appMap: Record<string, number> = {};
-
-    simulatedUsageRecords.forEach((r) => {
-      if (targetIds.has(r.appliance_id) && (!r.usage_date || r.usage_date.startsWith(activeMonthKey))) {
-        const kwh = Number(r.kwh_consumed) || 0;
-        const cost = Number(r.estimated_cost) || 0;
-        totalKwh += kwh;
-        totalCost += cost;
-        const app = targetAppliances.find((a) => a.id === r.appliance_id);
-        const cat = app?.category || "General";
-        catMap[cat] = (catMap[cat] || 0) + kwh;
-        appMap[r.appliance_id] = (appMap[r.appliance_id] || 0) + kwh;
-      }
-    });
-
-    return {
-      totalKwh: Number(totalKwh.toFixed(2)),
-      totalCost: Number(totalCost.toFixed(2)),
-      catMap,
-      appMap,
-      hasRecords: totalKwh > 0,
-    };
-  }, [simulatedUsageRecords, targetAppliances, activeMonthKey]);
-
   const activeSpace = spaces.find((s) => s.id === selectedSpaceId);
   const isCommercialSelected = selectedSpaceId !== "all" && activeSpace?.tariff_type === "commercial";
   const tariffType: "residential" | "commercial" = isCommercialSelected ? "commercial" : "residential";
+
+  // Aggregated Simulated Plan Data for target appliances (Filtered to active billing month)
+  // Combines customized simulated days (with baseline fallback for untouched devices) and untouched routine days
+  const simulatedAggregates = useMemo(() => {
+    const targetIds = new Set(targetAppliances.map((a) => a.id));
+    
+    // Group custom simulated records by date
+    const simByDate = new Map<string, Map<string, { kwh: number; cost: number }>>();
+    let hasCustomRecords = false;
+
+    simulatedUsageRecords.forEach((r) => {
+      if (targetIds.has(r.appliance_id) && (!r.usage_date || r.usage_date.startsWith(activeMonthKey))) {
+        hasCustomRecords = true;
+        if (!simByDate.has(r.usage_date)) {
+          simByDate.set(r.usage_date, new Map());
+        }
+        simByDate.get(r.usage_date)!.set(r.appliance_id, {
+          kwh: Number(r.kwh_consumed) || 0,
+          cost: Number(r.estimated_cost) || 0,
+        });
+      }
+    });
+
+    const catMap: Record<string, number> = {};
+    const appMap: Record<string, number> = {};
+    let totalKwh = 0;
+
+    for (let d = 1; d <= daysInActiveMonth; d++) {
+      const dateStr = `${activeMonthKey}-${String(d).padStart(2, "0")}`;
+      const dayCustomMap = simByDate.get(dateStr);
+
+      targetAppliances.forEach((app) => {
+        const cat = app.category || "General";
+        if (dayCustomMap && dayCustomMap.has(app.id)) {
+          const rec = dayCustomMap.get(app.id)!;
+          totalKwh += rec.kwh;
+          catMap[cat] = (catMap[cat] || 0) + rec.kwh;
+          appMap[app.id] = (appMap[app.id] || 0) + rec.kwh;
+        } else {
+          // Untouched appliance or unedited day: routine baseline
+          const dailyKwh = calculateApplianceKwh(app, Number(app.hours_per_day) || 0);
+          totalKwh += dailyKwh;
+          catMap[cat] = (catMap[cat] || 0) + dailyKwh;
+          appMap[app.id] = (appMap[app.id] || 0) + dailyKwh;
+        }
+      });
+    }
+
+    const billResult = calculateMeralcoBill(totalKwh, undefined, 0, false, tariffType);
+
+    return {
+      totalKwh: Number(totalKwh.toFixed(2)),
+      totalCost: billResult.totalBill,
+      catMap,
+      appMap,
+      hasRecords: hasCustomRecords,
+    };
+  }, [simulatedUsageRecords, targetAppliances, activeMonthKey, daysInActiveMonth, tariffType]);
 
   // Appliance monthly kWh helper - Inverter-aware parity with Forecasting
   const getApplianceMonthlyKwh = (a: UserAppliance): number => {
@@ -302,7 +330,7 @@ export const AnalyticsView: React.FC = () => {
       // Strictly show actual measured telemetry (0 if no sessions logged)
       return actualAggregates.totalKwh;
     }
-    if (dataSourceMode === "simulated" && simulatedAggregates.hasRecords) {
+    if (dataSourceMode === "simulated") {
       return simulatedAggregates.totalKwh;
     }
     return totalMonthlyKwh;
@@ -316,7 +344,20 @@ export const AnalyticsView: React.FC = () => {
     return calculateMeralcoBill(activeEnergyVolume, undefined, 0, false, tariff);
   }, [selectedSpaceId, activeEnergyVolume, tariffType, dataSourceMode, actualAggregates.hasRecords]);
 
-  const totalCost = bill.totalBill;
+  // Actual spend displays true measured audit spend; baseline and simulated display unbundled Meralco bill
+  const totalCost = useMemo(() => {
+    if (dataSourceMode === "actual") {
+      return actualAggregates.hasRecords ? actualAggregates.totalCost : 0;
+    }
+    if (dataSourceMode === "simulated") {
+      return simulatedAggregates.totalCost;
+    }
+    if (selectedSpaceId === "all") {
+      return spaceAnalytics.consolidatedTotalBill;
+    }
+    return bill.totalBill;
+  }, [dataSourceMode, actualAggregates, simulatedAggregates, selectedSpaceId, spaceAnalytics.consolidatedTotalBill, bill.totalBill]);
+
   const effectiveRate = activeEnergyVolume > 0 ? totalCost / activeEnergyVolume : bill.effectiveRatePerKwh || 0;
 
   // Running appliances count
@@ -536,7 +577,7 @@ export const AnalyticsView: React.FC = () => {
         catMap[cat].kwh = kwh;
         catMap[cat].count += a.quantity || 1;
       });
-    } else if (dataSourceMode === "simulated" && simulatedAggregates.hasRecords) {
+    } else if (dataSourceMode === "simulated") {
       targetAppliances.forEach((a) => {
         const cat = a.category || "General";
         const kwh = simulatedAggregates.catMap[cat] || 0;
@@ -575,7 +616,7 @@ export const AnalyticsView: React.FC = () => {
     const effectiveTotalKwh =
       dataSourceMode === "actual" && actualAggregates.hasRecords
         ? actualAggregates.totalKwh
-        : dataSourceMode === "simulated" && simulatedAggregates.hasRecords
+        : dataSourceMode === "simulated"
         ? simulatedAggregates.totalKwh
         : totalMonthlyKwh || 1;
 
@@ -584,7 +625,7 @@ export const AnalyticsView: React.FC = () => {
         const kwh =
           dataSourceMode === "actual" && actualAggregates.hasRecords
             ? actualAggregates.appMap[a.id] || 0
-            : dataSourceMode === "simulated" && simulatedAggregates.hasRecords
+            : dataSourceMode === "simulated"
             ? simulatedAggregates.appMap[a.id] || 0
             : getApplianceMonthlyKwh(a);
 

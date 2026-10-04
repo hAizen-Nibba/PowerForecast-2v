@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.12v",
+    version: "3.8.12v",
+    git_commit_tag: "3.8.12v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.12v - Fix calculation engine across Smart Calendar, Analytics, and Forecasting: resolve runaway run-rate extrapolation, preserve routine baselines in simulation plans, sync verified actuals spend, and eliminate What-If delta jumps.",
+  },
+  {
     id: "3.8.11v",
     version: "3.8.11v",
     git_commit_tag: "3.8.11v",

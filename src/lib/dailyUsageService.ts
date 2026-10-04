@@ -1429,19 +1429,45 @@ export function computeSimulatedDayMetrics(
 
   // 1. If custom simulated rows exist for this date
   if (filteredSim.length > 0) {
-    const simKwh = filteredSim.reduce((acc, curr) => acc + (Number(curr.kwh_consumed) || 0), 0);
-    const simCost = filteredSim.reduce((acc, curr) => acc + (Number(curr.estimated_cost) || 0), 0);
-    const count = filteredSim.filter((u) => Number(u.hours_used) > 0).length;
+    const simMap = new Map<string, { hours: number; kwh: number; cost: number }>();
+    filteredSim.forEach((item) => {
+      simMap.set(item.appliance_id, {
+        hours: Number(item.hours_used) || 0,
+        kwh: Number(item.kwh_consumed) || 0,
+        cost: Number(item.estimated_cost) || 0,
+      });
+    });
+
+    let totalSimKwh = 0;
+    let totalSimCost = 0;
+    let activeSimCount = 0;
+
+    activeAppliances.forEach((app) => {
+      if (simMap.has(app.id)) {
+        const item = simMap.get(app.id)!;
+        totalSimKwh += item.kwh;
+        totalSimCost += item.cost;
+        if (item.hours > 0) activeSimCount++;
+      } else {
+        // Unmodified appliances run at their registered baseline routine hours
+        const defaultHours = Number(app.hours_per_day) || 0;
+        const appKwh = calculateApplianceKwh(app, defaultHours);
+        const appCost = appKwh * effectiveRate;
+        totalSimKwh += appKwh;
+        totalSimCost += appCost;
+        if (defaultHours > 0) activeSimCount++;
+      }
+    });
 
     return {
-      kwh: Number(simKwh.toFixed(2)),
-      cost: Number(simCost.toFixed(2)),
+      kwh: Number(totalSimKwh.toFixed(2)),
+      cost: Number(totalSimCost.toFixed(2)),
       baselineKwh: pureBaselineKwh,
       baselineCost: pureBaselineCost,
-      savings: Number((pureBaselineCost - simCost).toFixed(2)),
+      savings: Number((pureBaselineCost - totalSimCost).toFixed(2)),
       isCustomSimulated: true,
-      isPeak: simKwh > 18 || simCost > 270,
-      applianceCount: count,
+      isPeak: totalSimKwh > 18 || totalSimCost > 270,
+      applianceCount: activeSimCount,
       source: "custom_simulation",
     };
   }

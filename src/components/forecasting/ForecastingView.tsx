@@ -243,71 +243,120 @@ export const ForecastingView: React.FC = () => {
     };
   }, [targetAppliances, daysInActiveMonth, tariffType]);
 
-  // Map simulated kWh per date for the active month
-  const simulatedDateMap = useMemo(() => {
-    const map = new Map<string, number>();
+  // Pre-index simulated records by date and appliance
+  const simulatedRecordsByDate = useMemo(() => {
+    const map = new Map<string, Map<string, number>>();
     simulatedRecords.forEach((rec) => {
       if (rec.usage_date && rec.usage_date.startsWith(activeMonthKey) && targetApplianceIds.has(rec.appliance_id)) {
-        map.set(rec.usage_date, (map.get(rec.usage_date) || 0) + (Number(rec.kwh_consumed) || 0));
+        if (!map.has(rec.usage_date)) {
+          map.set(rec.usage_date, new Map<string, number>());
+        }
+        map.get(rec.usage_date)!.set(rec.appliance_id, Number(rec.kwh_consumed) || 0);
       }
     });
     return map;
   }, [simulatedRecords, activeMonthKey, targetApplianceIds]);
 
-  // 4. End-of-Month Forecast (Actual Logged + Paced Run-Rate Extrapolation / Simulation Plan)
+  // Pre-index daily actual records by date
+  const actualKwhByDate = useMemo(() => {
+    const map = new Map<string, number>();
+    dailyRecords.forEach((rec) => {
+      if (rec.usage_date && rec.usage_date.startsWith(activeMonthKey) && targetApplianceIds.has(rec.appliance_id)) {
+        map.set(rec.usage_date, (map.get(rec.usage_date) || 0) + (Number(rec.kwh_consumed) || 0));
+      }
+    });
+    return map;
+  }, [dailyRecords, activeMonthKey, targetApplianceIds]);
+
+  // Total simulated day kWh combining customized appliances + unmodified routine appliances
+  const getSimulatedDayKwh = (dateStr: string): number => {
+    const customMap = simulatedRecordsByDate.get(dateStr);
+    if (!customMap) return routineBaseline.dailyKwh;
+    let dayKwh = 0;
+    targetAppliances.forEach((app) => {
+      if (customMap.has(app.id)) {
+        dayKwh += customMap.get(app.id)!;
+      } else {
+        dayKwh += calculateApplianceKwh(app, Number(app.hours_per_day) || 0);
+      }
+    });
+    return dayKwh;
+  };
+
+  // 4. End-of-Month Forecast (Blends actual logged days, simulation plans, and routine baseline)
   const trajectoryForecast = useMemo(() => {
     let forecastedKwh = 0;
     let projectedRemainingKwh = 0;
     let simulatedDaysCount = 0;
-    const unloggedDaysCount = Math.max(0, daysInActiveMonth - mtdActuals.loggedDaysCount);
+    const currentDay = now.getDate();
 
-    // If user has recorded actuals, project remaining days using true measured daily burn rate
-    const pacedDailyKwh = mtdActuals.avgDailyLoggedKwh > 0 ? mtdActuals.avgDailyLoggedKwh : routineBaseline.dailyKwh;
+    for (let d = 1; d <= daysInActiveMonth; d++) {
+      const dateStr = `${activeMonthKey}-${String(d).padStart(2, "0")}`;
+      const hasActualLog = actualKwhByDate.has(dateStr);
+      const actualLogged = actualKwhByDate.get(dateStr) || 0;
 
-    if (mtdActuals.hasLoggedRecords) {
-      for (let d = 1; d <= daysInActiveMonth; d++) {
-        const dateStr = `${activeMonthKey}-${String(d).padStart(2, "0")}`;
-        const isLogged = dailyRecords.some(
-          (r) => r.usage_date === dateStr && targetApplianceIds.has(r.appliance_id) && (Number(r.hours_used) > 0 || Number(r.kwh_consumed) > 0)
-        );
-        if (!isLogged) {
-          if (simulatedDateMap.has(dateStr)) {
-            projectedRemainingKwh += simulatedDateMap.get(dateStr)!;
-            simulatedDaysCount++;
-          } else {
-            projectedRemainingKwh += pacedDailyKwh;
-          }
-        }
-      }
-      forecastedKwh = Number((mtdActuals.actualKwh + projectedRemainingKwh).toFixed(3));
-    } else {
-      for (let d = 1; d <= daysInActiveMonth; d++) {
-        const dateStr = `${activeMonthKey}-${String(d).padStart(2, "0")}`;
-        if (simulatedDateMap.has(dateStr)) {
-          forecastedKwh += simulatedDateMap.get(dateStr)!;
-          simulatedDaysCount++;
+      if (d < currentDay) {
+        // Past day: if logged, use actual. If unlogged, assume baseline routine
+        if (hasActualLog) {
+          forecastedKwh += actualLogged;
         } else {
           forecastedKwh += routineBaseline.dailyKwh;
         }
+      } else if (d === currentDay) {
+        // Today: account for live stopwatch sessions and actuals recorded today, blended with routine
+        const runningTargetApps = targetAppliances.filter((a) => a.is_currently_on && a.last_turned_on_at);
+        const liveSummary = sumLiveDeltaForRange(
+          runningTargetApps,
+          liveNow,
+          dailyRecords,
+          (key) => key === dateStr
+        );
+        const totalTodaySoFar = actualLogged + liveSummary.deltaKwh;
+        const todayProjected = Math.max(totalTodaySoFar, routineBaseline.dailyKwh);
+        forecastedKwh += todayProjected;
+        projectedRemainingKwh += Math.max(0, todayProjected - totalTodaySoFar);
+      } else {
+        // Future days: use custom simulation plan if scheduled, otherwise routine baseline
+        if (simulatedRecordsByDate.has(dateStr)) {
+          const simDayKwh = getSimulatedDayKwh(dateStr);
+          forecastedKwh += simDayKwh;
+          projectedRemainingKwh += simDayKwh;
+          simulatedDaysCount++;
+        } else {
+          forecastedKwh += routineBaseline.dailyKwh;
+          projectedRemainingKwh += routineBaseline.dailyKwh;
+        }
       }
-      forecastedKwh = Number(forecastedKwh.toFixed(3));
-      projectedRemainingKwh = forecastedKwh;
     }
 
+    forecastedKwh = Number(forecastedKwh.toFixed(3));
+    projectedRemainingKwh = Number(projectedRemainingKwh.toFixed(3));
     const forecastedBill = calculateMeralcoBill(forecastedKwh, undefined, 0, false, tariffType).totalBill;
     const effectiveBurnRate = daysInActiveMonth > 0 ? forecastedKwh / daysInActiveMonth : 0;
 
     return {
       forecastedKwh,
-      projectedRemainingKwh: Number(projectedRemainingKwh.toFixed(3)),
+      projectedRemainingKwh,
       forecastedBill,
-      unloggedDaysCount,
+      unloggedDaysCount: Math.max(0, daysInActiveMonth - mtdActuals.loggedDaysCount),
       simulatedDaysCount,
       effectiveBurnRate: Number(effectiveBurnRate.toFixed(3)),
-      pacedDailyKwh: Number(pacedDailyKwh.toFixed(3)),
+      pacedDailyKwh: Number((forecastedKwh / daysInActiveMonth).toFixed(3)),
       hasActualPace: mtdActuals.hasLoggedRecords,
     };
-  }, [mtdActuals, routineBaseline, daysInActiveMonth, tariffType, activeMonthKey, dailyRecords, targetApplianceIds, simulatedDateMap]);
+  }, [
+    daysInActiveMonth,
+    activeMonthKey,
+    actualKwhByDate,
+    routineBaseline,
+    now,
+    targetAppliances,
+    mtdActuals,
+    simulatedRecordsByDate,
+    dailyRecords,
+    liveNow,
+    tariffType,
+  ]);
 
   // Identify top heavy energy hog appliance
   const topHeavyApplianceName = useMemo(() => {
@@ -329,9 +378,11 @@ export const ForecastingView: React.FC = () => {
       whatIfDailyKwh += calculateApplianceKwh(app, activeHours);
     });
 
-    const daysMultiplier = mtdActuals.hasLoggedRecords ? remainingDays : daysInActiveMonth;
+    const daysMultiplier = remainingDays;
     const simulatedRemainingKwh = whatIfDailyKwh * daysMultiplier;
-    const whatIfTotalKwh = Number(((mtdActuals.hasLoggedRecords ? mtdActuals.actualKwh : 0) + simulatedRemainingKwh).toFixed(3));
+    // Blended total: what's already elapsed + what-if for remaining days
+    const elapsedKwh = Math.max(0, trajectoryForecast.forecastedKwh - trajectoryForecast.projectedRemainingKwh);
+    const whatIfTotalKwh = Number((elapsedKwh + simulatedRemainingKwh).toFixed(3));
     const whatIfBill = calculateMeralcoBill(whatIfTotalKwh, undefined, 0, false, tariffType).totalBill;
     const billDelta = whatIfBill - trajectoryForecast.forecastedBill;
 
@@ -340,7 +391,7 @@ export const ForecastingView: React.FC = () => {
       whatIfBill,
       billDelta,
     };
-  }, [targetAppliances, whatIfHours, mtdActuals, remainingDays, daysInActiveMonth, tariffType, trajectoryForecast]);
+  }, [targetAppliances, whatIfHours, remainingDays, trajectoryForecast, tariffType]);
 
   // 6. Appliance Pareto Breakdown (Ranked by Forecasted Energy Share)
   const paretoBreakdown = useMemo(() => {

@@ -30,4 +30,5 @@ __pycache__/
 .env
 .env*.local
 .archify
+.playwright-mcp/
 ~$*
