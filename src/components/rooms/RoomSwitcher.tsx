@@ -173,7 +173,7 @@ export const RoomSwitcher: React.FC = () => {
             color: 'primary.main',
             '&:hover': {
               bgcolor: 'primary.main',
-              color: '#0a1917',
+              color: 'primary.contrastText',
             },
           }}
         >

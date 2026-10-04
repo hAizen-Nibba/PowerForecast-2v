@@ -292,6 +292,19 @@ export function sendNotification(options: {
   const urgency = options.urgency || "normal";
   const soundType = options.soundType || (urgency === "critical" ? "urgent" : urgency === "high" ? "warning" : "chime");
 
+  // Always log notification to in-app history
+  try {
+    addNotificationLog({
+      title: options.title,
+      body: options.body,
+      urgency,
+      tag: options.tag,
+      category: resolveNotificationCategory(options.title, options.tag),
+    });
+  } catch {
+    // Non-fatal logging error
+  }
+
   // Trigger synthesized audio if sound is enabled
   if (prefs.soundEnabled) {
     playNotificationSound(soundType);
@@ -338,6 +351,16 @@ export function sendNotification(options: {
   fallbackWindowNotification(options, notifOptions);
 }
 
+function resolveNotificationCategory(title: string, tag?: string): NotificationLogItem['category'] {
+  const text = `${title} ${tag || ''}`.toLowerCase();
+  if (text.includes('surge') || text.includes('load')) return 'surge';
+  if (text.includes('runtime') || text.includes('stopwatch') || text.includes('circuit')) return 'runtime';
+  if (text.includes('budget') || text.includes('quota')) return 'budget';
+  if (text.includes('peak')) return 'peakhours';
+  if (text.includes('schedule') || text.includes('calendar')) return 'schedule';
+  return 'general';
+}
+
 function fallbackWindowNotification(
   options: { title: string; onClick?: () => void },
   notifOptions: NotificationOptions
@@ -356,3 +379,102 @@ function fallbackWindowNotification(
     devLog.warn("Notifications", `Failed to display fallback notification: ${err?.message}`);
   }
 }
+
+// ── Notification History & Persistent Logs ─────────────────
+
+export interface NotificationLogItem {
+  id: string;
+  title: string;
+  body: string;
+  timestamp: number;
+  urgency: AlertUrgency;
+  read: boolean;
+  category?: 'surge' | 'runtime' | 'budget' | 'schedule' | 'peakhours' | 'system' | 'general';
+  tag?: string;
+}
+
+const NOTIFICATION_LOGS_STORAGE_KEY = "powerforecast_notification_logs";
+
+export function getNotificationLogs(): NotificationLogItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(NOTIFICATION_LOGS_STORAGE_KEY);
+    if (!raw) {
+      const initialLogs: NotificationLogItem[] = [
+        {
+          id: "init-1",
+          title: "PowerForecast Telemetry Online",
+          body: "Smart Energy alerts, continuous runtime monitors, and budget tracking are operational.",
+          timestamp: Date.now() - 1000 * 60 * 18,
+          urgency: "info",
+          read: false,
+          category: "system",
+        },
+      ];
+      localStorage.setItem(NOTIFICATION_LOGS_STORAGE_KEY, JSON.stringify(initialLogs));
+      return initialLogs;
+    }
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export function addNotificationLog(
+  item: Omit<NotificationLogItem, "id" | "timestamp" | "read">
+): NotificationLogItem {
+  const newLog: NotificationLogItem = {
+    id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    timestamp: Date.now(),
+    read: false,
+    ...item,
+  };
+
+  if (typeof window !== "undefined") {
+    try {
+      const logs = getNotificationLogs();
+      const updated = [newLog, ...logs].slice(0, 50);
+      localStorage.setItem(NOTIFICATION_LOGS_STORAGE_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent("powerforecast_notifications_updated"));
+    } catch (e) {
+      devLog.warn("Notifications", "Failed to store notification log", e);
+    }
+  }
+
+  return newLog;
+}
+
+export function markNotificationAsRead(id: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const logs = getNotificationLogs();
+    const updated = logs.map((l) => (l.id === id ? { ...l, read: true } : l));
+    localStorage.setItem(NOTIFICATION_LOGS_STORAGE_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent("powerforecast_notifications_updated"));
+  } catch (e) {
+    devLog.warn("Notifications", "Failed to mark notification as read", e);
+  }
+}
+
+export function markAllNotificationsAsRead(): void {
+  if (typeof window === "undefined") return;
+  try {
+    const logs = getNotificationLogs();
+    const updated = logs.map((l) => ({ ...l, read: true }));
+    localStorage.setItem(NOTIFICATION_LOGS_STORAGE_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent("powerforecast_notifications_updated"));
+  } catch (e) {
+    devLog.warn("Notifications", "Failed to mark all notifications read", e);
+  }
+}
+
+export function clearAllNotificationLogs(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(NOTIFICATION_LOGS_STORAGE_KEY, JSON.stringify([]));
+    window.dispatchEvent(new CustomEvent("powerforecast_notifications_updated"));
+  } catch (e) {
+    devLog.warn("Notifications", "Failed to clear notification logs", e);
+  }
+}
+

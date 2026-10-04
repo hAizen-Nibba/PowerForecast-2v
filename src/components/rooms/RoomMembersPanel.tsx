@@ -191,14 +191,21 @@ export const RoomMembersPanel: React.FC = () => {
           sx={{
             borderRadius: 2,
             textTransform: 'none',
-            fontWeight: 700,
+            fontWeight: 800,
             fontSize: '0.85rem',
             px: 2.5,
             py: 1,
-            bgcolor: 'primary.main',
-            color: '#0a1917',
+            bgcolor: (theme) =>
+              theme.palette.mode === 'dark' ? '#00e5c9' : '#0d9488',
+            color: (theme) =>
+              theme.palette.mode === 'dark' ? '#042f2e' : '#ffffff',
+            boxShadow: (theme) =>
+              theme.palette.mode === 'dark'
+                ? '0 2px 12px rgba(0, 229, 201, 0.35)'
+                : '0 2px 10px rgba(13, 148, 136, 0.25)',
             '&:hover': {
-              bgcolor: '#00cbb2',
+              bgcolor: (theme) =>
+                theme.palette.mode === 'dark' ? '#38efd8' : '#0f766e',
             },
           }}
         >
@@ -362,9 +369,12 @@ export const RoomMembersPanel: React.FC = () => {
                           bgcolor: isMemberOwner
                             ? 'primary.main'
                             : m.role === 'admin'
-                            ? '#34d399'
+                            ? '#10b981'
                             : '#f59e0b',
-                          color: '#0a1917',
+                          color: (theme) =>
+                            isMemberOwner
+                              ? theme.palette.primary.contrastText
+                              : '#ffffff',
                           fontWeight: 800,
                           fontSize: '0.85rem',
                         }}

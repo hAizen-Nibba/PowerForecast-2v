@@ -36,7 +36,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useGetIdentity, useLogout } from "@refinedev/core";
 import { checkSupabaseConnection } from "../../lib/supabaseClient";
 import { NotificationPopover } from "./NotificationPopover";
-import { getNotificationPermission } from "../../lib/notificationService";
+import { getNotificationPermission, getNotificationLogs } from "../../lib/notificationService";
 import { useTour } from "../../hooks/useTour";
 import { ROUTE_TO_TOUR_PAGE } from "../tour/tourSteps";
 import { useLanguage } from "../../context/LanguageContext";
@@ -117,6 +117,18 @@ export const Header: React.FC<HeaderProps> = ({
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  const [unreadNotifCount, setUnreadNotifCount] = useState(() => {
+    return getNotificationLogs().filter((l) => !l.read).length;
+  });
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setUnreadNotifCount(getNotificationLogs().filter((l) => !l.read).length);
+    };
+    window.addEventListener("powerforecast_notifications_updated", handleUpdate);
+    return () => window.removeEventListener("powerforecast_notifications_updated", handleUpdate);
   }, []);
 
   const getPageTitle = (pathname: string) => {
@@ -354,17 +366,20 @@ export const Header: React.FC<HeaderProps> = ({
               }}
             >
               <Badge
-                variant="dot"
-                color={notifPermission === "granted" ? "success" : notifPermission === "denied" ? "error" : "warning"}
+                badgeContent={unreadNotifCount > 0 ? unreadNotifCount : undefined}
+                variant={unreadNotifCount > 0 ? "standard" : "dot"}
+                color={unreadNotifCount > 0 ? "error" : notifPermission === "granted" ? "success" : "warning"}
                 sx={{
                   "& .MuiBadge-badge": {
-                    width: 6,
-                    height: 6,
-                    minWidth: 6,
+                    fontSize: "0.625rem",
+                    height: unreadNotifCount > 0 ? 16 : 6,
+                    minWidth: unreadNotifCount > 0 ? 16 : 6,
+                    px: unreadNotifCount > 0 ? 0.5 : 0,
+                    fontWeight: 800,
                   },
                 }}
               >
-                {notifPermission === "granted" ? (
+                {unreadNotifCount > 0 || notifPermission === "granted" ? (
                   <NotificationsActiveIcon sx={{ color: "text.primary", fontSize: 18 }} />
                 ) : (
                   <NotificationsIcon sx={{ color: "text.secondary", fontSize: 18 }} />

@@ -1,149 +1,103 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Popover from "@mui/material/Popover";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
-import Switch from "@mui/material/Switch";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import Divider from "@mui/material/Divider";
-import TextField from "@mui/material/TextField";
 import Chip from "@mui/material/Chip";
-import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
 import Paper from "@mui/material/Paper";
 import Tooltip from "@mui/material/Tooltip";
+import IconButton from "@mui/material/IconButton";
 import {
   NotificationsActive as NotificationsActiveIcon,
+  NotificationsNone as EmptyNotifIcon,
   Timer as TimerIcon,
   AccountBalanceWallet as BudgetIcon,
   CalendarMonth as CalendarIcon,
   Bolt as BoltIcon,
-  VolumeUp as SoundIcon,
-  Vibration as VibrationIcon,
   FlashOn as SurgeIcon,
-  Shield as ShieldIcon,
-  Speed as SpeedIcon,
-  CloudDone as CloudDoneIcon,
-  Sensors as SensorsIcon,
-  MobileFriendly as DeviceIcon,
-  HelpOutlined as HelpIcon,
+  Settings as SettingsIcon,
+  DoneAll as DoneAllIcon,
+  DeleteSweep as ClearAllIcon,
+  Close as CloseIcon,
+  Circle as DotIcon,
 } from "@mui/icons-material";
-import { useNotifications } from "../../hooks/useNotifications";
-import { NotificationLevel } from "../../lib/notificationService";
+import { useNavigate } from "react-router-dom";
 import {
-  isPushSupported,
-  getPushSubscription,
-  subscribeToPush,
-  unsubscribeFromPush,
-  sendTestBackgroundPush,
-} from "../../lib/pushNotificationService";
+  getNotificationLogs,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  clearAllNotificationLogs,
+  NotificationLogItem,
+} from "../../lib/notificationService";
+import { useLanguage } from "../../context/LanguageContext";
 
 interface NotificationPopoverProps {
   anchorEl: HTMLElement | null;
   onClose: () => void;
 }
 
-const LEVEL_CONFIG: Record<
-  NotificationLevel,
-  { label: string; sub: string; color: string; bg: string; border: string }
-> = {
-  relaxed: {
-    label: "Relaxed (L1)",
-    sub: "Passive & silent; high thresholds only (6h timer, 90% budget)",
-    color: "#60a5fa",
-    bg: "rgba(59, 130, 246, 0.12)",
-    border: "rgba(59, 130, 246, 0.35)",
-  },
-  standard: {
-    label: "Standard (L2)",
-    sub: "Balanced household tracking (4h timer, 80% budget, peak hours)",
-    color: "#00e5c9",
-    bg: "rgba(0, 229, 201, 0.12)",
-    border: "rgba(0, 229, 201, 0.35)",
-  },
-  proactive: {
-    label: "Proactive (L3)",
-    sub: "Energy saver; 2h timer, 70% budget, >2.5kW surge, chimes & haptics",
-    color: "#f59e0b",
-    bg: "rgba(245, 158, 11, 0.12)",
-    border: "rgba(245, 158, 11, 0.35)",
-  },
-  strict: {
-    label: "Strict (L4)",
-    sub: "Maximum vigilance; 1h timer, 50% budget, >2.0kW surge, urgent alarms",
-    color: "#ef4444",
-    bg: "rgba(239, 68, 68, 0.15)",
-    border: "rgba(239, 68, 68, 0.4)",
-  },
-};
+function formatRelativeTime(timestamp: number, language: "en" | "tl"): string {
+  const diffSec = Math.floor((Date.now() - timestamp) / 1000);
+  if (diffSec < 60) return language === "tl" ? "Kani-kanina lang" : "Just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return language === "tl" ? `${diffMin}m ang nakalipas` : `${diffMin}m ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return language === "tl" ? `${diffHours}h ang nakalipas` : `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return language === "tl" ? `${diffDays}d ang nakalipas` : `${diffDays}d ago`;
+}
+
+function getCategoryIcon(category?: NotificationLogItem["category"]) {
+  switch (category) {
+    case "surge":
+      return <BoltIcon sx={{ color: "warning.main", fontSize: 18 }} />;
+    case "runtime":
+      return <TimerIcon sx={{ color: "primary.main", fontSize: 18 }} />;
+    case "budget":
+      return <BudgetIcon sx={{ color: "success.main", fontSize: 18 }} />;
+    case "peakhours":
+      return <SurgeIcon sx={{ color: "error.main", fontSize: 18 }} />;
+    case "schedule":
+      return <CalendarIcon sx={{ color: "info.main", fontSize: 18 }} />;
+    default:
+      return <NotificationsActiveIcon sx={{ color: "primary.main", fontSize: 18 }} />;
+  }
+}
 
 export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchorEl, onClose }) => {
-  const {
-    permission,
-    isSupported,
-    prefs,
-    setLevel,
-    requestPermission,
-    updatePrefs,
-    testNotification,
-    previewSound,
-    previewVibration,
-  } = useNotifications();
-
+  const navigate = useNavigate();
+  const { language } = useLanguage();
   const open = Boolean(anchorEl);
-  const currentLevelConfig = LEVEL_CONFIG[prefs.notificationLevel || "standard"];
 
-  const [isPushSubscribed, setIsPushSubscribed] = React.useState(false);
-  const [isPushLoading, setIsPushLoading] = React.useState(false);
-  const [pushError, setPushError] = React.useState<string | null>(null);
-  const [showGuide, setShowGuide] = React.useState(false);
-  const [pushCountdown, setPushCountdown] = React.useState<number | null>(null);
+  const [logs, setLogs] = useState<NotificationLogItem[]>(() => getNotificationLogs());
 
-  React.useEffect(() => {
-    if (open && isPushSupported()) {
-      getPushSubscription().then((sub) => {
-        setIsPushSubscribed(Boolean(sub));
-      });
-    }
-  }, [open]);
+  useEffect(() => {
+    const handleUpdate = () => {
+      setLogs(getNotificationLogs());
+    };
+    window.addEventListener("powerforecast_notifications_updated", handleUpdate);
+    return () => window.removeEventListener("powerforecast_notifications_updated", handleUpdate);
+  }, []);
 
-  const handleTogglePush = async () => {
-    setIsPushLoading(true);
-    setPushError(null);
-    try {
-      if (isPushSubscribed) {
-        await unsubscribeFromPush();
-        setIsPushSubscribed(false);
-      } else {
-        const res = await subscribeToPush();
-        if (res.success) {
-          setIsPushSubscribed(true);
-          setShowGuide(false);
-        } else {
-          setPushError(res.error || "Failed to enable Web Push.");
-          setShowGuide(true);
-        }
-      }
-    } catch (err: any) {
-      setPushError(err?.message || "An unexpected error occurred.");
-      setShowGuide(true);
-    } finally {
-      setIsPushLoading(false);
-    }
+  const unreadCount = logs.filter((l) => !l.read).length;
+
+  const handleItemClick = (id: string) => {
+    markNotificationAsRead(id);
   };
 
-  const handleTestBackgroundPush = async () => {
-    setPushCountdown(5);
-    sendTestBackgroundPush({ delaySeconds: 5 }).catch(() => {});
-    const interval = setInterval(() => {
-      setPushCountdown((prev) => {
-        if (prev === null || prev <= 1) {
-          clearInterval(interval);
-          return null;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+  const handleMarkAllRead = () => {
+    markAllNotificationsAsRead();
+  };
+
+  const handleClearAll = () => {
+    clearAllNotificationLogs();
+  };
+
+  const handleOpenSettings = () => {
+    onClose();
+    navigate("/settings?tab=notifications");
   };
 
   return (
@@ -162,480 +116,259 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({ anchor
       slotProps={{
         paper: {
           sx: {
-            width: { xs: "calc(100vw - 24px)", sm: 380 },
-            maxHeight: "85vh",
-            p: 2.5,
-            borderRadius: 1.5,
-            bgcolor: "background.paper",
+            width: { xs: "calc(100vw - 24px)", sm: 400 },
+            maxHeight: "80vh",
+            display: "flex",
+            flexDirection: "column",
+            borderRadius: 2,
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? "rgba(20, 24, 30, 0.98)" : "#ffffff",
+            backdropFilter: "blur(20px)",
             border: "1px solid",
             borderColor: (theme) =>
               theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "divider",
-            boxShadow: "0 16px 40px rgba(0,0,0,0.5)",
-            overflowY: "auto",
+            boxShadow: (theme) =>
+              theme.palette.mode === "dark"
+                ? "0 20px 50px rgba(0, 0, 0, 0.7)"
+                : "0 12px 36px rgba(0, 0, 0, 0.12)",
+            overflow: "hidden",
           },
         },
       }}
     >
-      {/* Header */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <NotificationsActiveIcon sx={{ color: currentLevelConfig.color, fontSize: 22 }} />
-          <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-            Smart Energy Alerts
-          </Typography>
-        </Box>
-        <Chip
-          label={permission === "granted" ? "Active" : permission === "denied" ? "Blocked" : "Needs Permission"}
-          size="small"
-          color={permission === "granted" ? "success" : permission === "denied" ? "error" : "warning"}
-          sx={{ fontWeight: 700, fontSize: "0.6875rem" }}
-        />
-      </Box>
-
-      {!isSupported && (
-        <Alert severity="warning" sx={{ mb: 2, borderRadius: 1, fontSize: "0.75rem" }}>
-          Web Notifications are not supported in this browser environment.
-        </Alert>
-      )}
-
-      {isSupported && permission === "default" && (
-        <Box sx={{ mb: 2, p: 1.5, borderRadius: 1.25, bgcolor: "rgba(0, 229, 201, 0.08)", border: "1px solid rgba(0, 229, 201, 0.25)" }}>
-          <Typography variant="caption" sx={{ color: "text.primary", display: "block", mb: 1 }}>
-            Allow browser alerts to receive active circuit extended runtime warnings, surge spikes, and schedule reminders.
-          </Typography>
-          <Button
-            variant="contained"
-            size="small"
-            fullWidth
-            onClick={requestPermission}
-            sx={{ fontWeight: 800, borderRadius: 1 }}
-          >
-            Enable Browser Alerts
-          </Button>
-        </Box>
-      )}
-
-      {isSupported && permission === "denied" && (
-        <Alert severity="error" sx={{ mb: 2, borderRadius: 1.25, fontSize: "0.75rem" }}>
-          Notifications are blocked in your browser settings. Please allow notifications for this site to receive smart alerts.
-        </Alert>
-      )}
-
-      {/* Master Switch & Active Level Badge */}
-      <Paper
-        variant="outlined"
+      {/* ── Popover Header ── */}
+      <Box
         sx={{
-          p: 1.5,
-          mb: 1.5,
-          borderRadius: 1.25,
-          bgcolor: currentLevelConfig.bg,
-          borderColor: currentLevelConfig.border,
+          p: 2,
+          pb: 1.5,
+          borderBottom: "1px solid",
+          borderColor: "divider",
           display: "flex",
-          flexDirection: "column",
-          gap: 1,
+          alignItems: "center",
+          justifyContent: "space-between",
+          bgcolor: (theme) =>
+            theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "#f8fafc",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <ShieldIcon sx={{ fontSize: 18, color: currentLevelConfig.color }} />
-            <Typography variant="body2" sx={{ fontWeight: 800, color: "text.primary" }}>
-              Alert Sensitivity Level
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <NotificationsActiveIcon sx={{ color: "primary.main", fontSize: 20 }} />
+          <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+            {language === "tl" ? "Mga Alerto at Abiso" : "System Notifications"}
+          </Typography>
+          {unreadCount > 0 && (
+            <Chip
+              label={`${unreadCount} ${language === "tl" ? "bago" : "new"}`}
+              size="small"
+              color="primary"
+              sx={{ fontWeight: 800, fontSize: "0.6875rem", height: 20 }}
+            />
+          )}
+        </Box>
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          {unreadCount > 0 && (
+            <Tooltip title={language === "tl" ? "Markahan lahat bilang nabasa" : "Mark all as read"}>
+              <IconButton size="small" onClick={handleMarkAllRead} sx={{ p: 0.5 }}>
+                <DoneAllIcon sx={{ fontSize: 17, color: "text.secondary" }} />
+              </IconButton>
+            </Tooltip>
+          )}
+
+          {logs.length > 0 && (
+            <Tooltip title={language === "tl" ? "Burahin lahat ng logs" : "Clear all notifications"}>
+              <IconButton size="small" onClick={handleClearAll} sx={{ p: 0.5 }}>
+                <ClearAllIcon sx={{ fontSize: 17, color: "text.secondary" }} />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
+      </Box>
+
+      {/* ── Notifications List / Feed ── */}
+      <Box sx={{ flex: 1, overflowY: "auto", p: 1.5, display: "flex", flexDirection: "column", gap: 1 }}>
+        {logs.length === 0 ? (
+          <Box
+            sx={{
+              py: 6,
+              px: 2,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              gap: 1.5,
+            }}
+          >
+            <Box
+              sx={{
+                width: 52,
+                height: 52,
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.04)",
+                color: "text.secondary",
+              }}
+            >
+              <EmptyNotifIcon sx={{ fontSize: 26 }} />
+            </Box>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "text.primary" }}>
+              {language === "tl" ? "Walang mga Abiso" : "All Caught Up!"}
+            </Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", maxWidth: 240 }}>
+              {language === "tl"
+                ? "Lahat ng smart energy alerts, continuous circuit warnings, at budget reminders ay lalabas dito."
+                : "Real-time energy alerts, circuit overrun warnings, and budget milestones will appear here."}
             </Typography>
           </Box>
-          <Chip
-            label={currentLevelConfig.label}
-            size="small"
-            sx={{
-              fontWeight: 800,
-              fontSize: "0.6875rem",
-              bgcolor: currentLevelConfig.color,
-              color: "#000",
-            }}
-          />
-        </Box>
-        <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.7rem", lineHeight: 1.2 }}>
-          {currentLevelConfig.sub}
-        </Typography>
-
-        {/* 4-Tier Level Selector Bar */}
-        <Box sx={{ display: "flex", gap: 0.5, mt: 0.5 }}>
-          {(["relaxed", "standard", "proactive", "strict"] as NotificationLevel[]).map((lvl) => {
-            const isSelected = (prefs.notificationLevel || "standard") === lvl;
-            const cfg = LEVEL_CONFIG[lvl];
+        ) : (
+          logs.map((log) => {
+            const isUnread = !log.read;
             return (
-              <Button
-                key={lvl}
-                size="small"
-                onClick={() => setLevel(lvl)}
+              <Paper
+                key={log.id}
+                elevation={0}
+                onClick={() => handleItemClick(log.id)}
                 sx={{
-                  flex: 1,
-                  py: 0.4,
-                  px: 0.5,
-                  fontSize: "0.65rem",
-                  fontWeight: 800,
-                  borderRadius: 1,
-                  textTransform: "none",
-                  bgcolor: isSelected ? cfg.color : "rgba(255, 255, 255, 0.05)",
-                  color: isSelected ? "#000" : "text.secondary",
+                  p: 1.5,
+                  borderRadius: 1.5,
+                  cursor: "pointer",
                   border: "1px solid",
-                  borderColor: isSelected ? cfg.color : "rgba(255, 255, 255, 0.08)",
+                  borderColor: isUnread
+                    ? (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "rgba(0, 229, 201, 0.35)"
+                          : "rgba(13, 148, 136, 0.3)"
+                    : "divider",
+                  bgcolor: isUnread
+                    ? (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "rgba(0, 229, 201, 0.06)"
+                          : "rgba(13, 148, 136, 0.04)"
+                    : (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "rgba(255, 255, 255, 0.02)"
+                          : "background.paper",
+                  transition: "all 0.15s ease",
                   "&:hover": {
-                    bgcolor: isSelected ? cfg.color : "rgba(255, 255, 255, 0.1)",
+                    borderColor: "primary.main",
+                    transform: "translateY(-1px)",
                   },
                 }}
               >
-                {lvl === "relaxed" ? "Relaxed" : lvl === "standard" ? "Standard" : lvl === "proactive" ? "Proactive" : "Strict"}
-              </Button>
+                <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.25 }}>
+                  <Box
+                    sx={{
+                      p: 0.75,
+                      borderRadius: 1,
+                      display: "flex",
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0.04)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {getCategoryIcon(log.category)}
+                  </Box>
+
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, mb: 0.25 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: isUnread ? 800 : 700,
+                          color: "text.primary",
+                          fontSize: "0.8125rem",
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {log.title}
+                      </Typography>
+
+                      {isUnread && (
+                        <DotIcon
+                          sx={{
+                            color: "primary.main",
+                            fontSize: 10,
+                            flexShrink: 0,
+                          }}
+                        />
+                      )}
+                    </Box>
+
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "text.secondary",
+                        display: "block",
+                        lineHeight: 1.4,
+                        fontSize: "0.75rem",
+                        mb: 0.75,
+                      }}
+                    >
+                      {log.body}
+                    </Typography>
+
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 0.5 }}>
+                      <Typography variant="caption" sx={{ color: "text.disabled", fontSize: "0.6875rem" }}>
+                        {formatRelativeTime(log.timestamp, language)}
+                      </Typography>
+
+                      {log.urgency === "critical" && (
+                        <Chip
+                          label={language === "tl" ? "Kritikal" : "Critical"}
+                          size="small"
+                          color="error"
+                          sx={{ height: 18, fontSize: "0.625rem", fontWeight: 800 }}
+                        />
+                      )}
+                      {log.urgency === "high" && (
+                        <Chip
+                          label={language === "tl" ? "Alerto" : "High"}
+                          size="small"
+                          color="warning"
+                          sx={{ height: 18, fontSize: "0.625rem", fontWeight: 800 }}
+                        />
+                      )}
+                    </Box>
+                  </Box>
+                </Box>
+              </Paper>
             );
-          })}
-        </Box>
-      </Paper>
+          })
+        )}
+      </Box>
 
-      <Stack spacing={1.25}>
-        {/* Master Switch */}
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Typography variant="body2" sx={{ fontWeight: 700 }}>
-            Master Notifications
-          </Typography>
-          <Switch
-            checked={prefs.enabled}
-            onChange={(e) => updatePrefs({ enabled: e.target.checked })}
-            color="primary"
-            size="small"
-          />
-        </Box>
+      {/* ── Popover Footer Link ── */}
+      <Divider />
+      <Box
+        sx={{
+          p: 1.5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          bgcolor: (theme) =>
+            theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "#f8fafc",
+        }}
+      >
+        <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
+          {language === "tl" ? "I-configure ang mga patakaran:" : "Customize alert triggers:"}
+        </Typography>
 
-        <Divider />
-
-        {/* Sound & Mobile Haptics Toggles */}
-        <Box sx={{ opacity: prefs.enabled ? 1 : 0.4, transition: "opacity 0.2s" }}>
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <SoundIcon sx={{ fontSize: 18, color: "primary.light" }} />
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                Synthesized Audio Chimes
-              </Typography>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Tooltip title="Preview Audio Chime">
-                <Button
-                  size="small"
-                  onClick={() => previewSound(prefs.notificationLevel === "strict" ? "urgent" : "chime")}
-                  sx={{ minWidth: "auto", px: 1, py: 0.2, fontSize: "0.65rem", fontWeight: 700 }}
-                >
-                  Play
-                </Button>
-              </Tooltip>
-              <Switch
-                checked={prefs.soundEnabled}
-                disabled={!prefs.enabled}
-                onChange={(e) => updatePrefs({ soundEnabled: e.target.checked })}
-                size="small"
-              />
-            </Box>
-          </Box>
-
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 0.75 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <VibrationIcon sx={{ fontSize: 18, color: "#a855f7" }} />
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                Mobile Haptic Vibration
-              </Typography>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Tooltip title="Test Vibration Pattern">
-                <Button
-                  size="small"
-                  onClick={() => previewVibration(prefs.notificationLevel === "strict" ? "critical" : "high")}
-                  sx={{ minWidth: "auto", px: 1, py: 0.2, fontSize: "0.65rem", fontWeight: 700 }}
-                >
-                  Vibrate
-                </Button>
-              </Tooltip>
-              <Switch
-                checked={prefs.vibrationEnabled}
-                disabled={!prefs.enabled}
-                onChange={(e) => updatePrefs({ vibrationEnabled: e.target.checked })}
-                size="small"
-              />
-            </Box>
-          </Box>
-        </Box>
-
-        <Divider />
-
-        {/* Live Power Load Surge Spike Alert */}
-        <Box sx={{ opacity: prefs.enabled ? 1 : 0.4, transition: "opacity 0.2s" }}>
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <SurgeIcon sx={{ fontSize: 18, color: "#f87171" }} />
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                Live Load Surge Alert
-              </Typography>
-            </Box>
-            <Switch
-              checked={prefs.surgeAlert}
-              disabled={!prefs.enabled}
-              onChange={(e) => updatePrefs({ surgeAlert: e.target.checked })}
-              size="small"
-            />
-          </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5, pl: 3.25 }}>
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Alert if concurrent draw exceeds:
-            </Typography>
-            <TextField
-              type="number"
-              size="small"
-              disabled={!prefs.enabled || !prefs.surgeAlert}
-              value={prefs.surgeThresholdWatts || 2500}
-              onChange={(e) =>
-                updatePrefs({ surgeThresholdWatts: Math.max(500, parseInt(e.target.value) || 2500) })
-              }
-              sx={{ width: 68, "& input": { py: 0.25, px: 1, fontSize: "0.75rem", textAlign: "center" } }}
-            />
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Watts
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Extended Runtime Alert */}
-        <Box sx={{ opacity: prefs.enabled ? 1 : 0.4, transition: "opacity 0.2s" }}>
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <TimerIcon sx={{ fontSize: 18, color: "warning.main" }} />
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                Extended Runtime Alert
-              </Typography>
-            </Box>
-            <Switch
-              checked={prefs.runtimeAlert ?? prefs.stopwatchAlert ?? true}
-              disabled={!prefs.enabled}
-              onChange={(e) => updatePrefs({ runtimeAlert: e.target.checked, stopwatchAlert: e.target.checked })}
-              size="small"
-            />
-          </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5, pl: 3.25 }}>
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Alert after:
-            </Typography>
-            <TextField
-              type="number"
-              size="small"
-              disabled={!prefs.enabled || !(prefs.runtimeAlert ?? prefs.stopwatchAlert ?? true)}
-              value={prefs.runtimeThresholdHours ?? prefs.stopwatchThresholdHours ?? 4}
-              onChange={(e) => {
-                const val = Math.max(1, parseInt(e.target.value) || 4);
-                updatePrefs({ runtimeThresholdHours: val, stopwatchThresholdHours: val });
-              }}
-              sx={{ width: 60, "& input": { py: 0.25, px: 1, fontSize: "0.75rem", textAlign: "center" } }}
-            />
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              hours
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Budget Alert */}
-        <Box sx={{ opacity: prefs.enabled ? 1 : 0.4, transition: "opacity 0.2s" }}>
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <BudgetIcon sx={{ fontSize: 18, color: "#34d399" }} />
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                Budget Milestones (Multi-Tier)
-              </Typography>
-            </Box>
-            <Switch
-              checked={prefs.budgetAlert}
-              disabled={!prefs.enabled}
-              onChange={(e) => updatePrefs({ budgetAlert: e.target.checked })}
-              size="small"
-            />
-          </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5, pl: 3.25 }}>
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              Base threshold:
-            </Typography>
-            <TextField
-              type="number"
-              size="small"
-              disabled={!prefs.enabled || !prefs.budgetAlert}
-              value={prefs.budgetThresholdPercent}
-              onChange={(e) =>
-                updatePrefs({ budgetThresholdPercent: Math.max(30, Math.min(100, parseInt(e.target.value) || 80)) })
-              }
-              sx={{ width: 60, "& input": { py: 0.25, px: 1, fontSize: "0.75rem", textAlign: "center" } }}
-            />
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
-              % of target budget
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Schedule Alert */}
-        <Box sx={{ opacity: prefs.enabled ? 1 : 0.4, transition: "opacity 0.2s" }}>
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <CalendarIcon sx={{ fontSize: 18, color: "#818cf8" }} />
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                Schedule Reminders (5m before)
-              </Typography>
-            </Box>
-            <Switch
-              checked={prefs.scheduleAlert}
-              disabled={!prefs.enabled}
-              onChange={(e) => updatePrefs({ scheduleAlert: e.target.checked })}
-              size="small"
-            />
-          </Box>
-        </Box>
-
-        {/* Peak Hours Alert */}
-        <Box sx={{ opacity: prefs.enabled ? 1 : 0.4, transition: "opacity 0.2s" }}>
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <BoltIcon sx={{ fontSize: 18, color: "#ffd54f" }} />
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                Meralco Peak Hours Warning
-              </Typography>
-            </Box>
-            <Switch
-              checked={prefs.peakHourAlert}
-              disabled={!prefs.enabled}
-              onChange={(e) => updatePrefs({ peakHourAlert: e.target.checked })}
-              size="small"
-            />
-          </Box>
-        </Box>
-      </Stack>
-
-      {/* Background Web Push Notification Channel (Windows Action Center / Mobile Tray) */}
-      {isPushSupported() && (
-        <Paper
-          variant="outlined"
+        <Button
+          size="small"
+          onClick={handleOpenSettings}
+          startIcon={<SettingsIcon sx={{ fontSize: 15 }} />}
           sx={{
-            p: 1.5,
-            mt: 2,
-            borderRadius: 1.25,
-            bgcolor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.05)" : "rgba(13, 148, 136, 0.04)",
-            borderColor: isPushSubscribed ? "primary.main" : "divider",
+            fontWeight: 800,
+            fontSize: "0.75rem",
+            textTransform: "none",
+            borderRadius: 1,
+            py: 0.5,
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <CloudDoneIcon sx={{ fontSize: 18, color: isPushSubscribed ? "primary.main" : "text.secondary" }} />
-              <Typography variant="body2" sx={{ fontWeight: 800 }}>
-                Background Web Push (OS / PWA)
-              </Typography>
-            </Box>
-            <Switch
-              size="small"
-              checked={isPushSubscribed}
-              disabled={isPushLoading}
-              onChange={handleTogglePush}
-            />
-          </Box>
-          <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 1.25 }}>
-            Receives alerts directly in Windows Action Center or mobile tray even when this app/browser is completely closed.
-          </Typography>
-
-          {pushCountdown !== null ? (
-            <Alert severity="info" sx={{ py: 0.5, px: 1, fontSize: "0.72rem", borderRadius: 1 }}>
-              Dispatched to cloud! Close browser or PWA window right now! Arriving in {pushCountdown}s...
-            </Alert>
-          ) : (
-            <Button
-              size="small"
-              variant="outlined"
-              fullWidth
-              disabled={!isPushSubscribed}
-              onClick={handleTestBackgroundPush}
-              sx={{
-                fontSize: "0.72rem",
-                fontWeight: 700,
-                textTransform: "none",
-                borderRadius: 1,
-                py: 0.35,
-              }}
-            >
-              Test Closed-App Push (5s Countdown)
-            </Button>
-          )}
-
-          {pushError && (
-            <Alert
-              severity="warning"
-              onClose={() => setPushError(null)}
-              sx={{ mt: 1, py: 0.25, px: 1, fontSize: "0.72rem", borderRadius: 1 }}
-            >
-              {pushError}
-            </Alert>
-          )}
-
-          {/* Guide toggle button */}
-          <Box sx={{ mt: 1, display: "flex", justifyContent: "flex-end" }}>
-            <Button
-              size="small"
-              onClick={() => setShowGuide(!showGuide)}
-              startIcon={<HelpIcon sx={{ fontSize: 13 }} />}
-              sx={{
-                fontSize: "0.6875rem",
-                textTransform: "none",
-                py: 0.2,
-                px: 0.75,
-                color: "text.secondary",
-                "&:hover": { color: "primary.main" },
-              }}
-            >
-              {showGuide ? "Hide Setup Tips" : "Push Setup & Error Guide"}
-            </Button>
-          </Box>
-
-          {showGuide && (
-            <Paper
-              variant="outlined"
-              sx={{
-                mt: 1,
-                p: 1.25,
-                borderRadius: 1,
-                bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.3)" : "rgba(248, 250, 252, 0.9)",
-              }}
-            >
-              <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.main", display: "block", mb: 0.5, fontSize: "0.7rem" }}>
-                Browser Setup Tips to Avoid Errors:
-              </Typography>
-              <Typography variant="caption" component="div" sx={{ color: "text.secondary", fontSize: "0.6875rem", lineHeight: 1.45 }}>
-                • <strong>Brave Browser:</strong> Open <code>brave://settings/privacy</code> and enable <em>"Use Google services for push messaging"</em>.<br />
-                • <strong>Ad-Blockers / VPN:</strong> Whitelist Google push sockets (<code>fcm.googleapis.com</code>, <code>mtalk.google.com</code>).<br />
-                • <strong>Windows:</strong> Ensure Notifications are enabled in Windows Settings &gt; System &gt; Notifications.<br />
-                • <strong>Incognito:</strong> Web Push is disabled by browsers in Private/Incognito windows.
-              </Typography>
-            </Paper>
-          )}
-        </Paper>
-      )}
-
-      <Divider sx={{ my: 2 }} />
-
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Button
-          size="small"
-          variant="outlined"
-          onClick={testNotification}
-          disabled={permission !== "granted"}
-          sx={{ borderRadius: 1.5, fontSize: "0.75rem", textTransform: "none", fontWeight: 700 }}
-        >
-          Test Alert & Haptics
-        </Button>
-        <Button
-          size="small"
-          onClick={onClose}
-          sx={{ borderRadius: 1.5, fontSize: "0.75rem", textTransform: "none", fontWeight: 700 }}
-        >
-          Close
+          {language === "tl" ? "Mga Setting ng Abiso" : "Notification Settings"}
         </Button>
       </Box>
     </Popover>

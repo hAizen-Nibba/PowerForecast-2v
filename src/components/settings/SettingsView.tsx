@@ -15,8 +15,6 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Divider from "@mui/material/Divider";
 import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import Avatar from "@mui/material/Avatar";
 import Tooltip from "@mui/material/Tooltip";
 import Alert from "@mui/material/Alert";
@@ -34,8 +32,7 @@ import {
   Translate as LanguageIcon,
   People as HouseholdIcon,
   DeleteForever as DeleteIcon,
-  ContentCopy as CopyIcon,
-  Check as CheckIcon,
+  CheckCircle as CheckCircleIcon,
   Security as SecurityIcon,
   Lock as LockIcon,
   Save as SaveIcon,
@@ -45,7 +42,6 @@ import {
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
   Email as EmailIcon,
-  CheckCircle as CheckCircleIcon,
   NotificationsActive as NotificationsActiveIcon,
   Sensors as SensorsIcon,
   CloudDone as CloudDoneIcon,
@@ -65,6 +61,10 @@ import {
   Logout as LogoutIcon,
   DeviceHub as DeviceHubIcon,
   VerifiedUser as VerifiedIcon,
+  VolumeUp as SoundIcon,
+  Vibration as VibrationIcon,
+  FlashOn as SurgeIcon,
+  AccountBalanceWallet as BudgetIcon,
 } from "@mui/icons-material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTour } from "../../hooks/useTour";
@@ -80,6 +80,8 @@ import { useToast } from "../common/ToastProvider";
 import { supabaseClient } from "../../lib/supabaseClient";
 import { useLanguage, Language } from "../../context/LanguageContext";
 import { useRoom } from "../../context/RoomContext";
+import { useNotifications } from "../../hooks/useNotifications";
+import { NotificationLevel } from "../../lib/notificationService";
 import { devLog } from "../../lib/devLogger";
 import {
   isPushSupported,
@@ -88,14 +90,44 @@ import {
   unsubscribeFromPush,
   sendTestBackgroundPush,
 } from "../../lib/pushNotificationService";
-import {
-  getNotificationPreferences,
-  saveNotificationPreferences,
-} from "../../lib/notificationService";
 import { RoomMembersPanel } from "../rooms/RoomMembersPanel";
 
 const SETTINGS_TABS = ["general", "household", "notifications", "security"] as const;
 type SettingsTabKey = (typeof SETTINGS_TABS)[number];
+
+const LEVEL_CONFIG: Record<
+  NotificationLevel,
+  { label: string; sub: string; color: string; bg: string; border: string }
+> = {
+  relaxed: {
+    label: "Relaxed (L1)",
+    sub: "Passive & silent; high thresholds only (6h timer, 90% budget)",
+    color: "#60a5fa",
+    bg: "rgba(59, 130, 246, 0.12)",
+    border: "rgba(59, 130, 246, 0.35)",
+  },
+  standard: {
+    label: "Standard (L2)",
+    sub: "Balanced household tracking (4h timer, 80% budget, peak hours)",
+    color: "#00e5c9",
+    bg: "rgba(0, 229, 201, 0.12)",
+    border: "rgba(0, 229, 201, 0.35)",
+  },
+  proactive: {
+    label: "Proactive (L3)",
+    sub: "Energy saver; 2h timer, 70% budget, >2.5kW surge, chimes & haptics",
+    color: "#f59e0b",
+    bg: "rgba(245, 158, 11, 0.12)",
+    border: "rgba(245, 158, 11, 0.35)",
+  },
+  strict: {
+    label: "Strict (L4)",
+    sub: "Maximum vigilance; 1h timer, 50% budget, >2.0kW surge, urgent alarms",
+    color: "#ef4444",
+    bg: "rgba(239, 68, 68, 0.15)",
+    border: "rgba(239, 68, 68, 0.4)",
+  },
+};
 
 export const SettingsView: React.FC = () => {
   const navigate = useNavigate();
@@ -106,6 +138,19 @@ export const SettingsView: React.FC = () => {
   const { showSuccess, showError, showInfo } = useToast();
   const { language, setLanguage, t } = useLanguage();
   const { activeRoom, role: roomRole, isOwner } = useRoom();
+
+  // Unified Notifications hook
+  const {
+    permission: notifPermission,
+    isSupported: isNotifSupported,
+    prefs: notifPrefs,
+    setLevel: setNotifLevel,
+    requestPermission: requestNotifPermission,
+    updatePrefs: updateNotifPrefs,
+    testNotification: triggerTestNotification,
+    previewSound,
+    previewVibration,
+  } = useNotifications();
 
   // Tab state synchronized with URL search param: /settings?tab=general|household|notifications|security
   const tabParam = searchParams.get("tab") as SettingsTabKey | null;
@@ -118,7 +163,6 @@ export const SettingsView: React.FC = () => {
     setSearchParams({ tab: SETTINGS_TABS[newIndex] }, { replace: true });
   };
 
-  const [idCopied, setIdCopied] = useState(false);
   const [isSignoutConfirmOpen, setIsSignoutConfirmOpen] = useState(false);
 
   // ── 1. Change Password State ─────────────────────────────
@@ -216,8 +260,7 @@ export const SettingsView: React.FC = () => {
   const passwordsMatch = !confirmNewPassword || newPassword === confirmNewPassword;
 
   // ── 2. Language & Localization ───────────────────────────
-  const handleLanguageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const lang = e.target.value as Language;
+  const handleLanguageChange = (lang: Language) => {
     setLanguage(lang);
     showSuccess(
       lang === "tl" ? "Wika ay pinalitan sa Tagalog (Filipino)!" : "Language updated to English (US)!",
@@ -225,75 +268,7 @@ export const SettingsView: React.FC = () => {
     );
   };
 
-  // ── 3. Notification Preferences State ────────────────────
-  const [emailAlertsEnabled, setEmailAlertsEnabled] = useState(() => {
-    return getNotificationPreferences().emailAlertsEnabled ?? false;
-  });
-
-  const [stopwatchAlertEnabled, setStopwatchAlertEnabled] = useState(() => {
-    return getNotificationPreferences().runtimeAlert ?? true;
-  });
-
-  const [stopwatchThresholdHours, setStopwatchThresholdHours] = useState<number>(() => {
-    return getNotificationPreferences().runtimeThresholdHours ?? 2;
-  });
-
-  const [planQuotaAlertEnabled, setPlanQuotaAlertEnabled] = useState(() => {
-    return getNotificationPreferences().planQuotaAlert ?? true;
-  });
-
-  const handleToggleEmailAlerts = (checked: boolean) => {
-    setEmailAlertsEnabled(checked);
-    saveNotificationPreferences({
-      emailAlertsEnabled: checked,
-      alertEmailAddress: identity?.email,
-    });
-    showSuccess(
-      checked
-        ? (language === "tl" ? "Aktibo na ang email alerts para sa budget at surges!" : "Email alerts activated for budget milestones and power surges!")
-        : (language === "tl" ? "Nai-off ang email alerts." : "Email alerts disabled.")
-    );
-  };
-
-  const handleToggleStopwatchAlert = (checked: boolean) => {
-    setStopwatchAlertEnabled(checked);
-    saveNotificationPreferences({
-      runtimeAlert: checked,
-      stopwatchAlert: checked,
-    });
-    showSuccess(
-      checked
-        ? (language === "tl" ? "Aktibo na ang unattended stopwatch alerts!" : "Unattended stopwatch alerts enabled!")
-        : (language === "tl" ? "Nai-off ang stopwatch alerts." : "Unattended stopwatch alerts disabled.")
-    );
-  };
-
-  const handleChangeStopwatchThreshold = (hours: number) => {
-    setStopwatchThresholdHours(hours);
-    saveNotificationPreferences({
-      runtimeThresholdHours: hours,
-      stopwatchThresholdHours: hours,
-    });
-    showSuccess(
-      language === "tl"
-        ? `Na-set ang stopwatch alert threshold sa ${hours} oras.`
-        : `Stopwatch alert threshold updated to ${hours} hours.`
-    );
-  };
-
-  const handleTogglePlanQuotaAlert = (checked: boolean) => {
-    setPlanQuotaAlertEnabled(checked);
-    saveNotificationPreferences({
-      planQuotaAlert: checked,
-    });
-    showSuccess(
-      checked
-        ? (language === "tl" ? "Aktibo na ang simulated plan quota overrun alerts!" : "Simulated plan quota overrun alerts enabled!")
-        : (language === "tl" ? "Nai-off ang quota overrun alerts." : "Plan quota overrun alerts disabled.")
-    );
-  };
-
-  // ── 4. Web Push & Background OS Notifications ─────────────
+  // ── 3. Web Push & Background OS Notifications ─────────────
   const [isPushSubscribed, setIsPushSubscribed] = useState(false);
   const [isPushLoading, setIsPushLoading] = useState(false);
   const [pushCountdown, setPushCountdown] = useState<number | null>(null);
@@ -384,7 +359,7 @@ export const SettingsView: React.FC = () => {
     }, 1000);
   };
 
-  // ── 5. Account Deletion Security Flow ─────────────────────
+  // ── 4. Account Deletion Security Flow ─────────────────────
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -466,22 +441,12 @@ export const SettingsView: React.FC = () => {
     }
   };
 
-  const handleCopyUserId = () => {
-    if (identity?.id) {
-      navigator.clipboard.writeText(identity.id);
-      setIdCopied(true);
-      showSuccess(
-        t("settings.userIdCopied", "User ID copied to clipboard!"),
-        "Copied"
-      );
-      setTimeout(() => setIdCopied(false), 2500);
-    }
-  };
-
   const userInitial =
     identity?.name?.charAt(0)?.toUpperCase() ||
     identity?.email?.charAt(0)?.toUpperCase() ||
     "U";
+
+  const activeLevelConfig = LEVEL_CONFIG[notifPrefs.notificationLevel || "standard"];
 
   return (
     <Box
@@ -542,7 +507,7 @@ export const SettingsView: React.FC = () => {
         </Box>
       </Box>
 
-      {/* ── Active User Profile & Identity Summary Banner ── */}
+      {/* ── Active User Profile Banner (UID Removed) ── */}
       <Card
         elevation={0}
         sx={{
@@ -606,29 +571,6 @@ export const SettingsView: React.FC = () => {
           </Box>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
-            {identity?.id && (
-              <Tooltip title={language === "tl" ? "Kopyahin ang natatanging User Telemetry ID" : "Copy unique account telemetry ID"}>
-                <Chip
-                  icon={idCopied ? <CheckIcon sx={{ fontSize: "13px !important" }} /> : <CopyIcon sx={{ fontSize: "13px !important" }} />}
-                  label={`UID: ${identity.id.slice(0, 8)}...`}
-                  size="small"
-                  onClick={handleCopyUserId}
-                  clickable
-                  variant="outlined"
-                  sx={{
-                    fontFamily: "monospace",
-                    fontWeight: 700,
-                    fontSize: "0.72rem",
-                    height: 28,
-                    bgcolor: (theme) =>
-                      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.03)",
-                    borderColor: "divider",
-                    "&:hover": { borderColor: "primary.main" },
-                  }}
-                />
-              </Tooltip>
-            )}
-
             <Button
               variant="outlined"
               color="error"
@@ -738,7 +680,7 @@ export const SettingsView: React.FC = () => {
           aria-labelledby="settings-tab-0"
           sx={{ display: "flex", flexDirection: "column", gap: 3 }}
         >
-          {/* 1. Language Preferences Section */}
+          {/* Language Preferences Section */}
           <Card
             sx={{
               p: { xs: 2.5, sm: 3 },
@@ -764,10 +706,7 @@ export const SettingsView: React.FC = () => {
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Paper
                   elevation={0}
-                  onClick={() => {
-                    setLanguage("en");
-                    showSuccess("Language updated to English (US)!", "Language Updated");
-                  }}
+                  onClick={() => handleLanguageChange("en")}
                   sx={{
                     p: 2,
                     cursor: "pointer",
@@ -814,7 +753,7 @@ export const SettingsView: React.FC = () => {
                   </Box>
                   <Radio
                     checked={language === "en"}
-                    onChange={() => setLanguage("en")}
+                    onChange={() => handleLanguageChange("en")}
                     value="en"
                     name="language-radio"
                     color="primary"
@@ -825,10 +764,7 @@ export const SettingsView: React.FC = () => {
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Paper
                   elevation={0}
-                  onClick={() => {
-                    setLanguage("tl");
-                    showSuccess("Wika ay pinalitan sa Tagalog (Filipino)!", "Na-update ang Wika");
-                  }}
+                  onClick={() => handleLanguageChange("tl")}
                   sx={{
                     p: 2,
                     cursor: "pointer",
@@ -875,7 +811,7 @@ export const SettingsView: React.FC = () => {
                   </Box>
                   <Radio
                     checked={language === "tl"}
-                    onChange={() => setLanguage("tl")}
+                    onChange={() => handleLanguageChange("tl")}
                     value="tl"
                     name="language-radio"
                     color="primary"
@@ -885,7 +821,7 @@ export const SettingsView: React.FC = () => {
             </Grid>
           </Card>
 
-          {/* 2. Interactive Guided Tour & Tutorials Section */}
+          {/* Interactive Guided Tour & Tutorials Section */}
           <Card
             sx={{
               p: { xs: 2.5, sm: 3 },
@@ -1139,7 +1075,7 @@ export const SettingsView: React.FC = () => {
       )}
 
       {/* ──────────────────────────────────────────────────────────
-          TAB 2: NOTIFICATIONS & SYSTEM ALERTS
+          TAB 2: NOTIFICATIONS & SYSTEM ALERTS (COMMAND CENTER)
       ────────────────────────────────────────────────────────── */}
       {activeTabIndex === 2 && (
         <Box
@@ -1148,7 +1084,7 @@ export const SettingsView: React.FC = () => {
           aria-labelledby="settings-tab-2"
           sx={{ display: "flex", flexDirection: "column", gap: 3 }}
         >
-          {/* Web Push & Closed-App Delivery Card */}
+          {/* 1. Master Toggle & Sensitivity Presets Card */}
           <Card
             sx={{
               p: { xs: 2.5, sm: 3 },
@@ -1165,428 +1101,737 @@ export const SettingsView: React.FC = () => {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: { xs: "flex-start", sm: "center" },
-                mb: 2,
+                mb: 2.5,
                 flexWrap: "wrap",
                 gap: 1.5,
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <NotificationsActiveIcon sx={{ color: "primary.main" }} />
+                <ShieldIcon sx={{ color: activeLevelConfig.color, fontSize: 24 }} />
                 <Box>
                   <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
-                    {language === "tl"
-                      ? "Background Web Push Notifications (Closed-App)"
-                      : "Background Web Push Notifications (Closed-App)"}
+                    {language === "tl" ? "Antas ng Sensitibidad ng mga Alerto" : "Master Notifications & Alert Sensitivity"}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     {language === "tl"
-                      ? "Makatanggap ng instant alerts sa Windows Action Center o Mobile Notification Tray kahit ganap nang nakasara ang browser o PWA."
-                      : "Receive instant energy surge & budget alerts in Windows Action Center or mobile tray even when your browser or PWA is completely closed."}
+                      ? "Piliin ang antas ng pagkaalerto ng system batay sa iyong gawi sa pagtitipid ng enerhiya."
+                      : "Select an automated vigilance preset to balance notification urgency and frequency."}
                   </Typography>
                 </Box>
-              </Box>
-              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                <Button
-                  variant={isPushSubscribed ? "outlined" : "contained"}
-                  color={isPushSubscribed ? "inherit" : "primary"}
-                  size="small"
-                  startIcon={isPushLoading ? <CircularProgress size={14} color="inherit" /> : <SensorsIcon />}
-                  onClick={handleToggleWebPush}
-                  disabled={isPushLoading || !isPushSupported()}
-                  sx={{ borderRadius: 1.5, fontWeight: 700, fontSize: "0.75rem", textTransform: "none" }}
-                >
-                  {isPushSubscribed
-                    ? (language === "tl" ? "I-unlink ang Device" : "Unlink This Device")
-                    : (language === "tl" ? "I-enable ang Background Push" : "Enable Background Push")}
-                </Button>
-              </Box>
-            </Box>
-
-            {/* Status Chips */}
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2.5 }}>
-              <Chip
-                icon={isPushSupported() ? <CheckCircleIcon sx={{ fontSize: "14px !important" }} /> : <WarningIcon sx={{ fontSize: "14px !important" }} />}
-                label={isPushSupported() ? "W3C Web Push: Supported" : "W3C Web Push: Unsupported"}
-                size="small"
-                color={isPushSupported() ? "success" : "default"}
-                variant="outlined"
-                sx={{ fontWeight: 800, fontSize: "0.72rem" }}
-              />
-              <Chip
-                icon={isPushSubscribed ? <CloudDoneIcon sx={{ fontSize: "14px !important" }} /> : <DeviceHubIcon sx={{ fontSize: "14px !important" }} />}
-                label={isPushSubscribed ? `Status: Registered (${pushEndpointType})` : "Status: Not Subscribed on This Device"}
-                size="small"
-                color={isPushSubscribed ? "primary" : "warning"}
-                variant="outlined"
-                sx={{ fontWeight: 800, fontSize: "0.72rem" }}
-              />
-              <Chip
-                label="Service Worker: WNS / FCM Gateway Active"
-                size="small"
-                variant="outlined"
-                sx={{ fontWeight: 700, fontSize: "0.72rem" }}
-              />
-            </Box>
-
-            {/* Closed-App Verification Banner */}
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 2,
-                borderRadius: 1.5,
-                bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.25)" : "rgba(248, 250, 252, 0.8)",
-                display: "flex",
-                flexDirection: { xs: "column", sm: "row" },
-                alignItems: { xs: "stretch", sm: "center" },
-                justifyContent: "space-between",
-                gap: 2,
-              }}
-            >
-              <Box>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
-                  {language === "tl"
-                    ? "Subukan ang Closed-App Notification (5s Countdown)"
-                    : "Test Closed-App Notification (5s Countdown)"}
-                </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                  {language === "tl"
-                    ? "Pindutin ito, pagkatapos ay agad na isara ang browser tab o PWA. Pagkalipas ng 5 segundo, magpapakita ang Windows Action Center alert."
-                    : "Click the test button and immediately close or minimize this window. Within 5 seconds, an alert will pop up in Windows Action Center."}
-                </Typography>
-              </Box>
-
-              <Box sx={{ flexShrink: 0 }}>
-                {pushCountdown !== null ? (
-                  <Alert severity="info" sx={{ py: 0.5, px: 1.5, fontSize: "0.75rem", borderRadius: 1 }}>
-                    {language === "tl"
-                      ? `Isara ang app ngayon! Darating sa ${pushCountdown}s...`
-                      : `Close the app now! Arriving in ${pushCountdown}s...`}
-                  </Alert>
-                ) : (
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    size="small"
-                    disabled={!isPushSubscribed}
-                    onClick={handleTestBackgroundPush}
-                    startIcon={<SensorsIcon />}
-                    sx={{
-                      borderRadius: 1.5,
-                      fontWeight: 800,
-                      fontSize: "0.75rem",
-                      textTransform: "none",
-                      width: { xs: "100%", sm: "auto" },
-                    }}
-                  >
-                    {language === "tl" ? "Ipadala ang Test Push (5s)" : "Send Test Background Push (5s)"}
-                  </Button>
-                )}
-              </Box>
-            </Paper>
-
-            {/* Smart Email Alerts Channel */}
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 2,
-                mt: 2,
-                borderRadius: 1.5,
-                bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.25)" : "rgba(248, 250, 252, 0.8)",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: { xs: "flex-start", sm: "center" },
-                gap: 2,
-                flexWrap: "wrap",
-              }}
-            >
-              <Box>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1 }}>
-                  <EmailIcon sx={{ color: "primary.main", fontSize: 18 }} />
-                  {language === "tl" ? "Mga Notification sa Email (Smart Alerts)" : "Smart Automated Email Alerts"}
-                </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.5 }}>
-                  {language === "tl"
-                    ? `Makatanggap ng email alert sa ${identity?.email || "iyong account"} kapag lumagpas sa 80% at 100% ng budget, o tuwing may wattage surge.`
-                    : `Receive automated email alerts at ${identity?.email || "your email"} when reaching 80% and 100% of your budget or during high wattage surges.`}
-                </Typography>
               </Box>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <Switch
-                  checked={emailAlertsEnabled}
-                  onChange={(e) => handleToggleEmailAlerts(e.target.checked)}
-                  color="primary"
-                  size="small"
-                />
-                <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                  {emailAlertsEnabled
-                    ? (language === "tl" ? "Aktibo" : "Active")
-                    : (language === "tl" ? "Naka-off" : "Disabled")}
+                <Typography variant="body2" sx={{ fontWeight: 800, color: notifPrefs.enabled ? "primary.main" : "text.secondary" }}>
+                  {notifPrefs.enabled
+                    ? (language === "tl" ? "Naka-on ang mga Abiso" : "Notifications Active")
+                    : (language === "tl" ? "Naka-pause ang mga Abiso" : "Notifications Paused")}
                 </Typography>
+                <Switch
+                  checked={notifPrefs.enabled}
+                  onChange={(e) => updateNotifPrefs({ enabled: e.target.checked })}
+                  color="primary"
+                />
               </Box>
-            </Paper>
+            </Box>
 
-            {/* Stopwatch Left-Running & Overrun Protection */}
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 2,
-                mt: 2,
-                borderRadius: 1.5,
-                bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.25)" : "rgba(248, 250, 252, 0.8)",
-                borderColor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(13, 148, 136, 0.2)",
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: { xs: "flex-start", sm: "center" },
-                  gap: 2,
-                  flexWrap: "wrap",
-                }}
-              >
-                <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1 }}>
-                    <ClockIcon sx={{ color: "primary.main", fontSize: 18 }} />
-                    {language === "tl" ? "Alerto Para sa Hindi Napatay na Stopwatch" : "Unattended Stopwatch & Overrun Alerts"}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.5 }}>
-                    {language === "tl"
-                      ? "Nagpapadala ng alerto kapag naiwang bukas ang circuit stopwatch lampas sa itinakdang oras o lumagpas sa quota ng simulation plan."
-                      : "Notifies you when an appliance circuit stopwatch runs unattended past your limit or exceeds its planned simulation quota."}
-                  </Typography>
-                </Box>
+            {/* 4-Level Sensitivity Selector Cards */}
+            <Grid container spacing={1.5}>
+              {(["relaxed", "standard", "proactive", "strict"] as NotificationLevel[]).map((level) => {
+                const cfg = LEVEL_CONFIG[level];
+                const isSelected = notifPrefs.notificationLevel === level;
+                return (
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }} key={level}>
+                    <Paper
+                      elevation={0}
+                      onClick={() => setNotifLevel(level)}
+                      sx={{
+                        p: 1.75,
+                        borderRadius: 1.5,
+                        cursor: "pointer",
+                        border: "2px solid",
+                        borderColor: isSelected ? cfg.color : "divider",
+                        bgcolor: isSelected ? cfg.bg : (theme) => theme.palette.mode === "dark" ? "rgba(255,255,255,0.02)" : "#f8fafc",
+                        transition: "all 0.15s ease",
+                        "&:hover": {
+                          borderColor: cfg.color,
+                          transform: "translateY(-1px)",
+                        },
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                        height: "100%",
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: isSelected ? cfg.color : "text.primary" }}>
+                          {cfg.label}
+                        </Typography>
+                        {isSelected && (
+                          <Chip
+                            label="Active"
+                            size="small"
+                            sx={{
+                              height: 18,
+                              fontSize: "0.625rem",
+                              fontWeight: 900,
+                              bgcolor: cfg.color,
+                              color: "#042f2e",
+                            }}
+                          />
+                        )}
+                      </Box>
+                      <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.4, fontSize: "0.72rem" }}>
+                        {cfg.sub}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </Card>
 
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                  <Switch
-                    checked={stopwatchAlertEnabled}
-                    onChange={(e) => handleToggleStopwatchAlert(e.target.checked)}
-                    color="primary"
-                    size="small"
-                  />
-                  <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                    {stopwatchAlertEnabled
-                      ? (language === "tl" ? "Naka-on" : "Active")
-                      : (language === "tl" ? "Naka-off" : "Disabled")}
-                  </Typography>
-                </Box>
-              </Box>
+          {/* 2. Hardware Feedback & Delivery Channels Card */}
+          <Card
+            sx={{
+              p: { xs: 2.5, sm: 3 },
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.7)" : "#ffffff",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+              <NotificationsActiveIcon sx={{ color: "primary.main" }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
+                {language === "tl" ? "Mga Channel ng Paghahatid at Hardware Feedback" : "Delivery Channels & Hardware Feedback"}
+              </Typography>
+            </Box>
+            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2.5 }}>
+              {language === "tl"
+                ? "I-configure kung paano maririnig o mararamdaman ang mga alerto sa iyong aparato."
+                : "Choose audio chimes, tactile haptics, email alerts, and closed-app background OS pushes."}
+            </Typography>
 
-              {stopwatchAlertEnabled && (
-                <Box
+            <Grid container spacing={2}>
+              {/* Synthesized Audio Chimes */}
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Paper
+                  variant="outlined"
                   sx={{
-                    mt: 2,
-                    pt: 1.5,
-                    borderTop: "1px dashed",
-                    borderColor: "divider",
+                    p: 2,
+                    borderRadius: 1.5,
+                    height: "100%",
                     display: "flex",
-                    alignItems: "center",
+                    flexDirection: "column",
                     justifyContent: "space-between",
-                    flexWrap: "wrap",
-                    gap: 1.5,
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0,0,0,0.25)" : "#f8fafc",
                   }}
                 >
-                  <Box>
-                    <Typography variant="caption" sx={{ fontWeight: 700, display: "block" }}>
-                      {language === "tl" ? "Oras Bago Mag-abiso (Runtime Limit)" : "Runtime Notification Threshold"}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                      {language === "tl"
-                        ? "Magpapadala ng alerto kapag tuloy-tuloy na tumatakbo ang stopwatch sa tagal na ito nang hindi pinapatay."
-                        : "Alert fires if a circuit runs continuously for this duration without being turned off."}
-                    </Typography>
+                  <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <SoundIcon sx={{ color: "primary.main", fontSize: 20 }} />
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                        {language === "tl" ? "Audio Chimes (Synthesized)" : "Synthesized Audio Chimes"}
+                      </Typography>
+                    </Box>
+                    <Switch
+                      size="small"
+                      checked={notifPrefs.soundEnabled}
+                      onChange={(e) => updateNotifPrefs({ soundEnabled: e.target.checked })}
+                      color="primary"
+                    />
                   </Box>
+                  <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 1.5 }}>
+                    {language === "tl"
+                      ? "Tumutunog ng harmonic chime kapag may bagong alerto (gumagana offline nang walang sound files)."
+                      : "Plays harmonic synthesized audio chimes on alerts using Web Audio API."}
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    disabled={!notifPrefs.soundEnabled}
+                    onClick={() => previewSound("chime")}
+                    startIcon={<SoundIcon sx={{ fontSize: 15 }} />}
+                    sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 700, borderRadius: 1 }}
+                  >
+                    {language === "tl" ? "Subukan ang Tunog" : "Play Test Chime"}
+                  </Button>
+                </Paper>
+              </Grid>
 
+              {/* Mobile Haptic Vibration */}
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: 1.5,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0,0,0,0.25)" : "#f8fafc",
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <VibrationIcon sx={{ color: "primary.main", fontSize: 20 }} />
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                        {language === "tl" ? "Haptic Vibration (Mobile)" : "Mobile Haptic Vibration"}
+                      </Typography>
+                    </Box>
+                    <Switch
+                      size="small"
+                      checked={notifPrefs.vibrationEnabled}
+                      onChange={(e) => updateNotifPrefs({ vibrationEnabled: e.target.checked })}
+                      color="primary"
+                    />
+                  </Box>
+                  <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 1.5 }}>
+                    {language === "tl"
+                      ? "Nagbibigay ng banayad o mabilis na vibration patterns sa Android smartphones tuwing may alerto."
+                      : "Triggers tactile vibration pulses on mobile devices during critical power spikes."}
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    disabled={!notifPrefs.vibrationEnabled}
+                    onClick={() => previewVibration("high")}
+                    startIcon={<VibrationIcon sx={{ fontSize: 15 }} />}
+                    sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 700, borderRadius: 1 }}
+                  >
+                    {language === "tl" ? "Subukan ang Vibration" : "Test Vibration"}
+                  </Button>
+                </Paper>
+              </Grid>
+
+              {/* Automated Smart Email Alerts */}
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: 1.5,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0,0,0,0.25)" : "#f8fafc",
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <EmailIcon sx={{ color: "warning.main", fontSize: 20 }} />
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                        {language === "tl" ? "Smart Email Delivery" : "Automated Smart Email Alerts"}
+                      </Typography>
+                    </Box>
+                    <Switch
+                      size="small"
+                      checked={notifPrefs.emailAlertsEnabled}
+                      onChange={(e) => updateNotifPrefs({ emailAlertsEnabled: e.target.checked, alertEmailAddress: identity?.email })}
+                      color="warning"
+                    />
+                  </Box>
+                  <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 1.5 }}>
+                    {language === "tl"
+                      ? `Nagpapadala ng opisyal na email sa ${identity?.email || "iyong inbox"} kapag lumagpas sa 80% o 100% ng budget.`
+                      : `Dispatches critical budget milestone and surge warnings to ${identity?.email || "your inbox"}.`}
+                  </Typography>
+                  <Chip
+                    size="small"
+                    label={identity?.email ? `To: ${identity.email}` : "Recipient: Active Account"}
+                    sx={{ alignSelf: "flex-start", fontWeight: 700, fontSize: "0.6875rem" }}
+                  />
+                </Paper>
+              </Grid>
+
+              {/* Background Web Push Notification */}
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: 1.5,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0,0,0,0.25)" : "#f8fafc",
+                    borderColor: isPushSubscribed ? "primary.main" : "divider",
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <SensorsIcon sx={{ color: "primary.main", fontSize: 20 }} />
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                        {language === "tl" ? "Closed-App Web Push" : "Closed-App Background Web Push"}
+                      </Typography>
+                    </Box>
+                    <Chip
+                      size="small"
+                      label={isPushSubscribed ? "Active" : "Disabled"}
+                      color={isPushSubscribed ? "success" : "default"}
+                      sx={{ fontWeight: 800, fontSize: "0.6875rem", height: 20 }}
+                    />
+                  </Box>
+                  <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 1.5 }}>
+                    {language === "tl"
+                      ? "Pumapasok sa Windows Action Center o notification tray kahit nakasara ang browser window."
+                      : "Pushes alerts to Windows Action Center and mobile trays even when the browser is closed."}
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                    <Button
+                      size="small"
+                      variant={isPushSubscribed ? "outlined" : "contained"}
+                      color={isPushSubscribed ? "inherit" : "primary"}
+                      onClick={handleToggleWebPush}
+                      disabled={isPushLoading || !isPushSupported()}
+                      sx={{ textTransform: "none", fontWeight: 800, borderRadius: 1 }}
+                    >
+                      {isPushSubscribed
+                        ? (language === "tl" ? "I-unlink Device" : "Unlink Device")
+                        : (language === "tl" ? "I-enable Push" : "Enable Push")}
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      disabled={!isPushSubscribed}
+                      onClick={handleTestBackgroundPush}
+                      sx={{ textTransform: "none", fontWeight: 700, borderRadius: 1 }}
+                    >
+                      {pushCountdown !== null ? `${pushCountdown}s...` : "Test 5s Push"}
+                    </Button>
+                  </Box>
+                </Paper>
+              </Grid>
+            </Grid>
+          </Card>
+
+          {/* 3. Granular Power & Budget Rules Card */}
+          <Card
+            sx={{
+              p: { xs: 2.5, sm: 3 },
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.7)" : "#ffffff",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+              <BoltIcon sx={{ color: "primary.main" }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
+                {language === "tl" ? "Mga Patakaran sa Enerhiya at Badyet (Thresholds)" : "Smart Energy & Budget Threshold Rules"}
+              </Typography>
+            </Box>
+            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2.5 }}>
+              {language === "tl"
+                ? "Itakda ang eksaktong wattage spikes, oras ng stopwatch, at limitasyon sa kuryente bago mag-alerto."
+                : "Fine-tune power draw limits, circuit runtimes, and billing milestone thresholds."}
+            </Typography>
+
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {/* Rule A: Live Load Surge Alert */}
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  borderRadius: 1.5,
+                  display: "flex",
+                  alignItems: { xs: "flex-start", sm: "center" },
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 2,
+                  bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0,0,0,0.25)" : "#f8fafc",
+                }}
+              >
+                <Box sx={{ flex: 1, minWidth: 240 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1 }}>
+                    <SurgeIcon sx={{ color: "error.main", fontSize: 18 }} />
+                    {language === "tl" ? "Alerto sa Pagtaas ng Wattage (Surge Spikes)" : "Live Load Surge Alert"}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    {language === "tl"
+                      ? "Awtomatikong mag-aabiso kapag sabay-sabay na lumagpas ang aktibong konsumo sa itinakdang Watts."
+                      : "Triggers immediate alert when active simultaneous wattage draw exceeds your threshold."}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                   <TextField
                     select
                     size="small"
-                    value={stopwatchThresholdHours}
-                    onChange={(e) => handleChangeStopwatchThreshold(Number(e.target.value))}
-                    sx={{ minWidth: 170 }}
+                    label="Watts Limit"
+                    value={notifPrefs.surgeThresholdWatts || 2500}
+                    onChange={(e) => updateNotifPrefs({ surgeThresholdWatts: Number(e.target.value) })}
+                    disabled={!notifPrefs.surgeAlert}
+                    sx={{ width: 140 }}
                   >
-                    <MenuItem value={1}>1 {language === "tl" ? "oras" : "hour"}</MenuItem>
-                    <MenuItem value={2}>2 {language === "tl" ? "oras (Inirerekomenda)" : "hours (Recommended)"}</MenuItem>
-                    <MenuItem value={3}>3 {language === "tl" ? "oras" : "hours"}</MenuItem>
-                    <MenuItem value={4}>4 {language === "tl" ? "oras" : "hours"}</MenuItem>
-                    <MenuItem value={6}>6 {language === "tl" ? "oras" : "hours"}</MenuItem>
+                    <MenuItem value={1500}>1,500 Watts</MenuItem>
+                    <MenuItem value={2000}>2,000 Watts</MenuItem>
+                    <MenuItem value={2500}>2,500 Watts</MenuItem>
+                    <MenuItem value={3000}>3,000 Watts</MenuItem>
+                    <MenuItem value={4000}>4,000 Watts</MenuItem>
                   </TextField>
+                  <Switch
+                    checked={notifPrefs.surgeAlert}
+                    onChange={(e) => updateNotifPrefs({ surgeAlert: e.target.checked })}
+                    color="primary"
+                  />
                 </Box>
-              )}
+              </Paper>
 
-              {/* Plan Quota Overrun Alert Toggle */}
-              <Box
+              {/* Rule B: Continuous Runtime & Unattended Stopwatch */}
+              <Paper
+                variant="outlined"
                 sx={{
-                  mt: 2,
-                  pt: 1.5,
-                  borderTop: "1px dashed",
-                  borderColor: "divider",
+                  p: 2,
+                  borderRadius: 1.5,
                   display: "flex",
-                  justifyContent: "space-between",
                   alignItems: { xs: "flex-start", sm: "center" },
-                  gap: 2,
+                  justifyContent: "space-between",
                   flexWrap: "wrap",
+                  gap: 2,
+                  bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0,0,0,0.25)" : "#f8fafc",
                 }}
               >
-                <Box>
+                <Box sx={{ flex: 1, minWidth: 240 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1 }}>
+                    <ClockIcon sx={{ color: "primary.main", fontSize: 18 }} />
+                    {language === "tl" ? "Hindi Napatay na Circuit (Runtime Limit)" : "Unattended Circuit & Runtime Limit"}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    {language === "tl"
+                      ? "Nag-aabiso kapag ang isang appliance circuit ay tuloy-tuloy na tumatakbo lampas sa itinakdang oras."
+                      : "Alerts when an appliance runs continuously without being shut off past your set duration."}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <TextField
+                    select
+                    size="small"
+                    label="Runtime Threshold"
+                    value={notifPrefs.runtimeThresholdHours || 4}
+                    onChange={(e) => updateNotifPrefs({ runtimeThresholdHours: Number(e.target.value), stopwatchThresholdHours: Number(e.target.value) })}
+                    disabled={!notifPrefs.runtimeAlert}
+                    sx={{ width: 140 }}
+                  >
+                    <MenuItem value={1}>1 hour</MenuItem>
+                    <MenuItem value={2}>2 hours</MenuItem>
+                    <MenuItem value={3}>3 hours</MenuItem>
+                    <MenuItem value={4}>4 hours</MenuItem>
+                    <MenuItem value={6}>6 hours</MenuItem>
+                  </TextField>
+                  <Switch
+                    checked={notifPrefs.runtimeAlert}
+                    onChange={(e) => updateNotifPrefs({ runtimeAlert: e.target.checked, stopwatchAlert: e.target.checked })}
+                    color="primary"
+                  />
+                </Box>
+              </Paper>
+
+              {/* Rule C: Simulated Plan Quota Overrun Warning */}
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  borderRadius: 1.5,
+                  display: "flex",
+                  alignItems: { xs: "flex-start", sm: "center" },
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 2,
+                  bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0,0,0,0.25)" : "#f8fafc",
+                }}
+              >
+                <Box sx={{ flex: 1, minWidth: 240 }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1 }}>
                     <TimerIcon sx={{ color: "warning.main", fontSize: 18 }} />
-                    {language === "tl" ? "Bala sa Paglagpas sa Simulated Quota" : "Plan Quota Overrun Warning"}
+                    {language === "tl" ? "Bala sa Paglagpas sa Simulated Quota" : "Plan Quota Overrun Alert"}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.5 }}>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     {language === "tl"
-                      ? "Nagpapadala ng kritikal na alerto kapag lumagpas ang runtime ng stopwatch sa nakalaang simulated target hours ngayong araw."
-                      : "Fires a critical alert when live stopwatch runtime exceeds today's planned hours in your Simulation Plan."}
+                      ? "Nagpapadala ng alerto kapag lumagpas ang runtime ng stopwatch sa nakalaang simulation plan hours ngayong araw."
+                      : "Fires when live stopwatch runtime exceeds today's planned hours in your Simulation Plan."}
                   </Typography>
                 </Box>
+                <Switch
+                  checked={notifPrefs.planQuotaAlert ?? true}
+                  onChange={(e) => updateNotifPrefs({ planQuotaAlert: e.target.checked })}
+                  color="warning"
+                />
+              </Paper>
 
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                  <Switch
-                    checked={planQuotaAlertEnabled}
-                    onChange={(e) => handleTogglePlanQuotaAlert(e.target.checked)}
-                    color="warning"
-                    size="small"
-                  />
-                  <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                    {planQuotaAlertEnabled
-                      ? (language === "tl" ? "Naka-on" : "Active")
-                      : (language === "tl" ? "Naka-off" : "Disabled")}
-                  </Typography>
-                </Box>
-              </Box>
-            </Paper>
-
-            {/* Web Push Setup & Error Prevention Accordion */}
-            <Accordion
-              disableGutters
-              elevation={0}
-              sx={{
-                mt: 2,
-                borderRadius: 1.5,
-                border: "1px solid",
-                borderColor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)",
-                bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(18, 21, 26, 0.7)" : "rgba(248, 250, 252, 0.7)",
-                "&:before": { display: "none" },
-              }}
-            >
-              <AccordionSummary
-                expandIcon={<ExpandMoreIcon sx={{ fontSize: 18 }} />}
-                sx={{ px: 2, py: 0.5, minHeight: 44 }}
+              {/* Rule D: Budget Milestones (Multi-Tier) */}
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  borderRadius: 1.5,
+                  display: "flex",
+                  alignItems: { xs: "flex-start", sm: "center" },
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 2,
+                  bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0,0,0,0.25)" : "#f8fafc",
+                }}
               >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <HelpIcon sx={{ fontSize: 18, color: "primary.main" }} />
-                  <Typography variant="body2" sx={{ fontWeight: 800, fontSize: "0.8rem" }}>
+                <Box sx={{ flex: 1, minWidth: 240 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1 }}>
+                    <BudgetIcon sx={{ color: "success.main", fontSize: 18 }} />
+                    {language === "tl" ? "Mga Milestone sa Badyet (Target Spending)" : "Budget Milestone Alerts (Multi-Tier)"}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     {language === "tl"
-                      ? "Gabay: Paano maiwasan ang push connection error? (Brave, Chrome, Windows)"
-                      : "Setup Guide: How to avoid push connection errors (Brave, Chrome, Windows)"}
+                      ? "Nagpapadala ng babala kapag naabot ang porsyento ng iyong buwanang target na Meralco budget."
+                      : "Warns when projected electricity spend reaches your percentage milestone of target budget."}
                   </Typography>
                 </Box>
-              </AccordionSummary>
-              <AccordionDetails sx={{ px: 2, pb: 2, pt: 0 }}>
-                <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 1.5 }}>
-                  {language === "tl"
-                    ? "Kung nakaranas ka ng 'Push service connection failed' o AbortError habang nag-e-enable, sundin ang mga hakbang na ito batay sa iyong browser at operating system:"
-                    : "If you encounter 'Push service connection failed' or an AbortError when enabling, follow these browser-specific guidelines:"}
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <TextField
+                    select
+                    size="small"
+                    label="Milestone %"
+                    value={notifPrefs.budgetThresholdPercent || 80}
+                    onChange={(e) => updateNotifPrefs({ budgetThresholdPercent: Number(e.target.value) })}
+                    disabled={!notifPrefs.budgetAlert}
+                    sx={{ width: 140 }}
+                  >
+                    <MenuItem value={50}>50% of budget</MenuItem>
+                    <MenuItem value={70}>70% of budget</MenuItem>
+                    <MenuItem value={80}>80% (Standard)</MenuItem>
+                    <MenuItem value={90}>90% of budget</MenuItem>
+                  </TextField>
+                  <Switch
+                    checked={notifPrefs.budgetAlert}
+                    onChange={(e) => updateNotifPrefs({ budgetAlert: e.target.checked })}
+                    color="primary"
+                  />
+                </Box>
+              </Paper>
 
-                <Grid container spacing={1.5}>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Paper
-                      variant="outlined"
-                      sx={{
-                        p: 1.5,
-                        borderRadius: 1,
-                        height: "100%",
-                        bgcolor: (theme) =>
-                          theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.6)",
-                      }}
-                    >
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.main", display: "block", mb: 0.5 }}>
-                        🦁 {language === "tl" ? "1. Para sa Brave Browser (Pinakakaraniwan)" : "1. For Brave Browser Users (Most Common)"}
+              {/* Rule E: Schedule Reminders & Peak Hours */}
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 2,
+                      borderRadius: 1.5,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 2,
+                      bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0,0,0,0.25)" : "#f8fafc",
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1 }}>
+                        <CalendarIcon sx={{ color: "info.main", fontSize: 18 }} />
+                        {language === "tl" ? "Paalala sa Iskedyul (5m Bago)" : "Schedule Reminders (5m Before)"}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.5 }}>
-                        {language === "tl"
-                          ? "I-type ang brave://settings/privacy sa URL bar. Hanapin ang 'Use Google services for push messaging' at i-ON ito, pagkatapos ay i-relaunch ang Brave."
-                          : "Open brave://settings/privacy in your URL bar. Scroll down and toggle ON 'Use Google services for push messaging', then relaunch Brave."}
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                        {language === "tl" ? "Mag-aabiso 5 minuto bago ang nakatakdang routine." : "Sends reminder 5 minutes before scheduled appliances."}
                       </Typography>
-                    </Paper>
-                  </Grid>
-
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Paper
-                      variant="outlined"
-                      sx={{
-                        p: 1.5,
-                        borderRadius: 1,
-                        height: "100%",
-                        bgcolor: (theme) =>
-                          theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.6)",
-                      }}
-                    >
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: "warning.main", display: "block", mb: 0.5 }}>
-                        🛡️ {language === "tl" ? "2. Ad-Blockers, VPNs & Firewalls" : "2. Ad-Blockers, VPNs & Firewalls"}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.5 }}>
-                        {language === "tl"
-                          ? "Siguraduhing hindi bina-block ng extensions (uBlock, AdGuard, Pi-hole) o corporate VPN ang Google FCM (fcm.googleapis.com, mtalk.google.com)."
-                          : "Ensure extensions (uBlock, AdGuard, Pi-hole) or VPNs do not block Google FCM socket domains (fcm.googleapis.com, mtalk.google.com)."}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Paper
-                      variant="outlined"
-                      sx={{
-                        p: 1.5,
-                        borderRadius: 1,
-                        height: "100%",
-                        bgcolor: (theme) =>
-                          theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.6)",
-                      }}
-                    >
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: "info.main", display: "block", mb: 0.5 }}>
-                        🪟 {language === "tl" ? "3. Windows Action Center Notifications" : "3. Windows Action Center Notifications"}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.5 }}>
-                        {language === "tl"
-                          ? "Pumunta sa Windows Settings -> System -> Notifications. Siguraduhing naka-ON ang Notifications at pinapayagan ang iyong browser."
-                          : "Open Windows Settings -> System -> Notifications. Ensure Notifications are ON and your browser is allowed to display desktop banners."}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Paper
-                      variant="outlined"
-                      sx={{
-                        p: 1.5,
-                        borderRadius: 1,
-                        height: "100%",
-                        bgcolor: (theme) =>
-                          theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.6)",
-                      }}
-                    >
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: "success.main", display: "block", mb: 0.5 }}>
-                        🌐 {language === "tl" ? "4. Regular Browsing Window Lamang" : "4. Standard Window (No Incognito)"}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.5 }}>
-                        {language === "tl"
-                          ? "Awtomatikong bina-block ng mga browser ang Web Push sa Incognito o InPrivate mode. Gamitin ang regular window."
-                          : "Browsers strictly disallow Web Push subscriptions in Incognito or InPrivate windows. Use a normal browser profile."}
-                      </Typography>
-                    </Paper>
-                  </Grid>
+                    </Box>
+                    <Switch
+                      checked={notifPrefs.scheduleAlert}
+                      onChange={(e) => updateNotifPrefs({ scheduleAlert: e.target.checked })}
+                      color="primary"
+                    />
+                  </Paper>
                 </Grid>
-              </AccordionDetails>
-            </Accordion>
+
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 2,
+                      borderRadius: 1.5,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 2,
+                      bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0,0,0,0.25)" : "#f8fafc",
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1 }}>
+                        <SurgeIcon sx={{ color: "warning.dark", fontSize: 18 }} />
+                        {language === "tl" ? "Meralco Peak Hours Warning" : "Meralco Peak Hours Warning"}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                        {language === "tl" ? "Babala sa oras ng peak grid demand (2-4pm, 6-9pm)." : "Warns during commercial high-tariff grid windows."}
+                      </Typography>
+                    </Box>
+                    <Switch
+                      checked={notifPrefs.peakHourAlert}
+                      onChange={(e) => updateNotifPrefs({ peakHourAlert: e.target.checked })}
+                      color="primary"
+                    />
+                  </Paper>
+                </Grid>
+              </Grid>
+            </Box>
+
+            {/* Test Notification Trigger Action */}
+            <Box sx={{ mt: 3, pt: 2, borderTop: "1px dashed", borderColor: "divider", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5 }}>
+              <Box>
+                <Typography variant="caption" sx={{ fontWeight: 800, display: "block" }}>
+                  {language === "tl" ? "Subukan ang In-App Notification System" : "Verify In-App Notifications"}
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  {language === "tl"
+                    ? "Magpapadala ng alerto upang masubukan ang tunog, vibration, at in-app toast feed."
+                    : "Dispatches a live test alert to verify chime audio, haptics, and notification log entries."}
+                </Typography>
+              </Box>
+
+              <Button
+                variant="contained"
+                size="small"
+                onClick={triggerTestNotification}
+                startIcon={<NotificationsActiveIcon />}
+                sx={{
+                  fontWeight: 800,
+                  textTransform: "none",
+                  borderRadius: 1.25,
+                  px: 2,
+                }}
+              >
+                {language === "tl" ? "Magpadala ng Test Alert" : "Send Test Notification"}
+              </Button>
+            </Box>
           </Card>
+
+          {/* 4. Web Push Setup & Error Prevention Accordion */}
+          <Accordion
+            disableGutters
+            elevation={0}
+            sx={{
+              borderRadius: 1.5,
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(18, 21, 26, 0.7)" : "rgba(248, 250, 252, 0.7)",
+              "&:before": { display: "none" },
+            }}
+          >
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon sx={{ fontSize: 18 }} />}
+              sx={{ px: 2, py: 0.5, minHeight: 44 }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <HelpIcon sx={{ fontSize: 18, color: "primary.main" }} />
+                <Typography variant="body2" sx={{ fontWeight: 800, fontSize: "0.8rem" }}>
+                  {language === "tl"
+                    ? "Gabay: Paano maiwasan ang push connection error? (Brave, Chrome, Windows)"
+                    : "Setup Guide: How to avoid push connection errors (Brave, Chrome, Windows)"}
+                </Typography>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails sx={{ px: 2, pb: 2, pt: 0 }}>
+              <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 1.5 }}>
+                {language === "tl"
+                  ? "Kung nakaranas ka ng 'Push service connection failed' o AbortError habang nag-e-enable, sundin ang mga hakbang na ito:"
+                  : "If you encounter 'Push service connection failed' or an AbortError when enabling, follow these browser guidelines:"}
+              </Typography>
+
+              <Grid container spacing={1.5}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 1,
+                      height: "100%",
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.6)",
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.main", display: "block", mb: 0.5 }}>
+                      🦁 {language === "tl" ? "1. Para sa Brave Browser (Pinakakaraniwan)" : "1. For Brave Browser Users (Most Common)"}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.5 }}>
+                      {language === "tl"
+                        ? "I-type ang brave://settings/privacy sa URL bar. Hanapin ang 'Use Google services for push messaging' at i-ON ito, pagkatapos ay i-relaunch ang Brave."
+                        : "Open brave://settings/privacy in your URL bar. Scroll down and toggle ON 'Use Google services for push messaging', then relaunch Brave."}
+                    </Typography>
+                  </Paper>
+                </Grid>
+
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 1,
+                      height: "100%",
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.6)",
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: "warning.main", display: "block", mb: 0.5 }}>
+                      🛡️ {language === "tl" ? "2. Ad-Blockers, VPNs & Firewalls" : "2. Ad-Blockers, VPNs & Firewalls"}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.5 }}>
+                      {language === "tl"
+                        ? "Siguraduhing hindi bina-block ng extensions (uBlock, AdGuard, Pi-hole) o corporate VPN ang Google FCM (fcm.googleapis.com, mtalk.google.com)."
+                        : "Ensure extensions (uBlock, AdGuard, Pi-hole) or VPNs do not block Google FCM socket domains (fcm.googleapis.com, mtalk.google.com)."}
+                    </Typography>
+                  </Paper>
+                </Grid>
+
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 1,
+                      height: "100%",
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.6)",
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: "info.main", display: "block", mb: 0.5 }}>
+                      🪟 {language === "tl" ? "3. Windows Action Center Notifications" : "3. Windows Action Center Notifications"}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.5 }}>
+                      {language === "tl"
+                        ? "Pumunta sa Windows Settings -> System -> Notifications. Siguraduhing naka-ON ang Notifications at pinapayagan ang iyong browser."
+                        : "Open Windows Settings -> System -> Notifications. Ensure Notifications are ON and your browser is allowed to display desktop banners."}
+                    </Typography>
+                  </Paper>
+                </Grid>
+
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 1,
+                      height: "100%",
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.6)",
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: "success.main", display: "block", mb: 0.5 }}>
+                      🌐 {language === "tl" ? "4. Regular Browsing Window Lamang" : "4. Standard Window (No Incognito)"}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.5 }}>
+                      {language === "tl"
+                        ? "Awtomatikong bina-block ng mga browser ang Web Push sa Incognito o InPrivate mode. Gamitin ang regular window."
+                        : "Browsers strictly disallow Web Push subscriptions in Incognito or InPrivate windows. Use a normal browser profile."}
+                    </Typography>
+                  </Paper>
+                </Grid>
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
         </Box>
       )}
 

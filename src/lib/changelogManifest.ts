@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.4v",
+    version: "3.8.4v",
+    git_commit_tag: "3.8.4v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.4v - Button Contrast Optimization & Notification Center Architecture: Fixed button and text contrast across light and dark modes for Join With Code, removed raw telemetry UID badge from active profile banner, consolidated comprehensive notification configuration (sensitivity presets, hardware chimes/haptics, load surge watts, budget milestones, peak hours) into Settings Notifications tab, and transformed the header popover into an interactive Notification Logs Feed.",
+  },
+  {
     id: "3.8.3v",
     version: "3.8.3v",
     git_commit_tag: "3.8.3v",
