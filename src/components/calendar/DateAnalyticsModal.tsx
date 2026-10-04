@@ -126,6 +126,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
   // Modal State: Past Session Logging
   const [isPastModalOpen, setIsPastModalOpen] = useState(false);
+  const [isSavingPastSession, setIsSavingPastSession] = useState(false);
   const [targetPastApp, setTargetPastApp] = useState<UserAppliance | null>(null);
   const [pastStartHour, setPastStartHour] = useState("08:00");
   const [pastEndHour, setPastEndHour] = useState("10:00");
@@ -144,6 +145,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       // 1. Logged/Recorded sessions from database
       (logs || []).forEach((log) => {
         if (log.appliance_id !== app.id) return;
+        if (!log.duration_minutes || log.duration_minutes <= 0) return;
         const start = new Date(log.started_at);
         const end = log.ended_at ? new Date(log.ended_at) : new Date(start.getTime() + (log.duration_minutes || 60) * 60000);
         const slices = splitSessionAcrossDays(start, end);
@@ -298,7 +300,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
   // Save Past Session
   const handleSavePastSession = async () => {
-    if (!canEdit || !targetPastApp) return;
+    if (isSavingPastSession || !canEdit || !targetPastApp) return;
 
     const [sh, sm] = pastStartHour.split(":").map(Number);
     const [eh, em] = pastEndHour.split(":").map(Number);
@@ -312,6 +314,20 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       return;
     }
 
+    // Check against locally loaded logs to prevent accidental double-logging
+    const hasDuplicate = (logs || []).some(
+      (l) =>
+        l.appliance_id === targetPastApp.id &&
+        (l.duration_minutes || 0) > 0 &&
+        new Date(l.started_at).getTime() === start.getTime() &&
+        (l.ended_at ? new Date(l.ended_at).getTime() === end.getTime() : false)
+    );
+    if (hasDuplicate) {
+      showError("A session has already been logged for this exact time range.");
+      return;
+    }
+
+    setIsSavingPastSession(true);
     try {
       const res = await addManualPastSession({
         appliance: targetPastApp,
@@ -324,6 +340,8 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       if (onUsageSaved) onUsageSaved();
     } catch (err: any) {
       showError(`Failed to save past session: ${err?.message}`);
+    } finally {
+      setIsSavingPastSession(false);
     }
   };
 
@@ -769,8 +787,10 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
           />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setIsPastModalOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleSavePastSession}>Save Session</Button>
+          <Button onClick={() => setIsPastModalOpen(false)} disabled={isSavingPastSession}>Cancel</Button>
+          <Button variant="contained" onClick={handleSavePastSession} disabled={isSavingPastSession}>
+            {isSavingPastSession ? "Saving..." : "Save Session"}
+          </Button>
         </DialogActions>
       </Dialog>
 

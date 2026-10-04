@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.13v",
+    version: "3.8.13v",
+    git_commit_tag: "3.8.13v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.13v - Fix DateAnalyticsModal duplicate session stacking, add debounce guard, and unify inverter-aware past session allocation",
+  },
+  {
     id: "3.8.12v",
     version: "3.8.12v",
     git_commit_tag: "3.8.12v",

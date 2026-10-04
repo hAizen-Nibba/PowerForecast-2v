@@ -367,6 +367,7 @@ export async function addManualPastSession(params: {
 
   const result = await savePastSessionWithAllocation({
     appliance_id: params.appliance.id,
+    appliance: params.appliance,
     startDate: params.startDate,
     endDate: params.endDate,
     watts: params.appliance.watts,

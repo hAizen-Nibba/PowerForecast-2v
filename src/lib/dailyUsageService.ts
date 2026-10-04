@@ -1085,6 +1085,7 @@ export async function reconcileUpdatedSessionLog(params: {
  */
 export async function savePastSessionWithAllocation(params: {
   appliance_id: string;
+  appliance?: Partial<UserAppliance>;
   startDate: Date;
   endDate: Date;
   watts: number;
@@ -1098,11 +1099,28 @@ export async function savePastSessionWithAllocation(params: {
   const allocationMode = params.allocationMode || "allocate_inside";
 
   const totalMinutes = Math.max(1, Math.round((params.endDate.getTime() - params.startDate.getTime()) / 60000));
-  const totalKwh = calculateKwh(params.watts, totalMinutes / 60, quantity);
+  const totalHours = totalMinutes / 60;
+  const totalKwh = params.appliance
+    ? calculateApplianceKwh(params.appliance, totalHours)
+    : calculateKwh(params.watts, totalHours, quantity);
   const totalCost = calculateCost(totalKwh, rate);
 
-  // 1. Insert log in appliance_usage_logs
+  // 1. Insert log in appliance_usage_logs (with deduplication guard)
   try {
+    const { data: duplicateLog } = await supabaseClient
+      .from("appliance_usage_logs")
+      .select("id")
+      .eq("appliance_id", params.appliance_id)
+      .eq("started_at", params.startDate.toISOString())
+      .eq("ended_at", params.endDate.toISOString())
+      .gt("duration_minutes", 0)
+      .maybeSingle();
+
+    if (duplicateLog) {
+      devLog.info("DailyUsageService", `Skipping duplicate past session log for ${params.appliance_id} at ${params.startDate.toISOString()}`);
+      return { totalMinutes, totalKwh, totalCost };
+    }
+
     await supabaseClient.from("appliance_usage_logs").insert({
       appliance_id: params.appliance_id,
       user_id: params.user_id || null,
@@ -1145,7 +1163,9 @@ export async function savePastSessionWithAllocation(params: {
       }
 
       const clampedHours = Math.max(0, Math.min(24, Number(newHours.toFixed(2))));
-      const kwh = calculateKwh(params.watts, clampedHours, quantity);
+      const kwh = params.appliance
+        ? calculateApplianceKwh(params.appliance, clampedHours)
+        : calculateKwh(params.watts, clampedHours, quantity);
       const cost = calculateCost(kwh, rate);
 
       await supabaseClient.from("daily_appliance_usage").upsert(
