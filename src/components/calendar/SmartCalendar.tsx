@@ -46,10 +46,12 @@ import {
   computeActualDayMetrics,
   computeSimulatedDayMetrics,
   DEFAULT_EFFECTIVE_RATE,
+  calculateApplianceKwh,
   getStoredBillingPeriodConfig,
   setStoredBillingPeriodConfig,
   resolveBillingPeriodWindow,
 } from "../../lib/dailyUsageService";
+import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
 import { useRoom } from "../../context/RoomContext";
 
 export const SmartCalendar: React.FC = () => {
@@ -170,6 +172,19 @@ export const SmartCalendar: React.FC = () => {
   const realToday = new Date();
   const realTodayKey = formatDateToKey(realToday);
 
+  // Dynamically resolve tiered effective rate based on total monthly projected load for rate parity with Forecasting
+  const calendarEffectiveRate = useMemo(() => {
+    const totalBaselineKwh = appliances.reduce(
+      (acc, a) => acc + calculateApplianceKwh(a, Number(a.hours_per_day) || 0),
+      0
+    ) * (billingWindow.days.length || 30);
+    if (totalBaselineKwh <= 0) return DEFAULT_EFFECTIVE_RATE;
+    const activeSpace = spaces.find((s) => s.id === selectedSpaceId);
+    const tariff = activeSpace?.tariff_type || "residential";
+    const billRes = calculateMeralcoBill(totalBaselineKwh, undefined, 0, false, tariff);
+    return billRes.effectiveRatePerKwh || DEFAULT_EFFECTIVE_RATE;
+  }, [appliances, billingWindow.days.length, selectedSpaceId, spaces]);
+
   // Period Summaries
   const actualPeriodSummary = useMemo(() => {
     let totCost = 0;
@@ -178,7 +193,7 @@ export const SmartCalendar: React.FC = () => {
 
     billingWindow.days.forEach((dayDate) => {
       const dKey = formatDateToKey(dayDate);
-      const metrics = computeActualDayMetrics(dKey, dailyUsageMap[dKey] || [], appliances, DEFAULT_EFFECTIVE_RATE);
+      const metrics = computeActualDayMetrics(dKey, dailyUsageMap[dKey] || [], appliances, calendarEffectiveRate);
       if (metrics.isLogged) {
         totCost += metrics.cost;
         totKwh += metrics.kwh;
@@ -195,7 +210,7 @@ export const SmartCalendar: React.FC = () => {
       runningCircuitsCount: runningCount,
       totalDays: billingWindow.days.length,
     };
-  }, [billingWindow.days, dailyUsageMap, appliances]);
+  }, [billingWindow.days, dailyUsageMap, appliances, calendarEffectiveRate]);
 
   const simPeriodSummary = useMemo(() => {
     let baseCost = 0;
@@ -206,7 +221,7 @@ export const SmartCalendar: React.FC = () => {
 
     billingWindow.days.forEach((dayDate) => {
       const dKey = formatDateToKey(dayDate);
-      const metrics = computeSimulatedDayMetrics(dKey, dayDate, simulatedUsageMap[dKey] || [], appliances, DEFAULT_EFFECTIVE_RATE);
+      const metrics = computeSimulatedDayMetrics(dKey, dayDate, simulatedUsageMap[dKey] || [], appliances, calendarEffectiveRate);
       baseCost += metrics.baselineCost;
       baseKwh += metrics.baselineKwh;
       simCost += metrics.cost;
@@ -227,7 +242,7 @@ export const SmartCalendar: React.FC = () => {
       simulatedDaysCount: customSimCount,
       totalDays: billingWindow.days.length,
     };
-  }, [billingWindow.days, simulatedUsageMap, appliances]);
+  }, [billingWindow.days, simulatedUsageMap, appliances, calendarEffectiveRate]);
 
   // Mobile selected day metrics
   const selectedMobileDateKey = formatDateToKey(selectedMobileDate);
@@ -237,9 +252,9 @@ export const SmartCalendar: React.FC = () => {
       selectedMobileDateKey,
       dailyUsageMap[selectedMobileDateKey] || [],
       appliances,
-      DEFAULT_EFFECTIVE_RATE
+      calendarEffectiveRate
     );
-  }, [selectedMobileDateKey, dailyUsageMap, appliances]);
+  }, [selectedMobileDateKey, dailyUsageMap, appliances, calendarEffectiveRate]);
 
   const mobileSelectedSimMetrics = useMemo(() => {
     return computeSimulatedDayMetrics(
@@ -247,9 +262,9 @@ export const SmartCalendar: React.FC = () => {
       selectedMobileDate,
       simulatedUsageMap[selectedMobileDateKey] || [],
       appliances,
-      DEFAULT_EFFECTIVE_RATE
+      calendarEffectiveRate
     );
-  }, [selectedMobileDateKey, selectedMobileDate, simulatedUsageMap, appliances]);
+  }, [selectedMobileDateKey, selectedMobileDate, simulatedUsageMap, appliances, calendarEffectiveRate]);
 
   // Calendar Grid Setup
   const firstDayOfPeriod = billingWindow.days[0];
@@ -860,7 +875,7 @@ export const SmartCalendar: React.FC = () => {
                 dateKey,
                 dailyUsageMap[dateKey] || [],
                 appliances,
-                DEFAULT_EFFECTIVE_RATE
+                calendarEffectiveRate
               );
 
               return (
@@ -1121,7 +1136,7 @@ export const SmartCalendar: React.FC = () => {
               dayDate,
               simulatedUsageMap[dateKey] || [],
               appliances,
-              DEFAULT_EFFECTIVE_RATE
+              calendarEffectiveRate
             );
 
             return (

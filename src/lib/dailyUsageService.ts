@@ -1446,23 +1446,15 @@ export function computeSimulatedDayMetrics(
     };
   }
 
-  // 2. Otherwise return standard routine baseline projection
-  const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-  const projectedKwh = activeAppliances.reduce((acc, app) => {
-    const defaultHours = Number(app.hours_per_day) || 0;
-    const hours = isWeekend ? Math.min(24, defaultHours * 1.15) : defaultHours;
-    return acc + calculateApplianceKwh(app, hours);
-  }, 0);
-  const projectedCost = projectedKwh * effectiveRate;
-
+  // 2. Otherwise return standard routine baseline projection (parity with pure baseline when unedited)
   return {
-    kwh: Number(projectedKwh.toFixed(2)),
-    cost: Number(projectedCost.toFixed(2)),
+    kwh: pureBaselineKwh,
+    cost: pureBaselineCost,
     baselineKwh: pureBaselineKwh,
     baselineCost: pureBaselineCost,
     savings: 0,
     isCustomSimulated: false,
-    isPeak: projectedKwh > 18 || projectedCost > 270,
+    isPeak: pureBaselineKwh > 18 || pureBaselineCost > 270,
     applianceCount: activeAppliances.length,
     source: "routine_baseline",
   };

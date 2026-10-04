@@ -54,6 +54,8 @@ import {
 import { UserAppliance, ApplianceList, DailyApplianceUsage, SimulatedApplianceUsage } from "../../types";
 import { useList, useGetIdentity } from "@refinedev/core";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
+import { calculateApplianceKwh, sumLiveDeltaForRange } from "../../lib/dailyUsageService";
+import { useLiveTicker } from "../../hooks/useLiveTicker";
 import { MetricCard } from "../common/MetricCard";
 import { PageHeader } from "../common/PageHeader";
 import { SectionCard } from "../common/SectionCard";
@@ -138,12 +140,17 @@ export const AnalyticsView: React.FC = () => {
     return list.filter((a) => a.is_active !== false);
   }, [appliances, spaces, selectedSpaceId]);
 
+  // Live ticker for active stopwatch circuits
+  const hasRunningCircuits = appliances.some((a) => a.is_currently_on);
+  const liveNow = useLiveTicker(hasRunningCircuits);
+
   // Active Billing Cycle Timeline Key
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonthIdx = now.getMonth();
   const currentMonthStr = String(currentMonthIdx + 1).padStart(2, "0");
   const activeMonthKey = `${currentYear}-${currentMonthStr}`;
+  const daysInActiveMonth = new Date(currentYear, currentMonthIdx + 1, 0).getDate();
 
   // Aggregated Actual Measured Data for target appliances (Filtered to active billing month)
   const actualAggregates = useMemo(() => {
@@ -167,6 +174,26 @@ export const AnalyticsView: React.FC = () => {
       }
     });
 
+    // Factor in live running stopwatches for the active billing cycle
+    const runningTargetApps = targetAppliances.filter((a) => a.is_currently_on && a.last_turned_on_at);
+    if (runningTargetApps.length > 0) {
+      const liveSummary = sumLiveDeltaForRange(
+        runningTargetApps,
+        liveNow,
+        dailyUsageRecords,
+        (dateKey) => dateKey.startsWith(activeMonthKey)
+      );
+      if (liveSummary.deltaKwh > 0 || liveSummary.deltaCost > 0) {
+        totalKwh += liveSummary.deltaKwh;
+        totalCost += liveSummary.deltaCost;
+        runningTargetApps.forEach((app) => {
+          const cat = app.category || "General";
+          catMap[cat] = (catMap[cat] || 0) + liveSummary.deltaKwh;
+          appMap[app.id] = (appMap[app.id] || 0) + liveSummary.deltaKwh;
+        });
+      }
+    }
+
     return {
       totalKwh: Number(totalKwh.toFixed(2)),
       totalCost: Number(totalCost.toFixed(2)),
@@ -174,7 +201,7 @@ export const AnalyticsView: React.FC = () => {
       appMap,
       hasRecords: totalKwh > 0,
     };
-  }, [dailyUsageRecords, targetAppliances, activeMonthKey]);
+  }, [dailyUsageRecords, targetAppliances, activeMonthKey, liveNow]);
 
   // Aggregated Simulated Plan Data for target appliances (Filtered to active billing month)
   const simulatedAggregates = useMemo(() => {
@@ -210,16 +237,11 @@ export const AnalyticsView: React.FC = () => {
   const isCommercialSelected = selectedSpaceId !== "all" && activeSpace?.tariff_type === "commercial";
   const tariffType: "residential" | "commercial" = isCommercialSelected ? "commercial" : "residential";
 
-  // Appliance monthly kWh helper
+  // Appliance monthly kWh helper - Inverter-aware parity with Forecasting
   const getApplianceMonthlyKwh = (a: UserAppliance): number => {
-    if (a.monthly_kwh !== undefined && a.monthly_kwh !== null && a.monthly_kwh > 0) {
-      return Number(a.monthly_kwh);
-    }
     const hours = Number(a.hours_per_day) || 0;
-    const days = Number(a.days_per_month) || 30;
-    const qty = Number(a.quantity) || 1;
-    const watts = Number(a.watts) || 0;
-    return (watts * hours * days * qty) / 1000;
+    const dailyKwh = calculateApplianceKwh(a, hours);
+    return Number((dailyKwh * daysInActiveMonth).toFixed(3));
   };
 
   // 1. Calculate space-by-space and consolidated monthly energy (strictly active appliances)
@@ -264,7 +286,7 @@ export const AnalyticsView: React.FC = () => {
       resTotalKwh,
       comTotalKwh,
     };
-  }, [appliances, spaces]);
+  }, [appliances, spaces, daysInActiveMonth]);
 
   // Target monthly kWh baseline
   const totalMonthlyKwh = useMemo(() => {
@@ -276,7 +298,8 @@ export const AnalyticsView: React.FC = () => {
 
   // Active energy volume based on verified actuals / simulated mode / routine baseline
   const activeEnergyVolume = useMemo(() => {
-    if (dataSourceMode === "actual" && actualAggregates.hasRecords) {
+    if (dataSourceMode === "actual") {
+      // Strictly show actual measured telemetry (0 if no sessions logged)
       return actualAggregates.totalKwh;
     }
     if (dataSourceMode === "simulated" && simulatedAggregates.hasRecords) {
@@ -286,12 +309,15 @@ export const AnalyticsView: React.FC = () => {
   }, [dataSourceMode, actualAggregates, simulatedAggregates, totalMonthlyKwh]);
 
   const bill = useMemo(() => {
+    if (dataSourceMode === "actual" && !actualAggregates.hasRecords) {
+      return calculateMeralcoBill(0, undefined, 0, false, tariffType);
+    }
     const tariff = selectedSpaceId === "all" ? "residential" : tariffType;
     return calculateMeralcoBill(activeEnergyVolume, undefined, 0, false, tariff);
-  }, [selectedSpaceId, activeEnergyVolume, tariffType]);
+  }, [selectedSpaceId, activeEnergyVolume, tariffType, dataSourceMode, actualAggregates.hasRecords]);
 
   const totalCost = bill.totalBill;
-  const effectiveRate = activeEnergyVolume > 0 ? totalCost / activeEnergyVolume : bill.effectiveRatePerKwh || 14.8261;
+  const effectiveRate = activeEnergyVolume > 0 ? totalCost / activeEnergyVolume : bill.effectiveRatePerKwh || 0;
 
   // Running appliances count
   const runningAppliances = targetAppliances.filter((a) => a.is_currently_on);
@@ -302,7 +328,11 @@ export const AnalyticsView: React.FC = () => {
       return { tier: "Commercial GP", label: "Flat ₱1.652/kWh", color: "info.main" };
     }
     if (activeEnergyVolume <= 0) {
-      return { tier: "No Active Load", label: "0 kWh configured", color: "text.secondary" };
+      return {
+        tier: dataSourceMode === "actual" ? "Zero MTD Actuals" : "No Active Load",
+        label: dataSourceMode === "actual" ? "No stopwatch runtime" : "0 kWh configured",
+        color: "text.secondary",
+      };
     }
     if (activeEnergyVolume <= 100) {
       return { tier: "Lifeline Tier", label: "≤100 kWh (Subsidized)", color: "success.main" };
@@ -495,7 +525,10 @@ export const AnalyticsView: React.FC = () => {
   const categoryBreakdown = useMemo(() => {
     const catMap: Record<string, { kwh: number; count: number }> = {};
 
-    if (dataSourceMode === "actual" && actualAggregates.hasRecords) {
+    if (dataSourceMode === "actual") {
+      if (!actualAggregates.hasRecords) {
+        return [];
+      }
       targetAppliances.forEach((a) => {
         const cat = a.category || "General";
         const kwh = actualAggregates.catMap[cat] || 0;
@@ -535,6 +568,10 @@ export const AnalyticsView: React.FC = () => {
 
   // Individual Top Appliances Breakdown (Pareto)
   const topAppliancesBreakdown = useMemo(() => {
+    if (dataSourceMode === "actual" && !actualAggregates.hasRecords) {
+      return [];
+    }
+
     const effectiveTotalKwh =
       dataSourceMode === "actual" && actualAggregates.hasRecords
         ? actualAggregates.totalKwh
@@ -1085,6 +1122,16 @@ export const AnalyticsView: React.FC = () => {
                 <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", py: 4 }}>
                   No appliances registered in this space. Add appliances to inspect category shares.
                 </Typography>
+              ) : dataSourceMode === "actual" && !actualAggregates.hasRecords ? (
+                <Box sx={{ py: 4, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                  <ClockIcon sx={{ fontSize: 32, color: "text.secondary", opacity: 0.6 }} />
+                  <Typography variant="body2" sx={{ color: "text.primary", fontWeight: 600 }}>
+                    No Verified Actuals Logged Yet
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary", maxWidth: 360 }}>
+                    Start an appliance stopwatch or log daily telemetry to see real measured category consumption and spend.
+                  </Typography>
+                </Box>
               ) : breakdownView === "category" ? (
                 categoryBreakdown.map((item) => (
                   <Box key={item.name} sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>

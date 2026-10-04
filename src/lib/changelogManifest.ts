@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.11v",
+    version: "3.8.11v",
+    git_commit_tag: "3.8.11v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.11v - Align energy metrics parity: fix Verified Actuals zero-record fallback in Analytics, unify Inverter baseline calculation with Forecasting, and eliminate weekend simulation disparity on Smart Calendar.",
+  },
+  {
     id: "3.8.10v",
     version: "3.8.10v",
     git_commit_tag: "3.8.10v",
