@@ -225,7 +225,9 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
 
       // 2. Dispatch 8-digit OTP recovery code directly via Supabase Auth
       devLog.info("Auth", `Dispatching 8-digit password recovery code to ${emailToUse}`);
-      const { error: resetErr } = await supabaseClient.auth.resetPasswordForEmail(emailToUse);
+      const { error: resetErr } = await supabaseClient.auth.resetPasswordForEmail(emailToUse, {
+        redirectTo: `${window.location.origin}/#/forgot-password?mode=update`,
+      });
       if (resetErr) {
         throw resetErr;
       }
@@ -403,7 +405,9 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
 
     try {
       devLog.info("Auth", `Resending 8-digit verification code to ${resolvedEmail}`);
-      const { error } = await supabaseClient.auth.resetPasswordForEmail(resolvedEmail);
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(resolvedEmail, {
+        redirectTo: `${window.location.origin}/#/forgot-password?mode=update`,
+      });
       if (error) throw error;
 
       setCooldown(60);

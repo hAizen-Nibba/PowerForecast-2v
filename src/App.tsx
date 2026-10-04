@@ -3,7 +3,7 @@ import { Refine, Authenticated } from "@refinedev/core";
 import routerBindings, {
   UnsavedChangesNotifier,
 } from "@refinedev/react-router-v6";
-import { HashRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { resilientDataProvider } from "./providers/dataProvider";
 import { authProvider } from "./providers/authProvider";
 import { supabaseClient } from "./lib/supabaseClient";
@@ -25,6 +25,7 @@ import { EmailVerifiedPage } from "./pages/EmailVerifiedPage";
 import { VersionBadge } from "./components/common/VersionBadge";
 import { PwaUpdateModal } from "./components/common/PwaUpdateModal";
 import { WhatsNewModal } from "./components/common/WhatsNewModal";
+import { PasswordRecoveryModal } from "./components/common/PasswordRecoveryModal";
 import { ToastProvider } from "./components/common/ToastProvider";
 import { ConfirmProvider } from "./components/common/ConfirmProvider";
 import { LanguageProvider } from "./context/LanguageContext";
@@ -51,15 +52,24 @@ const JoinRoomModalConsumer: React.FC = () => {
 };
 
 /**
- * Intelligent Root Gate: Detects existing active session and 'Remember Me' state.
+ * Intelligent Root Gate: Detects existing active session, password recovery token, and 'Remember Me' state.
+ * If password recovery token is detected in URL, redirects to /forgot-password?mode=update.
  * If authenticated, seamlessly routes straight to /dashboard (e.g. when launching installed PC PWA).
  * If guest, displays the marketing LandingPage.
  */
 const RootGate: React.FC = () => {
-  const [checking, setChecking] = useState(true);
+  const isRecoveryMode = typeof window !== "undefined" && (
+    window.location.href.includes("type=recovery") ||
+    window.location.href.includes("mode=update") ||
+    window.location.hash.includes("type=recovery")
+  );
+
+  const [checking, setChecking] = useState(!isRecoveryMode);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
+    if (isRecoveryMode) return;
+
     let isMounted = true;
     const rememberMe = localStorage.getItem("powerforecast_remember_me");
     const sessionActive = sessionStorage.getItem("powerforecast_session_active");
@@ -95,10 +105,14 @@ const RootGate: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [isRecoveryMode]);
 
   if (checking) {
     return null;
+  }
+
+  if (isRecoveryMode) {
+    return <Navigate to="/forgot-password?mode=update" replace />;
   }
 
   if (isAuthenticated) {
@@ -253,6 +267,7 @@ export const App: React.FC = () => {
               <VersionBadge />
               <PwaUpdateModal />
               <WhatsNewModal />
+              <PasswordRecoveryModal />
             </RoomProvider>
           </Refine>
           </HashRouter>

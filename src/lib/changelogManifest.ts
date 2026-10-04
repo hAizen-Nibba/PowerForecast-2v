@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.6cv",
+    version: "3.8.6cv",
+    git_commit_tag: "3.8.6cv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.6cv - Mobile View Modernization & Upstream Synchronization: Replaced header burger menu with PowerForecast brand logo and title on mobile, removed profile icon clutter from mobile header, streamlined More navigation drawer by removing redundant brand logo and title, transformed Smart Calendar on mobile to clean date-only view with interactive tap-to-reveal selected day metrics panel, eliminated fixed element overlaps, and fully synchronized with upstream PasswordRecoveryModal and 8-digit OTP security.",
+  },
+  {
     id: "3.8.6bv",
     version: "3.8.6bv",
     git_commit_tag: "3.8.6bv",
@@ -10,7 +20,7 @@ export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
-      "3.8.6bv - Mobile View Modernization & Upstream Synchronization: Replaced header burger menu with PowerForecast brand logo and title on mobile, removed profile icon clutter from mobile header, streamlined More navigation drawer by removing redundant brand logo and title, transformed Smart Calendar on mobile to clean date-only view with interactive tap-to-reveal selected day metrics panel, eliminated fixed element overlaps, and synchronized with 8-digit email OTP password security.",
+      "3.8.6bv - Password Recovery Link Routing & Global Modal Interceptor: Added global PasswordRecoveryModal, updated RootGate to redirect recovery tokens directly to password update workflow, and ensured all resetPasswordForEmail dispatches include explicit redirectTo URLs.",
   },
   {
     id: "3.8.6av",
