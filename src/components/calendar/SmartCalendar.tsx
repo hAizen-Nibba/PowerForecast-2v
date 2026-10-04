@@ -798,17 +798,19 @@ export const SmartCalendar: React.FC = () => {
                       bgcolor: (theme) => {
                         const isDark = theme.palette.mode === "dark";
                         if (isCurrentToday) {
-                          return isDark ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle;
+                          return isDark ? tokens.dark.liveBg : tokens.light.liveBg;
                         }
                         if (actualMetrics.isLogged) {
                           return isDark ? tokens.dark.surface : tokens.light.surface;
                         }
                         return "transparent";
                       },
+                      borderWidth: "1px",
+                      borderStyle: "solid",
                       borderColor: (theme) => {
                         const isDark = theme.palette.mode === "dark";
                         if (isCurrentToday) {
-                          return isDark ? tokens.dark.primary : tokens.light.primary;
+                          return isDark ? tokens.dark.liveBorder : tokens.light.liveBorder;
                         }
                         if (actualMetrics.isLogged) {
                           return isDark ? tokens.dark.borderStrong : tokens.light.borderStrong;
@@ -817,20 +819,26 @@ export const SmartCalendar: React.FC = () => {
                       },
                       transition: "background-color 0.15s ease, border-color 0.15s ease",
                       "&:hover": {
-                        borderColor: (theme) =>
-                          isFuture
-                            ? theme.palette.mode === "dark"
-                              ? tokens.dark.borderSubtle
-                              : tokens.light.borderSubtle
-                            : theme.palette.mode === "dark"
-                            ? tokens.dark.borderStrong
-                            : tokens.light.borderStrong,
-                        bgcolor: (theme) =>
-                          isFuture
-                            ? "transparent"
-                            : theme.palette.mode === "dark"
-                            ? tokens.dark.hover
-                            : tokens.light.hover,
+                        borderColor: (theme) => {
+                          const isDark = theme.palette.mode === "dark";
+                          if (isFuture) {
+                            return isDark ? tokens.dark.borderSubtle : tokens.light.borderSubtle;
+                          }
+                          if (isCurrentToday) {
+                            return isDark ? tokens.dark.live : tokens.light.live;
+                          }
+                          return isDark ? tokens.dark.borderStrong : tokens.light.borderStrong;
+                        },
+                        bgcolor: (theme) => {
+                          const isDark = theme.palette.mode === "dark";
+                          if (isFuture) {
+                            return "transparent";
+                          }
+                          if (isCurrentToday) {
+                            return isDark ? "rgba(52, 211, 153, 0.16)" : "rgba(5, 150, 105, 0.16)";
+                          }
+                          return isDark ? tokens.dark.hover : tokens.light.hover;
+                        },
                       },
                     }}
                   >
@@ -975,17 +983,19 @@ export const SmartCalendar: React.FC = () => {
                     bgcolor: (theme) => {
                       const isDark = theme.palette.mode === "dark";
                       if (isCurrentToday) {
-                        return isDark ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle;
+                        return isDark ? tokens.dark.liveBg : tokens.light.liveBg;
                       }
                       if (simMetrics.isCustomSimulated) {
                         return isDark ? tokens.dark.surface : tokens.light.surface;
                       }
                       return "transparent";
                     },
+                    borderWidth: "1px",
+                    borderStyle: "solid",
                     borderColor: (theme) => {
                       const isDark = theme.palette.mode === "dark";
                       if (isCurrentToday) {
-                        return isDark ? tokens.dark.primary : tokens.light.primary;
+                        return isDark ? tokens.dark.liveBorder : tokens.light.liveBorder;
                       }
                       if (simMetrics.isCustomSimulated) {
                         return isDark ? tokens.dark.borderStrong : tokens.light.borderStrong;
@@ -994,10 +1004,20 @@ export const SmartCalendar: React.FC = () => {
                     },
                     transition: "background-color 0.15s ease, border-color 0.15s ease",
                     "&:hover": {
-                      borderColor: (theme) =>
-                        theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
-                      bgcolor: (theme) =>
-                        theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover,
+                      borderColor: (theme) => {
+                        const isDark = theme.palette.mode === "dark";
+                        if (isCurrentToday) {
+                          return isDark ? tokens.dark.live : tokens.light.live;
+                        }
+                        return isDark ? tokens.dark.borderStrong : tokens.light.borderStrong;
+                      },
+                      bgcolor: (theme) => {
+                        const isDark = theme.palette.mode === "dark";
+                        if (isCurrentToday) {
+                          return isDark ? "rgba(52, 211, 153, 0.16)" : "rgba(5, 150, 105, 0.16)";
+                        }
+                        return isDark ? tokens.dark.hover : tokens.light.hover;
+                      },
                     },
                   }}
                 >

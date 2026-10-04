@@ -3,6 +3,26 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.4dv",
+    version: "3.8.4dv",
+    git_commit_tag: "3.8.4dv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.4dv - Smart Calendar Today Highlight Enhancement: Preserved 1px border thickness from simulation plan while styling the Today date cell with live emerald green background tint and border accents across Actual Tracker and Simulation Plan views.",
+  },
+  {
+    id: "3.8.4cv",
+    version: "3.8.4cv",
+    git_commit_tag: "3.8.4cv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.4cv - Container Border Alignment: Reverted internal component border radius while maintaining header and sidebar container borders.",
+  },
+  {
     id: "3.8.4bv",
     version: "3.8.4bv",
     git_commit_tag: "3.8.4bv",
