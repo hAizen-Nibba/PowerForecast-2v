@@ -1,7 +1,8 @@
 /**
- * PowerForecast Branded Email Templates (Dark Theme)
- * Responsive, premium dark-themed HTML email templates matching the PowerForecast brand aesthetic.
- * Slate #111827 / #0b0f17 dark cards, cyan #00e5c9 accents, glowing action buttons, and high-contrast typography.
+ * PowerForecast Branded Email Templates (Obsidian / Zinc Theme)
+ * Responsive, premium dark-themed HTML email templates matching the current PowerForecast brand aesthetic.
+ * Obsidian #09090b background, Zinc #121215 cards, subtle #27272a borders, crisp white #fafafa CTA buttons,
+ * and high-contrast typography with 8-digit OTP verification code hero blocks.
  * 100% compatible with Supabase GoTrue Auth Templates and in-app transactional dispatchers.
  */
 
@@ -37,9 +38,9 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
   const {
     preheader = 'PowerForecast Energy Intelligence Notification',
     badge = 'SECURITY',
-    badgeColor = '#00e5c9',
-    badgeBg = 'rgba(0, 229, 201, 0.12)',
-    badgeBorder = 'rgba(0, 229, 201, 0.35)',
+    badgeColor = '#fafafa',
+    badgeBg = '#18181b',
+    badgeBorder = '#27272a',
     headline,
     subheadline,
     bodyParagraphs,
@@ -49,7 +50,7 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
     buttonUrl,
     fallbackUrlLabel = 'If the button does not work, copy and paste this link in your browser:',
     fallbackUrl,
-    securityNotice = 'This link is single-use and will expire in 24 hours. If you did not request this change, your account remains secure and you can safely disregard this email.',
+    securityNotice = 'This code and link are single-use and will expire in 24 hours. If you did not request this, your account remains secure and you can safely disregard this email.',
   } = config;
 
   const paragraphsHtml = bodyParagraphs
@@ -61,14 +62,14 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
 
   const highlightHtml = highlightBox
     ? `
-      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 24px 0; background-color: #0b0f19; border: 1px dashed rgba(0, 229, 201, 0.45); border-radius: 12px; padding: 20px;">
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 24px 0; background-color: #09090b; border: 1px dashed #3f3f46; border-radius: 12px; padding: 20px;">
         <tr>
           <td align="center">
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #00e5c9; margin-bottom: 8px;">${highlightBox.label}</div>
-            <div style="font-size: 30px; font-weight: 800; letter-spacing: 6px; color: #ffffff; font-family: 'JetBrains Mono', 'Courier New', monospace; background-color: #1e293b; padding: 12px 24px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); display: inline-block;">${highlightBox.value}</div>
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #a1a1aa; margin-bottom: 10px;">${highlightBox.label}</div>
+            <div style="font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #ffffff; font-family: 'JetBrains Mono', 'Courier New', monospace; background-color: #18181b; padding: 14px 28px; border-radius: 8px; border: 1px solid #27272a; display: inline-block;">${highlightBox.value}</div>
             ${
               highlightBox.sublabel
-                ? `<div style="font-size: 12px; color: #94a3b8; margin-top: 10px; line-height: 1.4;">${highlightBox.sublabel}</div>`
+                ? `<div style="font-size: 12px; color: #71717a; margin-top: 12px; line-height: 1.4;">${highlightBox.sublabel}</div>`
                 : ''
             }
           </td>
@@ -80,14 +81,14 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
   const tableHtml =
     metricsTable && metricsTable.length > 0
       ? `
-      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 20px 0; background-color: #0b0f19; border: 1px solid #1e293b; border-radius: 8px; overflow: hidden;">
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 20px 0; background-color: #09090b; border: 1px solid #27272a; border-radius: 8px; overflow: hidden;">
         ${metricsTable
           .map(
             (row, idx) => `
-          <tr style="${idx > 0 ? 'border-top: 1px solid #1e293b;' : ''}">
-            <td style="padding: 12px 18px; font-size: 14px; color: #94a3b8;">${row.label}</td>
+          <tr style="${idx > 0 ? 'border-top: 1px solid #27272a;' : ''}">
+            <td style="padding: 12px 18px; font-size: 14px; color: #a1a1aa;">${row.label}</td>
             <td style="padding: 12px 18px; font-size: 14px; font-weight: 700; text-align: right; color: ${
-              row.highlight ? '#00e5c9' : '#ffffff'
+              row.highlight ? '#fafafa' : '#ffffff'
             };">${row.value}</td>
           </tr>`
           )
@@ -105,8 +106,8 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
           <td align="center">
             <table role="presentation" border="0" cellpadding="0" cellspacing="0">
               <tr>
-                <td align="center" style="border-radius: 8px; background-color: #00e5c9;">
-                  <a href="${buttonActionUrl}" target="_blank" rel="noopener noreferrer" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 800; color: #041f1a; text-decoration: none; padding: 14px 36px; border-radius: 8px; display: inline-block; letter-spacing: 0.3px; background-color: #00e5c9; box-shadow: 0 4px 16px rgba(0, 229, 201, 0.35);">
+                <td align="center" style="border-radius: 8px; background-color: #fafafa;">
+                  <a href="${buttonActionUrl}" target="_blank" rel="noopener noreferrer" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 700; color: #09090b; text-decoration: none; padding: 14px 36px; border-radius: 8px; display: inline-block; letter-spacing: 0.2px; background-color: #fafafa; box-shadow: 0 2px 10px rgba(255, 255, 255, 0.1);">
                     ${buttonText}
                   </a>
                 </td>
@@ -120,9 +121,9 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
 
   const fallbackHtml = buttonActionUrl
     ? `
-      <div style="background-color: #0b0f19; border: 1px solid #1e293b; border-radius: 8px; padding: 14px 18px; margin-top: 24px;">
-        <div style="font-size: 11px; font-weight: 600; color: #94a3b8; margin-bottom: 6px;">${fallbackUrlLabel}</div>
-        <a href="${buttonActionUrl}" target="_blank" rel="noopener noreferrer" style="font-size: 12px; color: #00e5c9; word-break: break-all; text-decoration: underline; line-height: 1.5; font-family: monospace;">${buttonActionUrl}</a>
+      <div style="background-color: #09090b; border: 1px solid #27272a; border-radius: 8px; padding: 14px 18px; margin-top: 24px;">
+        <div style="font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 6px;">${fallbackUrlLabel}</div>
+        <a href="${buttonActionUrl}" target="_blank" rel="noopener noreferrer" style="font-size: 12px; color: #ffffff; word-break: break-all; text-decoration: underline; line-height: 1.5; font-family: monospace;">${buttonActionUrl}</a>
       </div>
     `
       : '';
@@ -139,21 +140,21 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
   </style>
   <![endif]-->
 </head>
-<body style="margin: 0; padding: 0; background-color: #0b0f17; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
+<body style="margin: 0; padding: 0; background-color: #09090b; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
   <!-- Preheader text (hidden in body but shown in inbox preview) -->
-  <div style="display: none; max-height: 0px; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; color: #0b0f17; opacity: 0;">
+  <div style="display: none; max-height: 0px; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; color: #09090b; opacity: 0;">
     ${preheader}
   </div>
 
-  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #0b0f17; padding: 36px 12px;">
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #09090b; padding: 36px 12px;">
     <tr>
       <td align="center">
         <!-- Main Card Container -->
-        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; background-color: #111827; border: 1px solid #1e293b; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; background-color: #121215; border: 1px solid #27272a; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);">
           
           <!-- Brand Header -->
           <tr>
-            <td style="padding: 24px 32px 20px 32px; border-bottom: 1px solid #1e293b; background-color: #111827;">
+            <td style="padding: 24px 32px 20px 32px; border-bottom: 1px solid #27272a; background-color: #0d1117;">
               <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
                   <td style="vertical-align: middle; width: 44px;">
@@ -163,7 +164,7 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 20px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px;">
-                          Power<span style="color: #00e5c9;">Forecast</span>
+                          Power<span style="color: #fafafa;">Forecast</span>
                         </td>
                         <td style="padding-left: 10px;">
                           <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 10px; font-weight: 700; background-color: ${badgeBg}; color: ${badgeColor}; padding: 3px 9px; border-radius: 999px; letter-spacing: 0.6px; text-transform: uppercase; border: 1px solid ${badgeBorder};">
@@ -172,7 +173,7 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
                         </td>
                       </tr>
                       <tr>
-                        <td colspan="2" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; font-weight: 500; color: #94a3b8; letter-spacing: 0.2px; padding-top: 3px;">
+                        <td colspan="2" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; font-weight: 500; color: #a1a1aa; letter-spacing: 0.2px; padding-top: 3px;">
                           Smart Energy Monitoring & Bill Forecasting
                         </td>
                       </tr>
@@ -193,7 +194,7 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
 
               ${
                 subheadline
-                  ? `<p style="margin: 0 0 20px 0; font-size: 14px; color: #00e5c9; font-weight: 600; letter-spacing: 0.2px;">${subheadline}</p>`
+                  ? `<p style="margin: 0 0 20px 0; font-size: 14px; color: #a1a1aa; font-weight: 600; letter-spacing: 0.2px;">${subheadline}</p>`
                   : ''
               }
 
@@ -212,12 +213,12 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
 
           <!-- Security & Footer Divider -->
           <tr>
-            <td style="padding: 20px 32px 24px 32px; border-top: 1px solid #1e293b; background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-              <p style="margin: 0 0 10px 0; font-size: 12px; line-height: 1.5; color: #94a3b8;">
-                🛡️ <strong style="color: #cbd5e1;">Security Notice:</strong> ${securityNotice}
+            <td style="padding: 20px 32px 24px 32px; border-top: 1px solid #27272a; background-color: #0d1117; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              <p style="margin: 0 0 10px 0; font-size: 12px; line-height: 1.5; color: #a1a1aa;">
+                🛡️ <strong style="color: #ffffff;">Security Notice:</strong> ${securityNotice}
               </p>
-              <div style="font-size: 11px; line-height: 1.5; color: #64748b;">
-                Dispatched via PowerForecast Verified SMTP (<strong style="color: #94a3b8;">noreply@comugallery.me</strong>).<br>
+              <div style="font-size: 11px; line-height: 1.5; color: #52525b;">
+                Dispatched via PowerForecast Verified SMTP (<strong style="color: #71717a;">noreply@comugallery.me</strong>).<br>
                 © 2026 PowerForecast Refine. All rights reserved.
               </div>
             </td>
@@ -232,31 +233,32 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
 }
 
 /**
- * Returns the production-ready Dark-Themed HTML template for Supabase Auth: Reset Password.
- * Displays BOTH the one-time 8-digit OTP code ({{ .Token }}) and the direct Reset Password button ({{ .ConfirmationURL }}).
+ * Returns the production-ready Obsidian/Zinc HTML template for Supabase Auth: Reset Password.
+ * Features the ONE-TIME 8-DIGIT SECURITY CONFIRMATION CODE ({{ .Token }}) as the hero element,
+ * matching the 8-slot input verification prompt in the PowerForecast application.
  * Copy and paste this directly into Supabase Dashboard -> Authentication -> Email Templates -> Reset Password.
  */
 export function getSupabaseResetPasswordTemplate(): string {
   return buildBrandedEmailHtml({
-    preheader: 'Reset your PowerForecast account password',
+    preheader: 'Your 8-digit verification code to reset your password',
     badge: 'SECURITY',
-    badgeColor: '#00e5c9',
-    badgeBg: 'rgba(0, 229, 201, 0.12)',
-    badgeBorder: 'rgba(0, 229, 201, 0.35)',
+    badgeColor: '#fafafa',
+    badgeBg: '#18181b',
+    badgeBorder: '#27272a',
     headline: 'Reset Your Password',
-    subheadline: 'A request was received to reset your password',
+    subheadline: 'Your One-Time 8-Digit Confirmation Code',
     bodyParagraphs: [
-      'We received a request to change the password for your PowerForecast account associated with <strong style="color: #38bdf8;">{{ .Email }}</strong>.',
-      'To verify this request and choose a new secure password, enter the one-time code below in the webapp or click the button directly:',
+      'We received a request to change the password for your PowerForecast account associated with <strong style="color: #ffffff;">{{ .Email }}</strong>.',
+      'Enter the 8-digit confirmation code below into the security verification prompt in PowerForecast to update your master password:',
     ],
     highlightBox: {
-      label: 'ONE-TIME VERIFICATION CODE',
+      label: '8-DIGIT CONFIRMATION CODE',
       value: '{{ .Token }}',
-      sublabel: 'Enter this verification code in the PowerForecast Settings screen to finalize your new password',
+      sublabel: 'Enter this 8-digit code in the PowerForecast prompt to confirm your identity and update your password',
     },
-    buttonText: 'Reset Password',
+    buttonText: 'Reset Password via Browser',
     buttonUrl: '{{ .ConfirmationURL }}',
-    fallbackUrlLabel: 'If the button does not work, copy and paste this link in your browser:',
+    fallbackUrlLabel: 'Prefer direct browser link? Copy and paste this URL:',
     fallbackUrl: '{{ .ConfirmationURL }}',
     securityNotice:
       'This password reset code and link are single-use and will expire in 24 hours. If you did not request this change, your password remains completely secure and you can safely disregard this email.',
@@ -264,21 +266,22 @@ export function getSupabaseResetPasswordTemplate(): string {
 }
 
 /**
- * Returns the production-ready Dark-Themed HTML template for Supabase Auth: Confirm Signup.
+ * Returns the production-ready Obsidian/Zinc HTML template for Supabase Auth: Confirm Signup.
+ * Features both the one-time account activation code ({{ .Token }}) and the primary confirmation button.
  * Copy and paste this directly into Supabase Dashboard -> Authentication -> Email Templates -> Confirm Signup.
  */
 export function getSupabaseConfirmSignupTemplate(): string {
   return buildBrandedEmailHtml({
     preheader: 'Confirm your PowerForecast account registration',
     badge: 'WELCOME',
-    badgeColor: '#00e5c9',
-    badgeBg: 'rgba(0, 229, 201, 0.12)',
-    badgeBorder: 'rgba(0, 229, 201, 0.35)',
+    badgeColor: '#fafafa',
+    badgeBg: '#18181b',
+    badgeBorder: '#27272a',
     headline: 'Welcome to PowerForecast!',
     subheadline: 'Smart Energy Optimization & Real-Time Appliance Intelligence',
     bodyParagraphs: [
       'Thank you for creating an account with PowerForecast! You are one step away from monitoring your electricity consumption, calculating Meralco appliance tariffs, and preventing monthly bill spikes.',
-      'Please confirm your email address (<strong style="color: #38bdf8;">{{ .Email }}</strong>) using the verification code or confirmation button below:',
+      'Please confirm your email address (<strong style="color: #ffffff;">{{ .Email }}</strong>) using the verification code or confirmation button below:',
     ],
     highlightBox: {
       label: 'ACCOUNT ACTIVATION CODE',
@@ -295,20 +298,20 @@ export function getSupabaseConfirmSignupTemplate(): string {
 }
 
 /**
- * Returns the production-ready Dark-Themed HTML template for Supabase Auth: Magic Link.
+ * Returns the production-ready Obsidian/Zinc HTML template for Supabase Auth: Magic Link.
  * Copy and paste this directly into Supabase Dashboard -> Authentication -> Email Templates -> Magic Link.
  */
 export function getSupabaseMagicLinkTemplate(): string {
   return buildBrandedEmailHtml({
     preheader: 'Your secure passwordless sign-in link for PowerForecast',
     badge: 'MAGIC LINK',
-    badgeColor: '#00e5c9',
-    badgeBg: 'rgba(0, 229, 201, 0.12)',
-    badgeBorder: 'rgba(0, 229, 201, 0.35)',
+    badgeColor: '#fafafa',
+    badgeBg: '#18181b',
+    badgeBorder: '#27272a',
     headline: 'Sign In to PowerForecast',
     subheadline: 'Passwordless instant authentication',
     bodyParagraphs: [
-      'You requested a passwordless sign-in for your account associated with <strong style="color: #38bdf8;">{{ .Email }}</strong>.',
+      'You requested a passwordless sign-in for your account associated with <strong style="color: #ffffff;">{{ .Email }}</strong>.',
       'Use the one-time sign-in code below or click the button to authenticate instantly:',
     ],
     highlightBox: {
@@ -326,16 +329,16 @@ export function getSupabaseMagicLinkTemplate(): string {
 }
 
 /**
- * Returns the production-ready Dark-Themed HTML template for Supabase Auth: Invite User.
+ * Returns the production-ready Obsidian/Zinc HTML template for Supabase Auth: Invite User.
  * Copy and paste this directly into Supabase Dashboard -> Authentication -> Email Templates -> Invite User.
  */
 export function getSupabaseInviteUserTemplate(): string {
   return buildBrandedEmailHtml({
     preheader: 'You have been invited to join PowerForecast',
     badge: 'INVITATION',
-    badgeColor: '#00e5c9',
-    badgeBg: 'rgba(0, 229, 201, 0.12)',
-    badgeBorder: 'rgba(0, 229, 201, 0.35)',
+    badgeColor: '#fafafa',
+    badgeBg: '#18181b',
+    badgeBorder: '#27272a',
     headline: 'You Have Been Invited!',
     subheadline: 'Collaborative Household Energy Management',
     bodyParagraphs: [
@@ -352,20 +355,20 @@ export function getSupabaseInviteUserTemplate(): string {
 }
 
 /**
- * Returns the production-ready Dark-Themed HTML template for Supabase Auth: Change Email Address.
+ * Returns the production-ready Obsidian/Zinc HTML template for Supabase Auth: Change Email Address.
  * Copy and paste this directly into Supabase Dashboard -> Authentication -> Email Templates -> Change Email Address.
  */
 export function getSupabaseChangeEmailTemplate(): string {
   return buildBrandedEmailHtml({
     preheader: 'Confirm change of email address for PowerForecast',
     badge: 'EMAIL UPDATE',
-    badgeColor: '#00e5c9',
-    badgeBg: 'rgba(0, 229, 201, 0.12)',
-    badgeBorder: 'rgba(0, 229, 201, 0.35)',
+    badgeColor: '#fafafa',
+    badgeBg: '#18181b',
+    badgeBorder: '#27272a',
     headline: 'Confirm Email Address Change',
     subheadline: 'Account security verification',
     bodyParagraphs: [
-      'We received a request to update your PowerForecast account email address to <strong style="color: #38bdf8;">{{ .Email }}</strong>.',
+      'We received a request to update your PowerForecast account email address to <strong style="color: #ffffff;">{{ .Email }}</strong>.',
       'Enter the verification code below in PowerForecast or click the button to finalize this update:',
     ],
     highlightBox: {

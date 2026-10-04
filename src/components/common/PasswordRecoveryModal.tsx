@@ -81,7 +81,21 @@ export const PasswordRecoveryModal: React.FC = () => {
 
   // Listen to Supabase auth events & URL parameters for password recovery
   useEffect(() => {
+    const isForgotPasswordRoute = () => {
+      const href = window.location.href;
+      return (
+        href.includes("/forgot-password") ||
+        window.location.pathname.includes("/forgot-password") ||
+        window.location.hash.includes("/forgot-password")
+      );
+    };
+
     const checkRecoveryContext = () => {
+      if (isForgotPasswordRoute()) {
+        devLog.info("Auth", "PasswordRecoveryModal suppressed because ForgotPasswordPage is active");
+        return;
+      }
+
       const href = window.location.href;
       const isRecoveryInUrl =
         href.includes("type=recovery") ||
@@ -102,6 +116,11 @@ export const PasswordRecoveryModal: React.FC = () => {
     // Listen to Supabase onAuthStateChange for PASSWORD_RECOVERY
     const { data: authListener } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
       devLog.info("Auth", `PasswordRecoveryModal auth event: ${event}`);
+      if (isForgotPasswordRoute()) {
+        devLog.info("Auth", "PasswordRecoveryModal suppressed for auth event because ForgotPasswordPage is active");
+        return;
+      }
+
       if (event === "PASSWORD_RECOVERY") {
         setIsOpen(true);
         if (session?.user?.email) {
