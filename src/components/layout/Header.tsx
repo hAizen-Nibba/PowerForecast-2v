@@ -150,7 +150,7 @@ export const Header: React.FC<HeaderProps> = ({
               variant="outlined"
               color="inherit"
               sx={{
-                borderRadius: 0,
+                borderRadius: 1.25,
                 fontWeight: 600,
                 textTransform: "none",
                 fontSize: "0.8125rem",
@@ -165,7 +165,7 @@ export const Header: React.FC<HeaderProps> = ({
               color="inherit"
               edge="start"
               onClick={onOpenSidebar}
-              sx={{ display: { lg: "none" }, p: 0.75, borderRadius: 0 }}
+              sx={{ display: { lg: "none" }, p: 0.75 }}
             >
               <MenuIcon />
             </IconButton>
@@ -223,7 +223,7 @@ export const Header: React.FC<HeaderProps> = ({
                   borderColor: "divider",
                   color: "text.secondary",
                   p: 0.75,
-                  borderRadius: 0,
+                  borderRadius: 1.5,
                   "&:hover": {
                     bgcolor: "action.hover",
                     color: "text.primary",
@@ -246,7 +246,7 @@ export const Header: React.FC<HeaderProps> = ({
                 border: "1px solid",
                 borderColor: "divider",
                 p: 0.75,
-                borderRadius: 0,
+                borderRadius: 1.5,
                 color: "text.secondary",
                 "&:hover": {
                   bgcolor: "action.hover",
@@ -266,7 +266,6 @@ export const Header: React.FC<HeaderProps> = ({
                     minWidth: unreadNotifCount > 0 ? 16 : 6,
                     px: unreadNotifCount > 0 ? 0.5 : 0,
                     fontWeight: 800,
-                    borderRadius: 0,
                   },
                 }}
               >
@@ -288,7 +287,7 @@ export const Header: React.FC<HeaderProps> = ({
               alignItems: "center",
               gap: 1,
               p: "4px 8px 4px 4px",
-              borderRadius: 0,
+              borderRadius: 1.5,
               border: "1px solid",
               borderColor: "divider",
               cursor: "pointer",
@@ -301,7 +300,7 @@ export const Header: React.FC<HeaderProps> = ({
               sx={{
                 width: 26,
                 height: 26,
-                borderRadius: 0,
+                borderRadius: 1,
                 bgcolor: "primary.main",
                 color: "primary.contrastText",
                 fontSize: "0.75rem",
@@ -336,7 +335,7 @@ export const Header: React.FC<HeaderProps> = ({
                   minWidth: 260,
                   maxWidth: 320,
                   p: 0.5,
-                  borderRadius: 0,
+                  borderRadius: 1.5,
                   boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)",
                   border: "1px solid",
                   borderColor: "divider",
@@ -363,7 +362,6 @@ export const Header: React.FC<HeaderProps> = ({
                   height: 20,
                   fontSize: "0.625rem",
                   fontWeight: 600,
-                  borderRadius: 0,
                   bgcolor: (theme) =>
                     theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.12)" : "rgba(217, 119, 6, 0.1)",
                   color: "warning.main",
@@ -404,7 +402,7 @@ export const Header: React.FC<HeaderProps> = ({
                   }}
                   selected={isCurrent}
                   sx={{
-                    borderRadius: 0,
+                    borderRadius: 1,
                     my: 0.25,
                     mx: 0.5,
                     py: 0.75,
@@ -448,7 +446,6 @@ export const Header: React.FC<HeaderProps> = ({
                             height: 16,
                             fontSize: "0.5625rem",
                             fontWeight: 700,
-                            borderRadius: 0,
                             bgcolor: r.is_owner
                               ? "rgba(0, 229, 201, 0.15)"
                               : isItemAdmin
@@ -475,7 +472,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setAnchorEl(null);
                 openJoinModal();
               }}
-              sx={{ borderRadius: 0, mx: 0.5, py: 0.6, px: 1.5, gap: 1 }}
+              sx={{ borderRadius: 1, mx: 0.5, py: 0.6, px: 1.5, gap: 1 }}
             >
               <ListItemIcon sx={{ minWidth: 28 }}>
                 <AddIcon sx={{ fontSize: 17, color: "primary.main" }} />
@@ -492,7 +489,7 @@ export const Header: React.FC<HeaderProps> = ({
             {activeRoom?.room_code && (
               <MenuItem
                 onClick={(e) => handleCopyCode(e, activeRoom.room_code)}
-                sx={{ borderRadius: 0, mx: 0.5, py: 0.6, px: 1.5, gap: 1 }}
+                sx={{ borderRadius: 1, mx: 0.5, py: 0.6, px: 1.5, gap: 1 }}
               >
                 <ListItemIcon sx={{ minWidth: 28 }}>
                   <CopyIcon sx={{ fontSize: 16, color: "text.secondary" }} />
@@ -516,7 +513,7 @@ export const Header: React.FC<HeaderProps> = ({
                   if (el) el.scrollIntoView({ behavior: "smooth" });
                 }, 150);
               }}
-              sx={{ borderRadius: 0, mx: 0.5, py: 0.6, px: 1.5, gap: 1 }}
+              sx={{ borderRadius: 1, mx: 0.5, py: 0.6, px: 1.5, gap: 1 }}
             >
               <ListItemIcon sx={{ minWidth: 28 }}>
                 <GroupIcon sx={{ fontSize: 16, color: "text.secondary" }} />
@@ -538,7 +535,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setAnchorEl(null);
                 navigate("/settings");
               }}
-              sx={{ gap: 1.25, fontSize: "0.8125rem", fontWeight: 500, borderRadius: 0, py: 0.75, color: "text.primary" }}
+              sx={{ gap: 1.25, fontSize: "0.8125rem", fontWeight: 500, borderRadius: 1, py: 0.75, color: "text.primary" }}
             >
               <SettingsIcon fontSize="small" sx={{ color: "text.secondary" }} />
               {t("header.settings", "Settings")}
@@ -552,7 +549,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setAnchorEl(null);
                 setIsLogoutConfirmOpen(true);
               }}
-              sx={{ gap: 1.25, color: "error.main", fontSize: "0.8125rem", fontWeight: 500, borderRadius: 0, py: 0.75 }}
+              sx={{ gap: 1.25, color: "error.main", fontSize: "0.8125rem", fontWeight: 500, borderRadius: 1, py: 0.75 }}
             >
               <LogoutIcon fontSize="small" />
               {t("header.signOut", "Sign Out")}
@@ -568,7 +565,7 @@ export const Header: React.FC<HeaderProps> = ({
             slotProps={{
               paper: {
                 sx: {
-                  borderRadius: 0,
+                  borderRadius: 1.5,
                   border: "1px solid",
                   borderColor: "divider",
                   bgcolor: (theme) =>
@@ -589,7 +586,7 @@ export const Header: React.FC<HeaderProps> = ({
               </Typography>
             </DialogContent>
             <DialogActions sx={{ p: 2 }}>
-              <Button onClick={() => setIsLogoutConfirmOpen(false)} sx={{ fontWeight: 600, borderRadius: 0 }}>
+              <Button onClick={() => setIsLogoutConfirmOpen(false)} sx={{ fontWeight: 600 }}>
                 {t("header.cancel", "Cancel")}
               </Button>
               <Button
@@ -599,7 +596,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setIsLogoutConfirmOpen(false);
                   logout();
                 }}
-                sx={{ fontWeight: 600, borderRadius: 0, px: 2 }}
+                sx={{ fontWeight: 600, borderRadius: 1.5, px: 2 }}
               >
                 {t("header.signOut", "Sign Out")}
               </Button>

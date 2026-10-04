@@ -113,7 +113,7 @@ export const RoomSwitcher: React.FC = () => {
                     theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.35)' : 'rgba(0, 0, 0, 0.08)',
                   px: 0.6,
                   py: 0.1,
-                  borderRadius: 0,
+                  borderRadius: 0.75,
                   letterSpacing: '0.04em',
                   display: { xs: 'none', sm: 'inline-block' },
                 }}
@@ -127,7 +127,6 @@ export const RoomSwitcher: React.FC = () => {
                   height: 18,
                   fontSize: '0.625rem',
                   fontWeight: 800,
-                  borderRadius: 0,
                   bgcolor: isAdmin ? 'rgba(52, 211, 153, 0.18)' : 'rgba(245, 158, 11, 0.18)',
                   color: isAdmin ? '#34d399' : '#f59e0b',
                   border: '1px solid',
@@ -143,7 +142,7 @@ export const RoomSwitcher: React.FC = () => {
             height: 32,
             px: 0.5,
             cursor: 'pointer',
-            borderRadius: 0,
+            borderRadius: 2,
             border: '1px solid',
             borderColor: (theme) =>
               theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
@@ -167,7 +166,7 @@ export const RoomSwitcher: React.FC = () => {
           sx={{
             width: 32,
             height: 32,
-            borderRadius: 0,
+            borderRadius: 1.5,
             border: '1px solid',
             borderColor: 'primary.main',
             bgcolor: 'rgba(0, 229, 201, 0.08)',
@@ -193,7 +192,7 @@ export const RoomSwitcher: React.FC = () => {
               width: 300,
               maxHeight: 450,
               mt: 1,
-              borderRadius: 0,
+              borderRadius: 2.5,
               bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#17191d' : '#ffffff'),
               border: '1px solid',
               borderColor: 'divider',
@@ -227,7 +226,7 @@ export const RoomSwitcher: React.FC = () => {
               onClick={() => handleSelectRoom(r.room_id)}
               selected={isCurrent}
               sx={{
-                borderRadius: 0,
+                borderRadius: 1.5,
                 my: 0.25,
                 mx: 0.5,
                 py: 1,
@@ -270,7 +269,6 @@ export const RoomSwitcher: React.FC = () => {
                         height: 18,
                         fontSize: '0.625rem',
                         fontWeight: 700,
-                        borderRadius: 0,
                         bgcolor: r.is_owner
                           ? 'rgba(0, 229, 201, 0.15)'
                           : isItemAdmin
@@ -300,7 +298,7 @@ export const RoomSwitcher: React.FC = () => {
             handleCloseMenu();
             openJoinModal();
           }}
-          sx={{ borderRadius: 0, mx: 0.5, py: 0.75 }}
+          sx={{ borderRadius: 1.5, mx: 0.5, py: 0.75 }}
         >
           <ListItemIcon sx={{ minWidth: 32 }}>
             <AddIcon sx={{ fontSize: 18, color: 'primary.main' }} />
@@ -314,7 +312,7 @@ export const RoomSwitcher: React.FC = () => {
           />
         </MenuItem>
 
-        <MenuItem onClick={handleCopyCode} sx={{ borderRadius: 0, mx: 0.5, py: 0.75 }}>
+        <MenuItem onClick={handleCopyCode} sx={{ borderRadius: 1.5, mx: 0.5, py: 0.75 }}>
           <ListItemIcon sx={{ minWidth: 32 }}>
             <CopyIcon sx={{ fontSize: 18 }} />
           </ListItemIcon>
@@ -327,7 +325,7 @@ export const RoomSwitcher: React.FC = () => {
           />
         </MenuItem>
 
-        <MenuItem onClick={handleManageMembers} sx={{ borderRadius: 0, mx: 0.5, py: 0.75 }}>
+        <MenuItem onClick={handleManageMembers} sx={{ borderRadius: 1.5, mx: 0.5, py: 0.75 }}>
           <ListItemIcon sx={{ minWidth: 32 }}>
             <GroupIcon sx={{ fontSize: 18 }} />
           </ListItemIcon>
