@@ -60,7 +60,6 @@ export const Layout: React.FC = () => {
         }}
       >
         <Header
-          onOpenSidebar={() => setSidebarOpen(true)}
           isDark={mode === "dark"}
           onToggleTheme={toggleColorMode}
           onOpenAiScanner={() => setIsAiScannerOpen(true)}

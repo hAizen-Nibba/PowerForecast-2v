@@ -552,7 +552,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         boxSizing: "border-box",
       }}
     >
-      {/* 1. Header with Close Button */}
+      {/* 1. Header with Close Button (Icon and PowerForecast name removed) */}
       <Box
         sx={{
           display: "flex",
@@ -563,53 +563,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
           borderColor: "divider",
         }}
       >
-        <Box
-          component={Link}
-          to="/"
-          onClick={onClose}
+        <Typography
+          variant="subtitle1"
           sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.25,
-            textDecoration: "none",
+            fontWeight: 700,
+            color: "text.primary",
+            fontSize: "0.9375rem",
+            letterSpacing: "-0.01em",
           }}
         >
-          <Box
-            component="img"
-            src="/Assets/LOGO.png"
-            alt="PowerForecast Logo"
-            sx={{
-              width: 30,
-              height: 30,
-              borderRadius: 1.5,
-              objectFit: "contain",
-            }}
-          />
-          <Box>
-            <Typography
-              variant="subtitle2"
-              sx={{
-                fontWeight: 700,
-                color: "text.primary",
-                lineHeight: 1.15,
-                fontSize: "0.875rem",
-              }}
-            >
-              PowerForecast
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{
-                color: "text.secondary",
-                fontSize: "0.6875rem",
-                fontWeight: 500,
-                display: "block",
-              }}
-            >
-              Energy Intelligence
-            </Typography>
-          </Box>
-        </Box>
+          {t("nav.mobile.more", "More")}
+        </Typography>
 
         <IconButton
           onClick={onClose}

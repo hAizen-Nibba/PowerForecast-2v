@@ -70,6 +70,7 @@ export const SmartCalendar: React.FC = () => {
   };
 
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [selectedMobileDate, setSelectedMobileDate] = useState<Date>(() => new Date());
   const [selectedDateForActualModal, setSelectedDateForActualModal] = useState<Date | null>(null);
   const [selectedDateForSimModal, setSelectedDateForSimModal] = useState<Date | null>(null);
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>("all");
@@ -228,6 +229,28 @@ export const SmartCalendar: React.FC = () => {
     };
   }, [billingWindow.days, simulatedUsageMap, appliances]);
 
+  // Mobile selected day metrics
+  const selectedMobileDateKey = formatDateToKey(selectedMobileDate);
+
+  const mobileSelectedActualMetrics = useMemo(() => {
+    return computeActualDayMetrics(
+      selectedMobileDateKey,
+      dailyUsageMap[selectedMobileDateKey] || [],
+      appliances,
+      DEFAULT_EFFECTIVE_RATE
+    );
+  }, [selectedMobileDateKey, dailyUsageMap, appliances]);
+
+  const mobileSelectedSimMetrics = useMemo(() => {
+    return computeSimulatedDayMetrics(
+      selectedMobileDateKey,
+      selectedMobileDate,
+      simulatedUsageMap[selectedMobileDateKey] || [],
+      appliances,
+      DEFAULT_EFFECTIVE_RATE
+    );
+  }, [selectedMobileDateKey, selectedMobileDate, simulatedUsageMap, appliances]);
+
   // Calendar Grid Setup
   const firstDayOfPeriod = billingWindow.days[0];
   const firstDayIndex = firstDayOfPeriod.getDay();
@@ -283,6 +306,7 @@ export const SmartCalendar: React.FC = () => {
             <Box
               sx={{
                 display: "inline-flex",
+                width: { xs: "100%", sm: "auto" },
                 p: "3px",
                 borderRadius: 1,
                 border: "1px solid",
@@ -297,6 +321,7 @@ export const SmartCalendar: React.FC = () => {
                 onClick={() => handleTabChange("actual")}
                 startIcon={<TimerIcon sx={{ fontSize: 15 }} />}
                 sx={{
+                  flex: { xs: 1, sm: "none" },
                   borderRadius: 0.75,
                   fontWeight: 600,
                   fontSize: "0.75rem",
@@ -325,6 +350,7 @@ export const SmartCalendar: React.FC = () => {
                 onClick={() => handleTabChange("simulation")}
                 startIcon={<ScienceIcon sx={{ fontSize: 15 }} />}
                 sx={{
+                  flex: { xs: 1, sm: "none" },
                   borderRadius: 0.75,
                   fontWeight: 600,
                   fontSize: "0.75rem",
@@ -357,6 +383,7 @@ export const SmartCalendar: React.FC = () => {
               startIcon={<DateRangeIcon sx={{ fontSize: 15 }} />}
               onClick={() => setIsBillingModalOpen(true)}
               sx={{
+                flex: { xs: calendarTab === "simulation" ? 1 : "1 1 100%", sm: "none" },
                 borderRadius: 1,
                 fontWeight: 600,
                 fontSize: "0.75rem",
@@ -384,10 +411,11 @@ export const SmartCalendar: React.FC = () => {
             {/* Simulate Appliance Button (Visible in Simulation Tab) */}
             {calendarTab === "simulation" && (
               <Tooltip title={!canEdit ? "View-only members cannot create simulation schedules" : ""}>
-                <span>
+                <span style={{ display: "inline-flex", flex: 1 }}>
                   <Button
                     variant="contained"
                     size="small"
+                    fullWidth
                     startIcon={<ScienceIcon sx={{ fontSize: 15 }} />}
                     disabled={!canEdit}
                     onClick={() => setIsSimulateApplianceOpen(true)}
@@ -672,7 +700,7 @@ export const SmartCalendar: React.FC = () => {
           </Box>
         }
         headerActions={
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 2 }}>
             {calendarTab === "actual" ? (
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                 <Box
@@ -730,6 +758,57 @@ export const SmartCalendar: React.FC = () => {
           </Box>
         }
       >
+        {/* Mobile Compact Legend */}
+        <Box sx={{ display: { xs: "flex", sm: "none" }, alignItems: "center", justifyContent: "center", gap: 2, mb: 1.25 }}>
+          {calendarTab === "actual" ? (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Box
+                sx={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live,
+                }}
+              />
+              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", fontWeight: 500 }}>
+                Logged Sessions
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Box
+                  sx={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.zinc[500] : tokens.zinc[400],
+                  }}
+                />
+                <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", fontWeight: 500 }}>
+                  Routine
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Box
+                  sx={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live,
+                  }}
+                />
+                <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", fontWeight: 500 }}>
+                  Custom Plan
+                </Typography>
+              </Box>
+            </>
+          )}
+        </Box>
+
         {/* Days of week header */}
         <Grid container columns={7} spacing={{ xs: 0.5, sm: 1 }} sx={{ mb: 1 }}>
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
@@ -745,7 +824,12 @@ export const SmartCalendar: React.FC = () => {
                   letterSpacing: "0.03em",
                 }}
               >
-                {day}
+                <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
+                  {day.charAt(0)}
+                </Box>
+                <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                  {day}
+                </Box>
               </Typography>
             </Grid>
           ))}
@@ -756,7 +840,7 @@ export const SmartCalendar: React.FC = () => {
           {/* Empty spacer cells */}
           {Array.from({ length: firstDayIndex }).map((_, idx) => (
             <Grid size={1} key={`empty-${idx}`}>
-              <Box sx={{ minHeight: { xs: 74, sm: 94 }, opacity: 0.15 }} />
+              <Box sx={{ minHeight: { xs: 44, sm: 94 }, opacity: 0.15 }} />
             </Grid>
           ))}
 
@@ -766,6 +850,7 @@ export const SmartCalendar: React.FC = () => {
             const dateKey = formatDateToKey(dayDate);
             const isCurrentToday = dateKey === realTodayKey;
             const isFuture = dateKey > realTodayKey;
+            const isSelectedOnMobile = dateKey === selectedMobileDateKey;
 
             // In Actual Tracker tab
             if (calendarTab === "actual") {
@@ -781,22 +866,29 @@ export const SmartCalendar: React.FC = () => {
                   <Paper
                     variant="outlined"
                     onClick={() => {
-                      if (!isFuture) {
-                        setSelectedDateForActualModal(dayDate);
+                      setSelectedMobileDate(dayDate);
+                      if (typeof window !== "undefined" && window.innerWidth >= 600) {
+                        if (!isFuture) {
+                          setSelectedDateForActualModal(dayDate);
+                        }
                       }
                     }}
                     sx={{
-                      minHeight: { xs: 74, sm: 94 },
-                      p: { xs: 0.75, sm: 1 },
+                      minHeight: { xs: 44, sm: 94 },
+                      p: { xs: 0.5, sm: 1 },
                       borderRadius: 1,
                       cursor: isFuture ? "not-allowed" : "pointer",
                       opacity: isFuture ? 0.4 : 1,
                       display: "flex",
                       flexDirection: "column",
-                      justifyContent: "space-between",
+                      justifyContent: { xs: "center", sm: "space-between" },
+                      alignItems: { xs: "center", sm: "stretch" },
                       position: "relative",
                       bgcolor: (theme) => {
                         const isDark = theme.palette.mode === "dark";
+                        if (isSelectedOnMobile) {
+                          return isDark ? "rgba(0, 229, 201, 0.12)" : "rgba(0, 229, 201, 0.08)";
+                        }
                         if (isCurrentToday) {
                           return isDark ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle;
                         }
@@ -807,6 +899,9 @@ export const SmartCalendar: React.FC = () => {
                       },
                       borderColor: (theme) => {
                         const isDark = theme.palette.mode === "dark";
+                        if (isSelectedOnMobile) {
+                          return isDark ? tokens.dark.primary : tokens.light.primary;
+                        }
                         if (isCurrentToday) {
                           return isDark ? tokens.dark.primary : tokens.light.primary;
                         }
@@ -815,6 +910,7 @@ export const SmartCalendar: React.FC = () => {
                         }
                         return isDark ? tokens.dark.borderSubtle : tokens.light.borderSubtle;
                       },
+                      borderWidth: isSelectedOnMobile ? { xs: "1.5px", sm: "1px" } : "1px",
                       transition: "background-color 0.15s ease, border-color 0.15s ease",
                       "&:hover": {
                         borderColor: (theme) =>
@@ -834,8 +930,70 @@ export const SmartCalendar: React.FC = () => {
                       },
                     }}
                   >
-                    {/* Header */}
-                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    {/* MOBILE DISPLAY (xs): Clean Date Number + Micro Indicator Dot */}
+                    <Box
+                      sx={{
+                        display: { xs: "flex", sm: "none" },
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "100%",
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: isCurrentToday || isSelectedOnMobile ? 700 : 500,
+                          fontVariantNumeric: "tabular-nums",
+                          fontSize: "0.8125rem",
+                          lineHeight: 1.1,
+                          color: isSelectedOnMobile
+                            ? "primary.main"
+                            : isCurrentToday
+                            ? (theme) =>
+                                theme.palette.mode === "dark"
+                                  ? tokens.dark.textPrimary
+                                  : tokens.light.textPrimary
+                            : (theme) =>
+                                theme.palette.mode === "dark"
+                                  ? tokens.dark.textSecondary
+                                  : tokens.light.textSecondary,
+                        }}
+                      >
+                        {dayNum}
+                      </Typography>
+                      {/* Micro indicator dot */}
+                      <Box sx={{ height: 4, mt: 0.35, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {actualMetrics.hasActiveLiveCircuits ? (
+                          <Box
+                            sx={{
+                              width: 5,
+                              height: 5,
+                              borderRadius: "50%",
+                              bgcolor: (theme) =>
+                                theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live,
+                              boxShadow: (theme) =>
+                                theme.palette.mode === "dark"
+                                  ? `0 0 4px ${tokens.dark.live}`
+                                  : `0 0 3px ${tokens.light.live}`,
+                            }}
+                          />
+                        ) : actualMetrics.isLogged ? (
+                          <Box
+                            sx={{
+                              width: 4,
+                              height: 4,
+                              borderRadius: "50%",
+                              bgcolor: (theme) =>
+                                theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live,
+                            }}
+                          />
+                        ) : null}
+                      </Box>
+                    </Box>
+
+                    {/* DESKTOP DISPLAY (sm+): Full Card Header & Cost/kWh Content */}
+                    <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", justifyContent: "space-between", width: "100%" }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                         <Typography
                           variant="body2"
@@ -868,7 +1026,6 @@ export const SmartCalendar: React.FC = () => {
                                 theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary,
                               color: (theme) =>
                                 theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg,
-                              display: { xs: "none", sm: "inline-flex" },
                             }}
                           />
                         )}
@@ -892,8 +1049,7 @@ export const SmartCalendar: React.FC = () => {
                       )}
                     </Box>
 
-                    {/* Content */}
-                    <Box sx={{ textAlign: "right", mt: 0.5 }}>
+                    <Box sx={{ display: { xs: "none", sm: "block" }, textAlign: "right", mt: 0.5 }}>
                       {isFuture ? (
                         <Typography
                           variant="caption"
@@ -962,18 +1118,27 @@ export const SmartCalendar: React.FC = () => {
               <Grid size={1} key={`sim-${dateKey}-${idx}`}>
                 <Paper
                   variant="outlined"
-                  onClick={() => setSelectedDateForSimModal(dayDate)}
+                  onClick={() => {
+                    setSelectedMobileDate(dayDate);
+                    if (typeof window !== "undefined" && window.innerWidth >= 600) {
+                      setSelectedDateForSimModal(dayDate);
+                    }
+                  }}
                   sx={{
-                    minHeight: { xs: 74, sm: 94 },
-                    p: { xs: 0.75, sm: 1 },
+                    minHeight: { xs: 44, sm: 94 },
+                    p: { xs: 0.5, sm: 1 },
                     borderRadius: 1,
                     cursor: "pointer",
                     display: "flex",
                     flexDirection: "column",
-                    justifyContent: "space-between",
+                    justifyContent: { xs: "center", sm: "space-between" },
+                    alignItems: { xs: "center", sm: "stretch" },
                     position: "relative",
                     bgcolor: (theme) => {
                       const isDark = theme.palette.mode === "dark";
+                      if (isSelectedOnMobile) {
+                        return isDark ? "rgba(0, 229, 201, 0.12)" : "rgba(0, 229, 201, 0.08)";
+                      }
                       if (isCurrentToday) {
                         return isDark ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle;
                       }
@@ -984,6 +1149,9 @@ export const SmartCalendar: React.FC = () => {
                     },
                     borderColor: (theme) => {
                       const isDark = theme.palette.mode === "dark";
+                      if (isSelectedOnMobile) {
+                        return isDark ? tokens.dark.primary : tokens.light.primary;
+                      }
                       if (isCurrentToday) {
                         return isDark ? tokens.dark.primary : tokens.light.primary;
                       }
@@ -992,6 +1160,7 @@ export const SmartCalendar: React.FC = () => {
                       }
                       return isDark ? tokens.dark.borderSubtle : tokens.light.borderSubtle;
                     },
+                    borderWidth: isSelectedOnMobile ? { xs: "1.5px", sm: "1px" } : "1px",
                     transition: "background-color 0.15s ease, border-color 0.15s ease",
                     "&:hover": {
                       borderColor: (theme) =>
@@ -1001,8 +1170,56 @@ export const SmartCalendar: React.FC = () => {
                     },
                   }}
                 >
-                  {/* Header */}
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  {/* MOBILE DISPLAY (xs): Clean Date Number + Micro Indicator Dot */}
+                  <Box
+                    sx={{
+                      display: { xs: "flex", sm: "none" },
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "100%",
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: isCurrentToday || isSelectedOnMobile ? 700 : 500,
+                        fontVariantNumeric: "tabular-nums",
+                        fontSize: "0.8125rem",
+                        lineHeight: 1.1,
+                        color: isSelectedOnMobile
+                          ? "primary.main"
+                          : isCurrentToday
+                          ? (theme) =>
+                              theme.palette.mode === "dark"
+                                ? tokens.dark.textPrimary
+                                : tokens.light.textPrimary
+                          : (theme) =>
+                              theme.palette.mode === "dark"
+                                ? tokens.dark.textSecondary
+                                : tokens.light.textSecondary,
+                      }}
+                    >
+                      {dayNum}
+                    </Typography>
+                    {/* Micro indicator dot */}
+                    <Box sx={{ height: 4, mt: 0.35, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {simMetrics.isCustomSimulated ? (
+                        <Box
+                          sx={{
+                            width: 5,
+                            height: 5,
+                            borderRadius: "50%",
+                            bgcolor: (theme) =>
+                              theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live,
+                          }}
+                        />
+                      ) : null}
+                    </Box>
+                  </Box>
+
+                  {/* DESKTOP DISPLAY (sm+): Full Card Header & Cost/kWh Content */}
+                  <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", justifyContent: "space-between", width: "100%" }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                       <Typography
                         variant="body2"
@@ -1035,7 +1252,6 @@ export const SmartCalendar: React.FC = () => {
                               theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary,
                             color: (theme) =>
                               theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg,
-                            display: { xs: "none", sm: "inline-flex" },
                           }}
                         />
                       )}
@@ -1055,8 +1271,7 @@ export const SmartCalendar: React.FC = () => {
                     )}
                   </Box>
 
-                  {/* Content */}
-                  <Box sx={{ textAlign: "right", mt: 0.5 }}>
+                  <Box sx={{ display: { xs: "none", sm: "block" }, textAlign: "right", mt: 0.5 }}>
                     <Typography
                       variant="body2"
                       sx={{
@@ -1092,6 +1307,209 @@ export const SmartCalendar: React.FC = () => {
             );
           })}
         </Grid>
+
+        {/* Mobile View: Interactive Selected Date Details Card (Reveals details when date is clicked) */}
+        {selectedMobileDate && (
+          <Box
+            sx={{
+              display: { xs: "block", sm: "none" },
+              mt: 2,
+              pt: 2,
+              borderTop: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+            }}
+          >
+            <Box
+              sx={{
+                p: 1.75,
+                borderRadius: 1.25,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+              }}
+            >
+              {/* Header: Date + Badges */}
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.25 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.875rem" }}>
+                    {selectedMobileDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                  </Typography>
+                  {selectedMobileDateKey === realTodayKey && (
+                    <Chip
+                      label="TODAY"
+                      size="small"
+                      sx={{
+                        height: 18,
+                        fontSize: "0.625rem",
+                        fontWeight: 700,
+                        bgcolor: "primary.main",
+                        color: "primary.contrastText",
+                      }}
+                    />
+                  )}
+                  {selectedMobileDateKey > realTodayKey && (
+                    <Chip
+                      label="FUTURE"
+                      size="small"
+                      sx={{
+                        height: 18,
+                        fontSize: "0.625rem",
+                        fontWeight: 600,
+                        color: "text.secondary",
+                      }}
+                    />
+                  )}
+                </Box>
+
+                {calendarTab === "actual" && mobileSelectedActualMetrics.hasActiveLiveCircuits && (
+                  <Chip
+                    size="small"
+                    icon={<TimerIcon sx={{ fontSize: "12px !important", color: "inherit" }} />}
+                    label="Stopwatch Live"
+                    sx={{
+                      height: 20,
+                      fontSize: "0.6875rem",
+                      fontWeight: 700,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.15)" : "rgba(0, 229, 201, 0.1)",
+                      color: "primary.main",
+                    }}
+                  />
+                )}
+                {calendarTab === "simulation" && mobileSelectedSimMetrics.isCustomSimulated && (
+                  <Chip
+                    size="small"
+                    label="Custom Plan"
+                    sx={{
+                      height: 20,
+                      fontSize: "0.6875rem",
+                      fontWeight: 700,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.15)" : "rgba(0, 229, 201, 0.1)",
+                      color: "primary.main",
+                    }}
+                  />
+                )}
+              </Box>
+
+              {/* Key Stats Row */}
+              <Grid container spacing={1} sx={{ mb: 1.5 }}>
+                <Grid size={6}>
+                  <Box
+                    sx={{
+                      p: 1.25,
+                      borderRadius: 1,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
+                      border: "1px solid",
+                      borderColor: "divider",
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
+                      {calendarTab === "actual" ? "Recorded Cost" : "Simulated Cost"}
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        fontWeight: 700,
+                        color: (theme) =>
+                          calendarTab === "actual"
+                            ? mobileSelectedActualMetrics.isLogged
+                              ? theme.palette.mode === "dark"
+                                ? tokens.dark.live
+                                : tokens.light.live
+                              : "text.secondary"
+                            : theme.palette.mode === "dark"
+                            ? tokens.dark.live
+                            : tokens.light.live,
+                        fontSize: "1.1rem",
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      ₱
+                      {calendarTab === "actual"
+                        ? mobileSelectedActualMetrics.cost.toFixed(2)
+                        : mobileSelectedSimMetrics.cost.toFixed(2)}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid size={6}>
+                  <Box
+                    sx={{
+                      p: 1.25,
+                      borderRadius: 1,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
+                      border: "1px solid",
+                      borderColor: "divider",
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
+                      Energy Usage
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        fontWeight: 700,
+                        color: "text.primary",
+                        fontSize: "1.1rem",
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {calendarTab === "actual"
+                        ? mobileSelectedActualMetrics.kwh.toFixed(2)
+                        : mobileSelectedSimMetrics.kwh.toFixed(2)}{" "}
+                      <Typography component="span" sx={{ fontSize: "0.75rem", color: "text.secondary", fontWeight: 500 }}>
+                        kWh
+                      </Typography>
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+
+              {/* Action Button to inspect day */}
+              <Button
+                fullWidth
+                variant="contained"
+                size="small"
+                disabled={calendarTab === "actual" && selectedMobileDateKey > realTodayKey}
+                onClick={() => {
+                  if (calendarTab === "actual") {
+                    if (selectedMobileDateKey <= realTodayKey) {
+                      setSelectedDateForActualModal(selectedMobileDate);
+                    }
+                  } else {
+                    setSelectedDateForSimModal(selectedMobileDate);
+                  }
+                }}
+                sx={{
+                  borderRadius: 1,
+                  fontWeight: 600,
+                  fontSize: "0.75rem",
+                  textTransform: "none",
+                  py: 0.75,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary,
+                  color: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg,
+                  "&:hover": {
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.zinc[200] : tokens.zinc[800],
+                  },
+                }}
+              >
+                {calendarTab === "actual"
+                  ? selectedMobileDateKey > realTodayKey
+                    ? "Future Date (No logs)"
+                    : "Inspect Day Sessions & 24H Timeline"
+                  : "Edit & Inspect Simulation Day Plan"}
+              </Button>
+            </Box>
+          </Box>
+        )}
       </SectionCard>
 
       {/* MODAL 1: Actual Tab Day Inspector with 24H Timeline & Stopwatch Switches */}

@@ -45,7 +45,7 @@ export const VersionBadge: React.FC = () => {
   return (
     <aside
       aria-label="PowerForecast system status badge"
-      className="fixed bottom-4 right-3 lg:right-4 z-40 flex flex-col items-end gap-2 select-none print:hidden pointer-events-auto"
+      className="fixed bottom-4 right-3 lg:right-4 z-40 hidden lg:flex flex-col items-end gap-2 select-none print:hidden pointer-events-auto"
     >
       {/* Expanded status card */}
       {isOpen && (

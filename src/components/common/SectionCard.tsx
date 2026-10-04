@@ -58,6 +58,8 @@ export const SectionCard: React.FC<SectionCardProps> = ({
             alignItems: "center",
             justifyContent: "space-between",
             gap: 1.5,
+            flexWrap: "wrap",
+            rowGap: 1.25,
             borderBottom: "1px solid",
             borderColor: (theme) =>
               theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,

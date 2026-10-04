@@ -19,7 +19,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import {
-  Menu as MenuIcon,
   Logout as LogoutIcon,
   NotificationsNone as NotificationsIcon,
   NotificationsActive as NotificationsActiveIcon,
@@ -46,15 +45,12 @@ import { useRoom } from "../../context/RoomContext";
 import { useToast } from "../common/ToastProvider";
 
 interface HeaderProps {
-  onOpenSidebar: () => void;
   isDark?: boolean;
   onToggleTheme?: () => void;
   onOpenAiScanner?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({
-  onOpenSidebar,
-}) => {
+export const Header: React.FC<HeaderProps> = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -139,40 +135,94 @@ export const Header: React.FC<HeaderProps> = ({
           gap: 1.5,
         }}
       >
-        {/* Left: Mobile Toggle / Back, Page Title / Room Breadcrumb, and Tariff */}
+        {/* Left: Mobile Brand (Logo + PowerForecast Name), Settings Back, Page Title / Room Breadcrumb, and Tariff */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
           {location.pathname === "/settings" ? (
-            <Button
-              component={Link}
-              to="/dashboard"
-              startIcon={<ArrowBackIcon />}
-              size="small"
-              variant="outlined"
-              color="inherit"
+            <>
+              {/* Settings Page: Compact Icon button on mobile, Text button on sm+ */}
+              <IconButton
+                component={Link}
+                to="/dashboard"
+                size="small"
+                color="inherit"
+                aria-label={t("common.backToDashboard", "Back to Dashboard")}
+                sx={{
+                  display: { xs: "inline-flex", sm: "none" },
+                  borderRadius: 1.25,
+                  border: "1px solid",
+                  borderColor: "divider",
+                  p: 0.5,
+                }}
+              >
+                <ArrowBackIcon fontSize="small" />
+              </IconButton>
+              <Button
+                component={Link}
+                to="/dashboard"
+                startIcon={<ArrowBackIcon />}
+                size="small"
+                variant="outlined"
+                color="inherit"
+                sx={{
+                  display: { xs: "none", sm: "inline-flex" },
+                  borderRadius: 1.25,
+                  fontWeight: 600,
+                  textTransform: "none",
+                  fontSize: "0.8125rem",
+                  mr: 0.5,
+                  borderColor: "divider",
+                }}
+              >
+                {t("common.backToDashboard", "Back to Dashboard")}
+              </Button>
+            </>
+          ) : null}
+
+          {/* Mobile Brand: Logo and PowerForecast Name (Replaces burger menu icon) */}
+          <Box
+            component={Link}
+            to="/dashboard"
+            sx={{
+              display: { xs: "flex", lg: "none" },
+              alignItems: "center",
+              gap: 1.25,
+              textDecoration: "none",
+              color: "inherit",
+              mr: { xs: 0, sm: 1 },
+              py: 0.5,
+              userSelect: "none",
+              "&:hover": { opacity: 0.9 },
+            }}
+          >
+            <Box
+              component="img"
+              src="/Assets/LOGO.png"
+              alt="PowerForecast Logo"
               sx={{
+                width: 28,
+                height: 28,
                 borderRadius: 1.25,
-                fontWeight: 600,
-                textTransform: "none",
-                fontSize: "0.8125rem",
-                mr: 0.5,
-                borderColor: "divider",
+                objectFit: "contain",
+                flexShrink: 0,
+              }}
+            />
+            <Typography
+              variant="subtitle2"
+              sx={{
+                fontWeight: 700,
+                letterSpacing: "-0.015em",
+                color: "text.primary",
+                lineHeight: 1.15,
+                fontSize: "0.9375rem",
+                whiteSpace: "nowrap",
               }}
             >
-              {t("common.backToDashboard", "Back to Dashboard")}
-            </Button>
-          ) : (
-            <IconButton
-              color="inherit"
-              edge="start"
-              onClick={onOpenSidebar}
-              sx={{ display: { lg: "none" }, p: 0.75 }}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
+              PowerForecast
+            </Typography>
+          </Box>
 
-          {/* Breadcrumb Path: Page Title FIRST (Larger & Bolder) / Room Name SECOND */}
-          <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 0.75, mr: 0.5 }}>
+          {/* Breadcrumb Path (Desktop lg+): Page Title FIRST (Larger & Bolder) / Room Name SECOND */}
+          <Box sx={{ display: { xs: "none", lg: "flex" }, alignItems: "center", gap: 0.75, mr: 0.5 }}>
             <Typography
               variant="subtitle1"
               sx={{
@@ -278,12 +328,12 @@ export const Header: React.FC<HeaderProps> = ({
             </IconButton>
           </Tooltip>
 
-          {/* User Profile Pill & Dropdown Menu */}
+          {/* User Profile Pill & Dropdown Menu (Hidden on mobile, accessible on desktop) */}
           <Box
             data-tour="header-profile"
             onClick={(e) => setAnchorEl(e.currentTarget)}
             sx={{
-              display: "flex",
+              display: { xs: "none", lg: "flex" },
               alignItems: "center",
               gap: 1,
               p: "4px 8px 4px 4px",

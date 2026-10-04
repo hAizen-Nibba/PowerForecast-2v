@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.5v",
+    version: "3.8.5v",
+    git_commit_tag: "3.8.5v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.5v - Mobile View Modernization: Replaced header burger menu with PowerForecast brand logo and title on mobile, removed profile icon clutter from mobile header, streamlined More navigation drawer by removing redundant brand logo and title, transformed Smart Calendar on mobile to clean date-only view with interactive tap-to-reveal selected day metrics panel, and eliminated fixed element overlaps.",
+  },
+  {
     id: "3.8.4bv",
     version: "3.8.4bv",
     git_commit_tag: "3.8.4bv",
