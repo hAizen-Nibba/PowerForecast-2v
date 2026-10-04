@@ -64,7 +64,7 @@ export const RoomSwitcher: React.FC = () => {
 
   const handleManageMembers = () => {
     handleCloseMenu();
-    navigate('/settings');
+    navigate('/settings?tab=household');
     // Scroll to room members section if on settings
     setTimeout(() => {
       const el = document.getElementById('room-members-section');

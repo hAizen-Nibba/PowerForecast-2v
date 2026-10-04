@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.3v",
+    version: "3.8.3v",
+    git_commit_tag: "3.8.3v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.3v - Production-Grade Settings Revamp: Re-architected settings into responsive categorized tabs (General & Tours, Household & Sharing, Notifications & Alerts, Security & Account); removed redundant appearance theme picker and developer SMTP engine diagnostics; added active user telemetry identity banner and synchronized URL search params (?tab=).",
+  },
+  {
     id: "3.8.2v",
     version: "3.8.2v",
     git_commit_tag: "3.8.2v",
