@@ -124,6 +124,15 @@ export const SignupPage: React.FC = () => {
           } else {
             showSuccess("Account created successfully! Welcome to PowerForecast.");
           }
+
+          // Flag that a new account was just created so the Due Date / Cutoff onboarding popup immediately displays upon arrival in the dashboard
+          try {
+            sessionStorage.setItem("powerforecast_just_registered", "true");
+            sessionStorage.setItem("powerforecast_new_account_created", "true");
+            localStorage.removeItem("powerforecast_billing_cutoff_configured_v1");
+            window.dispatchEvent(new CustomEvent("powerforecast_new_account_created"));
+          } catch {}
+
           navigate(data?.redirectTo || "/dashboard");
         },
         onError: (err: any) => {

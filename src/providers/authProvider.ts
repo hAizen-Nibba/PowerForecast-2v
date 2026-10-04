@@ -241,6 +241,12 @@ export const authProvider: AuthProvider = {
         try {
           localStorage.setItem("powerforecast_active_user", JSON.stringify(activeUser));
           sessionStorage.setItem("powerforecast_session_active", "true");
+          // Ensure new account is flagged for Due Date / Cutoff onboarding popup
+          sessionStorage.setItem("powerforecast_just_registered", "true");
+          sessionStorage.setItem("powerforecast_new_account_created", "true");
+          localStorage.removeItem("powerforecast_billing_cutoff_configured_v1");
+          localStorage.removeItem(`powerforecast_billing_cutoff_user_${userId}_configured`);
+          localStorage.removeItem(`powerforecast_billing_config_user_${userId}`);
         } catch (storageErr) {
           devLog.warn("Auth", "Could not cache active user during registration:", storageErr);
         }

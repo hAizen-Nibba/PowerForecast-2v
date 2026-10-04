@@ -64,6 +64,22 @@ export const BillingCutoffOnboardingModal: React.FC = () => {
 
   const quickCyclePresets = [1, 5, 10, 15, 20, 25, 28];
 
+  // Suppress modal on public/auth routes so it never covers the signup/login form
+  const isAuthOrPublicPage = typeof window !== "undefined" && (
+    window.location.hash.startsWith("#/login") ||
+    window.location.hash.startsWith("#/signup") ||
+    window.location.hash.startsWith("#/forgot-password") ||
+    window.location.hash.startsWith("#/verify-email") ||
+    window.location.hash.startsWith("#/verified") ||
+    window.location.hash === "#/" ||
+    window.location.pathname === "/login" ||
+    window.location.pathname === "/signup"
+  );
+
+  if (isAuthOrPublicPage) {
+    return null;
+  }
+
   return (
     <Dialog
       open={isOnboardingModalOpen}
@@ -113,7 +129,7 @@ export const BillingCutoffOnboardingModal: React.FC = () => {
           <Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Typography variant="h6" sx={{ fontWeight: 700, fontSize: "1.05rem" }}>
-                Welcome to PowerForecast
+                Choose Your Billing Due Date & Cutoff
               </Typography>
               <Chip
                 label="Step 1: Setup"
@@ -129,7 +145,7 @@ export const BillingCutoffOnboardingModal: React.FC = () => {
               />
             </Box>
             <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-              Configure your Meralco meter reading cutoff date for 100% accurate electric bills
+              Configure your monthly Meralco due date / meter reading cutoff for 100% accurate electric bills
             </Typography>
           </Box>
         </Box>
@@ -155,11 +171,11 @@ export const BillingCutoffOnboardingModal: React.FC = () => {
           <LightbulbIcon sx={{ color: "#3b82f6", fontSize: 20, mt: 0.25 }} />
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.8125rem", color: "text.primary" }}>
-              Why does your Billing Cutoff Date matter?
+              Why choose your Due Date / Meter Cutoff?
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.25, lineHeight: 1.4 }}>
-              Meralco calculates your bill across your specific monthly meter reading cycle (e.g. 15th to 15th), not
-              standard calendar months. Setting this ensures your analytics, unbundled tariffs, and forecasts reflect your exact utility statement.
+              Meralco bills your electricity across your specific monthly meter reading cycle (e.g. 15th to 15th), not
+              standard calendar months. Setting your cutoff day aligns your telemetry, unbundled tariffs, and forecasting to your actual statement.
             </Typography>
           </Box>
         </Paper>
@@ -288,7 +304,7 @@ export const BillingCutoffOnboardingModal: React.FC = () => {
             {/* Cutoff Day Picker */}
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase" }}>
-                1. What day of the month does your meter read cutoff?
+                1. What day of the month is your meter reading cutoff / statement due date?
               </Typography>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap", mt: 1 }}>
                 {quickCyclePresets.map((dayNum) => (
@@ -299,14 +315,14 @@ export const BillingCutoffOnboardingModal: React.FC = () => {
                     onClick={() => setCycleStartDay(dayNum)}
                     sx={{
                       minWidth: 44,
-                      px: 1,
+                      px: 1.25,
                       py: 0.4,
                       fontSize: "0.75rem",
                       fontWeight: 800,
                       borderRadius: 1,
                     }}
                   >
-                    Day {dayNum}
+                    {dayNum === 15 ? "Day 15 (Default)" : `Day ${dayNum}`}
                   </Button>
                 ))}
               </Box>
@@ -454,7 +470,7 @@ export const BillingCutoffOnboardingModal: React.FC = () => {
             },
           }}
         >
-          Confirm & Start Exploring PowerForecast
+          Confirm Due Date & Enter Dashboard
         </Button>
       </DialogActions>
     </Dialog>

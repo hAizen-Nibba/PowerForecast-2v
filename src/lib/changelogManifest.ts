@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.9.1v",
+    version: "3.9.1v",
+    git_commit_tag: "3.9.1v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.9.1v - Enforce Utility Due Date / Billing Cutoff onboarding popup trigger for all newly created accounts, add per-user cutoff persistence, and suppress popup on public auth routes.",
+  },
+  {
     id: "3.9.0v",
     version: "3.9.0v",
     git_commit_tag: "3.9.0v",

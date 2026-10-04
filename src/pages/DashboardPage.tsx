@@ -45,12 +45,25 @@ import { formatDateToKey, DEFAULT_EFFECTIVE_RATE, getApplianceEffectiveRunningWa
 import { getMeralcoTariff, MeralcoTariffData, DEFAULT_MERALCO_TARIFF } from "../lib/meralcoRateService";
 import { getEffectiveApplianceRate } from "../lib/sessionService";
 import { useRoom } from "../context/RoomContext";
+import { useBillingPeriod } from "../context/BillingPeriodContext";
 import { tokens } from "../theme/tokens";
 
 export const DashboardPage: React.FC = () => {
   const { t } = useLanguage();
   const { isViewer, canEdit } = useRoom();
   const { showSuccess } = useToast();
+  const { setIsOnboardingModalOpen, hasConfiguredCutoff } = useBillingPeriod();
+
+  // Ensure new accounts and unconfigured accounts trigger the Due Date / Cutoff onboarding popup immediately upon entering dashboard
+  useEffect(() => {
+    const isNewAccount =
+      sessionStorage.getItem("powerforecast_just_registered") === "true" ||
+      sessionStorage.getItem("powerforecast_new_account_created") === "true";
+    if (isNewAccount || !hasConfiguredCutoff) {
+      setIsOnboardingModalOpen(true);
+    }
+  }, [hasConfiguredCutoff, setIsOnboardingModalOpen]);
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPelpModalOpen, setIsPelpModalOpen] = useState(false);
   const [isAiScannerOpen, setIsAiScannerOpen] = useState(false);
