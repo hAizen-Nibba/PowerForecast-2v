@@ -36,8 +36,9 @@ interface ChangePasswordCardProps {
   userEmail?: string;
 }
 
-type AuthMode = "reauth" | "recovery";
 type Step = "input" | "verify" | "success";
+
+const OTP_LENGTH = 8;
 
 /**
  * Masks an email for privacy (e.g. john.doe@gmail.com -> j***e@gmail.com)
@@ -108,7 +109,6 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
 
   // Step state
   const [step, setStep] = useState<Step>("input");
-  const [authMode, setAuthMode] = useState<AuthMode>("reauth");
 
   // Inputs
   const [currentPassword, setCurrentPassword] = useState("");
@@ -118,8 +118,8 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
-  // OTP inputs (6 individual digits)
-  const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
+  // OTP inputs (8 individual digits matching Supabase OTP length)
+  const [otpDigits, setOtpDigits] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   // States
@@ -141,7 +141,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
   const passwordsMatch = !confirmNewPassword || newPassword === confirmNewPassword;
   const strength = calculatePasswordStrength(newPassword);
 
-  // ── Step 1: Initiate Password Change & Dispatch Confirmation Code ──
+  // ── Step 1: Initiate Password Change & Dispatch 8-Digit Confirmation Code ──
   const handleInitiateChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -207,7 +207,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
     try {
       devLog.info("Auth", "Verifying current password before dispatching confirmation code...");
 
-      // 1. Verify current password
+      // 1. Verify current password credentials
       const { error: authErr } = await supabaseClient.auth.signInWithPassword({
         email: emailToUse,
         password: trimmedCurrent,
@@ -223,40 +223,25 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
         return;
       }
 
-      // 2. Dispatch OTP / confirmation code to user's email
-      devLog.info("Auth", `Dispatching password change verification code to ${emailToUse}`);
-      let mode: AuthMode = "reauth";
-
-      try {
-        const { error: reauthErr } = await supabaseClient.auth.reauthenticate();
-        if (reauthErr) {
-          devLog.warn("Auth", "reauthenticate() returned error, falling back to reset OTP:", reauthErr.message);
-          const { error: resetErr } = await supabaseClient.auth.resetPasswordForEmail(emailToUse);
-          if (resetErr) throw resetErr;
-          mode = "recovery";
-        } else {
-          mode = "reauth";
-        }
-      } catch (innerErr: any) {
-        devLog.info("Auth", "Using fallback OTP dispatch via resetPasswordForEmail", innerErr?.message);
-        const { error: fallbackErr } = await supabaseClient.auth.resetPasswordForEmail(emailToUse);
-        if (fallbackErr) throw fallbackErr;
-        mode = "recovery";
+      // 2. Dispatch 8-digit OTP recovery code directly via Supabase Auth
+      devLog.info("Auth", `Dispatching 8-digit password recovery code to ${emailToUse}`);
+      const { error: resetErr } = await supabaseClient.auth.resetPasswordForEmail(emailToUse);
+      if (resetErr) {
+        throw resetErr;
       }
 
-      setAuthMode(mode);
-      setOtpDigits(["", "", "", "", "", ""]);
+      setOtpDigits(Array(OTP_LENGTH).fill(""));
       setCooldown(60);
       setStep("verify");
 
       showInfo(
         language === "tl"
-          ? `Ipinadala ang 6-digit na verification code sa ${maskEmail(emailToUse)}.`
-          : `A 6-digit verification code was sent to ${maskEmail(emailToUse)}.`,
+          ? `Ipinadala ang 8-digit na verification code sa ${maskEmail(emailToUse)}.`
+          : `An 8-digit verification code was sent to ${maskEmail(emailToUse)}.`,
         language === "tl" ? "Ipinadala ang Code" : "Code Dispatched"
       );
 
-      // Focus first OTP input after transition
+      // Focus first OTP input slot after transition
       setTimeout(() => {
         inputRefs.current[0]?.focus();
       }, 150);
@@ -273,18 +258,18 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
     }
   };
 
-  // ── OTP Digit Input Handlers ──
+  // ── OTP Digit Input Handlers (8 slots) ──
   const handleDigitChange = (index: number, value: string) => {
     // Handle paste of full or partial code
     if (value.length > 1) {
-      const cleanDigits = value.replace(/\D/g, "").slice(0, 6);
+      const cleanDigits = value.replace(/\D/g, "").slice(0, OTP_LENGTH);
       if (cleanDigits.length > 0) {
         const updated = [...otpDigits];
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < OTP_LENGTH; i++) {
           updated[i] = cleanDigits[i] || "";
         }
         setOtpDigits(updated);
-        const nextIndex = Math.min(cleanDigits.length, 5);
+        const nextIndex = Math.min(cleanDigits.length, OTP_LENGTH - 1);
         inputRefs.current[nextIndex]?.focus();
         return;
       }
@@ -296,7 +281,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
     updated[index] = cleanChar;
     setOtpDigits(updated);
 
-    if (cleanChar && index < 5) {
+    if (cleanChar && index < OTP_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -308,7 +293,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
       }
     } else if (e.key === "ArrowLeft" && index > 0) {
       inputRefs.current[index - 1]?.focus();
-    } else if (e.key === "ArrowRight" && index < 5) {
+    } else if (e.key === "ArrowRight" && index < OTP_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -316,31 +301,31 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     const pastedData = e.clipboardData.getData("text").trim();
-    const digitsOnly = pastedData.replace(/\D/g, "").slice(0, 6);
+    const digitsOnly = pastedData.replace(/\D/g, "").slice(0, OTP_LENGTH);
     if (!digitsOnly) return;
 
     const updated = [...otpDigits];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < OTP_LENGTH; i++) {
       updated[i] = digitsOnly[i] || "";
     }
     setOtpDigits(updated);
-    const targetIdx = Math.min(digitsOnly.length, 5);
+    const targetIdx = Math.min(digitsOnly.length, OTP_LENGTH - 1);
     inputRefs.current[targetIdx]?.focus();
   };
 
   const fullCode = otpDigits.join("");
-  const isCodeComplete = fullCode.length === 6;
+  const isCodeComplete = fullCode.length === OTP_LENGTH;
 
-  // ── Step 2: Confirm OTP & Commit Password Update ──
+  // ── Step 2: Strictly Verify OTP Code with Supabase & Apply Password Update ──
   const handleConfirmCode = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setErrorMessage(null);
 
-    if (fullCode.length !== 6) {
+    if (fullCode.length !== OTP_LENGTH) {
       setErrorMessage(
         language === "tl"
-          ? "Pakilagay ang kumpletong 6-digit na confirmation code."
-          : "Please enter the complete 6-digit confirmation code."
+          ? `Pakilagay ang kumpletong ${OTP_LENGTH}-digit na confirmation code.`
+          : `Please enter the complete ${OTP_LENGTH}-digit confirmation code.`
       );
       return;
     }
@@ -348,45 +333,38 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
     setIsVerifyingCode(true);
     try {
       const emailToUse = resolvedEmail;
-      devLog.info("Auth", `Verifying OTP [${fullCode}] in mode [${authMode}]...`);
+      devLog.info("Auth", `Strictly verifying OTP [${fullCode}] against Supabase...`);
 
-      if (authMode === "reauth") {
-        // Mode 1: Supabase reauthentication nonce
-        const { error: updateErr } = await supabaseClient.auth.updateUser({
-          password: newPassword.trim(),
-          nonce: fullCode,
-        });
+      // 1. Strict Verification via Supabase verifyOtp
+      // This MUST succeed. If the code is wrong, modified, or expired, verifyOtp WILL return an error.
+      const { data: otpData, error: otpErr } = await supabaseClient.auth.verifyOtp({
+        email: emailToUse,
+        token: fullCode,
+        type: "recovery",
+      });
 
-        if (updateErr) {
-          devLog.warn("Auth", "Reauth nonce update failed, trying OTP recovery fallback:", updateErr.message);
-          // Fallback: verify OTP as recovery token
-          const { error: otpErr } = await supabaseClient.auth.verifyOtp({
-            email: emailToUse,
-            token: fullCode,
-            type: "recovery",
-          });
+      if (otpErr || !otpData?.session) {
+        devLog.error("Auth", "OTP verification rejected by Supabase:", otpErr);
+        setErrorMessage(
+          otpErr?.message ||
+            (language === "tl"
+              ? "Maling verification code o nag-expire na ito. Pakisuri ang iyong email at subukang muli."
+              : "Invalid or expired verification code. Please check your email and try again.")
+        );
+        setIsVerifyingCode(false);
+        // CRITICAL: Stop immediately! Do not update password if code is invalid!
+        return;
+      }
 
-          if (otpErr) throw otpErr;
+      devLog.info("Auth", "OTP verified successfully. Applying new password...");
 
-          const { error: finalUpdateErr } = await supabaseClient.auth.updateUser({
-            password: newPassword.trim(),
-          });
-          if (finalUpdateErr) throw finalUpdateErr;
-        }
-      } else {
-        // Mode 2: Supabase recovery OTP verification
-        const { error: otpErr } = await supabaseClient.auth.verifyOtp({
-          email: emailToUse,
-          token: fullCode,
-          type: "recovery",
-        });
+      // 2. Only after strict verification succeeds, update user's password
+      const { error: updateErr } = await supabaseClient.auth.updateUser({
+        password: newPassword.trim(),
+      });
 
-        if (otpErr) throw otpErr;
-
-        const { error: updateErr } = await supabaseClient.auth.updateUser({
-          password: newPassword.trim(),
-        });
-        if (updateErr) throw updateErr;
+      if (updateErr) {
+        throw updateErr;
       }
 
       // Success celebration!
@@ -405,12 +383,12 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
 
       setStep("success");
     } catch (err: any) {
-      devLog.error("Auth", "Failed to confirm password update with code:", err);
+      devLog.error("Auth", "Failed to update password:", err);
       setErrorMessage(
         err?.message ||
           (language === "tl"
-            ? "Maling verification code o nag-expire na ito. Pakisuri at subukan muli."
-            : "Invalid or expired verification code. Please check your email and try again.")
+            ? "Maling verification code o nabigong palitan ang password."
+            : "Invalid verification code or failed to update password.")
       );
     } finally {
       setIsVerifyingCode(false);
@@ -424,22 +402,16 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
     setIsSubmitting(true);
 
     try {
-      devLog.info("Auth", `Resending verification code to ${resolvedEmail}`);
-      if (authMode === "reauth") {
-        const { error } = await supabaseClient.auth.reauthenticate();
-        if (error) {
-          await supabaseClient.auth.resetPasswordForEmail(resolvedEmail);
-        }
-      } else {
-        await supabaseClient.auth.resetPasswordForEmail(resolvedEmail);
-      }
+      devLog.info("Auth", `Resending 8-digit verification code to ${resolvedEmail}`);
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(resolvedEmail);
+      if (error) throw error;
 
       setCooldown(60);
-      setOtpDigits(["", "", "", "", "", ""]);
+      setOtpDigits(Array(OTP_LENGTH).fill(""));
       showInfo(
         language === "tl"
           ? "Ipinadala muli ang bagong verification code sa iyong email."
-          : "A new verification code has been dispatched to your email.",
+          : "A new 8-digit verification code has been dispatched to your email.",
         language === "tl" ? "Naipadala Muli" : "Code Resent"
       );
       inputRefs.current[0]?.focus();
@@ -484,7 +456,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
     setCurrentPassword("");
     setNewPassword("");
     setConfirmNewPassword("");
-    setOtpDigits(["", "", "", "", "", ""]);
+    setOtpDigits(Array(OTP_LENGTH).fill(""));
     setErrorMessage(null);
     setStep("input");
   };
@@ -516,7 +488,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
             step === "verify"
               ? language === "tl"
                 ? "Hakbang 2: Kumpirmasyon ng Code"
-                : "Step 2: Code Verification"
+                : "Step 2: 8-Digit Verification"
               : step === "success"
               ? language === "tl"
                 ? "Tapos Na"
@@ -569,12 +541,12 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
             <SecurityIcon sx={{ fontSize: 18, color: "primary.main", mt: 0.2 }} />
             <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.5 }}>
               {language === "tl"
-                ? `Para sa karagdagang proteksyon ng account, may ipapadalang 6-digit na verification code sa ${maskEmail(
+                ? `Para sa proteksyon ng iyong account, may ipapadalang 8-digit na verification code sa ${maskEmail(
                     resolvedEmail
-                  )} bago ilapat ang pagbabago.`
-                : `For account security, a 6-digit verification code will be sent to ${maskEmail(
+                  )} bago opisyal na mapalitan ang iyong password.`
+                : `For account security, an 8-digit verification code will be sent to ${maskEmail(
                     resolvedEmail
-                  )} before updating your credentials.`}
+                  )} before updating your master password.`}
             </Typography>
           </Box>
 
@@ -801,7 +773,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
         </Box>
       )}
 
-      {/* ── STEP 2: CODE VERIFICATION ── */}
+      {/* ── STEP 2: 8-DIGIT CODE VERIFICATION ── */}
       {step === "verify" && (
         <Box component="form" onSubmit={handleConfirmCode}>
           <Box
@@ -831,13 +803,13 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
             </Box>
 
             <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 0.5 }}>
-              {language === "tl" ? "Ilagay ang Confirmation Code" : "Enter Confirmation Code"}
+              {language === "tl" ? "Ilagay ang 8-Digit Confirmation Code" : "Enter 8-Digit Confirmation Code"}
             </Typography>
 
             <Typography variant="body2" sx={{ color: "text.secondary", maxWidth: 420, mb: 1.5 }}>
               {language === "tl"
-                ? "Ipinadala namin ang 6-digit na verification code sa iyong email:"
-                : "We dispatched a 6-digit security code to your registered email address:"}
+                ? "Ipinadala namin ang 8-digit na verification code sa iyong email:"
+                : "We dispatched an 8-digit security code to your registered email address:"}
             </Typography>
 
             <Chip
@@ -853,13 +825,14 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
             />
           </Box>
 
-          {/* 6-box OTP digits */}
+          {/* 8-box OTP digits */}
           <Box
             sx={{
               display: "flex",
-              gap: { xs: 0.75, sm: 1.25 },
+              gap: { xs: 0.5, sm: 1 },
               justifyContent: "center",
               mb: 2.5,
+              flexWrap: "nowrap",
             }}
           >
             {otpDigits.map((digit, idx) => (
@@ -871,16 +844,16 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
                 }}
                 type="text"
                 inputMode="numeric"
-                maxLength={6}
+                maxLength={8}
                 value={digit}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDigitChange(idx, e.target.value)}
                 onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => handleKeyDown(idx, e)}
                 onPaste={handlePaste}
                 disabled={isVerifyingCode}
                 sx={{
-                  width: { xs: 40, sm: 46 },
-                  height: { xs: 46, sm: 52 },
-                  fontSize: { xs: "1.25rem", sm: "1.4rem" },
+                  width: { xs: 32, sm: 40, md: 44 },
+                  height: { xs: 44, sm: 50 },
+                  fontSize: { xs: "1.1rem", sm: "1.3rem" },
                   fontWeight: 800,
                   textAlign: "center",
                   borderRadius: 1.5,
@@ -936,7 +909,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
               {isVerifyingCode
                 ? language === "tl"
                   ? "Kinukumpirma ang Password..."
-                  : "Confirming & Updating..."
+                  : "Verifying Code & Updating Password..."
                 : language === "tl"
                 ? "Kumpirmahin at I-update ang Password"
                 : "Confirm & Update Password"}
@@ -1080,7 +1053,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ userEmai
           <Typography variant="body2" sx={{ color: "text.secondary", maxWidth: 420, mb: 3 }}>
             {language === "tl"
               ? "Ang iyong login password ay opisyal nang na-update sa tulong ng email verification. Gamitin ang iyong bagong password sa susunod mong pag-log in."
-              : "Your master password has been securely updated with verified confirmation. Use your new password the next time you sign in to PowerForecast."}
+              : "Your master password has been securely updated with verified email confirmation. Use your new password the next time you sign in to PowerForecast."}
           </Typography>
 
           <Button

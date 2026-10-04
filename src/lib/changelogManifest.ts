@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.6av",
+    version: "3.8.6av",
+    git_commit_tag: "3.8.6av",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.6av - Password Change OTP Security Hotfix: Enforced strict 8-digit OTP verification via Supabase verifyOtp, rejecting modified or incorrect verification codes prior to password update, and updated input slots to 8 digits.",
+  },
+  {
     id: "3.8.6v",
     version: "3.8.6v",
     git_commit_tag: "3.8.6v",
