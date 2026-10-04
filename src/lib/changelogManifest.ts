@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.6dv",
+    version: "3.8.6dv",
+    git_commit_tag: "3.8.6dv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.6dv - Modernize SMTP Email Templates with Dark Theme: Updated all Supabase Auth and transactional email templates with sleek dark background (#0b0f17), slate card containers, glowing cyan buttons, and high-visibility OTP verification code highlight boxes ({{ .Token }}).",
+  },
+  {
     id: "3.8.6cv",
     version: "3.8.6cv",
     git_commit_tag: "3.8.6cv",
