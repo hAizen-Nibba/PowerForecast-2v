@@ -33,6 +33,16 @@ export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
       "3.8.0v - Production-grade admin design revamp: Unified Stack Template & Google Stitch zinc color system, eliminated legacy teal/glow artifacts across sidebar, header, and mobile nav, created PageHeader, SectionCard, and StatCard primitives, and restructured the dashboard into an inverted pyramid hierarchy with right rail shortcuts and full tour compatibility",
   },
   {
+    id: "3.7.2cv",
+    version: "3.7.2cv",
+    git_commit_tag: "3.7.2cv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Developer",
+    source: "github",
+    description:
+      "3.7.2cv - Hotfix: Add missing vite-plugin-qrcode devDependency to package.json to resolve deployment build error TS2307",
+  },
+  {
     id: "3.7.2bv",
     version: "3.7.2bv",
     git_commit_tag: "3.7.2bv",

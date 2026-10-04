@@ -660,53 +660,53 @@ const forecastingTour: PageTour = {
       },
     },
     {
-      id: 'forecasting-trajectory-chart',
+      id: 'forecasting-budget-sentinel',
       placement: 'top',
       page: 'forecasting',
       copy: {
         en: {
-          title: 'Cumulative Trajectory: Baseline vs Simulated Path',
+          title: 'Monthly Budget Sentinel & Breach Guard',
           description:
-            'Track cumulative month-end bill run rate comparing baseline quota against your simulated routine schedule to catch budget overruns early.',
+            'Set your monthly electricity spending cap, monitor daily burn rate, and receive proactive breach day projections with safe daily kWh allowances.',
         },
         tl: {
-          title: 'Tala ng Trajectory: Karaniwan vs Plano ng Simulasyon',
+          title: 'Bantay sa Buwanang Badyet at Alerto sa Paglabis',
           description:
-            'Tingnan ang takbo ng bill kada araw kung susundin ang karaniwang quota laban sa na-simulate na routine upang maagapan ang labis na gastos.',
+            'Magtakda ng buwanang limitasyon sa gastos, bantayan ang bilis ng paggamit, at alamin kung anong araw posibleng lumampas sa badyet upang maagapan.',
         },
       },
     },
     {
-      id: 'forecasting-rate-slider',
+      id: 'forecasting-virtual-bill',
       placement: 'top',
       page: 'forecasting',
       copy: {
         en: {
-          title: 'Meralco Rate Fluctuation Simulator',
+          title: 'Projected Meralco Statement Breakdown ("Virtual Bill")',
           description:
-            'Stress-test your bill against seasonal Meralco rate spikes or WESM generation increases (e.g. summer demand increases).',
+            'Authentic ERC unbundled cost decomposition showing generation, distribution, transmission, system loss, and government taxes (VAT).',
         },
         tl: {
-          title: 'Simulator ng Pagbabago sa Presyo ng Meralco',
+          title: 'Talaan ng Tinatayang Bill sa Meralco (Virtual Bill)',
           description:
-            'Subukan kung paano maaapektuhan ang bill kapag tumaas o bumaba ang singil ng Meralco o WESM generation rate (hal. tuwing tag-init).',
+            'Eksaktong unbundled na presyo ng ERC na naghihiwalay sa singil sa henerasyon, distribusyon, transmisyon, system loss, at mga buwis sa gobyerno.',
         },
       },
     },
     {
-      id: 'forecasting-scenarios',
+      id: 'forecasting-whatif-studio',
       placement: 'top',
       page: 'forecasting',
       copy: {
         en: {
-          title: 'Data-Driven Forecast Scenarios & Stress Tests',
+          title: 'Interactive "What-If" Appliance Studio',
           description:
-            'Side-by-side comparison of 4 projection models: Actual Trajectory, Conservative Saver, Baseline Routine, and Worst-Case High Usage.',
+            'Adjust runtime sliders on specific appliances to simulate real-time bill impacts and test whether your plan achieves your monthly budget target.',
         },
         tl: {
-          title: 'Apat na Sitwasyon ng Prediksyon at Stress-Test',
+          title: 'Interactive na "What-If" Appliance Studio',
           description:
-            'Paghahambing ng 4 na modelo: Kasalukuyang Takbo, Matipid na Sitwasyon, Karaniwang Routine, at Pinakamataas na Konsumo.',
+            'I-adjust ang oras ng paggamit ng bawat kagamitan upang makita agad ang pagbabago sa buwanang bill at kung aabot ito sa iyong itinakdang badyet.',
         },
       },
     },
