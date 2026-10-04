@@ -48,6 +48,7 @@ import { PcWorkloadModeModal } from "../appliances/PcWorkloadModeModal";
 import { useToast } from "../common/ToastProvider";
 import { useLiveTicker, formatElapsedHms } from "../../hooks/useLiveTicker";
 import { useRoom } from "../../context/RoomContext";
+import { tokens } from "../../theme/tokens";
 
 interface DateAnalyticsModalProps {
   isOpen: boolean;
@@ -363,15 +364,14 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 2.5,
-            bgcolor: "background.paper",
-            boxShadow: (theme) =>
-              theme.palette.mode === "dark"
-                ? "0 32px 80px rgba(0, 0, 0, 0.85)"
-                : "0 20px 60px rgba(15, 23, 42, 0.14)",
+            borderRadius: 1,
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
+            backgroundImage: "none",
+            boxShadow: "none",
             border: "1px solid",
             borderColor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "#e2e8f0",
+              theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
           },
         },
       }}
@@ -389,24 +389,26 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Box
             sx={{
-              width: 38,
-              height: 38,
-              borderRadius: 1.25,
-              bgcolor: "primary.main",
-              color: "#ffffff",
+              width: 34,
+              height: 34,
+              borderRadius: 0.75,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+              color: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
             }}
           >
-            <CalendarIcon sx={{ color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "#ffffff") }} />
+            <CalendarIcon sx={{ fontSize: 20 }} />
           </Box>
           <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: "0.9375rem" }}>
               {formattedDate}
             </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
               {isToday ? "Live Stopwatch Tracking & Actual Usage Timeline" : "Actual Measured Usage & Stopwatch Logs"}
             </Typography>
           </Box>

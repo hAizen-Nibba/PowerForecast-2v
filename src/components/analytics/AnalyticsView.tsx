@@ -55,6 +55,9 @@ import { UserAppliance, ApplianceList, DailyApplianceUsage, SimulatedApplianceUs
 import { useList, useGetIdentity } from "@refinedev/core";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
 import { MetricCard } from "../common/MetricCard";
+import { PageHeader } from "../common/PageHeader";
+import { SectionCard } from "../common/SectionCard";
+import { tokens } from "../../theme/tokens";
 import {
   generateAiEnergyTips,
   AiEnergyTip,
@@ -550,15 +553,16 @@ export const AnalyticsView: React.FC = () => {
 
   // Unbundled Rate Components breakdown
   const rateComponents = useMemo(() => {
+    const c = isDark ? tokens.dark.chart : tokens.light.chart;
     return [
-      { name: "Generation Charge", amount: bill.generationTotal, color: "#00e5c9", desc: "Cost of producing electricity by generation power plants" },
-      { name: "Transmission Charge", amount: bill.transmissionTotal, color: "#26c6da", desc: "High-voltage transmission grid wheeling fee (NGCP)" },
-      { name: "System Loss Charge", amount: bill.systemLossTotal, color: "#38bdf8", desc: "Technical & non-technical line losses allowed by ERC" },
-      { name: "Distribution Network", amount: bill.distributionTotal, color: "#009e88", desc: "Meralco poles, wires, meters, customer billing & supply" },
-      { name: "Government Taxes & VAT", amount: bill.totalVat + bill.localFranchiseTax, color: "#fbbf24", desc: "12% National Value Added Tax & Local Franchise Tax" },
-      { name: "Universal & FIT-All Charges", amount: bill.universalCharges.total + bill.fitAll + bill.lifelineSubsidy, color: "#8b949e", desc: "Missionary electrification, stranded debts, and RE Feed-in Tariff" },
+      { name: "Generation Charge", amount: bill.generationTotal, color: c[0], desc: "Cost of producing electricity by generation power plants" },
+      { name: "Transmission Charge", amount: bill.transmissionTotal, color: c[1], desc: "High-voltage transmission grid wheeling fee (NGCP)" },
+      { name: "System Loss Charge", amount: bill.systemLossTotal, color: c[2], desc: "Technical & non-technical line losses allowed by ERC" },
+      { name: "Distribution Network", amount: bill.distributionTotal, color: c[3], desc: "Meralco poles, wires, meters, customer billing & supply" },
+      { name: "Government Taxes & VAT", amount: bill.totalVat + bill.localFranchiseTax, color: c[4], desc: "12% National Value Added Tax & Local Franchise Tax" },
+      { name: "Universal & FIT-All Charges", amount: bill.universalCharges.total + bill.fitAll + bill.lifelineSubsidy, color: isDark ? tokens.dark.textSecondary : tokens.light.textSecondary, desc: "Missionary electrification, stranded debts, and RE Feed-in Tariff" },
     ];
-  }, [bill]);
+  }, [bill, isDark]);
 
 
 
@@ -604,8 +608,8 @@ export const AnalyticsView: React.FC = () => {
           status: dataSourceMode === "actual" ? "Recorded Actuals" : "Simulated Plan History",
           type: dataSourceMode === "actual" ? "recorded" : "simulated",
           fillColor: dataSourceMode === "actual"
-            ? (isDark ? "#009e88" : "#0d9488")
-            : (isDark ? "#00e5c9" : "#0d9488"),
+            ? (isDark ? tokens.dark.live : tokens.light.live)
+            : (isDark ? tokens.dark.chart[1] : tokens.light.chart[1]),
         });
       }
     }
@@ -626,7 +630,7 @@ export const AnalyticsView: React.FC = () => {
       cost: Math.round(totalActiveCost),
       status: `${dataSourceMode === "actual" ? "Active Cycle" : "Simulated Cycle"} • Day ${currentDay} of ${daysInCurrentMonth} (MTD + Projected)`,
       type: "active",
-      fillColor: isDark ? "#00e5c9" : "#14b8a6",
+      fillColor: isDark ? tokens.dark.live : tokens.light.live,
     });
 
     // 4. Future Months (Next 5 Months): Pure Baseline Prediction from registered appliance routines
@@ -641,7 +645,7 @@ export const AnalyticsView: React.FC = () => {
         cost: Math.round(totalCost),
         status: "Predicted Cycle • Based on active appliance baseline routine",
         type: "predicted",
-        fillColor: isDark ? "#2a2f38" : "#cbd5e1",
+        fillColor: isDark ? tokens.dark.borderStrong : tokens.light.borderStrong,
       });
     }
 
@@ -692,109 +696,147 @@ export const AnalyticsView: React.FC = () => {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3, md: 3.5 } }}>
       {/* 1. Header Banner & Action Buttons */}
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: { xs: "column", md: "row" },
-          alignItems: { xs: "flex-start", md: "center" },
-          justifyContent: "space-between",
-          gap: 2,
-        }}
-      >
-        <Box>
-          <Typography
-            variant="h4"
-            sx={{ fontWeight: 800, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 1.5 }}
-          >
+      <PageHeader
+        title="Energy Analytics & Cost Distribution"
+        subtitle="Telemetry breakdown, DOE PELP inventory efficiency, ERC unbundled cost allocation, and diurnal load profiles."
+        actions={
+          <>
+            {/* Top Level Mode Switcher: Actuals vs Simulated */}
             <Box
               sx={{
-                width: 40,
-                height: 40,
-                borderRadius: 2.5,
-                bgcolor: "primary.main",
-                color: "#ffffff",
                 display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
+                p: "3px",
+                borderRadius: 1,
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
               }}
             >
-              <AnalyticsIcon sx={{ color: "#ffd54f" }} />
+              <Button
+                size="small"
+                onClick={() => setDataSourceMode("actual")}
+                startIcon={<AnalyticsIcon sx={{ fontSize: 15 }} />}
+                sx={{
+                  borderRadius: 0.75,
+                  fontWeight: 600,
+                  fontSize: "0.75rem",
+                  px: 1.5,
+                  py: 0.5,
+                  textTransform: "none",
+                  bgcolor:
+                    dataSourceMode === "actual"
+                      ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.active : tokens.light.active)
+                      : "transparent",
+                  color:
+                    dataSourceMode === "actual"
+                      ? (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary
+                      : "text.secondary",
+                  boxShadow: dataSourceMode === "actual" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                  "&:hover": {
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover),
+                  },
+                }}
+              >
+                Verified Actuals
+              </Button>
+              <Button
+                size="small"
+                onClick={() => setDataSourceMode("simulated")}
+                startIcon={<ScienceIcon sx={{ fontSize: 15 }} />}
+                sx={{
+                  borderRadius: 0.75,
+                  fontWeight: 600,
+                  fontSize: "0.75rem",
+                  px: 1.5,
+                  py: 0.5,
+                  textTransform: "none",
+                  bgcolor:
+                    dataSourceMode === "simulated"
+                      ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.active : tokens.light.active)
+                      : "transparent",
+                  color:
+                    dataSourceMode === "simulated"
+                      ? (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary
+                      : "text.secondary",
+                  boxShadow: dataSourceMode === "simulated" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                  "&:hover": {
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover),
+                  },
+                }}
+              >
+                Simulated Plan
+              </Button>
             </Box>
-            Energy Analytics & Cost Distribution
-          </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
-            Telemetry breakdown, DOE PELP inventory efficiency, ERC unbundled cost allocation, and diurnal load profiles.
-          </Typography>
-        </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
-          {/* Top Level Mode Switcher: Actuals vs Simulated */}
-          <ButtonGroup size="small" variant="outlined" sx={{ borderRadius: 2 }}>
             <Button
-              variant={dataSourceMode === "actual" ? "contained" : "outlined"}
-              onClick={() => setDataSourceMode("actual")}
-              startIcon={<AnalyticsIcon sx={{ fontSize: 16 }} />}
+              variant="outlined"
+              size="small"
+              onClick={handleExportCsv}
+              startIcon={<FileDownloadIcon sx={{ fontSize: 15 }} />}
               sx={{
-                textTransform: "none",
-                fontWeight: 700,
+                borderRadius: 1,
+                fontWeight: 600,
                 fontSize: "0.75rem",
-                borderRadius: "8px 0 0 8px",
-                ...(dataSourceMode === "actual"
-                  ? { bgcolor: "primary.main", color: "#0c1b18" }
-                  : {}),
+                textTransform: "none",
+                px: 1.5,
+                py: 0.6,
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                "&:hover": {
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover),
+                },
               }}
             >
-              Verified Actuals
+              Export CSV
             </Button>
             <Button
-              variant={dataSourceMode === "simulated" ? "contained" : "outlined"}
-              onClick={() => setDataSourceMode("simulated")}
-              startIcon={<ScienceIcon sx={{ fontSize: 16 }} />}
+              variant="outlined"
+              size="small"
+              onClick={() => window.print()}
+              startIcon={<DownloadIcon sx={{ fontSize: 15 }} />}
               sx={{
-                textTransform: "none",
-                fontWeight: 700,
+                borderRadius: 1,
+                fontWeight: 600,
                 fontSize: "0.75rem",
-                borderRadius: "0 8px 8px 0",
-                ...(dataSourceMode === "simulated"
-                  ? { bgcolor: "secondary.main", color: "#0c1b18" }
-                  : {}),
+                textTransform: "none",
+                px: 1.5,
+                py: 0.6,
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                "&:hover": {
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover),
+                },
               }}
             >
-              Simulated Plan
+              Print Report
             </Button>
-          </ButtonGroup>
-
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={handleExportCsv}
-            startIcon={<FileDownloadIcon />}
-            sx={{ fontWeight: 700, borderRadius: 2 }}
-          >
-            Export CSV
-          </Button>
-          <Button
-            variant="contained"
-            size="small"
-            onClick={() => window.print()}
-            startIcon={<DownloadIcon />}
-            sx={{ fontWeight: 700, borderRadius: 2 }}
-          >
-            Print Report
-          </Button>
-        </Box>
-      </Box>
+          </>
+        }
+      />
 
       {/* 2. Space Filter Tabs */}
       <Paper
         elevation={0}
         sx={{
-          p: 0.75,
-          borderRadius: 3,
-          bgcolor: "background.paper",
+          p: 0.5,
+          borderRadius: 1,
+          bgcolor: (theme) =>
+            theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
           border: "1px solid",
-          borderColor: "divider",
+          borderColor: (theme) =>
+            theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
           display: "flex",
           alignItems: "center",
           overflowX: "auto",
@@ -806,20 +848,34 @@ export const AnalyticsView: React.FC = () => {
           variant="scrollable"
           scrollButtons="auto"
           sx={{
-            minHeight: 40,
+            minHeight: 36,
             "& .MuiTab-root": {
-              minHeight: 40,
-              fontWeight: 700,
-              fontSize: "0.85rem",
+              minHeight: 36,
+              fontWeight: 600,
+              fontSize: "0.8125rem",
               textTransform: "none",
-              borderRadius: 2,
-              px: 2,
+              borderRadius: 0.75,
+              px: 1.5,
+              py: 0.5,
+              color: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
+              "&.Mui-selected": {
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                fontWeight: 600,
+              },
+            },
+            "& .MuiTabs-indicator": {
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary,
+              height: 2,
+              borderRadius: 1,
             },
           }}
         >
           <Tab
             value="all"
-            icon={<AnalyticsIcon fontSize="small" />}
+            icon={<AnalyticsIcon sx={{ fontSize: 16 }} />}
             iconPosition="start"
             label={`All Spaces (${appliances.length} devices)`}
           />
@@ -830,23 +886,35 @@ export const AnalyticsView: React.FC = () => {
               <Tab
                 key={space.id}
                 value={space.id}
-                icon={isCommercial ? <StoreIcon fontSize="small" /> : <HomeIcon fontSize="small" />}
+                icon={isCommercial ? <StoreIcon sx={{ fontSize: 16 }} /> : <HomeIcon sx={{ fontSize: 16 }} />}
                 iconPosition="start"
                 label={
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                     <span>{space.name}</span>
                     <Chip
                       label={isCommercial ? "Commercial" : "Residential"}
                       size="small"
                       sx={{
-                        height: 18,
-                        fontSize: "0.68rem",
-                        fontWeight: 800,
-                        bgcolor: isCommercial ? "rgba(245, 158, 11, 0.15)" : "rgba(0, 229, 201, 0.15)",
-                        color: isCommercial ? "secondary.main" : "primary.main",
+                        height: 16,
+                        fontSize: "0.625rem",
+                        fontWeight: 600,
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                        color: (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
+                        border: "1px solid",
+                        borderColor: (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                       }}
                     />
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "text.secondary",
+                        fontSize: "0.75rem",
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
                       ({count})
                     </Typography>
                   </Box>
@@ -877,7 +945,7 @@ export const AnalyticsView: React.FC = () => {
                   : "No sessions recorded yet this cycle"
                 : `${targetAppliances.length} appliances • ${runningAppliances.length} live ON`
             }
-            icon={<BoltIcon sx={{ color: "#ffd54f" }} />}
+            icon={<BoltIcon sx={{ fontSize: 16 }} />}
             trend={{
               value:
                 dataSourceMode === "actual"
@@ -903,7 +971,7 @@ export const AnalyticsView: React.FC = () => {
                 : `₱${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
             }
             subtitle={`Effective: ₱${effectiveRate.toFixed(2)}/kWh`}
-            icon={<TrendingUpIcon sx={{ color: "primary.light" }} />}
+            icon={<TrendingUpIcon sx={{ fontSize: 16 }} />}
             trend={{
               value:
                 dataSourceMode === "actual"
@@ -923,7 +991,7 @@ export const AnalyticsView: React.FC = () => {
             title="DOE PELP & Inverter Rating"
             value={`${efficiencyMetrics.efficiencyPct}%`}
             subtitle={`${efficiencyMetrics.inverterCount} of ${efficiencyMetrics.totalCount} certified efficient`}
-            icon={<LeafIcon sx={{ color: "success.main" }} />}
+            icon={<LeafIcon sx={{ fontSize: 16 }} />}
             trend={{
               value: `Grade ${efficiencyMetrics.grade}`,
               direction: efficiencyMetrics.grade.includes("A") ? "up" : "neutral",
@@ -938,7 +1006,7 @@ export const AnalyticsView: React.FC = () => {
             title="Standby Vampire Loss"
             value={`₱${vampireLoadMetrics.standbyMonthlyCost.toFixed(2)}`}
             subtitle={`~${vampireLoadMetrics.standbyMonthlyKwh} kWh/mo (${vampireLoadMetrics.standbyWattsTotal}W idle)`}
-            icon={<StandbyIcon sx={{ color: "warning.main" }} />}
+            icon={<StandbyIcon sx={{ fontSize: 16 }} />}
             trend={{
               value: `${vampireLoadMetrics.vampireDevicesCount} Devices`,
               direction: "down",
@@ -952,45 +1020,73 @@ export const AnalyticsView: React.FC = () => {
       <Grid container spacing={{ xs: 2.5, sm: 3 }}>
         {/* Left: Appliance Category Share & Top Consumers (Pareto) */}
         <Grid size={{ xs: 12, md: 7 }}>
-          <Card
-            data-tour="analytics-category-bars"
-            sx={{
-              p: { xs: 2.5, sm: 3 },
-              borderRadius: 1.5,
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              gap: 2.5,
-            }}
-          >
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <PieChartIcon sx={{ color: "primary.main" }} />
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
-                  {breakdownView === "category" ? "Energy Usage by Category" : "Top Consuming Appliances (Pareto)"}
-                </Typography>
-              </Box>
-
-              <ButtonGroup size="small" variant="outlined">
+          <SectionCard
+            dataTour="analytics-category-bars"
+            title={breakdownView === "category" ? "Energy Usage by Category" : "Top Consuming Appliances (Pareto)"}
+            subtitle="Breakdown of energy consumption and monetary share across categories or top appliances"
+            headerActions={
+              <Box
+                sx={{
+                  display: "inline-flex",
+                  p: "2px",
+                  borderRadius: 1,
+                  border: "1px solid",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                }}
+              >
                 <Button
-                  variant={breakdownView === "category" ? "contained" : "outlined"}
+                  size="small"
                   onClick={() => setBreakdownView("category")}
-                  startIcon={<CategoryIcon />}
-                  sx={{ fontWeight: 700, fontSize: "0.75rem" }}
+                  startIcon={<CategoryIcon sx={{ fontSize: 14 }} />}
+                  sx={{
+                    borderRadius: 0.75,
+                    fontWeight: 600,
+                    fontSize: "0.75rem",
+                    px: 1.25,
+                    py: 0.35,
+                    textTransform: "none",
+                    bgcolor:
+                      breakdownView === "category"
+                        ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.active : tokens.light.active)
+                        : "transparent",
+                    color:
+                      breakdownView === "category"
+                        ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary)
+                        : "text.secondary",
+                  }}
                 >
                   Categories
                 </Button>
                 <Button
-                  variant={breakdownView === "appliances" ? "contained" : "outlined"}
+                  size="small"
                   onClick={() => setBreakdownView("appliances")}
-                  startIcon={<ListIcon />}
-                  sx={{ fontWeight: 700, fontSize: "0.75rem" }}
+                  startIcon={<ListIcon sx={{ fontSize: 14 }} />}
+                  sx={{
+                    borderRadius: 0.75,
+                    fontWeight: 600,
+                    fontSize: "0.75rem",
+                    px: 1.25,
+                    py: 0.35,
+                    textTransform: "none",
+                    bgcolor:
+                      breakdownView === "appliances"
+                        ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.active : tokens.light.active)
+                        : "transparent",
+                    color:
+                      breakdownView === "appliances"
+                        ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary)
+                        : "text.secondary",
+                  }}
                 >
                   Top Devices
                 </Button>
-              </ButtonGroup>
-            </Box>
-
+              </Box>
+            }
+            sx={{ height: "100%" }}
+          >
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2, flex: 1, justifyContent: "center" }}>
               {targetAppliances.length === 0 ? (
                 <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", py: 4 }}>
@@ -1000,18 +1096,18 @@ export const AnalyticsView: React.FC = () => {
                 categoryBreakdown.map((item) => (
                   <Box key={item.name} sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "text.primary" }}>
                         {item.name} ({item.count} unit{item.count > 1 ? "s" : ""})
                       </Typography>
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary" }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
                         {item.kwh.toFixed(1)} kWh ({item.percentage}%) •{" "}
                         <Typography
                           component="span"
                           variant="caption"
                           sx={{
-                            color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "#d97706"),
-                            fontFamily: "monospace",
-                            fontWeight: 800,
+                            color: "text.primary",
+                            fontWeight: 700,
+                            fontVariantNumeric: "tabular-nums",
                           }}
                         >
                           ₱{item.cost.toFixed(2)}
@@ -1022,13 +1118,14 @@ export const AnalyticsView: React.FC = () => {
                       variant="determinate"
                       value={item.percentage}
                       sx={{
-                        height: 8,
+                        height: 6,
                         borderRadius: 1,
                         bgcolor: (theme) =>
-                          theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.1)" : "rgba(13, 148, 136, 0.1)",
+                          theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
                         "& .MuiLinearProgress-bar": {
                           borderRadius: 1,
-                          background: "linear-gradient(90deg, #00e5c9, #26c6da)",
+                          bgcolor: (theme) =>
+                            theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.textSecondary,
                         },
                       }}
                     />
@@ -1039,22 +1136,37 @@ export const AnalyticsView: React.FC = () => {
                   <Box key={app.id} sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "text.primary" }}>
                           {app.name}
                         </Typography>
                         {app.isCurrentlyOn && (
-                          <Chip label="LIVE ON" size="small" color="success" sx={{ height: 16, fontSize: "0.6rem", fontWeight: 800 }} />
+                          <Chip
+                            label="LIVE ON"
+                            size="small"
+                            sx={{
+                              height: 16,
+                              fontSize: "0.6rem",
+                              fontWeight: 700,
+                              bgcolor: (theme) =>
+                                theme.palette.mode === "dark" ? tokens.dark.liveBg : tokens.light.liveBg,
+                              color: (theme) =>
+                                theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live,
+                              border: "1px solid",
+                              borderColor: (theme) =>
+                                theme.palette.mode === "dark" ? tokens.dark.liveBorder : tokens.light.liveBorder,
+                            }}
+                          />
                         )}
                       </Box>
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary" }}>
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
                         {app.kwh.toFixed(1)} kWh ({app.percentage}%) •{" "}
                         <Typography
                           component="span"
                           variant="caption"
                           sx={{
-                            color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "#d97706"),
-                            fontFamily: "monospace",
-                            fontWeight: 800,
+                            color: "text.primary",
+                            fontWeight: 700,
+                            fontVariantNumeric: "tabular-nums",
                           }}
                         >
                           ₱{app.cost.toFixed(2)}
@@ -1065,13 +1177,14 @@ export const AnalyticsView: React.FC = () => {
                       variant="determinate"
                       value={app.percentage}
                       sx={{
-                        height: 8,
+                        height: 6,
                         borderRadius: 1,
                         bgcolor: (theme) =>
-                          theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+                          theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
                         "& .MuiLinearProgress-bar": {
                           borderRadius: 1,
-                          background: "linear-gradient(90deg, #00e5c9, #26c6da)",
+                          bgcolor: (theme) =>
+                            theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.textSecondary,
                         },
                       }}
                     />
@@ -1079,126 +1192,172 @@ export const AnalyticsView: React.FC = () => {
                 ))
               )}
             </Box>
-          </Card>
+          </SectionCard>
         </Grid>
 
         {/* Right: Unbundled Rate Component Distribution */}
         <Grid size={{ xs: 12, md: 5 }}>
-          <Card
-            sx={{
-              p: { xs: 2.5, sm: 3 },
-              borderRadius: 1.5,
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-            }}
+          <SectionCard
+            title="Unbundled Tariff Split"
+            subtitle="ERC regulated breakdown of your projected monthly bill"
+            sx={{ height: "100%" }}
           >
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 0.5 }}>
-                Unbundled Tariff Split
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2 }}>
-                ERC regulated breakdown of your projected monthly bill
-              </Typography>
-            </Box>
-
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
-              {rateComponents.map((c) => (
-                <Box key={c.name} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Box sx={{ width: 10, height: 10, borderRadius: 1, bgcolor: c.color }} />
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: "text.primary" }}>
-                      {c.name}
+            <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%" }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, my: 0.5 }}>
+                {rateComponents.map((c) => (
+                  <Box key={c.name} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: 0.5, bgcolor: c.color }} />
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: "text.primary" }}>
+                        {c.name}
+                      </Typography>
+                    </Box>
+                    <Typography variant="caption" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                      ₱{c.amount.toFixed(2)}
                     </Typography>
                   </Box>
-                  <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
-                    ₱{c.amount.toFixed(2)}
+                ))}
+              </Box>
+
+              <Box>
+                <Divider sx={{ my: 2 }} />
+
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Total Projected Bill
+                  </Typography>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: 700,
+                      fontVariantNumeric: "tabular-nums",
+                      color: "text.primary",
+                    }}
+                  >
+                    ₱{totalCost.toFixed(2)}
                   </Typography>
                 </Box>
-              ))}
+              </Box>
             </Box>
-
-            <Divider sx={{ my: 2 }} />
-
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                Total Projected Bill
-              </Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#00e5c9" }}>
-                ₱{totalCost.toFixed(2)}
-              </Typography>
-            </Box>
-          </Card>
+          </SectionCard>
         </Grid>
       </Grid>
 
       {/* 5. Multi-Month Trend & Predictive Baseline Forecast */}
-      <Card data-tour="analytics-historical-trend" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 1.5 }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5, mb: 2.5 }}>
-          <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-              Multi-Month Consumption Trend & Predictive Forecast
-            </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-              Active billing cycle telemetry alongside forward-looking baseline predictions based on your registered appliance routines
-            </Typography>
-          </Box>
-
+      <SectionCard
+        dataTour="analytics-historical-trend"
+        title="Multi-Month Consumption Trend & Predictive Forecast"
+        subtitle="Active billing cycle telemetry alongside forward-looking baseline predictions based on your registered appliance routines"
+        headerActions={
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-            <ButtonGroup size="small" variant="outlined" sx={{ my: { xs: 0.5, sm: 0 } }}>
+            <Box
+              sx={{
+                display: "inline-flex",
+                p: "2px",
+                borderRadius: 1,
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+              }}
+            >
               <Button
-                variant={dataSourceMode === "actual" ? "contained" : "outlined"}
+                size="small"
                 onClick={() => setDataSourceMode("actual")}
-                startIcon={<AnalyticsIcon sx={{ fontSize: 16 }} />}
-                sx={{ textTransform: "none", fontWeight: 700, fontSize: "0.75rem" }}
+                startIcon={<AnalyticsIcon sx={{ fontSize: 14 }} />}
+                sx={{
+                  borderRadius: 0.75,
+                  fontWeight: 600,
+                  fontSize: "0.75rem",
+                  px: 1.25,
+                  py: 0.35,
+                  textTransform: "none",
+                  bgcolor:
+                    dataSourceMode === "actual"
+                      ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.active : tokens.light.active)
+                      : "transparent",
+                  color:
+                    dataSourceMode === "actual"
+                      ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary)
+                      : "text.secondary",
+                }}
               >
                 Verified Actuals
               </Button>
               <Button
-                variant={dataSourceMode === "simulated" ? "contained" : "outlined"}
+                size="small"
                 onClick={() => setDataSourceMode("simulated")}
-                startIcon={<ScienceIcon sx={{ fontSize: 16 }} />}
-                sx={{ textTransform: "none", fontWeight: 700, fontSize: "0.75rem" }}
+                startIcon={<ScienceIcon sx={{ fontSize: 14 }} />}
+                sx={{
+                  borderRadius: 0.75,
+                  fontWeight: 600,
+                  fontSize: "0.75rem",
+                  px: 1.25,
+                  py: 0.35,
+                  textTransform: "none",
+                  bgcolor:
+                    dataSourceMode === "simulated"
+                      ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.active : tokens.light.active)
+                      : "transparent",
+                  color:
+                    dataSourceMode === "simulated"
+                      ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary)
+                      : "text.secondary",
+                }}
               >
-                View Simulated History
+                Simulated History
               </Button>
-            </ButtonGroup>
+            </Box>
 
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
               {MONTHLY_TREND_DATA.some((d) => d.type === "recorded" || d.type === "simulated") && (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                   <Box
                     sx={{
-                      width: 10,
-                      height: 10,
+                      width: 8,
+                      height: 8,
                       borderRadius: "50%",
-                      bgcolor: dataSourceMode === "actual" ? (isDark ? "#009e88" : "#0d9488") : "#00e5c9",
+                      bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live),
                     }}
                   />
-                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>
-                    {dataSourceMode === "actual" ? "Recorded Actuals" : "Simulated Plan History"}
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
+                    {dataSourceMode === "actual" ? "Recorded Actuals" : "Simulated Plan"}
                   </Typography>
                 </Box>
               )}
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: isDark ? "#00e5c9" : "#14b8a6" }} />
-                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>Active Billing Cycle</Typography>
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live),
+                  }}
+                />
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>Active Cycle</Typography>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: isDark ? "#2a2f38" : "#cbd5e1" }} />
-                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>Predicted Baseline</Typography>
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong),
+                  }}
+                />
+                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>Predicted Baseline</Typography>
               </Box>
             </Box>
           </Box>
-        </Box>
-
+        }
+      >
         <Box sx={{ height: 260, width: "100%" }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={MONTHLY_TREND_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)"} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: isDark ? "#8b949e" : "#475569" }} stroke={isDark ? "rgba(255, 255, 255, 0.15)" : "#cbd5e1"} />
-              <YAxis tick={{ fontSize: 11, fill: isDark ? "#8b949e" : "#475569" }} stroke={isDark ? "rgba(255, 255, 255, 0.15)" : "#cbd5e1"} unit=" kWh" />
+              <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)"} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: isDark ? tokens.zinc[400] : tokens.zinc[600] }} stroke={isDark ? tokens.zinc[800] : tokens.zinc[300]} />
+              <YAxis tick={{ fontSize: 11, fill: isDark ? tokens.zinc[400] : tokens.zinc[600] }} stroke={isDark ? tokens.zinc[800] : tokens.zinc[300]} unit=" kWh" />
               <Tooltip
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
@@ -1207,15 +1366,16 @@ export const AnalyticsView: React.FC = () => {
                       <Box
                         sx={{
                           p: 1.5,
-                          borderRadius: 1.25,
-                          bgcolor: isDark ? "#17191d" : "#ffffff",
-                          border: isDark ? "1px solid rgba(0, 229, 201, 0.35)" : "1px solid #e2e8f0",
-                          color: isDark ? "#ffffff" : "#0f172a",
-                          boxShadow: isDark ? "0 8px 32px rgba(0,0,0,0.6)" : "0 8px 24px rgba(15, 23, 42, 0.08)",
+                          borderRadius: 1,
+                          bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surface),
+                          border: "1px solid",
+                          borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
+                          color: (theme) => (theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary),
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                         }}
                       >
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 800, fontSize: "0.85rem" }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.85rem" }}>
                             {d.month}
                           </Typography>
                           {d.type === "predicted" && (
@@ -1225,8 +1385,10 @@ export const AnalyticsView: React.FC = () => {
                               sx={{
                                 height: 16,
                                 fontSize: "0.6rem",
-                                fontWeight: 800,
-                                bgcolor: isDark ? "rgba(255, 255, 255, 0.08)" : "#f1f5f9",
+                                fontWeight: 700,
+                                bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surfaceSubtle),
+                                border: "1px solid",
+                                borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
                                 color: "text.secondary",
                               }}
                             />
@@ -1238,9 +1400,11 @@ export const AnalyticsView: React.FC = () => {
                               sx={{
                                 height: 16,
                                 fontSize: "0.6rem",
-                                fontWeight: 800,
-                                bgcolor: isDark ? "#00e5c9" : "primary.main",
-                                color: isDark ? "#0c1b18" : "#ffffff",
+                                fontWeight: 700,
+                                bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.liveBg : tokens.light.liveBg),
+                                border: "1px solid",
+                                borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.liveBorder : tokens.light.liveBorder),
+                                color: (theme) => (theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live),
                               }}
                             />
                           )}
@@ -1249,9 +1413,9 @@ export const AnalyticsView: React.FC = () => {
                           variant="caption"
                           sx={{
                             display: "block",
-                            color: isDark ? "#00e5c9" : "primary.main",
-                            fontWeight: 800,
-                            fontFamily: "monospace",
+                            color: "text.primary",
+                            fontWeight: 700,
+                            fontVariantNumeric: "tabular-nums",
                             fontSize: "0.95rem",
                           }}
                         >
@@ -1266,7 +1430,7 @@ export const AnalyticsView: React.FC = () => {
                   return null;
                 }}
               />
-              <Bar dataKey="kwh" radius={[6, 6, 0, 0]}>
+              <Bar dataKey="kwh" radius={[4, 4, 0, 0]}>
                 {MONTHLY_TREND_DATA.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.fillColor} />
                 ))}
@@ -1274,69 +1438,46 @@ export const AnalyticsView: React.FC = () => {
             </BarChart>
           </ResponsiveContainer>
         </Box>
-      </Card>
+      </SectionCard>
 
       {/* 6. AI Smart Energy Audit & Actionable Insights */}
-      <Card data-tour="analytics-insights" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 1.5 }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: { xs: "flex-start", sm: "center" },
-            flexDirection: { xs: "column", sm: "row" },
-            gap: 1.5,
-            mb: 2.5,
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Box
-              sx={{
-                width: 38,
-                height: 38,
-                borderRadius: "50%",
-                bgcolor: isDark ? "rgba(255, 213, 79, 0.12)" : "rgba(217, 119, 6, 0.12)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <SparklesIcon sx={{ color: isDark ? "#ffd54f" : "#d97706", fontSize: 22 }} />
-            </Box>
-            <Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                  AI Smart Energy Audit & Actionable Insights
-                </Typography>
-                {hasGeneratedAiTips && (
-                  <Chip
-                    icon={<SparklesIcon sx={{ fontSize: "14px !important" }} />}
-                    label={aiTipsIsFallback ? "Rule Engine Baseline" : "Google Gemini AI"}
-                    size="small"
-                    color={aiTipsIsFallback ? "default" : "secondary"}
-                    sx={{ height: 22, fontSize: "0.68rem", fontWeight: 700 }}
-                  />
-                )}
-              </Box>
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                Practical recommendations based on your appliance load profile and Meralco tariff structure
-              </Typography>
-            </Box>
-          </Box>
-
-          {/* Header Controls & Quota Indicator */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap", alignSelf: { xs: "flex-start", sm: "auto" } }}>
+      <SectionCard
+        dataTour="analytics-insights"
+        title="AI Smart Energy Audit & Actionable Insights"
+        subtitle="Practical recommendations based on your appliance load profile and Meralco tariff structure"
+        headerActions={
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
             <TooltipMui title={`Each user receives ${MAX_DAILY_AI_GENERATIONS} AI energy audits per day to preserve API tokens. Quota resets at 12:00 AM.`}>
               <Chip
                 label={`${dailyQuota.remaining}/${dailyQuota.max} Audits Left Today`}
                 size="small"
-                color={dailyQuota.remaining > 0 ? "info" : "error"}
-                variant={dailyQuota.remaining > 0 ? "outlined" : "filled"}
-                sx={{ height: 22, fontSize: "0.68rem", fontWeight: 700 }}
+                sx={{
+                  height: 22,
+                  fontSize: "0.68rem",
+                  fontWeight: 600,
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle),
+                  border: "1px solid",
+                  borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
+                  color: (theme) => (theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary),
+                }}
               />
             </TooltipMui>
 
             {hasGeneratedAiTips && (
               <>
+                <Chip
+                  icon={<SparklesIcon sx={{ fontSize: "13px !important" }} />}
+                  label={aiTipsIsFallback ? "Rule Engine Baseline" : "Google Gemini AI"}
+                  size="small"
+                  sx={{
+                    height: 22,
+                    fontSize: "0.68rem",
+                    fontWeight: 600,
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle),
+                    border: "1px solid",
+                    borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
+                  }}
+                />
                 {aiTipsGeneratedAt && (
                   <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
                     Updated {aiTipsGeneratedAt}
@@ -1345,45 +1486,50 @@ export const AnalyticsView: React.FC = () => {
                 <Button
                   size="small"
                   variant="outlined"
-                  startIcon={isGeneratingAiTips ? <CircularProgress size={14} color="inherit" /> : <RefreshIcon sx={{ fontSize: 16 }} />}
+                  startIcon={isGeneratingAiTips ? <CircularProgress size={14} color="inherit" /> : <RefreshIcon sx={{ fontSize: 14 }} />}
                   onClick={() => handleGenerateAiTips(true)}
                   disabled={isGeneratingAiTips || dailyQuota.remaining <= 0}
-                  sx={{ textTransform: "none", fontWeight: 700, fontSize: "0.75rem" }}
+                  sx={{
+                    borderRadius: 1,
+                    textTransform: "none",
+                    fontWeight: 600,
+                    fontSize: "0.75rem",
+                    borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong),
+                  }}
                 >
                   {isGeneratingAiTips ? "Auditing..." : dailyQuota.remaining <= 0 ? "Limit Reached" : "Regenerate Tips"}
                 </Button>
               </>
             )}
           </Box>
-        </Box>
-
+        }
+      >
         {/* Change Alert: Notification banner when user adds/modifies appliances */}
         {hasInventoryChanged && hasGeneratedAiTips && (
           <Alert
             severity="warning"
-            icon={<BoltIcon sx={{ color: "#f59e0b" }} />}
+            icon={<BoltIcon sx={{ fontSize: 18 }} />}
             action={
               <Button
                 color="inherit"
                 size="small"
                 onClick={() => handleGenerateAiTips(true)}
                 disabled={isGeneratingAiTips || dailyQuota.remaining <= 0}
-                sx={{ fontWeight: 800, textTransform: "none", fontSize: "0.75rem" }}
+                sx={{ fontWeight: 700, textTransform: "none", fontSize: "0.75rem" }}
               >
                 Update Audit Now
               </Button>
             }
             sx={{
               mb: 2.5,
-              borderRadius: 1.5,
-              bgcolor: isDark ? "rgba(245, 158, 11, 0.12)" : "rgba(254, 243, 199, 0.9)",
+              borderRadius: 1,
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.warnBg : tokens.light.warnBg),
               border: "1px solid",
-              borderColor: isDark ? "rgba(245, 158, 11, 0.3)" : "rgba(245, 158, 11, 0.4)",
-              fontSize: "0.82rem",
-              fontWeight: 600,
+              borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.warnBorder : tokens.light.warnBorder),
+              fontSize: "0.8rem",
             }}
           >
-            🔔 Telemetry Changed: Your appliance inventory or consumption data has been updated since your last AI audit. Regenerate tips to incorporate the latest telemetry!
+            Telemetry Changed: Your appliance inventory or consumption data has been updated since your last AI audit. Regenerate tips to incorporate the latest telemetry!
           </Alert>
         )}
 
@@ -1392,10 +1538,10 @@ export const AnalyticsView: React.FC = () => {
           <Box
             sx={{
               p: { xs: 3, sm: 4 },
-              borderRadius: 1.5,
-              bgcolor: isDark ? "rgba(18, 22, 28, 0.7)" : "rgba(248, 250, 252, 0.8)",
-              border: "1px dashed",
-              borderColor: isDark ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.3)",
+              borderRadius: 1,
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle),
+              border: "1px solid",
+              borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
               textAlign: "center",
               display: "flex",
               flexDirection: "column",
@@ -1405,23 +1551,25 @@ export const AnalyticsView: React.FC = () => {
           >
             <Box
               sx={{
-                width: 52,
-                height: 52,
-                borderRadius: "50%",
-                bgcolor: isDark ? "rgba(0, 229, 201, 0.12)" : "rgba(13, 148, 136, 0.12)",
+                width: 44,
+                height: 44,
+                borderRadius: 1,
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface),
+                border: "1px solid",
+                borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <SparklesIcon sx={{ color: "#00e5c9", fontSize: 30 }} />
+              <SparklesIcon sx={{ color: "text.primary", fontSize: 22 }} />
             </Box>
 
             <Box sx={{ maxWidth: 520 }}>
-              <Typography variant="h6" sx={{ fontWeight: 800, mb: 0.5 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>
                 Personalized Energy Optimization with Gemini AI
               </Typography>
-              <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6 }}>
+              <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6, fontSize: "0.85rem" }}>
                 Generate actionable strategies tailored to your {targetAppliances.length} active appliance(s),
                 identifying peak hour load shifts, inverter retrofits, and standby vampire power mitigation.
               </Typography>
@@ -1429,35 +1577,31 @@ export const AnalyticsView: React.FC = () => {
 
             <Button
               variant="contained"
-              size="medium"
-              startIcon={<SparklesIcon />}
+              size="small"
+              startIcon={<SparklesIcon sx={{ fontSize: 16 }} />}
               onClick={() => handleGenerateAiTips(false)}
               disabled={targetAppliances.length === 0 || dailyQuota.remaining <= 0}
               sx={{
-                bgcolor: "#00e5c9",
-                color: "#0a0e14",
-                fontWeight: 800,
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary),
+                color: (theme) => (theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg),
+                fontWeight: 600,
                 textTransform: "none",
-                px: 3.5,
-                py: 1.1,
-                borderRadius: 1.5,
-                fontSize: "0.88rem",
-                boxShadow: "0 0 16px rgba(0, 229, 201, 0.35)",
+                px: 2.5,
+                py: 0.75,
+                borderRadius: 1,
+                fontSize: "0.82rem",
+                boxShadow: "none",
                 "&:hover": {
-                  bgcolor: "#00c4ac",
-                  boxShadow: "0 0 24px rgba(0, 229, 201, 0.55)",
-                },
-                "&.Mui-disabled": {
-                  bgcolor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
-                  color: "text.disabled",
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.zinc[200] : tokens.zinc[800]),
+                  boxShadow: "none",
                 },
               }}
             >
               {dailyQuota.remaining <= 0 ? "Daily Quota Reached (0/5)" : "Generate Tips from AI"}
             </Button>
 
-            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem", opacity: 0.85 }}>
-              🔒 Quota-Protected: {dailyQuota.remaining} of {dailyQuota.max} AI audits available today. Persisted permanently until you regenerate.
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
+              Quota-Protected: {dailyQuota.remaining} of {dailyQuota.max} AI audits available today. Persisted permanently until you regenerate.
             </Typography>
           </Box>
         )}
@@ -1466,8 +1610,8 @@ export const AnalyticsView: React.FC = () => {
         {isGeneratingAiTips && (
           <Box sx={{ py: 1 }}>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1.5, mb: 2.5 }}>
-              <CircularProgress size={20} sx={{ color: "#00e5c9" }} />
-              <Typography variant="body2" sx={{ fontWeight: 700, color: "primary.main" }}>
+              <CircularProgress size={18} color="inherit" />
+              <Typography variant="body2" sx={{ fontWeight: 600, color: "text.primary" }}>
                 Auditing appliance loads & Meralco tariff tiers with Gemini AI...
               </Typography>
             </Box>
@@ -1478,15 +1622,15 @@ export const AnalyticsView: React.FC = () => {
                   <Box
                     sx={{
                       p: 2,
-                      borderRadius: 1.25,
-                      bgcolor: isDark ? "rgba(24, 27, 32, 0.65)" : "#ffffff",
+                      borderRadius: 1,
+                      bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle),
                       border: "1px solid",
-                      borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+                      borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
                     }}
                   >
                     <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
                       <Skeleton variant="text" width="60%" height={24} />
-                      <Skeleton variant="rounded" width={80} height={22} />
+                      <Skeleton variant="rounded" width={80} height={20} />
                     </Box>
                     <Skeleton variant="text" width="100%" height={18} />
                     <Skeleton variant="text" width="90%" height={18} />
@@ -1502,7 +1646,17 @@ export const AnalyticsView: React.FC = () => {
         {hasGeneratedAiTips && !isGeneratingAiTips && (
           <>
             {aiTipsIsFallback && (
-              <Alert severity="info" sx={{ mb: 2, borderRadius: 1.25, fontSize: "0.78rem" }}>
+              <Alert
+                severity="info"
+                sx={{
+                  mb: 2,
+                  borderRadius: 1,
+                  fontSize: "0.78rem",
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle),
+                  border: "1px solid",
+                  borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
+                }}
+              >
                 Notice: Gemini API is in local offline mode. Showing verified rule-based energy audit recommendations.
               </Alert>
             )}
@@ -1520,11 +1674,10 @@ export const AnalyticsView: React.FC = () => {
                     <Box
                       sx={{
                         p: 2,
-                        borderRadius: 1.25,
-                        bgcolor: isDark ? "rgba(24, 27, 32, 0.65)" : "#ffffff",
+                        borderRadius: 1,
+                        bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle),
                         border: "1px solid",
-                        borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
-                        boxShadow: isDark ? "none" : "0 2px 10px rgba(15, 23, 42, 0.04)",
+                        borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
                         height: "100%",
                         display: "flex",
                         flexDirection: "column",
@@ -1534,14 +1687,22 @@ export const AnalyticsView: React.FC = () => {
                     >
                       <Box>
                         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1, mb: 0.75 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 800, color: "text.primary" }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: "text.primary" }}>
                             {rec.title}
                           </Typography>
                           <Chip
                             label={rec.saving}
                             size="small"
-                            color={rec.badgeColor as any}
-                            sx={{ height: 22, fontWeight: 800, fontSize: "0.72rem", flexShrink: 0 }}
+                            sx={{
+                              height: 20,
+                              fontWeight: 700,
+                              fontSize: "0.7rem",
+                              flexShrink: 0,
+                              bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface),
+                              border: "1px solid",
+                              borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong),
+                              color: "text.primary",
+                            }}
                           />
                         </Box>
                         <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.5, display: "block" }}>
@@ -1555,7 +1716,7 @@ export const AnalyticsView: React.FC = () => {
             </Grid>
           </>
         )}
-      </Card>
+      </SectionCard>
     </Box>
   );
 };

@@ -31,6 +31,7 @@ import { formatDateToKey, calculateApplianceKwh, calculateCost, DEFAULT_EFFECTIV
 import { saveSimulatedAppliance, batchSaveSimulatedDay } from "../../lib/simulationService";
 import { useToast } from "../common/ToastProvider";
 import { formatElapsedHms } from "../../hooks/useLiveTicker";
+import { tokens } from "../../theme/tokens";
 
 interface SimulateApplianceModalProps {
   isOpen: boolean;
@@ -237,15 +238,14 @@ export const SimulateApplianceModal: React.FC<SimulateApplianceModalProps> = ({
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 2.5,
-            bgcolor: "background.paper",
-            boxShadow: (theme) =>
-              theme.palette.mode === "dark"
-                ? "0 32px 80px rgba(0, 0, 0, 0.85)"
-                : "0 20px 60px rgba(15, 23, 42, 0.14)",
+            borderRadius: 1,
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
+            backgroundImage: "none",
+            boxShadow: "none",
             border: "1px solid",
             borderColor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "#e2e8f0",
+              theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
           },
         },
       }}
@@ -263,23 +263,25 @@ export const SimulateApplianceModal: React.FC<SimulateApplianceModalProps> = ({
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Box
             sx={{
-              width: 40,
-              height: 40,
-              borderRadius: 1.5,
-              bgcolor: "primary.main",
-              color: "#ffffff",
+              width: 34,
+              height: 34,
+              borderRadius: 0.75,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+              color: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <ScienceIcon />
+            <ScienceIcon sx={{ fontSize: 20 }} />
           </Box>
           <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: "0.9375rem" }}>
               Simulate Appliance Schedule
             </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
               Fine-tune target hours or test-run a stopwatch to forecast Meralco bill impact
             </Typography>
           </Box>
@@ -450,32 +452,85 @@ export const SimulateApplianceModal: React.FC<SimulateApplianceModalProps> = ({
         </Paper>
 
         {/* Step 4: Projected Impact Preview */}
-        <Box sx={{ p: 2, borderRadius: 2, bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.05)" : "rgba(13, 148, 136, 0.05)", border: "1px solid", borderColor: "primary.main" }}>
+        <Box
+          sx={{
+            p: 2,
+            borderRadius: 1,
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+            border: "1px solid",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+          }}
+        >
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <Box>
-              <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "text.secondary",
+                  fontWeight: 600,
+                  fontSize: "0.6875rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.02em",
+                }}
+              >
                 DAILY ESTIMATE
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 900, color: "primary.main" }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 600,
+                  fontVariantNumeric: "tabular-nums",
+                  color: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                }}
+              >
                 ₱{calculations.simCost.toFixed(2)}
               </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "text.secondary",
+                  fontSize: "0.75rem",
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
                 {calculations.simKwh.toFixed(2)} kWh / day
               </Typography>
             </Box>
 
             <Box sx={{ textAlign: "right" }}>
-              <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "text.secondary",
+                  fontWeight: 600,
+                  fontSize: "0.6875rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.02em",
+                }}
+              >
                 VS. REGISTERED BASELINE
               </Typography>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, justifyContent: "flex-end" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, justifyContent: "flex-end", mt: 0.25 }}>
                 {calculations.deltaCost < 0 ? (
                   <Chip
                     size="small"
                     color="success"
                     icon={<TrendingDownIcon fontSize="small" />}
                     label={`Saves ₱${Math.abs(calculations.deltaCost).toFixed(2)}/day`}
-                    sx={{ fontWeight: 800 }}
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: "0.75rem",
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.liveBg : tokens.light.liveBg,
+                      color: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live,
+                      border: "1px solid",
+                      borderColor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.liveBorder : tokens.light.liveBorder,
+                    }}
                   />
                 ) : calculations.deltaCost > 0 ? (
                   <Chip
@@ -483,10 +538,32 @@ export const SimulateApplianceModal: React.FC<SimulateApplianceModalProps> = ({
                     color="warning"
                     icon={<TrendingUpIcon fontSize="small" />}
                     label={`+₱${calculations.deltaCost.toFixed(2)}/day Increase`}
-                    sx={{ fontWeight: 800 }}
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: "0.75rem",
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.warnBg : tokens.light.warnBg,
+                      color: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.warn : tokens.light.warn,
+                      border: "1px solid",
+                      borderColor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.warnBorder : tokens.light.warnBorder,
+                    }}
                   />
                 ) : (
-                  <Chip size="small" label="Matches Baseline" sx={{ fontWeight: 700 }} />
+                  <Chip
+                    size="small"
+                    label="Matches Baseline"
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: "0.75rem",
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
+                      border: "1px solid",
+                      borderColor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                    }}
+                  />
                 )}
               </Box>
             </Box>
@@ -497,16 +574,49 @@ export const SimulateApplianceModal: React.FC<SimulateApplianceModalProps> = ({
       <Divider />
 
       <DialogActions sx={{ p: 2, px: 3, display: "flex", justifyContent: "space-between" }}>
-        <Button variant="outlined" onClick={onClose} sx={{ borderRadius: 1.25, fontWeight: 700 }}>
+        <Button
+          variant="outlined"
+          onClick={onClose}
+          sx={{
+            borderRadius: 1,
+            fontWeight: 600,
+            textTransform: "none",
+            fontSize: "0.75rem",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+            color: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+            "&:hover": {
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover),
+            },
+          }}
+        >
           Cancel
         </Button>
         <Button
           variant="contained"
-          color="primary"
-          startIcon={<SaveIcon />}
+          startIcon={<SaveIcon sx={{ fontSize: 16 }} />}
           onClick={handleSaveSimulation}
           disabled={isSaving}
-          sx={{ borderRadius: 1.25, fontWeight: 800, px: 3 }}
+          sx={{
+            borderRadius: 1,
+            fontWeight: 600,
+            textTransform: "none",
+            fontSize: "0.75rem",
+            px: 2.5,
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary,
+            color: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg,
+            boxShadow: "none",
+            "&:hover": {
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.zinc[200] : tokens.zinc[800],
+              boxShadow: "none",
+            },
+          }}
         >
           {isSaving ? "Saving Plan..." : "Commit to Simulation"}
         </Button>

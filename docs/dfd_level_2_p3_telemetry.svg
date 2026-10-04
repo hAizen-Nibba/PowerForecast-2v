@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1140 920" width="100%" height="100%">
+  <defs>
+    <style type="text/css">
+<![CDATA[
+    svg { background-color: #ffffff; }
+    .title-main { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 28px; font-weight: 800; fill: #1e293b; letter-spacing: -0.5px; }
+    .title-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13.5px; fill: #475569; }
+    .entity-box { fill: #f1f5f9; stroke: #334155; stroke-width: 1.6px; rx: 4px; ry: 4px; }
+    .entity-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .entity-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 10.5px; font-weight: 600; fill: #475569; text-anchor: middle; }
+    .proc-bg { fill: #ffffff; stroke: #2563eb; stroke-width: 1.8px; rx: 8px; ry: 8px; }
+    .proc-header { fill: #dbeafe; stroke: #2563eb; stroke-width: 1.8px; }
+    .proc-bottom { fill: #dbeafe; stroke: #2563eb; stroke-width: 1.8px; }
+    .proc-id-box { fill: #2563eb; stroke: #1d4ed8; stroke-width: 1.4px; rx: 3px; }
+    .proc-id-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 800; fill: #ffffff; text-anchor: middle; }
+    .proc-name { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 12.5px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .store-id-box { fill: #475569; stroke: #334155; stroke-width: 1.6px; }
+    .store-id-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 12px; font-weight: 800; fill: #ffffff; text-anchor: middle; }
+    .store-body { fill: #f8fafc; stroke: #475569; stroke-width: 1.6px; }
+    .store-name { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 11.5px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .flow-line { fill: none; stroke: #2563eb; stroke-width: 1.6px; stroke-linejoin: round; stroke-linecap: round; }
+    .flow-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 8.5px; font-weight: 700; fill: #0f172a; letter-spacing: 0.3px; }
+    .context-process { fill: #ffffff; stroke: #2563eb; stroke-width: 2.5px; }
+    .context-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14.5px; font-weight: 800; fill: #1e3a8a; text-anchor: middle; }
+    .context-id { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 800; fill: #2563eb; text-anchor: middle; }
+    .footer-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 8.5px; font-weight: 600; fill: #94a3b8; text-anchor: end; letter-spacing: 0.5px; }
+]]>
+    </style>
+  </defs>
+  <!-- Pure White Clean Background for Easy Copying into Documents -->
+  <rect width="100%" height="100%" fill="#ffffff" />
+  <defs>
+    <marker id="a3" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 1.5L8 5 0 8.5z" fill="#2563eb"/></marker>
+    
+  </defs>
+  
+  
+
+  <text x="570" y="60" class="title-main" text-anchor="middle">Level 2 DFD — Process 3 Decomposition</text>
+  <text x="570" y="82" class="title-sub" text-anchor="middle">Daily Telemetry &amp; Smart Calendar: Live Power Board, Inverter Cruising Alerts, Dual-Track Logger &amp; Cycle Configurator.</text>
+
+  <!-- External Entities -->
+  <g><rect x="50" y="150" width="160" height="50" class="entity-box" rx="3"/><text x="130" y="175" class="entity-text">User / Consumer</text><text x="130" y="190" class="entity-sub">Switches &amp; Calendar</text></g>
+  <g><rect x="880" y="150" width="180" height="50" class="entity-box" rx="3"/><text x="970" y="173" class="entity-text">Notification Service</text><text x="970" y="189" class="entity-sub">Web Push &amp; Resend Email</text></g>
+
+  <!-- Sub-Processes -->
+  <!-- 3.1 -->
+  <g>
+    <rect x="340" y="130" width="220" height="88" class="proc-bg"/>
+    <path d="M340 138A8 8 0 01 348 130H552A8 8 0 01 560 138V152H340Z" class="proc-header"/>
+    <rect x="340" y="130" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="146" class="proc-id-text">3.1</text>
+    <path d="M340 209H560V210A8 8 0 01 552 218H348A8 8 0 01 340 210Z" class="proc-bottom"/>
+    <text x="450" y="175" class="proc-name">Live Power Board &amp; Inverter</text>
+    <text x="450" y="193" class="proc-name">Pulldown-Cruising Telemetry</text>
+  </g>
+
+  <!-- 3.2 -->
+  <g>
+    <rect x="340" y="280" width="220" height="88" class="proc-bg"/>
+    <path d="M340 288A8 8 0 01 348 280H552A8 8 0 01 560 288V302H340Z" class="proc-header"/>
+    <rect x="340" y="280" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="296" class="proc-id-text">3.2</text>
+    <path d="M340 359H560V360A8 8 0 01 552 368H348A8 8 0 01 340 360Z" class="proc-bottom"/>
+    <text x="450" y="325" class="proc-name">Dual-Track Usage Logger</text>
+    <text x="450" y="343" class="proc-name">(Actual vs Simulated Plans)</text>
+  </g>
+
+  <!-- 3.3 -->
+  <g>
+    <rect x="340" y="440" width="220" height="88" class="proc-bg"/>
+    <path d="M340 448A8 8 0 01 348 440H552A8 8 0 01 560 448V462H340Z" class="proc-header"/>
+    <rect x="340" y="440" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="456" class="proc-id-text">3.3</text>
+    <path d="M340 519H560V520A8 8 0 01 552 528H348A8 8 0 01 340 520Z" class="proc-bottom"/>
+    <text x="450" y="485" class="proc-name">Smart Calendar Multi-View</text>
+    <text x="450" y="503" class="proc-name">&amp; Peak Hour Overlays</text>
+  </g>
+
+  <!-- 3.4 -->
+  <g>
+    <rect x="340" y="600" width="220" height="88" class="proc-bg"/>
+    <path d="M340 608A8 8 0 01 348 600H552A8 8 0 01 560 608V622H340Z" class="proc-header"/>
+    <rect x="340" y="600" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="616" class="proc-id-text">3.4</text>
+    <path d="M340 679H560V680A8 8 0 01 552 688H348A8 8 0 01 340 680Z" class="proc-bottom"/>
+    <text x="450" y="645" class="proc-name">Billing Period &amp; Cycle</text>
+    <text x="450" y="663" class="proc-name">Configurator (15th-to-14th)</text>
+  </g>
+
+  <!-- 3.5 -->
+  <g>
+    <rect x="680" y="280" width="210" height="88" class="proc-bg"/>
+    <path d="M680 288A8 8 0 01 688 280H882A8 8 0 01 890 288V302H680Z" class="proc-header"/>
+    <rect x="680" y="280" width="34" height="22" class="proc-id-box"/>
+    <text x="697" y="296" class="proc-id-text">3.5</text>
+    <path d="M680 359H890V360A8 8 0 01 882 368H688A8 8 0 01 680 360Z" class="proc-bottom"/>
+    <text x="785" y="325" class="proc-name">Budget, Cruising &amp;</text>
+    <text x="785" y="343" class="proc-name">Peak Alert Dispatcher</text>
+  </g>
+
+  <!-- Data Stores -->
+  <g><rect x="100" y="740" width="36" height="42" class="store-id-box"/><text x="118" y="766" class="store-id-text">D3</text><rect x="136" y="740" width="160" height="42" class="store-body"/><text x="216" y="766" class="store-name">User Appliances</text></g>
+  <g><rect x="320" y="740" width="36" height="42" class="store-id-box"/><text x="338" y="766" class="store-id-text">D4</text><rect x="356" y="740" width="160" height="42" class="store-body"/><text x="436" y="766" class="store-name">Actual Daily Usage</text></g>
+  <g><rect x="540" y="740" width="36" height="42" class="store-id-box"/><text x="558" y="766" class="store-id-text">D5</text><rect x="576" y="740" width="160" height="42" class="store-body"/><text x="656" y="766" class="store-name">Simulated Plans</text></g>
+  <g><rect x="760" y="740" width="36" height="42" class="store-id-box"/><text x="778" y="766" class="store-id-text">D6</text><rect x="796" y="740" width="160" height="42" class="store-body"/><text x="876" y="766" class="store-name">Live Stopwatch Logs</text></g>
+
+  <!-- Flows -->
+  <line x1="210" y1="175" x2="332" y2="175" class="flow-line" marker-end="url(#a3)"/>
+  <text x="218" y="168" class="flow-text">TOGGLE SWITCH / WORKLOAD MODE</text>
+
+  <path d="M180 200 L180 480 L332 480" class="flow-line" marker-end="url(#a3)"/>
+  <text x="190" y="470" class="flow-text">SCHEDULE OVERRIDES &amp; TASKS</text>
+
+  <line x1="450" y1="218" x2="450" y2="272" class="flow-line" marker-end="url(#a3)"/>
+  <text x="458" y="250" class="flow-text">LIVE SESSION DATA</text>
+
+  <path d="M560 324 L672 324" class="flow-line" marker-end="url(#a3)"/>
+  <text x="575" y="317" class="flow-text">ALERT TRIGGERS</text>
+
+  <line x1="890" y1="324" x2="970" y2="324" class="flow-line"/>
+  <line x1="970" y1="324" x2="970" y2="208" class="flow-line" marker-end="url(#a3)"/>
+  <text x="900" y="270" class="flow-text">CRUISING TRANSITION &amp; PEAK ALERTS</text>
+
+  <line x1="410" y1="368" x2="410" y2="732" class="flow-line" marker-end="url(#a3)"/>
+  <text x="418" y="710" class="flow-text">WRITE MEASURED KWH</text>
+
+  <path d="M490 528 L490 600 L620 600 L620 732" class="flow-line" marker-end="url(#a3)"/>
+  <text x="500" y="590" class="flow-text">WRITE SIMULATED KWH</text>
+
+  <path d="M216 740 L216 200 L332 200" class="flow-line" marker-end="url(#a3)"/>
+  <text x="225" y="250" class="flow-text">APPLIANCE SPECS &amp; CRUISING RATIO</text>
+
+  <line x1="450" y1="528" x2="450" y2="592" class="flow-line" marker-end="url(#a3)"/>
+  <text x="458" y="565" class="flow-text">CYCLE BOUNDARIES</text>
+
+  <!-- Output to Process 4 -->
+  <line x1="450" y1="688" x2="450" y2="720" class="flow-line" stroke-dasharray="4,3"/>
+  <text x="458" y="710" class="flow-text" fill="#2563eb">→ TO PROCESS 4: AGGREGATED ACTUALS &amp; SIMULATED LOAD PROFILE</text>
+
+  <text x="1080" y="885" class="footer-text">LEVEL 2 — PROCESS 3 DECOMPOSITION</text>
+</svg>

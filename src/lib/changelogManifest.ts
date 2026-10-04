@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.4v",
+    version: "3.8.4v",
+    git_commit_tag: "3.8.4v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.4v - Core Views UI Modernization (Smart Calendar, Analytics, Forecasting, Bill Calculator): Comprehensive design alignment with Stack Template & Google Stitch zinc color system; converted views to PageHeader and SectionCard architectural primitives; eliminated legacy cyan glows and gradients in favor of crisp 1px zinc borders and restrained emerald telemetry accents; integrated tabular numerals (tabular-nums) across all telemetry and unbundled tariff tables.",
+  },
+  {
     id: "3.8.3v",
     version: "3.8.3v",
     git_commit_tag: "3.8.3v",

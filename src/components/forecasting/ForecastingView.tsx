@@ -35,6 +35,10 @@ import { useToast } from "../common/ToastProvider";
 import { saveSimulatedAppliance } from "../../lib/simulationService";
 import { BudgetSentinelCard } from "./BudgetSentinelCard";
 import { VirtualMeralcoBillCard } from "./VirtualMeralcoBillCard";
+import { PageHeader } from "../common/PageHeader";
+import { SectionCard } from "../common/SectionCard";
+import { MetricCard } from "../common/MetricCard";
+import { tokens } from "../../theme/tokens";
 
 export const ForecastingView: React.FC = () => {
   const theme = useTheme();
@@ -411,44 +415,65 @@ export const ForecastingView: React.FC = () => {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3, md: 3.5 } }}>
       {/* 1. Header Banner */}
-      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, gap: 2, pb: 2, borderBottom: "1px solid", borderColor: "divider" }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: "text.primary", display: "flex", alignItems: "center", gap: 1.5 }}>
-            <AutoGraphIcon sx={{ color: "primary.main" }} />
-            {t("fc.title", "Predictive Energy Forecasting")}
-          </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
-            {t("fc.subtitle", "Data-driven Meralco bill projections based on actual logged days and your registered appliance routines.")}
-          </Typography>
-        </Box>
-        <Chip
-          icon={<BoltIcon sx={{ fontSize: "16px !important", color: "#00e5c9 !important" }} />}
-          label={`Forecast Load: ${trajectoryForecast.forecastedKwh.toFixed(1)} kWh/mo`}
-          variant="outlined"
-          sx={{ fontWeight: 700, borderColor: "rgba(0, 229, 201, 0.4)", bgcolor: "rgba(0, 229, 201, 0.08)", color: "#00e5c9" }}
-        />
-      </Box>
+      <PageHeader
+        title={t("fc.title", "Predictive Energy Forecasting")}
+        subtitle={t("fc.subtitle", "Data-driven Meralco bill projections based on actual logged days and your registered appliance routines.")}
+        actions={
+          <Chip
+            icon={<BoltIcon sx={{ fontSize: "14px !important" }} />}
+            label={`Forecast Load: ${trajectoryForecast.forecastedKwh.toFixed(1)} kWh/mo`}
+            size="small"
+            sx={{
+              fontWeight: 600,
+              fontVariantNumeric: "tabular-nums",
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle),
+              border: "1px solid",
+              borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
+            }}
+          />
+        }
+      />
 
       {/* 2. Space Selector Tabs (When spaces exist) */}
       {spaces.length > 0 && (
-        <Box data-tour="forecasting-space-tabs">
-          <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", display: "block", mb: 1, letterSpacing: "0.05em" }}>
-            FORECAST SCOPE / TARGET SPACE
-          </Typography>
+        <Paper
+          elevation={0}
+          data-tour="forecasting-space-tabs"
+          sx={{
+            p: 0.5,
+            borderRadius: 1,
+            border: "1px solid",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+          }}
+        >
           <Tabs
             value={selectedSpaceId}
             onChange={(_, val) => setSelectedSpaceId(val)}
             variant="scrollable"
             scrollButtons="auto"
             sx={{
-              minHeight: 40,
+              minHeight: 36,
+              "& .MuiTabs-indicator": { display: "none" },
               "& .MuiTab-root": {
-                minHeight: 40,
-                borderRadius: 1,
+                minHeight: 36,
+                borderRadius: 0.75,
                 textTransform: "none",
-                fontWeight: 700,
-                px: 2,
-                mr: 1,
+                fontWeight: 600,
+                fontSize: "0.8rem",
+                px: 1.5,
+                py: 0.5,
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
+                "&.Mui-selected": {
+                  color: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.active : tokens.light.active,
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                },
               },
             }}
           >
@@ -457,25 +482,26 @@ export const ForecastingView: React.FC = () => {
               <Tab
                 key={s.id}
                 value={s.id}
-                icon={s.tariff_type === "commercial" ? <StoreIcon fontSize="small" /> : <HomeIcon fontSize="small" />}
+                icon={s.tariff_type === "commercial" ? <StoreIcon sx={{ fontSize: 16 }} /> : <HomeIcon sx={{ fontSize: 16 }} />}
                 iconPosition="start"
                 label={`${s.name} (${s.tariff_type === "commercial" ? "Commercial GP" : "Residential"})`}
               />
             ))}
           </Tabs>
-        </Box>
+        </Paper>
       )}
 
       {/* 3. Zero Active Appliances Empty State */}
       {targetAppliances.length === 0 ? (
         <Paper
-          variant="outlined"
+          elevation={0}
           sx={{
             p: { xs: 4, sm: 6 },
-            borderRadius: 1.5,
+            borderRadius: 1,
             textAlign: "center",
-            bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.6)" : "background.paper"),
-            borderColor: "divider",
+            bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle),
+            border: "1px solid",
+            borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -483,11 +509,11 @@ export const ForecastingView: React.FC = () => {
           }}
         >
           {blacklistedCount > 0 ? (
-            <BlockIcon sx={{ fontSize: 52, color: "warning.main", opacity: 0.9 }} />
+            <BlockIcon sx={{ fontSize: 44, color: "warning.main", opacity: 0.9 }} />
           ) : (
-            <ElectricBoltIcon sx={{ fontSize: 52, color: "primary.light", opacity: 0.8 }} />
+            <ElectricBoltIcon sx={{ fontSize: 44, color: "text.secondary", opacity: 0.8 }} />
           )}
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
             {blacklistedCount > 0
               ? language === "tl"
                 ? "Lahat ng Kagamitan ay Naka-Blacklist"
@@ -496,7 +522,7 @@ export const ForecastingView: React.FC = () => {
               ? "Walang Rehistradong Kagamitan"
               : "No Registered Appliances Found"}
           </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary", maxWidth: 460 }}>
+          <Typography variant="body2" sx={{ color: "text.secondary", maxWidth: 460, fontSize: "0.85rem" }}>
             {blacklistedCount > 0
               ? language === "tl"
                 ? `Kasalukuyang may ${blacklistedCount} kagamitan na naka-blacklist at hindi kasama sa kalkulasyon ng prediksyon. I-unblock ang mga ito sa Sentro ng Kagamitan upang makita ang forecast.`
@@ -510,8 +536,17 @@ export const ForecastingView: React.FC = () => {
             to="/appliances"
             variant="contained"
             color={blacklistedCount > 0 ? "warning" : "primary"}
-            startIcon={blacklistedCount > 0 ? <BlockIcon /> : <BoltIcon />}
-            sx={{ borderRadius: 1, fontWeight: 800, px: 3, py: 1, mt: 1 }}
+            startIcon={blacklistedCount > 0 ? <BlockIcon sx={{ fontSize: 16 }} /> : <BoltIcon sx={{ fontSize: 16 }} />}
+            sx={{
+              borderRadius: 1,
+              fontWeight: 600,
+              px: 2.5,
+              py: 0.75,
+              mt: 1,
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary),
+              color: (theme) => (theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg),
+              boxShadow: "none",
+            }}
           >
             {language === "tl" ? "Pumunta sa Sentro ng Kagamitan" : "Go to Appliances Hub"}
           </Button>
@@ -521,13 +556,14 @@ export const ForecastingView: React.FC = () => {
           {/* Blacklisted Appliances Exclusion Notice Banner */}
           {blacklistedCount > 0 && (
             <Paper
-              variant="outlined"
+              elevation={0}
               sx={{
-                p: 1.75,
-                mb: 2.5,
-                borderRadius: 1.5,
-                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.06)"),
-                borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.3)" : "rgba(245, 158, 11, 0.25)"),
+                p: 1.5,
+                mb: 2,
+                borderRadius: 1,
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.warnBg : tokens.light.warnBg),
+                border: "1px solid",
+                borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.warnBorder : tokens.light.warnBorder),
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -536,9 +572,9 @@ export const ForecastingView: React.FC = () => {
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-                <BlockIcon sx={{ color: "warning.main", fontSize: 22 }} />
+                <BlockIcon sx={{ color: "warning.main", fontSize: 20 }} />
                 <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: "text.primary" }}>
                     {blacklistedCount} appliance{blacklistedCount > 1 ? "s are" : " is"} currently blacklisted
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -552,7 +588,7 @@ export const ForecastingView: React.FC = () => {
                 size="small"
                 variant="outlined"
                 color="warning"
-                sx={{ fontSize: "0.75rem", textTransform: "none", fontWeight: 700 }}
+                sx={{ fontSize: "0.75rem", textTransform: "none", fontWeight: 600, borderRadius: 1 }}
               >
                 Manage in Appliances Hub
               </Button>
@@ -560,103 +596,87 @@ export const ForecastingView: React.FC = () => {
           )}
 
           {/* 4. Active Billing Cycle Run-Rate Telemetry Banner */}
-          <Card
-            data-tour="forecasting-hero-kpi"
-            sx={{
-              p: { xs: 2.5, sm: 3 },
-              borderRadius: 1.5,
-              border: "1px solid",
-              borderColor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "#e2e8f0",
-              bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.78)" : "#ffffff",
-              boxShadow: (theme) =>
-                theme.palette.mode === "dark" ? "none" : "0 2px 12px rgba(15, 23, 42, 0.04)",
-              backdropFilter: "blur(12px)",
-            }}
-          >
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <TimelineIcon sx={{ color: "primary.main" }} />
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
-                  {t("fc.activeCycleTitle", "Active Billing Cycle Run-Rate Telemetry")}
-                </Typography>
-              </Box>
+          <SectionCard
+            dataTour="forecasting-hero-kpi"
+            title={t("fc.activeCycleTitle", "Active Billing Cycle Run-Rate Telemetry")}
+            subtitle="Cycle progression, recorded actuals, and projected trajectory"
+            headerActions={
               <Chip
                 label={`${mtdActuals.loggedDaysCount} Days In • ${remainingDays} Days Left`}
                 size="small"
                 sx={{
-                  fontWeight: 700,
+                  fontWeight: 600,
+                  fontSize: "0.72rem",
                   bgcolor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(13, 148, 136, 0.1)",
-                  color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0f766e"),
+                    theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                  color: (theme) => (theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary),
                   border: "1px solid",
                   borderColor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)",
+                    theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                 }}
               />
-            </Box>
-
+            }
+          >
             <Grid container spacing={2}>
               {/* MTD Actual */}
               <Grid size={{ xs: 12, sm: 4 }}>
-                <Paper
-                  variant="outlined"
+                <Box
                   sx={{
                     p: 2,
-                    borderRadius: 1.25,
+                    borderRadius: 1,
                     bgcolor: (theme) =>
-                      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "#f8fafc",
+                      theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                    border: "1px solid",
                     borderColor: (theme) =>
-                      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "#e2e8f0",
+                      theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                   }}
                 >
-                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>
-                    {language === "tl" ? "NAITALANG MTD" : "RECORDED MTD ACTUAL"}
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600, textTransform: "uppercase", fontSize: "0.7rem", letterSpacing: "0.03em" }}>
+                    {language === "tl" ? "Naitalang MTD" : "Recorded MTD Actual"}
                   </Typography>
                   <Typography
                     variant="h5"
                     sx={{
-                      fontWeight: 900,
-                      fontFamily: "monospace",
-                      color: (theme) => (theme.palette.mode === "dark" ? "primary.light" : "primary.main"),
+                      fontWeight: 700,
+                      fontVariantNumeric: "tabular-nums",
+                      color: "text.primary",
                       my: 0.5,
                     }}
                   >
-                    {mtdActuals.actualKwh.toFixed(1)} <Typography component="span" variant="caption">kWh</Typography>
+                    {mtdActuals.actualKwh.toFixed(1)} <Typography component="span" variant="caption" sx={{ color: "text.secondary" }}>kWh</Typography>
                   </Typography>
-                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
                     {mtdActuals.loggedDaysCount} {language === "tl" ? "araw na may log" : "days logged"} (₱{mtdActuals.actualCost.toFixed(2)})
                   </Typography>
-                </Paper>
+                </Box>
               </Grid>
 
               {/* Projected Remaining */}
               <Grid size={{ xs: 12, sm: 4 }}>
-                <Paper
-                  variant="outlined"
+                <Box
                   sx={{
                     p: 2,
-                    borderRadius: 1.25,
+                    borderRadius: 1,
                     bgcolor: (theme) =>
-                      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "#f8fafc",
+                      theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                    border: "1px solid",
                     borderColor: (theme) =>
-                      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "#e2e8f0",
+                      theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                   }}
                 >
-                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>
-                    {language === "tl" ? "TINATAYANG NATITIRA" : "PROJECTED REMAINING"}
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600, textTransform: "uppercase", fontSize: "0.7rem", letterSpacing: "0.03em" }}>
+                    {language === "tl" ? "Tinatayang Natitira" : "Projected Remaining"}
                   </Typography>
                   <Typography
                     variant="h5"
                     sx={{
-                      fontWeight: 900,
-                      fontFamily: "monospace",
-                      color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "#d97706"),
+                      fontWeight: 700,
+                      fontVariantNumeric: "tabular-nums",
+                      color: "text.primary",
                       my: 0.5,
                     }}
                   >
-                    {trajectoryForecast.projectedRemainingKwh.toFixed(1)} <Typography component="span" variant="caption">kWh</Typography>
+                    {trajectoryForecast.projectedRemainingKwh.toFixed(1)} <Typography component="span" variant="caption" sx={{ color: "text.secondary" }}>kWh</Typography>
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     {remainingDays} {language === "tl" ? "natitirang araw sa cycle" : "days remaining"}
@@ -664,49 +684,52 @@ export const ForecastingView: React.FC = () => {
                       ? ` (${trajectoryForecast.simulatedDaysCount} ${language === "tl" ? "naka-plano sa simulasyon" : "planned in simulation"})`
                       : ""}
                   </Typography>
-                </Paper>
+                </Box>
               </Grid>
 
               {/* Composite Forecast */}
               <Grid size={{ xs: 12, sm: 4 }}>
-                <Paper
-                  variant="outlined"
+                <Box
                   sx={{
                     p: 2,
-                    borderRadius: 1.25,
+                    borderRadius: 1,
                     bgcolor: (theme) =>
-                      theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(13, 148, 136, 0.06)",
+                      theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                    border: "1px solid",
                     borderColor: (theme) =>
-                      theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)",
+                      theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                   }}
                 >
                   <Typography
                     variant="caption"
                     sx={{
-                      color: (theme) => (theme.palette.mode === "dark" ? "primary.light" : "primary.main"),
-                      fontWeight: 800,
+                      color: "text.secondary",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      fontSize: "0.7rem",
+                      letterSpacing: "0.03em",
                     }}
                   >
-                    {language === "tl" ? "KABUUANG PREDIKSYON SA BILL" : "COMPOSITE FORECASTED BILL"}
+                    {language === "tl" ? "Kabuuang Prediksyon sa Bill" : "Composite Forecasted Bill"}
                   </Typography>
                   <Typography
                     variant="h5"
                     sx={{
-                      fontWeight: 900,
-                      fontFamily: "monospace",
-                      color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
+                      fontWeight: 700,
+                      fontVariantNumeric: "tabular-nums",
+                      color: "text.primary",
                       my: 0.5,
                     }}
                   >
                     ₱{trajectoryForecast.forecastedBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                    {trajectoryForecast.forecastedKwh.toFixed(1)} kWh {language === "tl" ? "kabuuang buwan" : "month total"} ({trajectoryForecast.effectiveBurnRate} kWh/d)
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
+                    {trajectoryForecast.forecastedKwh.toFixed(1)} kWh total ({trajectoryForecast.effectiveBurnRate} kWh/d)
                   </Typography>
-                </Paper>
+                </Box>
               </Grid>
             </Grid>
-          </Card>
+          </SectionCard>
 
           {/* 5. NEW: Monthly Budget Sentinel & Breach Guard */}
           <BudgetSentinelCard
@@ -733,49 +756,44 @@ export const ForecastingView: React.FC = () => {
           />
 
           {/* 7. Interactive What-If Appliance Runtime Studio */}
-          <Card
-            data-tour="forecasting-whatif-studio"
-            sx={{
-              p: { xs: 2.5, sm: 3 },
-              borderRadius: 1.5,
-              border: "1px solid",
-              borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(13, 148, 136, 0.25)"),
-              bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.7)" : "#ffffff"),
-              boxShadow: (theme) => (theme.palette.mode === "dark" ? "none" : "0 2px 12px rgba(15, 23, 42, 0.04)"),
-            }}
-          >
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1.5 }}>
-              <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary", display: "flex", alignItems: "center", gap: 1 }}>
-                  <TuneIcon sx={{ color: "primary.main" }} />
-                  {t("fc.whatIfTitle", 'Interactive "What-If" Appliance Studio')}
-                </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                  {t("fc.whatIfSubtitle", "Adjust operating hours on individual appliances to simulate instant month-end bill impacts")}
-                </Typography>
-              </Box>
+          <SectionCard
+            dataTour="forecasting-whatif-studio"
+            title={t("fc.whatIfTitle", 'Interactive "What-If" Appliance Studio')}
+            subtitle={t("fc.whatIfSubtitle", "Adjust operating hours on individual appliances to simulate instant month-end bill impacts")}
+            headerActions={
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
                 {Object.keys(whatIfHours).length > 0 && (
                   <Button
                     size="small"
                     variant="contained"
-                    color="primary"
                     disabled={isSavingPlan}
-                    startIcon={<ScienceIcon sx={{ fontSize: 16 }} />}
+                    startIcon={<ScienceIcon sx={{ fontSize: 14 }} />}
                     onClick={handleSaveWhatIfToSimulationPlan}
-                    sx={{ borderRadius: 1, fontSize: "0.75rem", fontWeight: 700 }}
+                    sx={{
+                      borderRadius: 1,
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary),
+                      color: (theme) => (theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg),
+                      boxShadow: "none",
+                    }}
                   >
                     {isSavingPlan
                       ? language === "tl" ? "Sini-save..." : "Saving..."
-                      : language === "tl" ? "Ilapat sa Simulation Plan" : "Apply to Simulation Plan"}
+                      : language === "tl" ? "Ilapat sa Simulation Plan" : "Apply to Plan"}
                   </Button>
                 )}
                 <Button
                   size="small"
                   variant="outlined"
-                  startIcon={<ResetIcon sx={{ fontSize: 16 }} />}
+                  startIcon={<ResetIcon sx={{ fontSize: 14 }} />}
                   onClick={handleResetWhatIf}
-                  sx={{ borderRadius: 1, fontSize: "0.75rem", fontWeight: 700 }}
+                  sx={{
+                    borderRadius: 1,
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong),
+                  }}
                 >
                   {t("fc.resetDefaults", "Reset Defaults")}
                 </Button>
@@ -784,13 +802,36 @@ export const ForecastingView: React.FC = () => {
                 <Chip
                   label={
                     whatIfSimulation.billDelta === 0
-                      ? language === "tl" ? "Neutral (₱0.00)" : "Neutral (₱0.00)"
+                      ? "Neutral (₱0.00)"
                       : whatIfSimulation.billDelta < 0
                       ? `${language === "tl" ? "Makakatipid ng" : "Saves"} ₱${Math.abs(whatIfSimulation.billDelta).toFixed(2)}/mo`
                       : `+₱${whatIfSimulation.billDelta.toFixed(2)}/mo ${language === "tl" ? "Dagdag" : "Increase"}`
                   }
-                  color={whatIfSimulation.billDelta < 0 ? "success" : whatIfSimulation.billDelta > 0 ? "warning" : "default"}
-                  sx={{ fontWeight: 800, fontSize: "0.78rem" }}
+                  size="small"
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: "0.72rem",
+                    fontVariantNumeric: "tabular-nums",
+                    bgcolor: (theme) =>
+                      whatIfSimulation.billDelta < 0
+                        ? theme.palette.mode === "dark" ? tokens.dark.liveBg : tokens.light.liveBg
+                        : whatIfSimulation.billDelta > 0
+                        ? theme.palette.mode === "dark" ? tokens.dark.warnBg : tokens.light.warnBg
+                        : theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                    color: (theme) =>
+                      whatIfSimulation.billDelta < 0
+                        ? theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live
+                        : whatIfSimulation.billDelta > 0
+                        ? theme.palette.mode === "dark" ? tokens.dark.warn : tokens.light.warn
+                        : "text.secondary",
+                    border: "1px solid",
+                    borderColor: (theme) =>
+                      whatIfSimulation.billDelta < 0
+                        ? theme.palette.mode === "dark" ? tokens.dark.liveBorder : tokens.light.liveBorder
+                        : whatIfSimulation.billDelta > 0
+                        ? theme.palette.mode === "dark" ? tokens.dark.warnBorder : tokens.light.warnBorder
+                        : theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                  }}
                 />
 
                 {/* Impact vs Target Budget */}
@@ -805,16 +846,30 @@ export const ForecastingView: React.FC = () => {
                         ? `Higit sa Badyet (+₱${(whatIfSimulation.whatIfBill - budgetTarget).toFixed(2)})`
                         : `Over Budget (+₱${(whatIfSimulation.whatIfBill - budgetTarget).toFixed(2)})`
                     }
-                    color={whatIfSimulation.whatIfBill <= budgetTarget ? "success" : "error"}
-                    variant="outlined"
-                    sx={{ fontWeight: 800, fontSize: "0.75rem" }}
+                    size="small"
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: "0.72rem",
+                      fontVariantNumeric: "tabular-nums",
+                      bgcolor: (theme) =>
+                        whatIfSimulation.whatIfBill <= budgetTarget
+                          ? theme.palette.mode === "dark" ? tokens.dark.liveBg : tokens.light.liveBg
+                          : theme.palette.mode === "dark" ? tokens.dark.errorBg : tokens.light.errorBg,
+                      color: (theme) =>
+                        whatIfSimulation.whatIfBill <= budgetTarget
+                          ? theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live
+                          : theme.palette.mode === "dark" ? tokens.dark.error : tokens.light.error,
+                      border: "1px solid",
+                      borderColor: (theme) =>
+                        whatIfSimulation.whatIfBill <= budgetTarget
+                          ? theme.palette.mode === "dark" ? tokens.dark.liveBorder : tokens.light.liveBorder
+                          : theme.palette.mode === "dark" ? tokens.dark.errorBorder : tokens.light.errorBorder,
+                    }}
                   />
                 )}
               </Box>
-            </Box>
-
-            <Divider sx={{ mb: 2.5 }} />
-
+            }
+          >
             <Grid container spacing={2}>
               {targetAppliances.map((app) => {
                 const currentHours = whatIfHours[app.id] !== undefined ? whatIfHours[app.id] : (app.hours_per_day || 0);
@@ -823,19 +878,23 @@ export const ForecastingView: React.FC = () => {
 
                 return (
                   <Grid key={app.id} size={{ xs: 12, md: 6 }}>
-                    <Paper
-                      variant="outlined"
+                    <Box
                       sx={{
                         p: 2,
-                        borderRadius: 1.25,
-                        bgcolor: isModified ? "rgba(0, 229, 201, 0.12)" : "rgba(255, 255, 255, 0.02)",
-                        borderColor: isModified ? "primary.main" : "rgba(255, 255, 255, 0.08)",
+                        borderRadius: 1,
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                        border: "1px solid",
+                        borderColor: (theme) =>
+                          isModified
+                            ? theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong
+                            : theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                         transition: "all 0.2s ease",
                       }}
                     >
                       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                         <Box sx={{ minWidth: 0, flex: 1, mr: 1 }}>
-                          <Typography noWrap variant="body2" sx={{ fontWeight: 800 }}>
+                          <Typography noWrap variant="body2" sx={{ fontWeight: 600 }}>
                             {app.name}
                           </Typography>
                           <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -845,9 +904,14 @@ export const ForecastingView: React.FC = () => {
                         <Chip
                           label={`${currentHours.toFixed(1)}h/day`}
                           size="small"
-                          color={isModified ? "primary" : "default"}
-                          variant={isModified ? "filled" : "outlined"}
-                          sx={{ fontWeight: 800, fontSize: "0.75rem", fontFamily: "monospace" }}
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: "0.72rem",
+                            fontVariantNumeric: "tabular-nums",
+                            bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface),
+                            border: "1px solid",
+                            borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong),
+                          }}
                         />
                       </Box>
 
@@ -859,49 +923,44 @@ export const ForecastingView: React.FC = () => {
                         onChange={(_, val) => handleWhatIfHourChange(app.id, val as number)}
                         sx={{
                           my: 0.5,
-                          "& .MuiSlider-thumb": { width: 16, height: 16 },
+                          color: (theme) => (theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary),
+                          "& .MuiSlider-thumb": {
+                            width: 14,
+                            height: 14,
+                            bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary),
+                          },
+                          "& .MuiSlider-track": {
+                            bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary),
+                          },
+                          "& .MuiSlider-rail": {
+                            bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong),
+                          },
                         }}
                       />
-                    </Paper>
+                    </Box>
                   </Grid>
                 );
               })}
             </Grid>
-          </Card>
+          </SectionCard>
 
           {/* 8. Appliance Pareto Energy Contribution Breakdown */}
-          <Card
-            sx={{
-              p: { xs: 2.5, sm: 3 },
-              borderRadius: 1.5,
-              border: "1px solid",
-              borderColor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
-              bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.65)" : "#ffffff",
-              boxShadow: (theme) =>
-                theme.palette.mode === "dark" ? "none" : "0 2px 12px rgba(15, 23, 42, 0.04)",
-            }}
+          <SectionCard
+            title={t("fc.paretoTitle", "Appliance Monthly Energy Share (Pareto Breakdown)")}
+            subtitle={t("fc.paretoSubtitle", "Ranked breakdown of which registered devices contribute the highest share of your monthly power consumption.")}
           >
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary", mb: 1 }}>
-              {t("fc.paretoTitle", "Appliance Monthly Energy Share (Pareto Breakdown)")}
-            </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2.5 }}>
-              {t("fc.paretoSubtitle", "Ranked breakdown of which registered devices contribute the highest share of your monthly power consumption.")}
-            </Typography>
-
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
               {paretoBreakdown.map(({ app, monthlyKwh, cost, sharePercent }, idx) => (
-                <Paper
+                <Box
                   key={app.id}
-                  variant="outlined"
                   sx={{
                     p: 1.75,
-                    borderRadius: 1.25,
+                    borderRadius: 1,
                     bgcolor: (theme) =>
-                      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "#f8fafc",
+                      theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                    border: "1px solid",
                     borderColor: (theme) =>
-                      theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "#e2e8f0",
+                      theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                     display: "flex",
                     flexDirection: "column",
                     gap: 1,
@@ -911,34 +970,34 @@ export const ForecastingView: React.FC = () => {
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
                       <Box
                         sx={{
-                          width: 26,
-                          height: 26,
-                          borderRadius: "50%",
+                          width: 24,
+                          height: 24,
+                          borderRadius: 0.75,
                           bgcolor: (theme) =>
-                            idx < 3
-                              ? theme.palette.mode === "dark"
-                                ? "primary.main"
-                                : "#0d9488"
-                              : theme.palette.mode === "dark"
-                              ? "rgba(255, 255, 255, 0.1)"
-                              : "#e2e8f0",
+                            idx === 0
+                              ? theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary
+                              : theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
                           color: (theme) =>
-                            idx < 3
-                              ? "#ffffff"
-                              : theme.palette.mode === "dark"
-                              ? "#ffffff"
-                              : "#0f172a",
+                            idx === 0
+                              ? theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg
+                              : "text.secondary",
+                          border: "1px solid",
+                          borderColor: (theme) =>
+                            idx === 0
+                              ? "transparent"
+                              : theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          fontSize: "0.75rem",
-                          fontWeight: 900,
+                          fontSize: "0.72rem",
+                          fontWeight: 700,
+                          fontVariantNumeric: "tabular-nums",
                         }}
                       >
                         {idx + 1}
                       </Box>
                       <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
                           {app.name}
                         </Typography>
                         <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -951,14 +1010,14 @@ export const ForecastingView: React.FC = () => {
                       <Typography
                         variant="body2"
                         sx={{
-                          fontWeight: 900,
-                          fontFamily: "monospace",
-                          color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "#d97706"),
+                          fontWeight: 700,
+                          fontVariantNumeric: "tabular-nums",
+                          color: "text.primary",
                         }}
                       >
                         ₱{cost.toFixed(2)}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary", fontFamily: "monospace" }}>
+                      <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
                         {monthlyKwh.toFixed(1)} kWh ({sharePercent}%)
                       </Typography>
                     </Box>
@@ -971,45 +1030,56 @@ export const ForecastingView: React.FC = () => {
                       height: 6,
                       borderRadius: 1,
                       bgcolor: (theme) =>
-                        theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+                        theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
                       "& .MuiLinearProgress-bar": {
                         borderRadius: 1,
-                        bgcolor: idx === 0 ? "#ef4444" : idx === 1 ? "#f59e0b" : "primary.main",
+                        bgcolor: (theme) =>
+                          idx === 0
+                            ? theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live
+                            : theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
                       },
                     }}
                   />
-                </Paper>
+                </Box>
               ))}
             </Box>
-          </Card>
+          </SectionCard>
 
           {/* 9. Advisory Insights Box */}
-          <Paper
-            data-tour="forecasting-advisory"
-            sx={{
-              p: 3,
-              borderRadius: 1.5,
-              bgcolor: "background.paper",
-              border: "1px solid",
-              borderColor: "divider",
-              display: "flex",
-              flexDirection: { xs: "column", sm: "row" },
-              alignItems: { xs: "flex-start", sm: "center" },
-              gap: 2.5,
-            }}
-          >
-            <Box sx={{ p: 1.5, borderRadius: 1, bgcolor: "rgba(0, 229, 201, 0.15)", color: "primary.main", flexShrink: 0 }}>
-              <ShieldIcon sx={{ fontSize: 28 }} />
+          <SectionCard>
+            <Box
+              data-tour="forecasting-advisory"
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                alignItems: { xs: "flex-start", sm: "center" },
+                gap: 2,
+              }}
+            >
+              <Box
+                sx={{
+                  p: 1.25,
+                  borderRadius: 1,
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle),
+                  border: "1px solid",
+                  borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
+                  color: "text.primary",
+                  flexShrink: 0,
+                  display: "flex",
+                }}
+              >
+                <ShieldIcon sx={{ fontSize: 22 }} />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "text.primary" }}>
+                  ERC & Meralco Monthly Tariff Pass-Through Advisory
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block", lineHeight: 1.6 }}>
+                  In the Philippines, the generation charge is an automatic pass-through cost adjusted every billing cycle based on fuel costs (coal, natural gas) and WESM spot market rates. Meralco distributes electricity but does not profit from the generation charge. During hot dry months, higher grid demand pushes generation rates upward.
+                </Typography>
+              </Box>
             </Box>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "text.primary" }}>
-                ERC & Meralco Monthly Tariff Pass-Through Advisory
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block", lineHeight: 1.6 }}>
-                In the Philippines, the generation charge is an automatic pass-through cost adjusted every billing cycle based on fuel costs (coal, natural gas) and WESM spot market rates. Meralco distributes electricity but does not profit from the generation charge. During hot dry months, higher grid demand pushes generation rates upward.
-              </Typography>
-            </Box>
-          </Paper>
+          </SectionCard>
         </>
       )}
     </Box>

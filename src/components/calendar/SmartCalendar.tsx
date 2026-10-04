@@ -1,15 +1,12 @@
 import React, { useState, useMemo } from "react";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
-import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import Paper from "@mui/material/Paper";
 import Chip from "@mui/material/Chip";
 import Tooltip from "@mui/material/Tooltip";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
 import {
   CalendarMonth as CalendarIcon,
   ChevronLeft as ChevronLeftIcon,
@@ -26,6 +23,10 @@ import {
   Timeline as TimelineIcon,
   Timer as TimerIcon,
 } from "@mui/icons-material";
+import { PageHeader } from "../common/PageHeader";
+import { SectionCard } from "../common/SectionCard";
+import { MetricCard } from "../common/MetricCard";
+import { tokens } from "../../theme/tokens";
 import {
   UserCalendarEvent,
   UserAppliance,
@@ -234,143 +235,239 @@ export const SmartCalendar: React.FC = () => {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
       {/* 1. Header with Mode Toggle & Actions */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 1.5 }}>
+      <PageHeader
+        title="Smart Energy Calendar"
+        subtitle={
+          calendarTab === "actual"
+            ? "Actual Tracker: Verified stopwatch sessions, real-time circuit switches, and authentic measured telemetry."
+            : "Simulation Plan: Design what-if schedules, test appliance runtimes, and forecast Meralco monthly quotas."
+        }
+        badge={
+          <Chip
+            size="small"
+            label={calendarTab === "actual" ? "Live Tracker" : "What-If Simulator"}
+            sx={{
+              fontWeight: 600,
+              fontSize: "0.75rem",
+              bgcolor: (theme) =>
+                calendarTab === "actual"
+                  ? theme.palette.mode === "dark"
+                    ? tokens.dark.liveBg
+                    : tokens.light.liveBg
+                  : theme.palette.mode === "dark"
+                  ? tokens.dark.surfaceSubtle
+                  : tokens.light.surfaceSubtle,
+              color: (theme) =>
+                calendarTab === "actual"
+                  ? theme.palette.mode === "dark"
+                    ? tokens.dark.live
+                    : tokens.light.live
+                  : theme.palette.mode === "dark"
+                  ? tokens.dark.textSecondary
+                  : tokens.light.textSecondary,
+              border: "1px solid",
+              borderColor: (theme) =>
+                calendarTab === "actual"
+                  ? theme.palette.mode === "dark"
+                    ? tokens.dark.liveBorder
+                    : tokens.light.liveBorder
+                  : theme.palette.mode === "dark"
+                  ? tokens.dark.borderSubtle
+                  : tokens.light.borderSubtle,
+            }}
+          />
+        }
+        actions={
+          <>
+            {/* Top Segmented Navigation Tab */}
             <Box
               sx={{
-                width: 40,
-                height: 40,
-                borderRadius: 1.25,
-                bgcolor: calendarTab === "actual" ? "success.main" : "primary.main",
-                color: "#ffffff",
                 display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
+                p: "3px",
+                borderRadius: 1,
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
               }}
             >
-              {calendarTab === "actual" ? <TimelineIcon /> : <ScienceIcon />}
+              <Button
+                size="small"
+                onClick={() => handleTabChange("actual")}
+                startIcon={<TimerIcon sx={{ fontSize: 15 }} />}
+                sx={{
+                  borderRadius: 0.75,
+                  fontWeight: 600,
+                  fontSize: "0.75rem",
+                  px: 1.5,
+                  py: 0.5,
+                  textTransform: "none",
+                  bgcolor:
+                    calendarTab === "actual"
+                      ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.active : tokens.light.active)
+                      : "transparent",
+                  color:
+                    calendarTab === "actual"
+                      ? (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary
+                      : "text.secondary",
+                  boxShadow: calendarTab === "actual" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                  "&:hover": {
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover),
+                  },
+                }}
+              >
+                Actual Tracker
+              </Button>
+              <Button
+                size="small"
+                onClick={() => handleTabChange("simulation")}
+                startIcon={<ScienceIcon sx={{ fontSize: 15 }} />}
+                sx={{
+                  borderRadius: 0.75,
+                  fontWeight: 600,
+                  fontSize: "0.75rem",
+                  px: 1.5,
+                  py: 0.5,
+                  textTransform: "none",
+                  bgcolor:
+                    calendarTab === "simulation"
+                      ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.active : tokens.light.active)
+                      : "transparent",
+                  color:
+                    calendarTab === "simulation"
+                      ? (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary
+                      : "text.secondary",
+                  boxShadow: calendarTab === "simulation" ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                  "&:hover": {
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover),
+                  },
+                }}
+              >
+                Simulation Plan
+              </Button>
             </Box>
-            Smart Energy Calendar
-          </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.5 }}>
-            {calendarTab === "actual"
-              ? "Actual Tracker: Verified stopwatch sessions, real-time circuit switches, and authentic measured telemetry."
-              : "Simulation Plan: Design what-if schedules, test appliance runtimes, and forecast Meralco monthly quotas."}
-          </Typography>
-        </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexWrap: "wrap" }}>
-          {/* Top Segmented Navigation Tab */}
-          <Paper
-            variant="outlined"
-            sx={{
-              display: "flex",
-              p: 0.5,
-              borderRadius: 2,
-              bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.03)",
-            }}
-          >
+            {/* Billing Period Selector */}
             <Button
+              variant="outlined"
               size="small"
-              onClick={() => handleTabChange("actual")}
-              startIcon={<TimerIcon />}
+              startIcon={<DateRangeIcon sx={{ fontSize: 15 }} />}
+              onClick={() => setIsBillingModalOpen(true)}
               sx={{
-                borderRadius: 1.5,
-                fontWeight: 800,
-                px: 2,
-                py: 0.6,
+                borderRadius: 1,
+                fontWeight: 600,
+                fontSize: "0.75rem",
                 textTransform: "none",
-                bgcolor: calendarTab === "actual" ? (theme) => theme.palette.mode === "dark" ? "rgba(52, 211, 153, 0.2)" : "rgba(16, 185, 129, 0.15)" : "transparent",
-                color: calendarTab === "actual" ? "#34d399" : "text.secondary",
+                px: 1.5,
+                py: 0.6,
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
                 "&:hover": {
-                  bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(52, 211, 153, 0.25)" : "rgba(16, 185, 129, 0.2)",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover),
                 },
               }}
             >
-              Actual Tracker (Live)
+              {billingConfig.mode === "recurring_cycle"
+                ? `Cycle (Day ${billingConfig.cycleStartDay})`
+                : billingConfig.mode === "custom_range"
+                ? "Custom Range"
+                : "Monthly Period"}
             </Button>
-            <Button
-              size="small"
-              onClick={() => handleTabChange("simulation")}
-              startIcon={<ScienceIcon />}
-              sx={{
-                borderRadius: 1.5,
-                fontWeight: 800,
-                px: 2,
-                py: 0.6,
-                textTransform: "none",
-                bgcolor: calendarTab === "simulation" ? (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.2)" : "rgba(13, 148, 136, 0.15)" : "transparent",
-                color: calendarTab === "simulation" ? "primary.main" : "text.secondary",
-                "&:hover": {
-                  bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(13, 148, 136, 0.2)",
-                },
-              }}
-            >
-              Simulation Plan (What-If)
-            </Button>
-          </Paper>
 
-          {/* Billing Period Selector */}
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<DateRangeIcon />}
-            onClick={() => setIsBillingModalOpen(true)}
-            sx={{ borderRadius: 1.25, fontWeight: 700, px: 2, py: 0.8 }}
-          >
-            {billingConfig.mode === "recurring_cycle"
-              ? `Cycle (Day ${billingConfig.cycleStartDay})`
-              : billingConfig.mode === "custom_range"
-              ? "Custom Range"
-              : "Monthly Period"}
-          </Button>
-
-          {/* Simulate Appliance Button (Visible in Simulation Tab) */}
-          {calendarTab === "simulation" && (
-            <Tooltip title={!canEdit ? "View-only members cannot create simulation schedules" : ""}>
-              <span>
-                <Button
-                  variant="contained"
-                  size="small"
-                  startIcon={<ScienceIcon />}
-                  disabled={!canEdit}
-                  onClick={() => setIsSimulateApplianceOpen(true)}
-                  sx={{
-                    borderRadius: 1.25,
-                    fontWeight: 800,
-                    px: 2,
-                    py: 0.8,
-                    bgcolor: "primary.main",
-                    color: "#ffffff",
-                    boxShadow: canEdit ? "0 4px 14px rgba(0, 229, 201, 0.25)" : "none",
-                  }}
-                >
-                  Simulate Appliance
-                </Button>
-              </span>
-            </Tooltip>
-          )}
-        </Box>
-      </Box>
+            {/* Simulate Appliance Button (Visible in Simulation Tab) */}
+            {calendarTab === "simulation" && (
+              <Tooltip title={!canEdit ? "View-only members cannot create simulation schedules" : ""}>
+                <span>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<ScienceIcon sx={{ fontSize: 15 }} />}
+                    disabled={!canEdit}
+                    onClick={() => setIsSimulateApplianceOpen(true)}
+                    sx={{
+                      borderRadius: 1,
+                      fontWeight: 600,
+                      fontSize: "0.75rem",
+                      textTransform: "none",
+                      px: 1.75,
+                      py: 0.6,
+                      bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary),
+                      color: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg,
+                      boxShadow: "none",
+                      "&:hover": {
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark" ? tokens.zinc[200] : tokens.zinc[800],
+                        boxShadow: "none",
+                      },
+                    }}
+                  >
+                    Simulate Appliance
+                  </Button>
+                </span>
+              </Tooltip>
+            )}
+          </>
+        }
+      />
 
       {/* 2. Space Switcher Bento Pill Bar */}
       {spaces.length > 1 && (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, overflowX: "auto", pb: 0.5 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 0.75,
+            overflowX: "auto",
+            pb: 0.5,
+            "&::-webkit-scrollbar": { height: 4 },
+            "&::-webkit-scrollbar-thumb": {
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+              borderRadius: 2,
+            },
+          }}
+        >
           <Button
             size="small"
             onClick={() => setSelectedSpaceId("all")}
-            startIcon={<StoreIcon sx={{ fontSize: 15 }} />}
+            startIcon={<StoreIcon sx={{ fontSize: 14 }} />}
             sx={{
-              px: 2,
-              py: 0.5,
-              borderRadius: 2,
+              px: 1.5,
+              py: 0.4,
+              borderRadius: 1,
               fontSize: "0.75rem",
-              fontWeight: 700,
+              fontWeight: 600,
               textTransform: "none",
-              bgcolor: selectedSpaceId === "all" ? (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.15)" : "rgba(13, 148, 136, 0.1)" : "transparent",
-              color: selectedSpaceId === "all" ? "primary.main" : "text.secondary",
+              border: "1px solid",
+              borderColor: (theme) => {
+                const isDark = theme.palette.mode === "dark";
+                return selectedSpaceId === "all"
+                  ? isDark ? tokens.dark.borderStrong : tokens.light.borderStrong
+                  : isDark ? tokens.dark.borderSubtle : tokens.light.borderSubtle;
+              },
+              bgcolor: (theme) => {
+                const isDark = theme.palette.mode === "dark";
+                return selectedSpaceId === "all"
+                  ? isDark ? tokens.dark.active : tokens.light.active
+                  : "transparent";
+              },
+              color: (theme) => {
+                const isDark = theme.palette.mode === "dark";
+                return selectedSpaceId === "all"
+                  ? isDark ? tokens.dark.textPrimary : tokens.light.textPrimary
+                  : isDark ? tokens.dark.textSecondary : tokens.light.textSecondary;
+              },
+              "&:hover": {
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover),
+              },
             }}
           >
             All Spaces ({allAppliances.length})
@@ -384,16 +481,42 @@ export const SmartCalendar: React.FC = () => {
                 key={space.id}
                 size="small"
                 onClick={() => setSelectedSpaceId(space.id)}
-                startIcon={space.tariff_type === "commercial" ? <StoreIcon sx={{ fontSize: 15 }} /> : <HomeIcon sx={{ fontSize: 15 }} />}
+                startIcon={
+                  space.tariff_type === "commercial" ? (
+                    <StoreIcon sx={{ fontSize: 14 }} />
+                  ) : (
+                    <HomeIcon sx={{ fontSize: 14 }} />
+                  )
+                }
                 sx={{
-                  px: 2,
-                  py: 0.5,
-                  borderRadius: 2,
+                  px: 1.5,
+                  py: 0.4,
+                  borderRadius: 1,
                   fontSize: "0.75rem",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   textTransform: "none",
-                  bgcolor: isSelected ? (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.15)" : "rgba(13, 148, 136, 0.1)" : "transparent",
-                  color: isSelected ? "primary.main" : "text.secondary",
+                  border: "1px solid",
+                  borderColor: (theme) => {
+                    const isDark = theme.palette.mode === "dark";
+                    return isSelected
+                      ? isDark ? tokens.dark.borderStrong : tokens.light.borderStrong
+                      : isDark ? tokens.dark.borderSubtle : tokens.light.borderSubtle;
+                  },
+                  bgcolor: (theme) => {
+                    const isDark = theme.palette.mode === "dark";
+                    return isSelected
+                      ? isDark ? tokens.dark.active : tokens.light.active
+                      : "transparent";
+                  },
+                  color: (theme) => {
+                    const isDark = theme.palette.mode === "dark";
+                    return isSelected
+                      ? isDark ? tokens.dark.textPrimary : tokens.light.textPrimary
+                      : isDark ? tokens.dark.textSecondary : tokens.light.textSecondary;
+                  },
+                  "&:hover": {
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover),
+                  },
                 }}
               >
                 {space.name} ({count})
@@ -405,190 +528,221 @@ export const SmartCalendar: React.FC = () => {
 
       {/* 3. Top KPI Cards */}
       {calendarTab === "actual" ? (
-        /* Actual Tracker KPI Cards */
         <Grid container spacing={{ xs: 1.5, sm: 2 }}>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <Paper sx={{ p: 2, borderRadius: 1.5, border: "1px solid", borderColor: "divider" }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase" }}>
-                ACTUAL SPEND TO DATE
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 900, color: "#34d399", mt: 0.5, fontFamily: "monospace" }}>
-                ₱{actualPeriodSummary.actualCost.toFixed(2)}
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
-                Verified measured sessions
-              </Typography>
-            </Paper>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <MetricCard
+              title="ACTUAL SPEND TO DATE"
+              value={`₱${actualPeriodSummary.actualCost.toFixed(2)}`}
+              subtitle="Verified measured sessions"
+              icon={<TimelineIcon sx={{ fontSize: 16 }} />}
+            />
           </Grid>
-
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <Paper sx={{ p: 2, borderRadius: 1.5, border: "1px solid", borderColor: "divider" }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase" }}>
-                MEASURED ENERGY
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 900, color: "warning.main", mt: 0.5, fontFamily: "monospace" }}>
-                {actualPeriodSummary.actualKwh} kWh
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
-                Across {actualPeriodSummary.loggedDaysCount} logged day(s)
-              </Typography>
-            </Paper>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <MetricCard
+              title="MEASURED ENERGY"
+              value={`${actualPeriodSummary.actualKwh} kWh`}
+              subtitle={`Across ${actualPeriodSummary.loggedDaysCount} logged day(s)`}
+              icon={<BoltIcon sx={{ fontSize: 16 }} />}
+            />
           </Grid>
-
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <Paper sx={{ p: 2, borderRadius: 1.5, border: "1px solid", borderColor: actualPeriodSummary.runningCircuitsCount > 0 ? "#34d399" : "divider" }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase" }}>
-                CIRCUITS STATUS
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 900, color: actualPeriodSummary.runningCircuitsCount > 0 ? "#34d399" : "text.secondary", mt: 0.5, fontFamily: "monospace" }}>
-                {actualPeriodSummary.runningCircuitsCount > 0 ? `${actualPeriodSummary.runningCircuitsCount} Stopwatch Active` : "All Idle"}
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
-                Real-time active load
-              </Typography>
-            </Paper>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <MetricCard
+              title="CIRCUITS STATUS"
+              value={actualPeriodSummary.runningCircuitsCount > 0 ? `${actualPeriodSummary.runningCircuitsCount} Active` : "All Idle"}
+              subtitle="Real-time active load"
+              liveDot={actualPeriodSummary.runningCircuitsCount > 0}
+              icon={<TimerIcon sx={{ fontSize: 16 }} />}
+            />
           </Grid>
-
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <Paper sx={{ p: 2, borderRadius: 1.5, border: "1px solid", borderColor: "divider" }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase" }}>
-                TIMEFRAME DAYS
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 900, color: "info.main", mt: 0.5, fontFamily: "monospace" }}>
-                {actualPeriodSummary.loggedDaysCount} / {actualPeriodSummary.totalDays} Days
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
-                Days with verified records
-              </Typography>
-            </Paper>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <MetricCard
+              title="TIMEFRAME DAYS"
+              value={`${actualPeriodSummary.loggedDaysCount} / ${actualPeriodSummary.totalDays}`}
+              subtitle="Days with verified records"
+              icon={<DateRangeIcon sx={{ fontSize: 16 }} />}
+            />
           </Grid>
         </Grid>
       ) : (
-        /* Simulation Plan KPI Cards */
         <Grid container spacing={{ xs: 1.5, sm: 2 }}>
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <Paper sx={{ p: 2, borderRadius: 1.5, border: "1px solid", borderColor: "divider" }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase" }}>
-                BASELINE QUOTA
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 900, color: "#818cf8", mt: 0.5, fontFamily: "monospace" }}>
-                ~₱{simPeriodSummary.baselinePeriodCost.toFixed(2)}
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
-                Routine defaults ({simPeriodSummary.baselinePeriodKwh} kWh)
-              </Typography>
-            </Paper>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <MetricCard
+              title="BASELINE QUOTA"
+              value={`~₱${simPeriodSummary.baselinePeriodCost.toFixed(2)}`}
+              subtitle={`Routine defaults (${simPeriodSummary.baselinePeriodKwh} kWh)`}
+              icon={<SavingsIcon sx={{ fontSize: 16 }} />}
+            />
           </Grid>
-
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <Paper sx={{ p: 2, borderRadius: 1.5, border: "1px solid", borderColor: "primary.main" }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase" }}>
-                SIMULATED PERIOD BILL
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 900, color: "primary.main", mt: 0.5, fontFamily: "monospace" }}>
-                ₱{simPeriodSummary.simulatedPeriodCost.toFixed(2)}
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
-                With tailored schedules ({simPeriodSummary.simulatedPeriodKwh} kWh)
-              </Typography>
-            </Paper>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <MetricCard
+              title="SIMULATED PERIOD BILL"
+              value={`₱${simPeriodSummary.simulatedPeriodCost.toFixed(2)}`}
+              subtitle={`With tailored schedules (${simPeriodSummary.simulatedPeriodKwh} kWh)`}
+              icon={<ScienceIcon sx={{ fontSize: 16 }} />}
+            />
           </Grid>
-
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <Paper sx={{ p: 2, borderRadius: 1.5, border: "1px solid", borderColor: "divider" }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase" }}>
-                SIMULATED SAVINGS
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 900, color: simPeriodSummary.periodSavings >= 0 ? "#34d399" : "#f59e0b", mt: 0.5, fontFamily: "monospace" }}>
-                {simPeriodSummary.periodSavings >= 0 ? `Saves ₱${simPeriodSummary.periodSavings.toFixed(2)}` : `+₱${Math.abs(simPeriodSummary.periodSavings).toFixed(2)}`}
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
-                {simPeriodSummary.periodSavingsPct}% delta vs baseline
-              </Typography>
-            </Paper>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <MetricCard
+              title="SIMULATED SAVINGS"
+              value={
+                simPeriodSummary.periodSavings >= 0
+                  ? `Saves ₱${simPeriodSummary.periodSavings.toFixed(2)}`
+                  : `+₱${Math.abs(simPeriodSummary.periodSavings).toFixed(2)}`
+              }
+              subtitle={`${simPeriodSummary.periodSavingsPct}% delta vs baseline`}
+              icon={<FlameIcon sx={{ fontSize: 16 }} />}
+            />
           </Grid>
-
-          <Grid size={{ xs: 6, sm: 3 }}>
-            <Paper sx={{ p: 2, borderRadius: 1.5, border: "1px solid", borderColor: "divider" }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: "text.secondary", textTransform: "uppercase" }}>
-                CUSTOM PLAN COVERAGE
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 900, color: "#ffd54f", mt: 0.5, fontFamily: "monospace" }}>
-                {simPeriodSummary.simulatedDaysCount} / {simPeriodSummary.totalDays} Days
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
-                Days with tailored plans
-              </Typography>
-            </Paper>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <MetricCard
+              title="CUSTOM PLAN COVERAGE"
+              value={`${simPeriodSummary.simulatedDaysCount} / ${simPeriodSummary.totalDays}`}
+              subtitle="Days with tailored plans"
+              icon={<CheckCircleIcon sx={{ fontSize: 16 }} />}
+            />
           </Grid>
         </Grid>
       )}
 
-      {/* 4. Calendar Controls Navigator */}
-      <Card sx={{ p: 2, borderRadius: 1.5 }}>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
+      {/* 4. Calendar Controls Navigator & Month Grid */}
+      <SectionCard
+        title={
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <IconButton onClick={handlePrevPeriod} size="small" sx={{ border: "1px solid", borderColor: "divider" }}>
-              <ChevronLeftIcon />
-            </IconButton>
-
-            <Box sx={{ textAlign: "center", minWidth: { xs: 180, sm: 240 } }}>
-              <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: "-0.01em", lineHeight: 1.2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <IconButton
+                onClick={handlePrevPeriod}
+                size="small"
+                sx={{
+                  border: "1px solid",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                  borderRadius: 1,
+                  p: 0.5,
+                  "&:hover": {
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover),
+                  },
+                }}
+              >
+                <ChevronLeftIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                onClick={handleNextPeriod}
+                size="small"
+                sx={{
+                  border: "1px solid",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                  borderRadius: 1,
+                  p: 0.5,
+                  "&:hover": {
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover),
+                  },
+                }}
+              >
+                <ChevronRightIcon fontSize="small" />
+              </IconButton>
+            </Box>
+            <Box>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: "0.9375rem",
+                  letterSpacing: "-0.01em",
+                  color: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                }}
+              >
                 {billingWindow.label}
               </Typography>
               {billingWindow.subLabel && (
-                <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 700, fontSize: "0.7rem", display: "block" }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    display: "block",
+                    fontSize: "0.6875rem",
+                    color: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.textMuted : tokens.light.textMuted,
+                  }}
+                >
                   {billingWindow.subLabel}
                 </Typography>
               )}
             </Box>
-
-            <IconButton onClick={handleNextPeriod} size="small" sx={{ border: "1px solid", borderColor: "divider" }}>
-              <ChevronRightIcon />
-            </IconButton>
           </Box>
-
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+        }
+        headerActions={
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             {calendarTab === "actual" ? (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#34d399" }} />
-                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
-                  Logged Actuals
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                <Box
+                  sx={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live,
+                  }}
+                />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "text.secondary",
+                    fontWeight: 500,
+                    fontSize: "0.75rem",
+                  }}
+                >
+                  Logged Sessions
                 </Typography>
               </Box>
             ) : (
               <>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#818cf8" }} />
-                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
-                    ~₱ Routine Quota
+                  <Box
+                    sx={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: "50%",
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.zinc[500] : tokens.zinc[400],
+                    }}
+                  />
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.75rem" }}>
+                    Routine Quota
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#00e5c9" }} />
-                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600 }}>
-                    Custom Simulation
+                  <Box
+                    sx={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: "50%",
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live,
+                    }}
+                  />
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.75rem" }}>
+                    Custom Plan
                   </Typography>
                 </Box>
               </>
             )}
           </Box>
-        </Box>
-      </Card>
-
-      {/* 5. Calendar Month Grid */}
-      <Card sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: 1.5 }}>
+        }
+      >
         {/* Days of week header */}
         <Grid container columns={7} spacing={{ xs: 0.5, sm: 1 }} sx={{ mb: 1 }}>
-          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, idx) => (
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
             <Grid size={1} key={day} sx={{ textAlign: "center", py: 0.5 }}>
               <Typography
                 variant="caption"
                 sx={{
-                  fontWeight: 800,
-                  color: idx === 0 || idx === 6 ? "primary.light" : "text.secondary",
+                  fontWeight: 600,
+                  color: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.textMuted : tokens.light.textMuted,
                   textTransform: "uppercase",
                   fontSize: { xs: "0.625rem", sm: "0.6875rem" },
+                  letterSpacing: "0.03em",
                 }}
               >
                 {day}
@@ -602,7 +756,7 @@ export const SmartCalendar: React.FC = () => {
           {/* Empty spacer cells */}
           {Array.from({ length: firstDayIndex }).map((_, idx) => (
             <Grid size={1} key={`empty-${idx}`}>
-              <Box sx={{ minHeight: { xs: 76, sm: 98 }, opacity: 0.2 }} />
+              <Box sx={{ minHeight: { xs: 74, sm: 94 }, opacity: 0.15 }} />
             </Grid>
           ))}
 
@@ -632,89 +786,161 @@ export const SmartCalendar: React.FC = () => {
                       }
                     }}
                     sx={{
-                      minHeight: { xs: 76, sm: 98 },
-                      p: { xs: 0.5, sm: 1 },
-                      borderRadius: 1.5,
+                      minHeight: { xs: 74, sm: 94 },
+                      p: { xs: 0.75, sm: 1 },
+                      borderRadius: 1,
                       cursor: isFuture ? "not-allowed" : "pointer",
-                      opacity: isFuture ? 0.45 : 1,
+                      opacity: isFuture ? 0.4 : 1,
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
                       position: "relative",
-                      bgcolor: isCurrentToday
-                        ? (theme) => (theme.palette.mode === "dark" ? "rgba(52, 211, 153, 0.12)" : "rgba(16, 185, 129, 0.08)")
-                        : actualMetrics.isLogged
-                        ? (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "#ffffff")
-                        : "background.paper",
-                      borderColor: isCurrentToday
-                        ? "#34d399"
-                        : actualMetrics.isLogged
-                        ? (theme) => (theme.palette.mode === "dark" ? "rgba(52, 211, 153, 0.3)" : "rgba(16, 185, 129, 0.25)")
-                        : "divider",
+                      bgcolor: (theme) => {
+                        const isDark = theme.palette.mode === "dark";
+                        if (isCurrentToday) {
+                          return isDark ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle;
+                        }
+                        if (actualMetrics.isLogged) {
+                          return isDark ? tokens.dark.surface : tokens.light.surface;
+                        }
+                        return "transparent";
+                      },
+                      borderColor: (theme) => {
+                        const isDark = theme.palette.mode === "dark";
+                        if (isCurrentToday) {
+                          return isDark ? tokens.dark.primary : tokens.light.primary;
+                        }
+                        if (actualMetrics.isLogged) {
+                          return isDark ? tokens.dark.borderStrong : tokens.light.borderStrong;
+                        }
+                        return isDark ? tokens.dark.borderSubtle : tokens.light.borderSubtle;
+                      },
+                      transition: "background-color 0.15s ease, border-color 0.15s ease",
                       "&:hover": {
-                        borderColor: isFuture ? "divider" : "#34d399",
-                        transform: isFuture ? "none" : "translateY(-2px)",
+                        borderColor: (theme) =>
+                          isFuture
+                            ? theme.palette.mode === "dark"
+                              ? tokens.dark.borderSubtle
+                              : tokens.light.borderSubtle
+                            : theme.palette.mode === "dark"
+                            ? tokens.dark.borderStrong
+                            : tokens.light.borderStrong,
+                        bgcolor: (theme) =>
+                          isFuture
+                            ? "transparent"
+                            : theme.palette.mode === "dark"
+                            ? tokens.dark.hover
+                            : tokens.light.hover,
                       },
                     }}
                   >
                     {/* Header */}
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                        <Typography variant="body2" sx={{ fontWeight: isCurrentToday ? 900 : 700, color: isCurrentToday ? "success.main" : "text.primary" }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: isCurrentToday ? 700 : 500,
+                            fontVariantNumeric: "tabular-nums",
+                            fontSize: "0.8125rem",
+                            color: (theme) =>
+                              isCurrentToday
+                                ? theme.palette.mode === "dark"
+                                  ? tokens.dark.textPrimary
+                                  : tokens.light.textPrimary
+                                : theme.palette.mode === "dark"
+                                ? tokens.dark.textSecondary
+                                : tokens.light.textSecondary,
+                          }}
+                        >
                           {dayNum}
                         </Typography>
                         {isCurrentToday && (
-                          <>
-                            <Chip
-                              label="TODAY"
-                              size="small"
-                              sx={{
-                                height: 16,
-                                fontSize: "0.5rem",
-                                fontWeight: 900,
-                                bgcolor: "success.main",
-                                color: "#fff",
-                                display: { xs: "none", sm: "inline-flex" },
-                              }}
-                            />
-                            <Box
-                              sx={{
-                                display: { xs: "block", sm: "none" },
-                                width: 5,
-                                height: 5,
-                                borderRadius: "50%",
-                                bgcolor: "success.main",
-                                boxShadow: "0 0 6px rgba(52, 211, 153, 0.8)",
-                              }}
-                            />
-                          </>
+                          <Chip
+                            label="TODAY"
+                            size="small"
+                            sx={{
+                              height: 15,
+                              fontSize: "0.5625rem",
+                              fontWeight: 700,
+                              px: 0.25,
+                              bgcolor: (theme) =>
+                                theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary,
+                              color: (theme) =>
+                                theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg,
+                              display: { xs: "none", sm: "inline-flex" },
+                            }}
+                          />
                         )}
                       </Box>
                       {actualMetrics.hasActiveLiveCircuits && (
                         <Tooltip title="Stopwatch Running Live">
-                          <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#34d399", animation: "pulse 1.5s infinite" }} />
+                          <Box
+                            sx={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: "50%",
+                              bgcolor: (theme) =>
+                                theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live,
+                              boxShadow: (theme) =>
+                                theme.palette.mode === "dark"
+                                  ? `0 0 6px ${tokens.dark.live}`
+                                  : `0 0 4px ${tokens.light.live}`,
+                            }}
+                          />
                         </Tooltip>
                       )}
                     </Box>
 
                     {/* Content */}
-                    <Box sx={{ textAlign: "right", mt: 1 }}>
+                    <Box sx={{ textAlign: "right", mt: 0.5 }}>
                       {isFuture ? (
-                        <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.625rem" }}>
-                          Future Day
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: "text.secondary",
+                            fontSize: "0.625rem",
+                            opacity: 0.7,
+                          }}
+                        >
+                          Future
                         </Typography>
                       ) : actualMetrics.isLogged ? (
                         <>
-                          <Typography variant="body2" sx={{ fontWeight: 900, fontFamily: "monospace", color: "#34d399" }}>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 600,
+                              fontVariantNumeric: "tabular-nums",
+                              fontSize: "0.75rem",
+                              color: (theme) =>
+                                theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live,
+                            }}
+                          >
                             ₱{actualMetrics.cost.toFixed(2)}
                           </Typography>
-                          <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.625rem" }}>
-                            {actualMetrics.kwh.toFixed(1)} kWh • {actualMetrics.applianceCount} dev
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "text.secondary",
+                              fontSize: "0.625rem",
+                              fontVariantNumeric: "tabular-nums",
+                              display: "block",
+                            }}
+                          >
+                            {actualMetrics.kwh.toFixed(1)} kWh
                           </Typography>
                         </>
                       ) : (
-                        <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.625rem" }}>
-                          No sessions
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: "text.secondary",
+                            fontSize: "0.625rem",
+                            opacity: 0.6,
+                          }}
+                        >
+                          No logs
                         </Typography>
                       )}
                     </Box>
@@ -738,76 +964,126 @@ export const SmartCalendar: React.FC = () => {
                   variant="outlined"
                   onClick={() => setSelectedDateForSimModal(dayDate)}
                   sx={{
-                    minHeight: { xs: 76, sm: 98 },
-                    p: { xs: 0.5, sm: 1 },
-                    borderRadius: 1.5,
+                    minHeight: { xs: 74, sm: 94 },
+                    p: { xs: 0.75, sm: 1 },
+                    borderRadius: 1,
                     cursor: "pointer",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
                     position: "relative",
-                    bgcolor: isCurrentToday
-                      ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.15)" : "rgba(13, 148, 136, 0.08)")
-                      : simMetrics.isCustomSimulated
-                      ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.06)" : "rgba(13, 148, 136, 0.05)")
-                      : "background.paper",
-                    borderColor: isCurrentToday
-                      ? "primary.main"
-                      : simMetrics.isCustomSimulated
-                      ? "primary.main"
-                      : "divider",
+                    bgcolor: (theme) => {
+                      const isDark = theme.palette.mode === "dark";
+                      if (isCurrentToday) {
+                        return isDark ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle;
+                      }
+                      if (simMetrics.isCustomSimulated) {
+                        return isDark ? tokens.dark.surface : tokens.light.surface;
+                      }
+                      return "transparent";
+                    },
+                    borderColor: (theme) => {
+                      const isDark = theme.palette.mode === "dark";
+                      if (isCurrentToday) {
+                        return isDark ? tokens.dark.primary : tokens.light.primary;
+                      }
+                      if (simMetrics.isCustomSimulated) {
+                        return isDark ? tokens.dark.borderStrong : tokens.light.borderStrong;
+                      }
+                      return isDark ? tokens.dark.borderSubtle : tokens.light.borderSubtle;
+                    },
+                    transition: "background-color 0.15s ease, border-color 0.15s ease",
                     "&:hover": {
-                      borderColor: "primary.light",
-                      transform: "translateY(-2px)",
+                      borderColor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover,
                     },
                   }}
                 >
                   {/* Header */}
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                      <Typography variant="body2" sx={{ fontWeight: isCurrentToday ? 900 : 700, color: isCurrentToday ? "primary.main" : "text.primary" }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: isCurrentToday ? 700 : 500,
+                          fontVariantNumeric: "tabular-nums",
+                          fontSize: "0.8125rem",
+                          color: (theme) =>
+                            isCurrentToday
+                              ? theme.palette.mode === "dark"
+                                ? tokens.dark.textPrimary
+                                : tokens.light.textPrimary
+                              : theme.palette.mode === "dark"
+                              ? tokens.dark.textSecondary
+                              : tokens.light.textSecondary,
+                        }}
+                      >
                         {dayNum}
                       </Typography>
                       {isCurrentToday && (
-                        <>
-                          <Chip
-                            label="TODAY"
-                            size="small"
-                            sx={{
-                              height: 16,
-                              fontSize: "0.5rem",
-                              fontWeight: 900,
-                              bgcolor: "primary.main",
-                              color: "#fff",
-                              display: { xs: "none", sm: "inline-flex" },
-                            }}
-                          />
-                          <Box
-                            sx={{
-                              display: { xs: "block", sm: "none" },
-                              width: 5,
-                              height: 5,
-                              borderRadius: "50%",
-                              bgcolor: "primary.main",
-                              boxShadow: "0 0 6px rgba(0, 229, 201, 0.8)",
-                            }}
-                          />
-                        </>
+                        <Chip
+                          label="TODAY"
+                          size="small"
+                          sx={{
+                            height: 15,
+                            fontSize: "0.5625rem",
+                            fontWeight: 700,
+                            px: 0.25,
+                            bgcolor: (theme) =>
+                              theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary,
+                            color: (theme) =>
+                              theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg,
+                            display: { xs: "none", sm: "inline-flex" },
+                          }}
+                        />
                       )}
                     </Box>
                     {simMetrics.isCustomSimulated && (
                       <Tooltip title="Custom Simulation Plan Active">
-                        <Box sx={{ width: 7, height: 7, borderRadius: "50%", bgcolor: "#00e5c9" }} />
+                        <Box
+                          sx={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: "50%",
+                            bgcolor: (theme) =>
+                              theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live,
+                          }}
+                        />
                       </Tooltip>
                     )}
                   </Box>
 
                   {/* Content */}
-                  <Box sx={{ textAlign: "right", mt: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.main" }}>
+                  <Box sx={{ textAlign: "right", mt: 0.5 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 600,
+                        fontVariantNumeric: "tabular-nums",
+                        fontSize: "0.75rem",
+                        color: (theme) =>
+                          simMetrics.isCustomSimulated
+                            ? theme.palette.mode === "dark"
+                              ? tokens.dark.live
+                              : tokens.light.live
+                            : theme.palette.mode === "dark"
+                            ? tokens.dark.textPrimary
+                            : tokens.light.textPrimary,
+                      }}
+                    >
                       ₱{simMetrics.cost.toFixed(2)}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.625rem" }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "text.secondary",
+                        fontSize: "0.625rem",
+                        fontVariantNumeric: "tabular-nums",
+                        display: "block",
+                      }}
+                    >
                       {simMetrics.kwh.toFixed(1)} kWh
                     </Typography>
                   </Box>
@@ -816,7 +1092,7 @@ export const SmartCalendar: React.FC = () => {
             );
           })}
         </Grid>
-      </Card>
+      </SectionCard>
 
       {/* MODAL 1: Actual Tab Day Inspector with 24H Timeline & Stopwatch Switches */}
       {selectedDateForActualModal && (
