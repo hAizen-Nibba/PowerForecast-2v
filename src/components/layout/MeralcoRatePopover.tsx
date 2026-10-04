@@ -141,6 +141,7 @@ export const MeralcoRatePopover: React.FC = () => {
             fontWeight: 800,
             fontFamily: "monospace",
             cursor: "pointer",
+            borderRadius: 0,
             bgcolor: (theme) =>
               theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(13, 148, 136, 0.08)",
             color: (theme) => (theme.palette.mode === "dark" ? "#f1f5f9" : "#0f766e"),
@@ -192,7 +193,7 @@ export const MeralcoRatePopover: React.FC = () => {
               mt: 1.25,
               width: { xs: "calc(100vw - 32px)", sm: 460 },
               maxWidth: 480,
-              borderRadius: 1.5,
+              borderRadius: 0,
               bgcolor: (theme) =>
                 theme.palette.mode === "dark" ? "rgba(20, 23, 28, 0.98)" : "#ffffff",
               backgroundImage: "none",
@@ -217,7 +218,7 @@ export const MeralcoRatePopover: React.FC = () => {
               sx={{
                 width: 32,
                 height: 32,
-                borderRadius: 1.25,
+                borderRadius: 0,
                 bgcolor: (theme) =>
                   theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.15)" : "rgba(13, 148, 136, 0.1)",
                 display: "flex",
@@ -247,6 +248,7 @@ export const MeralcoRatePopover: React.FC = () => {
                 height: 20,
                 fontSize: "0.625rem",
                 fontWeight: 800,
+                borderRadius: 0,
                 bgcolor: "rgba(16, 185, 129, 0.12)",
                 color: "#10b981",
                 border: "1px solid rgba(16, 185, 129, 0.25)",
@@ -259,7 +261,7 @@ export const MeralcoRatePopover: React.FC = () => {
                 disabled={isRefreshing}
                 sx={{
                   p: 0.5,
-                  borderRadius: 1,
+                  borderRadius: 0,
                   bgcolor: (theme) =>
                     theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "#f1f5f9",
                   "&:hover": { color: "primary.main" },
@@ -284,7 +286,7 @@ export const MeralcoRatePopover: React.FC = () => {
           component={Paper}
           variant="outlined"
           sx={{
-            borderRadius: 1.25,
+            borderRadius: 0,
             bgcolor: (theme) =>
               theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.25)" : "rgba(248, 250, 252, 0.8)",
             border: "1px solid",
