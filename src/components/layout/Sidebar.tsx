@@ -240,7 +240,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             sx={{
               width: 30,
               height: 30,
-              borderRadius: 0,
+              borderRadius: 1.5,
               objectFit: "contain",
             }}
           />
@@ -302,7 +302,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         selected={isActive}
                         onClick={onClose}
                         sx={{
-                          borderRadius: 0,
+                          borderRadius: 1.5,
                           py: 0.85,
                           px: 1.25,
                           "&.Mui-selected": {
@@ -356,7 +356,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => setIsLiveDrawerOpen(true)}
             sx={{
               p: 1.5,
-              borderRadius: 0,
+              borderRadius: 1.5,
               bgcolor: (theme) =>
                 theme.palette.mode === "dark" ? "#121215" : "#fcfcfc",
               border: "1px solid",
@@ -472,7 +472,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             px: 1.25,
             py: 0.75,
             mb: 1.25,
-            borderRadius: 0,
+            borderRadius: 1,
             cursor: "pointer",
             bgcolor: (theme) =>
               theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
@@ -505,7 +505,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               height: 18,
               fontSize: "0.625rem",
               fontWeight: 600,
-              borderRadius: 0,
               textTransform: "uppercase",
               bgcolor: (theme) =>
                 theme.palette.mode === "dark" ? tokens.zinc[800] : tokens.zinc[200],
@@ -515,7 +514,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 0.5 }}>
-          <Box data-tour="header-db-status" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
             <ShieldIcon sx={{ fontSize: 13, color: "text.disabled" }} />
             <Typography variant="caption" sx={{ fontSize: "0.6875rem", color: "text.secondary" }}>
               Cloud Sync
@@ -582,7 +581,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             sx={{
               width: 30,
               height: 30,
-              borderRadius: 0,
+              borderRadius: 1.5,
               objectFit: "contain",
             }}
           />
@@ -618,7 +617,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           aria-label="Close navigation menu"
           sx={{
             p: 0.75,
-            borderRadius: 0,
+            borderRadius: 1.5,
             border: "1px solid",
             borderColor: "divider",
             bgcolor: "transparent",
@@ -636,7 +635,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         elevation={0}
         sx={{
           p: 1.75,
-          borderRadius: 0,
+          borderRadius: 1.5,
           bgcolor: (theme) =>
             theme.palette.mode === "dark" ? "#121215" : "#fcfcfc",
           border: "1px solid",
@@ -649,7 +648,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             sx={{
               width: 40,
               height: 40,
-              borderRadius: 0,
               bgcolor: "primary.main",
               color: "primary.contrastText",
               fontWeight: 700,
@@ -696,7 +694,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   height: 18,
                   fontSize: "0.625rem",
                   fontWeight: 600,
-                  borderRadius: 0,
                   maxWidth: 160,
                   bgcolor: (theme) =>
                     theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.12)" : "rgba(217, 119, 6, 0.1)",
@@ -717,7 +714,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   height: 18,
                   fontSize: "0.625rem",
                   fontWeight: 600,
-                  borderRadius: 0,
                   bgcolor: (theme) =>
                     theme.palette.mode === "dark" ? "rgba(52, 211, 153, 0.12)" : "rgba(5, 150, 105, 0.1)",
                   color: "success.main",
@@ -740,7 +736,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => { openJoinModal(); if (onClose) onClose(); }}
           sx={{
             mb: 1,
-            borderRadius: 0,
+            borderRadius: 1.5,
             fontWeight: 600,
             fontSize: "0.75rem",
             py: 0.75,
@@ -764,7 +760,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           startIcon={<LogoutIcon sx={{ fontSize: 16 }} />}
           onClick={() => setIsLogoutConfirmOpen(true)}
           sx={{
-            borderRadius: 0,
+            borderRadius: 1.5,
             fontWeight: 600,
             fontSize: "0.75rem",
             py: 0.75,
@@ -803,7 +799,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               to="/settings"
               onClick={onClose}
               sx={{
-                borderRadius: 0,
+                borderRadius: 1.5,
                 py: 0.85,
                 px: 1.5,
                 border: "1px solid",
@@ -837,7 +833,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               to="/forecasting"
               onClick={onClose}
               sx={{
-                borderRadius: 0,
+                borderRadius: 1.5,
                 py: 0.85,
                 px: 1.5,
                 border: "1px solid",
@@ -872,7 +868,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => setIsLiveDrawerOpen(true)}
         sx={{
           p: 1.75,
-          borderRadius: 0,
+          borderRadius: 1.5,
           bgcolor: (theme) =>
             theme.palette.mode === "dark" ? "#121215" : "#fcfcfc",
           border: "1px solid",
@@ -916,7 +912,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               height: 18,
               fontSize: "0.6875rem",
               fontWeight: 600,
-              borderRadius: 0,
               bgcolor: (theme) =>
                 runningCount > 0
                   ? theme.palette.mode === "dark"
@@ -978,7 +973,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         elevation={0}
         sx={{
           p: 1.75,
-          borderRadius: 0,
+          borderRadius: 1.5,
           bgcolor: (theme) =>
             theme.palette.mode === "dark" ? "#121215" : "#fcfcfc",
           border: "1px solid",
@@ -996,7 +991,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             size="small"
             onClick={handleRefreshTariff}
             disabled={isTariffRefreshing}
-            sx={{ p: 0.5, borderRadius: 0 }}
+            sx={{ p: 0.5, borderRadius: 1 }}
             aria-label="Refresh tariff rate"
           >
             <RefreshIcon
@@ -1043,7 +1038,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         elevation={0}
         sx={{
           p: 1.75,
-          borderRadius: 0,
+          borderRadius: 1.5,
           bgcolor: (theme) =>
             theme.palette.mode === "dark" ? "#121215" : "#fcfcfc",
           border: "1px solid",
@@ -1051,7 +1046,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+          <Box data-tour="header-db-status" sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
             <Box
               sx={{
                 width: 7,
@@ -1072,7 +1067,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               fontVariantNumeric: "tabular-nums",
               fontWeight: 600,
               fontSize: "0.6875rem",
-              borderRadius: 0,
               height: 20,
               bgcolor: "action.hover",
               color: "text.secondary",
@@ -1095,7 +1089,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             px: 1.25,
             py: 0.75,
             my: 1,
-            borderRadius: 0,
+            borderRadius: 1,
             cursor: "pointer",
             bgcolor: (theme) =>
               theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
@@ -1128,7 +1122,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               height: 18,
               fontSize: "0.625rem",
               fontWeight: 600,
-              borderRadius: 0,
               textTransform: "uppercase",
               bgcolor: (theme) =>
                 theme.palette.mode === "dark" ? tokens.zinc[800] : tokens.zinc[200],
@@ -1150,7 +1143,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             fontSize: "0.75rem",
             fontWeight: 600,
             textTransform: "none",
-            borderRadius: 0,
+            borderRadius: 1.5,
             color: "text.primary",
             borderColor: "divider",
             "&:hover": {
@@ -1180,7 +1173,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             width: { xs: "86vw", sm: 340 },
             maxWidth: 360,
             boxSizing: "border-box",
-            borderRadius: 0,
+            borderRadius: "12px 0 0 12px",
             borderLeft: "1px solid",
             borderColor: "divider",
             bgcolor: (theme) =>
@@ -1216,7 +1209,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         slotProps={{
           paper: {
             sx: {
-              borderRadius: 0,
+              borderRadius: 2,
               border: "1px solid",
               borderColor: "divider",
               bgcolor: (theme) =>
@@ -1237,7 +1230,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setIsLogoutConfirmOpen(false)} sx={{ fontWeight: 600, borderRadius: 0 }}>
+          <Button onClick={() => setIsLogoutConfirmOpen(false)} sx={{ fontWeight: 600 }}>
             {t("header.cancel", "Cancel")}
           </Button>
           <Button
@@ -1248,7 +1241,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClose?.();
               logout();
             }}
-            sx={{ fontWeight: 600, borderRadius: 0, px: 2 }}
+            sx={{ fontWeight: 600, borderRadius: 1.5, px: 2 }}
           >
             {t("header.signOut", "Sign Out")}
           </Button>
@@ -1271,7 +1264,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         slotProps={{
           paper: {
             sx: {
-              borderRadius: 0,
+              borderRadius: 2,
               border: "1px solid",
               borderColor: "divider",
               bgcolor: (theme) =>
@@ -1287,7 +1280,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               sx={{
                 width: 32,
                 height: 32,
-                borderRadius: 0,
+                borderRadius: 1,
                 bgcolor: (theme) =>
                   theme.palette.mode === "dark" ? "rgba(52, 211, 153, 0.12)" : "rgba(5, 150, 105, 0.1)",
                 color: "success.main",
@@ -1307,7 +1300,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </Typography>
             </Box>
           </Box>
-          <IconButton size="small" onClick={() => setIsLiveDrawerOpen(false)} sx={{ borderRadius: 0 }}>
+          <IconButton size="small" onClick={() => setIsLiveDrawerOpen(false)}>
             <CloseIcon fontSize="small" />
           </IconButton>
         </DialogTitle>
@@ -1319,7 +1312,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             sx={{
               p: 2,
               mb: 2.5,
-              borderRadius: 0,
+              borderRadius: 1.5,
               bgcolor: (theme) =>
                 theme.palette.mode === "dark" ? "#121215" : "#f4f4f5",
               border: "1px solid",
@@ -1368,7 +1361,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   elevation={0}
                   sx={{
                     p: 1.75,
-                    borderRadius: 0,
+                    borderRadius: 1.5,
                     border: "1px solid",
                     borderColor: "divider",
                     bgcolor: (theme) =>
@@ -1395,7 +1388,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <Chip
                         label={`${app.watts * (app.quantity || 1)}W`}
                         size="small"
-                        sx={{ height: 20, fontSize: "0.6875rem", fontWeight: 600, borderRadius: 0, fontVariantNumeric: "tabular-nums" }}
+                        sx={{ height: 20, fontSize: "0.6875rem", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}
                       />
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
@@ -1416,7 +1409,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     sx={{
                       fontSize: "0.75rem",
                       fontWeight: 600,
-                      borderRadius: 0,
+                      borderRadius: 1.5,
                       textTransform: "none",
                       px: 1.5,
                     }}
@@ -1438,7 +1431,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               size="small"
               variant="outlined"
               endIcon={<ArrowForwardIcon fontSize="small" />}
-              sx={{ textTransform: "none", fontWeight: 700, borderRadius: 0 }}
+              sx={{ textTransform: "none", fontWeight: 700 }}
             >
               Dashboard
             </Button>
@@ -1449,7 +1442,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               size="small"
               variant="outlined"
               endIcon={<ArrowForwardIcon fontSize="small" />}
-              sx={{ textTransform: "none", fontWeight: 700, borderRadius: 0 }}
+              sx={{ textTransform: "none", fontWeight: 700 }}
             >
               Calendar
             </Button>
@@ -1462,14 +1455,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 color="error"
                 size="small"
                 onClick={handleStopAllCircuits}
-                sx={{ textTransform: "none", fontWeight: 800, borderRadius: 0 }}
+                sx={{ textTransform: "none", fontWeight: 800 }}
               >
                 Stop All ({runningAppliances.length})
               </Button>
             )}
             <Button
               onClick={() => setIsLiveDrawerOpen(false)}
-              sx={{ textTransform: "none", fontWeight: 700, borderRadius: 0 }}
+              sx={{ textTransform: "none", fontWeight: 700 }}
             >
               Close
             </Button>

@@ -3,6 +3,26 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.4ev",
+    version: "3.8.4ev",
+    git_commit_tag: "3.8.4ev",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.4ev - AI Vision Scanner Dropzone Optimization: Removed redundant mobile camera button, retained prominent Upload from Gallery button, implemented interactive drag-and-drop file upload with visual feedback states, and introduced clean focus behavior that hides the upload dropzone when a photo is staged.",
+  },
+  {
+    id: "3.8.4dv",
+    version: "3.8.4dv",
+    git_commit_tag: "3.8.4dv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.4dv - Smart Calendar Today Highlight Enhancement: Preserved 1px border thickness from simulation plan while styling the Today date cell with live emerald green background tint and border accents across Actual Tracker and Simulation Plan views.",
+  },
+  {
     id: "3.8.4cv",
     version: "3.8.4cv",
     git_commit_tag: "3.8.4cv",
@@ -10,7 +30,7 @@ export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
-      "3.8.4cv - AI Vision Scanner Dropzone Optimization: Removed redundant mobile camera button, retained prominent Upload from Gallery button, implemented interactive drag-and-drop file upload with visual feedback states, and introduced clean focus behavior that hides the upload dropzone when a photo is staged.",
+      "3.8.4cv - Container Border Alignment: Reverted internal component border radius while maintaining header and sidebar container borders.",
   },
   {
     id: "3.8.4bv",
