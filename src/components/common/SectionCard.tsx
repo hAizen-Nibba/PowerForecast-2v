@@ -2,12 +2,14 @@ import React from "react";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import Tooltip from "@mui/material/Tooltip";
 import { tokens } from "../../theme/tokens";
 import type { SxProps, Theme } from "@mui/material/styles";
 
 export interface SectionCardProps {
   title?: React.ReactNode;
   subtitle?: React.ReactNode;
+  infoTooltip?: string;
   headerActions?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
@@ -20,6 +22,7 @@ export interface SectionCardProps {
 export const SectionCard: React.FC<SectionCardProps> = ({
   title,
   subtitle,
+  infoTooltip,
   headerActions,
   children,
   footer,
@@ -66,23 +69,63 @@ export const SectionCard: React.FC<SectionCardProps> = ({
           }}
         >
           <Box sx={{ minWidth: 0 }}>
-            {typeof title === "string" ? (
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  fontWeight: 600,
-                  fontSize: "0.875rem",
-                  letterSpacing: "-0.01em",
-                  color: (theme) =>
-                    theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
-                  lineHeight: 1.3,
-                }}
-              >
-                {title}
-              </Typography>
-            ) : (
-              title
-            )}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              {typeof title === "string" ? (
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: "0.875rem",
+                    letterSpacing: "-0.01em",
+                    color: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {title}
+                </Typography>
+              ) : (
+                title
+              )}
+              {infoTooltip && (
+                <Tooltip title={infoTooltip} arrow placement="top">
+                  <Box
+                    component="span"
+                    sx={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 16,
+                      height: 16,
+                      borderRadius: "50%",
+                      fontSize: "0.625rem",
+                      fontWeight: 700,
+                      fontFamily: "monospace",
+                      cursor: "help",
+                      flexShrink: 0,
+                      color: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                      border: "1px solid",
+                      borderColor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                      transition: "all 0.15s ease",
+                      "&:hover": {
+                        color: (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                        borderColor: (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover,
+                      },
+                    }}
+                  >
+                    ?
+                  </Box>
+                </Tooltip>
+              )}
+            </Box>
             {subtitle && (
               <Typography
                 variant="caption"

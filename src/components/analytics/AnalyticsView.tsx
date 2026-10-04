@@ -138,7 +138,14 @@ export const AnalyticsView: React.FC = () => {
     return list.filter((a) => a.is_active !== false);
   }, [appliances, spaces, selectedSpaceId]);
 
-  // Aggregated Actual Measured Data for target appliances
+  // Active Billing Cycle Timeline Key
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonthIdx = now.getMonth();
+  const currentMonthStr = String(currentMonthIdx + 1).padStart(2, "0");
+  const activeMonthKey = `${currentYear}-${currentMonthStr}`;
+
+  // Aggregated Actual Measured Data for target appliances (Filtered to active billing month)
   const actualAggregates = useMemo(() => {
     const targetIds = new Set(targetAppliances.map((a) => a.id));
     let totalKwh = 0;
@@ -147,7 +154,8 @@ export const AnalyticsView: React.FC = () => {
     const appMap: Record<string, number> = {};
 
     dailyUsageRecords.forEach((r) => {
-      if (targetIds.has(r.appliance_id)) {
+      // Filter by target space appliances and active billing cycle month
+      if (targetIds.has(r.appliance_id) && (!r.usage_date || r.usage_date.startsWith(activeMonthKey))) {
         const kwh = Number(r.kwh_consumed) || 0;
         const cost = Number(r.estimated_cost) || 0;
         totalKwh += kwh;
@@ -166,9 +174,9 @@ export const AnalyticsView: React.FC = () => {
       appMap,
       hasRecords: totalKwh > 0,
     };
-  }, [dailyUsageRecords, targetAppliances]);
+  }, [dailyUsageRecords, targetAppliances, activeMonthKey]);
 
-  // Aggregated Simulated Plan Data for target appliances
+  // Aggregated Simulated Plan Data for target appliances (Filtered to active billing month)
   const simulatedAggregates = useMemo(() => {
     const targetIds = new Set(targetAppliances.map((a) => a.id));
     let totalKwh = 0;
@@ -177,7 +185,7 @@ export const AnalyticsView: React.FC = () => {
     const appMap: Record<string, number> = {};
 
     simulatedUsageRecords.forEach((r) => {
-      if (targetIds.has(r.appliance_id)) {
+      if (targetIds.has(r.appliance_id) && (!r.usage_date || r.usage_date.startsWith(activeMonthKey))) {
         const kwh = Number(r.kwh_consumed) || 0;
         const cost = Number(r.estimated_cost) || 0;
         totalKwh += kwh;
@@ -196,7 +204,7 @@ export const AnalyticsView: React.FC = () => {
       appMap,
       hasRecords: totalKwh > 0,
     };
-  }, [simulatedUsageRecords, targetAppliances]);
+  }, [simulatedUsageRecords, targetAppliances, activeMonthKey]);
 
   const activeSpace = spaces.find((s) => s.id === selectedSpaceId);
   const isCommercialSelected = selectedSpaceId !== "all" && activeSpace?.tariff_type === "commercial";
@@ -258,7 +266,7 @@ export const AnalyticsView: React.FC = () => {
     };
   }, [appliances, spaces]);
 
-  // Target monthly kWh & Bill
+  // Target monthly kWh baseline
   const totalMonthlyKwh = useMemo(() => {
     if (selectedSpaceId === "all") {
       return spaceAnalytics.consolidatedTotalKwh;
@@ -266,42 +274,50 @@ export const AnalyticsView: React.FC = () => {
     return targetAppliances.reduce((acc, curr) => acc + getApplianceMonthlyKwh(curr), 0);
   }, [selectedSpaceId, spaceAnalytics, targetAppliances]);
 
-  const bill = useMemo(() => {
-    if (selectedSpaceId === "all") {
-      // Calculate consolidated unbundled bill
-      return calculateMeralcoBill(totalMonthlyKwh, undefined, 0, false, "residential");
+  // Active energy volume based on verified actuals / simulated mode / routine baseline
+  const activeEnergyVolume = useMemo(() => {
+    if (dataSourceMode === "actual" && actualAggregates.hasRecords) {
+      return actualAggregates.totalKwh;
     }
-    return calculateMeralcoBill(totalMonthlyKwh, undefined, 0, false, tariffType);
-  }, [selectedSpaceId, totalMonthlyKwh, tariffType]);
+    if (dataSourceMode === "simulated" && simulatedAggregates.hasRecords) {
+      return simulatedAggregates.totalKwh;
+    }
+    return totalMonthlyKwh;
+  }, [dataSourceMode, actualAggregates, simulatedAggregates, totalMonthlyKwh]);
 
-  const totalCost = selectedSpaceId === "all" ? spaceAnalytics.consolidatedTotalBill : bill.totalBill;
-  const effectiveRate = totalMonthlyKwh > 0 ? totalCost / totalMonthlyKwh : bill.effectiveRatePerKwh || 14.8261;
+  const bill = useMemo(() => {
+    const tariff = selectedSpaceId === "all" ? "residential" : tariffType;
+    return calculateMeralcoBill(activeEnergyVolume, undefined, 0, false, tariff);
+  }, [selectedSpaceId, activeEnergyVolume, tariffType]);
+
+  const totalCost = bill.totalBill;
+  const effectiveRate = activeEnergyVolume > 0 ? totalCost / activeEnergyVolume : bill.effectiveRatePerKwh || 14.8261;
 
   // Running appliances count
   const runningAppliances = targetAppliances.filter((a) => a.is_currently_on);
 
-  // Distribution Tier detection
+  // Distribution Tier detection based on active volume
   const distributionTierInfo = useMemo(() => {
     if (tariffType === "commercial") {
       return { tier: "Commercial GP", label: "Flat ₱1.652/kWh", color: "info.main" };
     }
-    if (totalMonthlyKwh <= 0) {
+    if (activeEnergyVolume <= 0) {
       return { tier: "No Active Load", label: "0 kWh configured", color: "text.secondary" };
     }
-    if (totalMonthlyKwh <= 100) {
+    if (activeEnergyVolume <= 100) {
       return { tier: "Lifeline Tier", label: "≤100 kWh (Subsidized)", color: "success.main" };
     }
-    if (totalMonthlyKwh <= 200) {
+    if (activeEnergyVolume <= 200) {
       return { tier: "Tier 1 (0-200)", label: "Base ₱0.9803/kWh", color: "primary.main" };
     }
-    if (totalMonthlyKwh <= 300) {
+    if (activeEnergyVolume <= 300) {
       return { tier: "Tier 2 (201-300)", label: "Dist. ₱1.2908/kWh", color: "info.main" };
     }
-    if (totalMonthlyKwh <= 400) {
+    if (activeEnergyVolume <= 400) {
       return { tier: "Tier 3 (301-400)", label: "Dist. ₱1.5837/kWh", color: "warning.main" };
     }
     return { tier: "Tier 4 (401+)", label: "Peak Dist. ₱2.0941/kWh", color: "error.main" };
-  }, [totalMonthlyKwh, tariffType]);
+  }, [activeEnergyVolume, tariffType]);
 
   // DOE PELP & Energy Efficiency Ratio
   const efficiencyMetrics = useMemo(() => {
@@ -510,12 +526,12 @@ export const AnalyticsView: React.FC = () => {
       .map(([category, data]) => ({
         name: category,
         kwh: data.kwh,
-        cost: data.kwh * effectiveRate,
+        cost: totalKwh > 0 ? (data.kwh / totalKwh) * totalCost : 0,
         percentage: Math.round((data.kwh / totalKwh) * 100),
         count: data.count,
       }))
       .sort((a, b) => b.kwh - a.kwh);
-  }, [targetAppliances, effectiveRate, dataSourceMode, actualAggregates, simulatedAggregates]);
+  }, [targetAppliances, totalCost, dataSourceMode, actualAggregates, simulatedAggregates]);
 
   // Individual Top Appliances Breakdown (Pareto)
   const topAppliancesBreakdown = useMemo(() => {
@@ -543,13 +559,13 @@ export const AnalyticsView: React.FC = () => {
           quantity: a.quantity || 1,
           hours: a.hours_per_day,
           kwh: kwh,
-          cost: kwh * effectiveRate,
+          cost: effectiveTotalKwh > 0 ? (kwh / effectiveTotalKwh) * totalCost : 0,
           percentage: Math.round((kwh / effectiveTotalKwh) * 100),
           isCurrentlyOn: a.is_currently_on,
         };
       })
       .sort((a, b) => b.kwh - a.kwh);
-  }, [targetAppliances, totalMonthlyKwh, effectiveRate, dataSourceMode, actualAggregates, simulatedAggregates]);
+  }, [targetAppliances, totalMonthlyKwh, totalCost, dataSourceMode, actualAggregates, simulatedAggregates]);
 
   // Unbundled Rate Components breakdown
   const rateComponents = useMemo(() => {
@@ -928,16 +944,10 @@ export const AnalyticsView: React.FC = () => {
       {/* 3. KPI Metrics Cards */}
       <Grid container spacing={{ xs: 2, sm: 2.5 }} data-tour="analytics-kpi-row">
         {/* Monthly Volume */}
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 4, md: 4 }}>
           <MetricCard
             title={dataSourceMode === "actual" ? "Actual Energy Volume (MTD)" : "Monthly Energy Volume"}
-            value={
-              dataSourceMode === "actual" && actualAggregates.hasRecords
-                ? `${actualAggregates.totalKwh} kWh`
-                : dataSourceMode === "simulated" && simulatedAggregates.hasRecords
-                ? `${simulatedAggregates.totalKwh} kWh`
-                : `${totalMonthlyKwh.toFixed(1)} kWh`
-            }
+            value={`${activeEnergyVolume.toFixed(1)} kWh`}
             subtitle={
               dataSourceMode === "actual"
                 ? actualAggregates.hasRecords
@@ -946,6 +956,7 @@ export const AnalyticsView: React.FC = () => {
                 : `${targetAppliances.length} appliances • ${runningAppliances.length} live ON`
             }
             icon={<BoltIcon sx={{ fontSize: 16 }} />}
+            infoTooltip="Cumulative kilowatt-hours (kWh) consumed in the active billing cycle. In Verified Actuals mode, this comes directly from your recorded appliance stopwatch logs and daily telemetry."
             trend={{
               value:
                 dataSourceMode === "actual"
@@ -959,19 +970,14 @@ export const AnalyticsView: React.FC = () => {
           />
         </Grid>
 
-        {/* Forecasted Bill */}
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        {/* Spend / Bill */}
+        <Grid size={{ xs: 12, sm: 4, md: 4 }}>
           <MetricCard
             title={dataSourceMode === "actual" ? "Actual Measured Spend (MTD)" : "Forecasted Monthly Bill"}
-            value={
-              dataSourceMode === "actual" && actualAggregates.hasRecords
-                ? `₱${actualAggregates.totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                : dataSourceMode === "simulated" && simulatedAggregates.hasRecords
-                ? `₱${simulatedAggregates.totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                : `₱${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-            }
+            value={`₱${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             subtitle={`Effective: ₱${effectiveRate.toFixed(2)}/kWh`}
             icon={<TrendingUpIcon sx={{ fontSize: 16 }} />}
+            infoTooltip="Real-time month-to-date electricity bill in Philippine Pesos (₱) calculated using the official ERC unbundled Meralco tariff formula, accounting for active distribution tiers and pass-through charges."
             trend={{
               value:
                 dataSourceMode === "actual"
@@ -986,31 +992,17 @@ export const AnalyticsView: React.FC = () => {
         </Grid>
 
         {/* DOE PELP Efficiency */}
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 4, md: 4 }}>
           <MetricCard
             title="DOE PELP & Inverter Rating"
             value={`${efficiencyMetrics.efficiencyPct}%`}
             subtitle={`${efficiencyMetrics.inverterCount} of ${efficiencyMetrics.totalCount} certified efficient`}
             icon={<LeafIcon sx={{ fontSize: 16 }} />}
+            infoTooltip="Evaluates your appliance inventory against the Department of Energy (DOE) Philippine Energy Labeling Program (PELP). Shows the percentage of your appliances utilizing certified energy-saving inverter technology."
             trend={{
               value: `Grade ${efficiencyMetrics.grade}`,
               direction: efficiencyMetrics.grade.includes("A") ? "up" : "neutral",
               label: "Inverter ratio",
-            }}
-          />
-        </Grid>
-
-        {/* Standby & Vampire Load */}
-        <Grid size={{ xs: 12, sm: 6, md: 3 }} data-tour="analytics-vampire-load">
-          <MetricCard
-            title="Standby Vampire Loss"
-            value={`₱${vampireLoadMetrics.standbyMonthlyCost.toFixed(2)}`}
-            subtitle={`~${vampireLoadMetrics.standbyMonthlyKwh} kWh/mo (${vampireLoadMetrics.standbyWattsTotal}W idle)`}
-            icon={<StandbyIcon sx={{ fontSize: 16 }} />}
-            trend={{
-              value: `${vampireLoadMetrics.vampireDevicesCount} Devices`,
-              direction: "down",
-              label: "Potential cutoff savings",
             }}
           />
         </Grid>
@@ -1024,6 +1016,7 @@ export const AnalyticsView: React.FC = () => {
             dataTour="analytics-category-bars"
             title={breakdownView === "category" ? "Energy Usage by Category" : "Top Consuming Appliances (Pareto)"}
             subtitle="Breakdown of energy consumption and monetary share across categories or top appliances"
+            infoTooltip="Breaks down your total consumption into functional categories or individual top appliances. Shows each item's proportional share of both total kWh and peso cost."
             headerActions={
               <Box
                 sx={{
@@ -1200,6 +1193,7 @@ export const AnalyticsView: React.FC = () => {
           <SectionCard
             title="Unbundled Tariff Split"
             subtitle="ERC regulated breakdown of your projected monthly bill"
+            infoTooltip="Decomposes your electricity cost into regulated ERC components: Generation (power plants & WESM), Transmission (NGCP grid), Distribution (Meralco wires & meters), System Loss, Taxes (VAT & LFT), and Universal Charges."
             sx={{ height: "100%" }}
           >
             <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%" }}>
@@ -1248,6 +1242,7 @@ export const AnalyticsView: React.FC = () => {
         dataTour="analytics-historical-trend"
         title="Multi-Month Consumption Trend & Predictive Forecast"
         subtitle="Active billing cycle telemetry alongside forward-looking baseline predictions based on your registered appliance routines"
+        infoTooltip="Visualizes your historical monthly power usage alongside the active billing cycle and forward-looking baseline projections based on your registered appliance routines."
         headerActions={
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
             <Box
@@ -1445,6 +1440,7 @@ export const AnalyticsView: React.FC = () => {
         dataTour="analytics-insights"
         title="AI Smart Energy Audit & Actionable Insights"
         subtitle="Practical recommendations based on your appliance load profile and Meralco tariff structure"
+        infoTooltip="Provides AI-generated optimization tips tailored to your specific load profile and Meralco rate structure, identifying peak-hour shifts and potential monthly peso savings."
         headerActions={
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
             <TooltipMui title={`Each user receives ${MAX_DAILY_AI_GENERATIONS} AI energy audits per day to preserve API tokens. Quota resets at 12:00 AM.`}>

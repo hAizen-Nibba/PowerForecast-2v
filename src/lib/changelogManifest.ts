@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.9v",
+    version: "3.8.9v",
+    git_commit_tag: "3.8.9v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.9v - Add interactive [?] hover tooltips to all bentos, harmonize mathematical parity across Analytics, remove Standby Vampire Loss card, and implement paced run-rate forecasting trajectory.",
+  },
+  {
     id: "3.8.8v",
     version: "3.8.8v",
     git_commit_tag: "3.8.8v",

@@ -257,12 +257,15 @@ export const ForecastingView: React.FC = () => {
     return map;
   }, [simulatedRecords, activeMonthKey, targetApplianceIds]);
 
-  // 4. Composite End-of-Month Forecast (Actual Logged + Simulation Plan / Remaining Routine Days)
+  // 4. End-of-Month Forecast (Actual Logged + Paced Run-Rate Extrapolation / Simulation Plan)
   const trajectoryForecast = useMemo(() => {
     let forecastedKwh = 0;
     let projectedRemainingKwh = 0;
     let simulatedDaysCount = 0;
     const unloggedDaysCount = Math.max(0, daysInActiveMonth - mtdActuals.loggedDaysCount);
+
+    // If user has recorded actuals, project remaining days using true measured daily burn rate
+    const pacedDailyKwh = mtdActuals.avgDailyLoggedKwh > 0 ? mtdActuals.avgDailyLoggedKwh : routineBaseline.dailyKwh;
 
     if (mtdActuals.hasLoggedRecords) {
       for (let d = 1; d <= daysInActiveMonth; d++) {
@@ -275,7 +278,7 @@ export const ForecastingView: React.FC = () => {
             projectedRemainingKwh += simulatedDateMap.get(dateStr)!;
             simulatedDaysCount++;
           } else {
-            projectedRemainingKwh += routineBaseline.dailyKwh;
+            projectedRemainingKwh += pacedDailyKwh;
           }
         }
       }
@@ -304,6 +307,8 @@ export const ForecastingView: React.FC = () => {
       unloggedDaysCount,
       simulatedDaysCount,
       effectiveBurnRate: Number(effectiveBurnRate.toFixed(3)),
+      pacedDailyKwh: Number(pacedDailyKwh.toFixed(3)),
+      hasActualPace: mtdActuals.hasLoggedRecords,
     };
   }, [mtdActuals, routineBaseline, daysInActiveMonth, tariffType, activeMonthKey, dailyRecords, targetApplianceIds, simulatedDateMap]);
 
@@ -600,6 +605,7 @@ export const ForecastingView: React.FC = () => {
             dataTour="forecasting-hero-kpi"
             title={t("fc.activeCycleTitle", "Active Billing Cycle Run-Rate Telemetry")}
             subtitle="Cycle progression, recorded actuals, and projected trajectory"
+            infoTooltip="Tracks actual energy consumed so far in the active billing month and projects remaining days forward based on your measured daily burn rate."
             headerActions={
               <Chip
                 label={`${mtdActuals.loggedDaysCount} Days In • ${remainingDays} Days Left`}
@@ -680,7 +686,9 @@ export const ForecastingView: React.FC = () => {
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     {remainingDays} {language === "tl" ? "natitirang araw sa cycle" : "days remaining"}
-                    {trajectoryForecast.simulatedDaysCount > 0
+                    {trajectoryForecast.hasActualPace
+                      ? ` • ${trajectoryForecast.pacedDailyKwh} kWh/d pace`
+                      : trajectoryForecast.simulatedDaysCount > 0
                       ? ` (${trajectoryForecast.simulatedDaysCount} ${language === "tl" ? "naka-plano sa simulasyon" : "planned in simulation"})`
                       : ""}
                   </Typography>
@@ -700,18 +708,35 @@ export const ForecastingView: React.FC = () => {
                       theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                   }}
                 >
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: "text.secondary",
-                      fontWeight: 600,
-                      textTransform: "uppercase",
-                      fontSize: "0.7rem",
-                      letterSpacing: "0.03em",
-                    }}
-                  >
-                    {language === "tl" ? "Kabuuang Prediksyon sa Bill" : "Composite Forecasted Bill"}
-                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "text.secondary",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                        fontSize: "0.7rem",
+                        letterSpacing: "0.03em",
+                      }}
+                    >
+                      {language === "tl" ? "Paced Prediksyon sa Bill" : "Paced Forecasted Bill"}
+                    </Typography>
+                    {trajectoryForecast.hasActualPace && (
+                      <Chip
+                        label="Run-Rate Paced"
+                        size="small"
+                        sx={{
+                          height: 16,
+                          fontSize: "0.6rem",
+                          fontWeight: 700,
+                          bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.liveBg : tokens.light.liveBg),
+                          border: "1px solid",
+                          borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.liveBorder : tokens.light.liveBorder),
+                          color: (theme) => (theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live),
+                        }}
+                      />
+                    )}
+                  </Box>
                   <Typography
                     variant="h5"
                     sx={{
@@ -764,6 +789,7 @@ export const ForecastingView: React.FC = () => {
             dataTour="forecasting-whatif-studio"
             title={t("fc.whatIfTitle", 'Interactive "What-If" Appliance Studio')}
             subtitle={t("fc.whatIfSubtitle", "Adjust operating hours on individual appliances to simulate instant month-end bill impacts")}
+            infoTooltip="Allows you to simulate adjusting daily runtime hours for individual appliances. Instantly calculates month-end bill impacts (savings or cost additions) and tests whether adjustments meet your target budget."
             headerActions={
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
                 {Object.keys(whatIfHours).length > 0 && (
@@ -952,6 +978,7 @@ export const ForecastingView: React.FC = () => {
           <SectionCard
             title={t("fc.paretoTitle", "Appliance Monthly Energy Share (Pareto Breakdown)")}
             subtitle={t("fc.paretoSubtitle", "Ranked breakdown of which registered devices contribute the highest share of your monthly power consumption.")}
+            infoTooltip="Ranks your registered appliances from heaviest to lightest energy consumer to highlight which devices are driving your electric bill."
           >
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
               {paretoBreakdown.map(({ app, monthlyKwh, cost, sharePercent }, idx) => (
@@ -1050,7 +1077,10 @@ export const ForecastingView: React.FC = () => {
           </SectionCard>
 
           {/* 9. Advisory Insights Box */}
-          <SectionCard>
+          <SectionCard
+            title="ERC & Meralco Monthly Tariff Advisory"
+            infoTooltip="Regulatory guidance explaining that Meralco's generation charge is a pass-through cost adjusted monthly according to fuel prices (coal, natural gas) and WESM wholesale spot market rates."
+          >
             <Box
               data-tour="forecasting-advisory"
               sx={{

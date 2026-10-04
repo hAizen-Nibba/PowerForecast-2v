@@ -67,6 +67,11 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
   return (
     <SectionCard
       dataTour="forecasting-virtual-bill"
+      infoTooltip={
+        language === "tl"
+          ? "Isang simulated digital twin ng opisyal na buwanang Meralco bill, na nagpapakita ng eksaktong unbundled charges at lifeline subsidy batay sa iyong prediksyon."
+          : "A simulated digital twin of an official monthly Meralco electricity statement, showing exact unbundled charges and Lifeline Subsidy qualification status based on your projected load."
+      }
       title={
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <BillIcon sx={{ color: "text.primary", fontSize: 18 }} />

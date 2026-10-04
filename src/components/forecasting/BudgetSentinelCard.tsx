@@ -108,6 +108,11 @@ export const BudgetSentinelCard: React.FC<BudgetSentinelCardProps> = ({
   return (
     <SectionCard
       dataTour="forecasting-budget-sentinel"
+      infoTooltip={
+        language === "tl"
+          ? "Sinusubaybayan ang iyong pang-araw-araw na bilis ng konsumo laban sa itinakdang badyet upang magbigay ng maagang babala bago lumagpas ang bill."
+          : "Monitors your current daily burn rate against your target budget ceiling. Warns you if and when a budget breach is projected to happen, and calculates your safe daily kWh allowance."
+      }
       title={
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <TargetIcon

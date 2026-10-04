@@ -2,6 +2,7 @@ import React from "react";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import Tooltip from "@mui/material/Tooltip";
 import Chip from "@mui/material/Chip";
 import { TrendingUp, TrendingDown, Remove } from "@mui/icons-material";
 import { tokens } from "../../theme/tokens";
@@ -11,6 +12,7 @@ export interface MetricCardProps {
   value: string | number;
   subtitle?: string;
   icon?: React.ReactNode;
+  infoTooltip?: string;
   trend?: {
     value: string;
     direction?: "up" | "down" | "neutral";
@@ -31,6 +33,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   value,
   subtitle,
   icon,
+  infoTooltip,
   trend,
   highlight,
   liveDot,
@@ -129,6 +132,44 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           >
             {title}
           </Typography>
+          {infoTooltip && (
+            <Tooltip title={infoTooltip} arrow placement="top">
+              <Box
+                component="span"
+                onClick={(e) => e.stopPropagation()}
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 15,
+                  height: 15,
+                  borderRadius: "50%",
+                  fontSize: "0.625rem",
+                  fontWeight: 700,
+                  fontFamily: "monospace",
+                  cursor: "help",
+                  color: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                  border: "1px solid",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                  transition: "all 0.15s ease",
+                  "&:hover": {
+                    color: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                    borderColor: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover,
+                  },
+                }}
+              >
+                ?
+              </Box>
+            </Tooltip>
+          )}
         </Box>
 
         {icon && (
