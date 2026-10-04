@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.7.2cv",
+    version: "3.7.2cv",
+    git_commit_tag: "3.7.2cv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Developer",
+    source: "github",
+    description:
+      "3.7.2cv - Hotfix: Add missing vite-plugin-qrcode devDependency to package.json to resolve deployment build error TS2307",
+  },
+  {
     id: "3.7.2bv",
     version: "3.7.2bv",
     git_commit_tag: "3.7.2bv",
