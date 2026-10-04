@@ -64,6 +64,7 @@ import {
   Vibration as VibrationIcon,
   FlashOn as SurgeIcon,
   AccountBalanceWallet as BudgetIcon,
+  Terminal as TerminalIcon,
 } from "@mui/icons-material";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTour } from "../../hooks/useTour";
@@ -92,8 +93,9 @@ import {
 import { RoomMembersPanel } from "../rooms/RoomMembersPanel";
 import { ChangePasswordCard } from "./ChangePasswordCard";
 import { SystemDevLogsCard } from "./SystemDevLogsCard";
+import { useDevLogsBubble } from "../../hooks/useDevLogsBubble";
 
-const SETTINGS_TABS = ["general", "household", "notifications", "security"] as const;
+const SETTINGS_TABS = ["general", "household", "notifications", "security", "developer"] as const;
 type SettingsTabKey = (typeof SETTINGS_TABS)[number];
 
 const LEVEL_CONFIG: Record<
@@ -139,6 +141,7 @@ export const SettingsView: React.FC = () => {
   const { showSuccess, showError, showInfo } = useToast();
   const { language, setLanguage, t } = useLanguage();
   const { activeRoom, role: roomRole, isOwner } = useRoom();
+  const { isBubbleEnabled, toggleBubble } = useDevLogsBubble();
 
   // Unified Notifications hook
   const {
@@ -573,6 +576,13 @@ export const SettingsView: React.FC = () => {
             label={t("settings.tabSecurity", "Security & Account")}
             id="settings-tab-3"
             aria-controls="settings-tabpanel-3"
+          />
+          <Tab
+            icon={<TerminalIcon sx={{ fontSize: 19 }} />}
+            iconPosition="start"
+            label={t("settings.tabDeveloper", "Developer Options")}
+            id="settings-tab-4"
+            aria-controls="settings-tabpanel-4"
           />
         </Tabs>
       </Paper>
@@ -1783,9 +1793,6 @@ export const SettingsView: React.FC = () => {
             </Grid>
           </Card>
 
-          {/* System Dev Logs & Telemetry Console */}
-          <SystemDevLogsCard />
-
           {/* Danger Zone: Account Deletion */}
           <Card
             sx={{
@@ -1837,6 +1844,125 @@ export const SettingsView: React.FC = () => {
               </Button>
             </Box>
           </Card>
+        </Box>
+      )}
+
+      {/* ──────────────────────────────────────────────────────────
+          TAB 4: DEVELOPER OPTIONS & DIAGNOSTICS
+      ────────────────────────────────────────────────────────── */}
+      {activeTabIndex === 4 && (
+        <Box
+          role="tabpanel"
+          id="settings-tabpanel-4"
+          aria-labelledby="settings-tab-4"
+          sx={{ display: "flex", flexDirection: "column", gap: 3 }}
+        >
+          {/* Developer Preferences & Widget Toggles */}
+          <Card
+            sx={{
+              p: { xs: 2.5, sm: 3 },
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.7)" : "#ffffff",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 0.5 }}>
+              <Box
+                sx={{
+                  p: 0.75,
+                  borderRadius: 1.5,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(13, 148, 136, 0.1)",
+                  color: "primary.main",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <TerminalIcon sx={{ fontSize: 22, color: "#00e5c9" }} />
+              </Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                {t("settings.devOptionsTitle", "Developer Diagnostics & Controls")}
+              </Typography>
+            </Box>
+            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2.5 }}>
+              {t(
+                "settings.devOptionsSubtitle",
+                "Advanced developer tooling, telemetry instruments, and on-screen floating diagnostics."
+              )}
+            </Typography>
+
+            <Box
+              sx={{
+                p: { xs: 2, sm: 2.5 },
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(18, 20, 26, 0.6)" : "rgba(248, 250, 252, 0.8)",
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                alignItems: { xs: "flex-start", sm: "center" },
+                justifyContent: "space-between",
+                gap: 2,
+              }}
+            >
+              <Box sx={{ flex: 1 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 0.5 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                    {t("settings.showDevBubble", "Floating Dev Logs Bubble")}
+                  </Typography>
+                  <Chip
+                    label={
+                      isBubbleEnabled
+                        ? language === "tl"
+                          ? "Nakabukas"
+                          : "Visible"
+                        : language === "tl"
+                        ? "Nakatago"
+                        : "Hidden"
+                    }
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: "0.6875rem",
+                      fontWeight: 700,
+                      bgcolor: isBubbleEnabled ? "rgba(0, 229, 201, 0.15)" : "rgba(148, 163, 184, 0.15)",
+                      color: isBubbleEnabled ? "#00e5c9" : "text.secondary",
+                      border: "1px solid",
+                      borderColor: isBubbleEnabled ? "rgba(0, 229, 201, 0.4)" : "rgba(148, 163, 184, 0.3)",
+                    }}
+                  />
+                </Box>
+                <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                  {t(
+                    "settings.showDevBubbleDesc",
+                    "Show a draggable on-screen floating bubble that displays real-time Gemini AI traces, OCR events, Supabase queries, and client errors across all pages."
+                  )}
+                </Typography>
+              </Box>
+
+              <Switch
+                checked={isBubbleEnabled}
+                onChange={(e) => toggleBubble(e.target.checked)}
+                sx={{
+                  "& .MuiSwitch-switchBase.Mui-checked": {
+                    color: "#00e5c9",
+                  },
+                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                    backgroundColor: "#00e5c9",
+                  },
+                }}
+              />
+            </Box>
+          </Card>
+
+          {/* System Dev Logs & Telemetry Console */}
+          <SystemDevLogsCard />
         </Box>
       )}
 

@@ -19,14 +19,15 @@ import {
   Pause,
   Play,
   GripVertical,
-  AlertTriangle,
-  CheckCircle2,
-  Info,
   Radio,
+  EyeOff,
 } from "lucide-react";
 import { devLog, DevLogEntry, LogLevel, LogSource } from "../../lib/devLogger";
+import { useDevLogsBubble } from "../../hooks/useDevLogsBubble";
 
 export const DevLogsFloatingWidget: React.FC = () => {
+  const { isBubbleEnabled, disableBubble } = useDevLogsBubble();
+
   const [isOpen, setIsOpen] = useState(false);
   const [logs, setLogs] = useState<DevLogEntry[]>([]);
   const [filterLevel, setFilterLevel] = useState<string>("all");
@@ -38,11 +39,11 @@ export const DevLogsFloatingWidget: React.FC = () => {
   const [hasNewPulse, setHasNewPulse] = useState(false);
   const [isExpandedFull, setIsExpandedFull] = useState(false);
 
-  // Floating Bubble Position (Default bottom-right, clearing mobile bottom dock on small screens)
+  // Floating Bubble Position (Default bottom-right, placed cleanly above VersionBadge)
   const isMobileScreen = typeof window !== "undefined" ? window.innerWidth < 1024 : false;
   const [bubblePos, setBubblePos] = useState({
-    x: typeof window !== "undefined" ? Math.max(20, window.innerWidth - 80) : 1000,
-    y: typeof window !== "undefined" ? Math.max(20, window.innerHeight - (isMobileScreen ? 140 : 80)) : 700,
+    x: typeof window !== "undefined" ? Math.max(20, window.innerWidth - 76) : 1000,
+    y: typeof window !== "undefined" ? Math.max(20, window.innerHeight - (isMobileScreen ? 140 : 130)) : 700,
   });
 
   // Popup Window Position (Default anchored next to bubble)
@@ -61,6 +62,9 @@ export const DevLogsFloatingWidget: React.FC = () => {
 
   // Subscribe to devLogger events
   useEffect(() => {
+    // Initial sync
+    setLogs(devLog.getLogs());
+
     const unsubscribe = devLog.subscribe((currentLogs, newEntry) => {
       setLogs(currentLogs);
       if (newEntry) {
@@ -72,7 +76,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  // Auto-scroll to top of list (newest logs are at index 0, or bottom if reversed)
+  // Auto-scroll to top of list
   useEffect(() => {
     if (autoScroll && logListRef.current) {
       logListRef.current.scrollTop = 0;
@@ -85,7 +89,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
       const isMobile = window.innerWidth < 1024;
       setBubblePos((prev) => ({
         x: Math.min(prev.x, window.innerWidth - 70),
-        y: Math.min(prev.y, window.innerHeight - (isMobile ? 135 : 70)),
+        y: Math.min(prev.y, window.innerHeight - (isMobile ? 135 : 120)),
       }));
       setWindowPos((prev) => ({
         x: Math.max(10, Math.min(prev.x, window.innerWidth - 520)),
@@ -95,6 +99,11 @@ export const DevLogsFloatingWidget: React.FC = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Early return if user disabled the bubble via Developer Options switch
+  if (!isBubbleEnabled) {
+    return null;
+  }
 
   // --- Bubble Dragging Handlers ---
   const handleBubblePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -106,20 +115,20 @@ export const DevLogsFloatingWidget: React.FC = () => {
       startPosY: bubblePos.y,
       hasMoved: false,
     };
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const handleBubblePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDraggingBubble.current) return;
-    const dx = e.clientX - bubbleDragStart.current.x;
-    const dy = e.clientY - bubbleDragStart.current.y;
+    const deltaX = e.clientX - bubbleDragStart.current.x;
+    const deltaY = e.clientY - bubbleDragStart.current.y;
 
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+    if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
       bubbleDragStart.current.hasMoved = true;
     }
 
-    const newX = Math.max(10, Math.min(window.innerWidth - 65, bubbleDragStart.current.startPosX + dx));
-    const newY = Math.max(10, Math.min(window.innerHeight - 65, bubbleDragStart.current.startPosY + dy));
+    const newX = Math.max(10, Math.min(window.innerWidth - 65, bubbleDragStart.current.startPosX + deltaX));
+    const newY = Math.max(10, Math.min(window.innerHeight - 65, bubbleDragStart.current.startPosY + deltaY));
 
     setBubblePos({ x: newX, y: newY });
   };
@@ -127,19 +136,19 @@ export const DevLogsFloatingWidget: React.FC = () => {
   const handleBubblePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDraggingBubble.current) return;
     isDraggingBubble.current = false;
-    (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // Ignore if pointer capture release throws
+    }
 
-    // If it was a click (not a drag), toggle popup
+    // If pointer didn't move significantly, treat as click to toggle window
     if (!bubbleDragStart.current.hasMoved) {
       setIsOpen((prev) => !prev);
-      // Auto-position window next to bubble
-      const optimalWindowX = Math.max(20, Math.min(window.innerWidth - 540, bubblePos.x - 480));
-      const optimalWindowY = Math.max(20, Math.min(window.innerHeight - 560, bubblePos.y - 480));
-      setWindowPos({ x: optimalWindowX, y: optimalWindowY });
     }
   };
 
-  // --- Window Header Dragging Handlers ---
+  // --- Window Dragging Handlers ---
   const handleWindowPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     isDraggingWindow.current = true;
     windowDragStart.current = {
@@ -148,26 +157,31 @@ export const DevLogsFloatingWidget: React.FC = () => {
       startPosX: windowPos.x,
       startPosY: windowPos.y,
     };
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const handleWindowPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDraggingWindow.current) return;
-    const dx = e.clientX - windowDragStart.current.x;
-    const dy = e.clientY - windowDragStart.current.y;
+    const deltaX = e.clientX - windowDragStart.current.x;
+    const deltaY = e.clientY - windowDragStart.current.y;
 
-    const newX = Math.max(10, Math.min(window.innerWidth - 300, windowDragStart.current.startPosX + dx));
-    const newY = Math.max(10, Math.min(window.innerHeight - 150, windowDragStart.current.startPosY + dy));
+    const newX = Math.max(10, Math.min(window.innerWidth - 300, windowDragStart.current.startPosX + deltaX));
+    const newY = Math.max(10, Math.min(window.innerHeight - 200, windowDragStart.current.startPosY + deltaY));
 
     setWindowPos({ x: newX, y: newY });
   };
 
   const handleWindowPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingWindow.current) return;
     isDraggingWindow.current = false;
-    (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // Ignore
+    }
   };
 
-  // --- Filter and Search ---
+  // Filter and Search
   const filteredLogs = logs.filter((log) => {
     const matchesLevel = filterLevel === "all" || log.level === filterLevel;
     const matchesSource = filterSource === "all" || log.source === filterSource;
@@ -223,7 +237,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(logs, null, 2));
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `powerforecast-devlogs-${new Date().toISOString().slice(0, 19)}.json`);
+    downloadAnchor.setAttribute("download", `powerforecast-telemetry-${new Date().toISOString()}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -231,35 +245,35 @@ export const DevLogsFloatingWidget: React.FC = () => {
 
   const getLevelBadge = (level: LogLevel) => {
     switch (level) {
-      case "api":
-        return <span className="px-1.5 py-0.2 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-800 font-mono text-[10px]">API</span>;
-      case "success":
-        return <span className="px-1.5 py-0.2 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800 font-mono text-[10px]">SUCCESS</span>;
       case "warn":
-        return <span className="px-1.5 py-0.2 rounded bg-amber-950/80 text-amber-300 border border-amber-800 font-mono text-[10px]">WARN</span>;
+        return <span className="px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono text-[10px]">WARN</span>;
+      case "api":
+        return <span className="px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono text-[10px]">API</span>;
+      case "success":
+        return <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono text-[10px]">OK</span>;
       case "error":
-        return <span className="px-1.5 py-0.2 rounded bg-rose-950/80 text-rose-300 border border-rose-800 font-mono text-[10px]">ERROR</span>;
+        return <span className="px-1.5 py-0.2 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30 font-mono text-[10px]">ERROR</span>;
       case "telemetry":
-        return <span className="px-1.5 py-0.2 rounded bg-teal-950/80 text-teal-300 border border-teal-800 font-mono text-[10px]">TELEM</span>;
+        return <span className="px-1.5 py-0.2 rounded bg-teal-500/15 text-teal-300 border border-teal-500/30 font-mono text-[10px]">TELEM</span>;
       default:
-        return <span className="px-1.5 py-0.2 rounded bg-[#202530] text-slate-300 border border-[#2e3544] font-mono text-[10px]">INFO</span>;
+        return <span className="px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 border border-zinc-700 font-mono text-[10px]">INFO</span>;
     }
   };
 
   const getSourceIcon = (source: LogSource) => {
     switch (source) {
       case "AI Scanner":
-        return <Sparkles className="w-3 h-3 text-amber-300 shrink-0" />;
+        return <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />;
       case "PELP Database":
-        return <Database className="w-3 h-3 text-teal-300 shrink-0" />;
+        return <Database className="w-3.5 h-3.5 text-teal-300 shrink-0" />;
       case "Telemetry":
-        return <Radio className="w-3 h-3 text-emerald-400 shrink-0" />;
+        return <Radio className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
       case "Calculator":
-        return <Zap className="w-3 h-3 text-amber-300 shrink-0" />;
+        return <Zap className="w-3.5 h-3.5 text-amber-300 shrink-0" />;
       case "Calendar":
-        return <Activity className="w-3 h-3 text-cyan-300 shrink-0" />;
+        return <Activity className="w-3.5 h-3.5 text-cyan-300 shrink-0" />;
       default:
-        return <Terminal className="w-3 h-3 text-slate-400 shrink-0" />;
+        return <Terminal className="w-3.5 h-3.5 text-zinc-400 shrink-0" />;
     }
   };
 
@@ -281,18 +295,18 @@ export const DevLogsFloatingWidget: React.FC = () => {
         title="PowerForecast Live Dev Logs (Drag anywhere / Click to open)"
       >
         <div
-          className={`relative w-14 h-14 rounded-full bg-[#181c24] border-2 shadow-2xl flex items-center justify-center transition-transform group-hover:scale-105 group-active:scale-95 ${
+          className={`relative w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#09090b]/92 backdrop-blur-xl border shadow-2xl flex items-center justify-center transition-all duration-200 group-hover:scale-105 group-active:scale-95 ${
             isOpen
-              ? "border-[#00e5c9] ring-4 ring-[#00e5c9]/30 bg-[#202530]"
+              ? "border-[#00e5c9] ring-4 ring-[#00e5c9]/30 bg-[#121215]"
               : hasNewPulse
               ? "border-emerald-400 ring-4 ring-emerald-500/40"
               : errorCount > 0
-              ? "border-rose-500 ring-2 ring-rose-500/30"
-              : "border-[#2e3542] hover:border-[#00e5c9]"
+              ? "border-rose-500 ring-4 ring-rose-500/30"
+              : "border-white/10 hover:border-[#00e5c9]/70 ring-1 ring-white/5"
           }`}
         >
           {/* Glowing background halo */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#00e5c9]/20 to-transparent blur-xs pointer-events-none" />
+          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#00e5c9]/20 via-transparent to-[#10b981]/20 blur-xs pointer-events-none" />
 
           {/* Icon */}
           <div className="relative text-white flex items-center justify-center">
@@ -310,14 +324,14 @@ export const DevLogsFloatingWidget: React.FC = () => {
             className={`absolute -top-1.5 -right-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full border shadow-md font-mono ${
               errorCount > 0
                 ? "bg-rose-600 border-rose-400 text-white animate-pulse"
-                : "bg-[#00e5c9] border-[#00c4aa] text-slate-950"
+                : "bg-[#00e5c9] border-[#00c4aa] text-zinc-950 font-bold"
             }`}
           >
             {logs.length > 99 ? "99+" : logs.length}
           </span>
 
           {/* Live Activity Blinking Dot */}
-          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#14171c] animate-pulse" />
+          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#09090b] shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
         </div>
       </div>
 
@@ -328,24 +342,24 @@ export const DevLogsFloatingWidget: React.FC = () => {
             position: "fixed",
             left: window.innerWidth < 640 ? "10px" : isExpandedFull ? "20px" : `${windowPos.x}px`,
             top: window.innerWidth < 640 ? "10px" : isExpandedFull ? "20px" : `${windowPos.y}px`,
-            width: window.innerWidth < 640 ? "calc(100vw - 20px)" : isExpandedFull ? "calc(100vw - 40px)" : "530px",
-            height: window.innerWidth < 640 ? "calc(100dvh - 100px)" : isExpandedFull ? "calc(100vh - 40px)" : "540px",
+            width: window.innerWidth < 640 ? "calc(100vw - 20px)" : isExpandedFull ? "calc(100vw - 40px)" : "540px",
+            height: window.innerWidth < 640 ? "calc(100dvh - 100px)" : isExpandedFull ? "calc(100vh - 40px)" : "560px",
             zIndex: 9998,
           }}
-          className="rounded-2xl bg-[#13161c]/98 backdrop-blur-xl border border-[#262c37] shadow-2xl flex flex-col overflow-hidden text-slate-200 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-white/5"
+          className="rounded-2xl bg-[#09090b]/98 backdrop-blur-2xl border border-[#27272a] shadow-2xl flex flex-col overflow-hidden text-zinc-200 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-white/10"
         >
           {/* Header (Draggable Handle) */}
           <div
             onPointerDown={isExpandedFull ? undefined : handleWindowPointerDown}
             onPointerMove={isExpandedFull ? undefined : handleWindowPointerMove}
             onPointerUp={isExpandedFull ? undefined : handleWindowPointerUp}
-            className={`p-3 bg-[#181c23] border-b border-[#242934] flex items-center justify-between select-none ${
+            className={`p-3 bg-[#121215] border-b border-[#27272a] flex items-center justify-between select-none ${
               isExpandedFull ? "cursor-default" : "cursor-move"
             }`}
           >
             <div className="flex items-center gap-2">
-              <GripVertical className="w-4 h-4 text-slate-500" />
-              <div className="p-1.5 rounded-lg bg-[#202530] border border-[#2d3544] text-[#00e5c9]">
+              <GripVertical className="w-4 h-4 text-zinc-500" />
+              <div className="p-1.5 rounded-lg bg-[#18181b] border border-[#27272a] text-[#00e5c9]">
                 <Terminal className="w-4 h-4" />
               </div>
               <div>
@@ -356,8 +370,8 @@ export const DevLogsFloatingWidget: React.FC = () => {
                     LIVE
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400">
-                  Google Gemini 3.7 Flash • OCR • Local State • Tariff Traces
+                <p className="text-[10px] text-zinc-400">
+                  Google Gemini 3.7 Flash • Supabase • OCR • Local Storage Traces
                 </p>
               </div>
             </div>
@@ -367,7 +381,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
               <button
                 onClick={() => setAutoScroll(!autoScroll)}
                 className={`p-1.5 rounded-md transition-colors ${
-                  autoScroll ? "text-emerald-400 hover:bg-[#222733]" : "text-slate-400 hover:text-white"
+                  autoScroll ? "text-emerald-400 hover:bg-[#1f2229]" : "text-zinc-400 hover:text-white"
                 }`}
                 title={autoScroll ? "Auto-scroll ON (Click to pause)" : "Auto-scroll PAUSED (Click to resume)"}
               >
@@ -376,7 +390,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
 
               <button
                 onClick={handleExportDump}
-                className="p-1.5 text-slate-400 hover:text-white hover:bg-[#222733] rounded-md transition-colors"
+                className="p-1.5 text-zinc-400 hover:text-white hover:bg-[#1f2229] rounded-md transition-colors"
                 title="Export Logs Dump (.json)"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -384,7 +398,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
 
               <button
                 onClick={() => devLog.clear()}
-                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-[#222733] rounded-md transition-colors"
+                className="p-1.5 text-zinc-400 hover:text-rose-400 hover:bg-[#1f2229] rounded-md transition-colors"
                 title="Clear Logs"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -392,16 +406,27 @@ export const DevLogsFloatingWidget: React.FC = () => {
 
               <button
                 onClick={() => setIsExpandedFull(!isExpandedFull)}
-                className="p-1.5 text-slate-400 hover:text-white hover:bg-[#222733] rounded-md transition-colors"
+                className="p-1.5 text-zinc-400 hover:text-white hover:bg-[#1f2229] rounded-md transition-colors"
                 title={isExpandedFull ? "Restore Window Size" : "Maximize Fullscreen"}
               >
                 {isExpandedFull ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
               </button>
 
               <button
+                onClick={() => {
+                  disableBubble();
+                  setIsOpen(false);
+                }}
+                className="p-1.5 text-zinc-400 hover:text-amber-400 hover:bg-[#1f2229] rounded-md transition-colors"
+                title="Hide Floating Bubble (Can be re-enabled in Settings > Developer Options)"
+              >
+                <EyeOff className="w-3.5 h-3.5" />
+              </button>
+
+              <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-white hover:bg-rose-600/80 rounded-md transition-colors"
-                title="Close Dev Logs"
+                className="p-1.5 text-zinc-400 hover:text-white hover:bg-rose-600/80 rounded-md transition-colors"
+                title="Close Dev Logs Window"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -409,21 +434,21 @@ export const DevLogsFloatingWidget: React.FC = () => {
           </div>
 
           {/* Search & Filter Bar */}
-          <div className="p-2.5 bg-[#15181f] border-b border-[#242934] space-y-2">
+          <div className="p-2.5 bg-[#121215] border-b border-[#27272a] space-y-2">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Filter logs by keyword, model, or payload..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#1c2028] border border-[#2e3542] rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#00e5c9]"
+                  className="w-full bg-[#18181b] border border-[#27272a] rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#00e5c9] focus:ring-1 focus:ring-[#00e5c9]/30"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white text-xs"
                   >
                     ×
                   </button>
@@ -434,7 +459,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
               <select
                 value={filterSource}
                 onChange={(e) => setFilterSource(e.target.value)}
-                className="bg-[#1c2028] border border-[#2e3542] rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-[#00e5c9] cursor-pointer"
+                className="bg-[#18181b] border border-[#27272a] rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-[#00e5c9] cursor-pointer"
               >
                 <option value="all">All Sources</option>
                 <option value="AI Scanner">AI Scanner</option>
@@ -448,7 +473,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
             </div>
 
             {/* Level Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs scrollbar-none">
               {[
                 { id: "all", label: `All (${logs.length})` },
                 { id: "api", label: "API Traces" },
@@ -462,8 +487,8 @@ export const DevLogsFloatingWidget: React.FC = () => {
                   onClick={() => setFilterLevel(pill.id)}
                   className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap cursor-pointer ${
                     filterLevel === pill.id
-                      ? "bg-[#00e5c9] text-slate-950 font-bold shadow-xs"
-                      : "bg-[#1b1f27] text-slate-400 hover:text-white border border-[#272d38] hover:border-[#384050]"
+                      ? "bg-[#00e5c9] text-zinc-950 font-bold shadow-xs"
+                      : "bg-[#18181b] text-zinc-400 hover:text-white border border-[#27272a] hover:border-[#3f3f46]"
                   }`}
                 >
                   {pill.label}
@@ -475,10 +500,10 @@ export const DevLogsFloatingWidget: React.FC = () => {
           {/* Logs Feed Container */}
           <div ref={logListRef} className="flex-1 overflow-y-auto p-2 space-y-1.5 font-mono text-xs">
             {filteredLogs.length === 0 ? (
-              <div className="py-16 text-center text-slate-400 space-y-1">
-                <Terminal className="w-8 h-8 mx-auto text-slate-500 opacity-50" />
+              <div className="py-16 text-center text-zinc-400 space-y-1">
+                <Terminal className="w-8 h-8 mx-auto text-zinc-600 opacity-60" />
                 <p className="text-xs">No log entries matching your current filters.</p>
-                <p className="text-[11px] text-slate-500">Interact with the app to generate live telemetry.</p>
+                <p className="text-[11px] text-zinc-500">Interact with the app to generate live telemetry.</p>
               </div>
             ) : (
               filteredLogs.map((log) => {
@@ -490,14 +515,14 @@ export const DevLogsFloatingWidget: React.FC = () => {
                     key={log.id}
                     className={`p-2 rounded-lg border transition-all ${
                       log.level === "error"
-                        ? "bg-rose-950/30 border-rose-900/60"
+                        ? "bg-rose-950/25 border-rose-900/50 text-rose-100"
                         : log.level === "warn"
-                        ? "bg-amber-950/30 border-amber-900/60"
+                        ? "bg-amber-950/25 border-amber-900/50 text-amber-100"
                         : log.level === "api"
-                        ? "bg-cyan-950/20 border-cyan-900/40"
+                        ? "bg-cyan-950/20 border-cyan-900/40 text-cyan-100"
                         : log.level === "success"
-                        ? "bg-emerald-950/20 border-emerald-900/40"
-                        : "bg-[#171b22] border-[#242a34] hover:border-[#343c4a]"
+                        ? "bg-emerald-950/20 border-emerald-900/40 text-emerald-100"
+                        : "bg-[#121215] border-[#27272a] hover:border-[#3f3f46] text-zinc-200"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -505,7 +530,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
                         <div className="mt-0.5">{getSourceIcon(log.source)}</div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[10px] text-slate-400 font-sans">{log.formattedTime}</span>
+                            <span className="text-[10px] text-zinc-400 font-sans">{log.formattedTime}</span>
                             {getLevelBadge(log.level)}
                             <span className="text-[10px] font-semibold text-teal-300 font-sans">[{log.source}]</span>
                             {log.durationMs !== undefined && (
@@ -514,7 +539,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-slate-100 mt-1 break-words font-sans leading-relaxed">
+                          <p className="text-[11px] text-zinc-100 mt-1 break-words font-sans leading-relaxed">
                             {log.message}
                           </p>
                         </div>
@@ -524,7 +549,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={() => handleCopyLog(log)}
-                          className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#232936] transition-colors"
+                          className="p-1 rounded text-zinc-400 hover:text-white hover:bg-[#27272a] transition-colors"
                           title="Copy Log Entry"
                         >
                           {isCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
@@ -532,7 +557,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
                         {log.details && (
                           <button
                             onClick={() => setExpandedLogId(isExpanded ? null : log.id)}
-                            className="p-1 rounded text-slate-400 hover:text-white hover:bg-[#232936] transition-colors"
+                            className="p-1 rounded text-zinc-400 hover:text-white hover:bg-[#27272a] transition-colors"
                             title={isExpanded ? "Collapse payload" : "Expand JSON payload"}
                           >
                             {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
@@ -543,8 +568,8 @@ export const DevLogsFloatingWidget: React.FC = () => {
 
                     {/* Expandable JSON Payload Inspector */}
                     {isExpanded && log.details && (
-                      <div className="mt-2 pt-2 border-t border-[#242934]">
-                        <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1 font-sans">
+                      <div className="mt-2 pt-2 border-t border-[#27272a]">
+                        <div className="flex items-center justify-between text-[10px] text-zinc-400 mb-1 font-sans">
                           <span>Payload / Metadata:</span>
                           <button
                             onClick={() => navigator.clipboard.writeText(JSON.stringify(log.details, null, 2))}
@@ -553,7 +578,7 @@ export const DevLogsFloatingWidget: React.FC = () => {
                             Copy Raw JSON
                           </button>
                         </div>
-                        <pre className="p-2 rounded bg-[#0f1115] text-[10px] text-emerald-300 font-mono overflow-x-auto max-h-48 whitespace-pre-wrap leading-tight border border-[#222731]">
+                        <pre className="p-2 rounded bg-[#09090b] text-[10px] text-emerald-300 font-mono overflow-x-auto max-h-48 whitespace-pre-wrap leading-tight border border-[#27272a]">
                           {typeof log.details === "string"
                             ? log.details
                             : JSON.stringify(log.details, null, 2)}
@@ -567,10 +592,10 @@ export const DevLogsFloatingWidget: React.FC = () => {
           </div>
 
           {/* Footer Status Bar */}
-          <div className="p-2 bg-[#15181f] border-t border-[#242934] flex items-center justify-between text-[11px] text-slate-400 font-mono">
+          <div className="p-2 bg-[#121215] border-t border-[#27272a] flex items-center justify-between text-[11px] text-zinc-400 font-mono">
             <div className="flex items-center gap-3">
               <span>Total: <strong className="text-white">{logs.length}</strong></span>
-              <span>Errors: <strong className={errorCount > 0 ? "text-rose-400" : "text-slate-400"}>{errorCount}</strong></span>
+              <span>Errors: <strong className={errorCount > 0 ? "text-rose-400" : "text-zinc-400"}>{errorCount}</strong></span>
               <span>Filtered: <strong className="text-amber-300">{filteredLogs.length}</strong></span>
             </div>
             <div className="flex items-center gap-1.5 text-teal-300">

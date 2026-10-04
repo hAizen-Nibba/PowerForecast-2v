@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.16v",
+    version: "3.8.16v",
+    git_commit_tag: "3.8.16v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.16v - Add Developer Options tab in Settings with toggleable floating logs bubble and modernized dark glassmorphism telemetry UI",
+  },
+  {
     id: "3.8.15v",
     version: "3.8.15v",
     git_commit_tag: "3.8.15v",
