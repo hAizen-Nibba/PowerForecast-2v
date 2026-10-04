@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.6v",
+    version: "3.8.6v",
+    git_commit_tag: "3.8.6v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.6v - Enhanced Account Security: Introduced 2-step password update with email OTP code confirmation, direct email verification link fallback, live password strength meter, 60s cooldown timer, and bilingual English/Tagalog support.",
+  },
+  {
     id: "3.8.4ev",
     version: "3.8.4ev",
     git_commit_tag: "3.8.4ev",
