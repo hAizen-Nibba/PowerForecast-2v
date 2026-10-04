@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.6bv",
+    version: "3.8.6bv",
+    git_commit_tag: "3.8.6bv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.6bv - Password Recovery Link Routing & Global Modal Interceptor: Added global PasswordRecoveryModal, updated RootGate to redirect recovery tokens directly to password update workflow, and ensured all resetPasswordForEmail dispatches include explicit redirectTo URLs.",
+  },
+  {
     id: "3.8.6av",
     version: "3.8.6av",
     git_commit_tag: "3.8.6av",
