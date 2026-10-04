@@ -49,8 +49,10 @@ import {
   setStoredBillingPeriodConfig,
   resolveBillingPeriodWindow,
 } from "../../lib/dailyUsageService";
+import { useRoom } from "../../context/RoomContext";
 
 export const SmartCalendar: React.FC = () => {
+  const { canEdit, isViewer } = useRoom();
   // Calendar Tab: Actual Tracker vs Simulation Plan
   const [calendarTab, setCalendarTab] = useState<"actual" | "simulation">(() => {
     if (typeof window !== "undefined") {
@@ -327,23 +329,28 @@ export const SmartCalendar: React.FC = () => {
 
           {/* Simulate Appliance Button (Visible in Simulation Tab) */}
           {calendarTab === "simulation" && (
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<ScienceIcon />}
-              onClick={() => setIsSimulateApplianceOpen(true)}
-              sx={{
-                borderRadius: 1.25,
-                fontWeight: 800,
-                px: 2,
-                py: 0.8,
-                bgcolor: "primary.main",
-                color: "#ffffff",
-                boxShadow: "0 4px 14px rgba(0, 229, 201, 0.25)",
-              }}
-            >
-              Simulate Appliance
-            </Button>
+            <Tooltip title={!canEdit ? "View-only members cannot create simulation schedules" : ""}>
+              <span>
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<ScienceIcon />}
+                  disabled={!canEdit}
+                  onClick={() => setIsSimulateApplianceOpen(true)}
+                  sx={{
+                    borderRadius: 1.25,
+                    fontWeight: 800,
+                    px: 2,
+                    py: 0.8,
+                    bgcolor: "primary.main",
+                    color: "#ffffff",
+                    boxShadow: canEdit ? "0 4px 14px rgba(0, 229, 201, 0.25)" : "none",
+                  }}
+                >
+                  Simulate Appliance
+                </Button>
+              </span>
+            </Tooltip>
           )}
         </Box>
       </Box>
@@ -653,11 +660,34 @@ export const SmartCalendar: React.FC = () => {
                     {/* Header */}
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                        <Typography variant="body2" sx={{ fontWeight: isCurrentToday ? 900 : 700, color: isCurrentToday ? "#34d399" : "text.primary" }}>
+                        <Typography variant="body2" sx={{ fontWeight: isCurrentToday ? 900 : 700, color: isCurrentToday ? "success.main" : "text.primary" }}>
                           {dayNum}
                         </Typography>
                         {isCurrentToday && (
-                          <Chip label="TODAY" size="small" sx={{ height: 16, fontSize: "0.5rem", fontWeight: 900, bgcolor: "#34d399", color: "#fff" }} />
+                          <>
+                            <Chip
+                              label="TODAY"
+                              size="small"
+                              sx={{
+                                height: 16,
+                                fontSize: "0.5rem",
+                                fontWeight: 900,
+                                bgcolor: "success.main",
+                                color: "#fff",
+                                display: { xs: "none", sm: "inline-flex" },
+                              }}
+                            />
+                            <Box
+                              sx={{
+                                display: { xs: "block", sm: "none" },
+                                width: 5,
+                                height: 5,
+                                borderRadius: "50%",
+                                bgcolor: "success.main",
+                                boxShadow: "0 0 6px rgba(52, 211, 153, 0.8)",
+                              }}
+                            />
+                          </>
                         )}
                       </Box>
                       {actualMetrics.hasActiveLiveCircuits && (
@@ -739,7 +769,30 @@ export const SmartCalendar: React.FC = () => {
                         {dayNum}
                       </Typography>
                       {isCurrentToday && (
-                        <Chip label="TODAY" size="small" sx={{ height: 16, fontSize: "0.5rem", fontWeight: 900, bgcolor: "primary.main", color: "#fff" }} />
+                        <>
+                          <Chip
+                            label="TODAY"
+                            size="small"
+                            sx={{
+                              height: 16,
+                              fontSize: "0.5rem",
+                              fontWeight: 900,
+                              bgcolor: "primary.main",
+                              color: "#fff",
+                              display: { xs: "none", sm: "inline-flex" },
+                            }}
+                          />
+                          <Box
+                            sx={{
+                              display: { xs: "block", sm: "none" },
+                              width: 5,
+                              height: 5,
+                              borderRadius: "50%",
+                              bgcolor: "primary.main",
+                              boxShadow: "0 0 6px rgba(0, 229, 201, 0.8)",
+                            }}
+                          />
+                        </>
                       )}
                     </Box>
                     {simMetrics.isCustomSimulated && (

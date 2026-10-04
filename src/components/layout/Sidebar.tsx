@@ -37,6 +37,8 @@ import {
   AccessTime as ClockIcon,
   PowerSettingsNew as PowerIcon,
   ArrowForward as ArrowForwardIcon,
+  Visibility as VisibilityIcon,
+  Add as AddIcon,
 } from "@mui/icons-material";
 import Tooltip from "@mui/material/Tooltip";
 import { useList, useGetIdentity, useLogout } from "@refinedev/core";
@@ -45,7 +47,7 @@ import { APP_VERSION, checkSupabaseConnection } from "../../lib/supabaseClient";
 import { useLanguage } from "../../context/LanguageContext";
 import { SystemChangelogModal } from "../changelog/SystemChangelogModal";
 import { getMeralcoTariff, MeralcoTariffData, DEFAULT_MERALCO_TARIFF } from "../../lib/meralcoRateService";
-import { useHousehold } from "../../context/HouseholdContext";
+import { useRoom } from "../../context/RoomContext";
 import { switchOffCircuit } from "../../lib/sessionService";
 import { DEFAULT_EFFECTIVE_RATE } from "../../lib/dailyUsageService";
 
@@ -66,7 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { t } = useLanguage();
   const { data: identity } = useGetIdentity<any>();
   const { mutate: logout } = useLogout();
-  const { isOwner, isFamilyMember, ownerInfo, openHouseholdModal } = useHousehold();
+  const { activeRoom, isAdmin, isViewer, openJoinModal } = useRoom();
 
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isChangelogModalOpen, setIsChangelogModalOpen] = useState(false);
@@ -100,6 +102,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     };
     window.addEventListener("powerforecast_circuit_toggled", handleCircuitToggled);
     return () => window.removeEventListener("powerforecast_circuit_toggled", handleCircuitToggled);
+  }, [appliancesRes]);
+
+  // Synchronize room changes via event listener
+  useEffect(() => {
+    const handleRoomChanged = () => {
+      if (appliancesRes?.refetch) appliancesRes.refetch();
+    };
+    window.addEventListener("powerforecast_room_changed", handleRoomChanged);
+    return () => window.removeEventListener("powerforecast_room_changed", handleRoomChanged);
   }, [appliancesRes]);
 
   // Fetch Meralco Tariff & DB Status for mobile telemetry
@@ -599,35 +610,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               {identity?.email || "Authenticated Account"}
             </Typography>
-            {isFamilyMember ? (
+            {isViewer ? (
               <Chip
-                icon={<FamilyIcon sx={{ fontSize: "11px !important", color: "#60a5fa !important" }} />}
-                label={ownerInfo ? `Member · ${ownerInfo.owner_name}` : "Family Member"}
+                icon={<VisibilityIcon sx={{ fontSize: "11px !important", color: "#f59e0b !important" }} />}
+                label={activeRoom ? `View-only · ${activeRoom.room_name}` : "View-only"}
                 size="small"
                 sx={{
                   height: 18,
                   fontSize: "0.625rem",
                   fontWeight: 800,
                   maxWidth: 160,
-                  bgcolor: "rgba(96, 165, 250, 0.12)",
-                  color: "#60a5fa",
-                  border: "1px solid rgba(96, 165, 250, 0.3)",
+                  bgcolor: "rgba(245, 158, 11, 0.12)",
+                  color: "#f59e0b",
+                  border: "1px solid rgba(245, 158, 11, 0.3)",
                   mt: 0.5,
                   '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
                 }}
               />
             ) : (
               <Chip
-                icon={<ShieldIcon sx={{ fontSize: "11px !important", color: "#ffd54f !important" }} />}
-                label={t("header.ownerBadge", "Household Owner")}
+                icon={<ShieldIcon sx={{ fontSize: "11px !important", color: "#34d399 !important" }} />}
+                label={activeRoom?.is_owner ? "Room Owner" : "Room Admin"}
                 size="small"
                 sx={{
                   height: 18,
                   fontSize: "0.625rem",
                   fontWeight: 800,
-                  bgcolor: "rgba(255, 213, 79, 0.12)",
-                  color: "#ffd54f",
-                  border: "1px solid rgba(255, 213, 79, 0.3)",
+                  bgcolor: "rgba(52, 211, 153, 0.12)",
+                  color: "#34d399",
+                  border: "1px solid rgba(52, 211, 153, 0.3)",
                   mt: 0.5,
                 }}
               />
@@ -635,13 +646,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </Box>
         </Box>
 
-        {/* Household Access Button */}
+        {/* Join Room with Code Button */}
         <Button
           fullWidth
           variant="outlined"
           size="small"
-          startIcon={<HouseholdAdminIcon sx={{ fontSize: 16 }} />}
-          onClick={() => { openHouseholdModal(isOwner ? 0 : 1); if (onClose) onClose(); }}
+          startIcon={<AddIcon sx={{ fontSize: 16 }} />}
+          onClick={() => { openJoinModal(); if (onClose) onClose(); }}
           sx={{
             mb: 1,
             borderRadius: 1.5,
@@ -649,16 +660,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             fontSize: "0.75rem",
             py: 0.75,
             textTransform: "none",
-            borderColor: isFamilyMember ? "rgba(96, 165, 250, 0.4)" : "rgba(0, 229, 201, 0.35)",
-            bgcolor: isFamilyMember ? "rgba(96, 165, 250, 0.08)" : "rgba(0, 229, 201, 0.08)",
-            color: isFamilyMember ? "#60a5fa" : "primary.main",
+            borderColor: "rgba(0, 229, 201, 0.35)",
+            bgcolor: "rgba(0, 229, 201, 0.08)",
+            color: "primary.main",
             "&:hover": {
-              bgcolor: isFamilyMember ? "rgba(96, 165, 250, 0.16)" : "rgba(0, 229, 201, 0.16)",
-              borderColor: isFamilyMember ? "#60a5fa" : "primary.main",
+              bgcolor: "rgba(0, 229, 201, 0.16)",
+              borderColor: "primary.main",
             },
           }}
         >
-          {isFamilyMember ? "Household Access" : "Household Access"}
+          Join a Room with Code
         </Button>
 
         <Button
@@ -702,8 +713,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           Navigation & Tools
         </Typography>
         <List disablePadding sx={{ mt: 0.75, display: "flex", flexDirection: "column", gap: 0.75 }}>
-          {/* Settings — Household Owner only */}
-          {isOwner && <ListItem disablePadding>
+          {/* Settings */}
+          <ListItem disablePadding>
             <ListItemButton
               component={Link}
               to="/settings"
@@ -738,7 +749,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               />
               <ChevronRightIcon sx={{ fontSize: 16, color: "text.disabled" }} />
             </ListItemButton>
-          </ListItem>}
+          </ListItem>
 
           {/* Forecasting */}
           <ListItem disablePadding>

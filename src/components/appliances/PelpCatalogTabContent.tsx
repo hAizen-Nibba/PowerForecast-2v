@@ -10,6 +10,7 @@ import Card from "@mui/material/Card";
 import InputAdornment from "@mui/material/InputAdornment";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
+import Tooltip from "@mui/material/Tooltip";
 import {
   Search as SearchIcon,
   Download as ImportIcon,
@@ -26,6 +27,7 @@ import { getDefaultStartHour } from "../../lib/loadCurveService";
 import { normalizeApplianceCategory, isCompressorInverterCategory } from "../../lib/dailyUsageService";
 import { DuplicateApplianceModal } from "./DuplicateApplianceModal";
 import { ApplianceRoutineModal } from "./ApplianceRoutineModal";
+import { useRoom } from "../../context/RoomContext";
 
 interface PelpCatalogTabContentProps {
   selectedListId: string;
@@ -38,6 +40,7 @@ export const PelpCatalogTabContent: React.FC<PelpCatalogTabContentProps> = ({
   onSelectedListIdChange,
   onClose,
 }) => {
+  const { canEdit } = useRoom();
   const [selectedCategory, setSelectedCategory] = useState<string>("air-conditioners");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [items, setItems] = useState<PelpItem[]>([]);
@@ -84,6 +87,7 @@ export const PelpCatalogTabContent: React.FC<PelpCatalogTabContentProps> = ({
   };
 
   const handleImport = (item: PelpItem) => {
+    if (!canEdit) return;
     const monthlyKwh = item.monthly_energy_consumption_kwh || 120;
     const watts = item.power_watts || 750;
 
@@ -399,16 +403,21 @@ export const PelpCatalogTabContent: React.FC<PelpCatalogTabContentProps> = ({
                       ~₱{estMonthlyCost.toFixed(2)}/mo
                     </Typography>
 
-                    <Button
-                      size="small"
-                      variant={isImported ? "contained" : "outlined"}
-                      color={isImported ? "success" : "primary"}
-                      onClick={() => handleImport(item)}
-                      startIcon={isImported ? <CheckCircleIcon /> : <ImportIcon />}
-                      sx={{ fontSize: "0.75rem", py: "2px", px: 1.5 }}
-                    >
-                      {isImported ? "Imported!" : "Add to Space"}
-                    </Button>
+                    <Tooltip title={!canEdit ? "View-only members cannot add appliances" : ""}>
+                      <span>
+                        <Button
+                          size="small"
+                          variant={isImported ? "contained" : "outlined"}
+                          color={isImported ? "success" : "primary"}
+                          disabled={!canEdit}
+                          onClick={() => handleImport(item)}
+                          startIcon={isImported ? <CheckCircleIcon /> : <ImportIcon />}
+                          sx={{ fontSize: "0.75rem", py: "2px", px: 1.5 }}
+                        >
+                          {isImported ? "Imported!" : "Add to Space"}
+                        </Button>
+                      </span>
+                    </Tooltip>
                   </Box>
                 </Card>
               </Grid>

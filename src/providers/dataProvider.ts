@@ -3,22 +3,69 @@ import { dataProvider as refineSupabaseDataProvider } from "@refinedev/supabase"
 import { supabaseClient } from "../lib/supabaseClient";
 import { devLog } from "../lib/devLogger";
 
-function getStorage<T>(key: string, defaultVal: T): T {
+export const ROOM_SCOPED_RESOURCES = [
+  "user_appliances",
+  "appliance_usage_logs",
+  "daily_appliance_usage",
+  "user_calendar_events",
+  "simulated_appliance_usage",
+  "appliance_lists",
+];
+
+export function getActiveRoomContext(): { ownerId?: string; role?: string; roomId?: string } {
   try {
-    const item = localStorage.getItem(`powerforecast_${key}`);
+    const rawUser = localStorage.getItem("powerforecast_active_user");
+    const user = rawUser ? JSON.parse(rawUser) : null;
+    let userId = user?.id;
+
+    if (!userId && typeof window !== "undefined") {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("powerforecast_active_room_owner_")) {
+          userId = key.replace("powerforecast_active_room_owner_", "");
+          break;
+        }
+      }
+    }
+
+    if (userId) {
+      const ownerId = localStorage.getItem(`powerforecast_active_room_owner_${userId}`);
+      const role = localStorage.getItem(`powerforecast_active_room_role_${userId}`);
+      const roomId = localStorage.getItem(`powerforecast_active_room_${userId}`);
+      return { ownerId: ownerId || userId, role: role || "owner", roomId: roomId || "" };
+    }
+  } catch {}
+  return {};
+}
+
+export function getScopedStorage<T>(key: string, defaultVal: T): T {
+  try {
+    const { ownerId } = getActiveRoomContext();
+    const storageKey = ownerId && ROOM_SCOPED_RESOURCES.includes(key)
+      ? `powerforecast_${ownerId}_${key}`
+      : `powerforecast_${key}`;
+    const item = localStorage.getItem(storageKey);
     return item ? JSON.parse(item) : defaultVal;
   } catch {
     return defaultVal;
   }
 }
 
-function setStorage<T>(key: string, val: T): void {
+export function setScopedStorage<T>(key: string, val: T): void {
   try {
-    localStorage.setItem(`powerforecast_${key}`, JSON.stringify(val));
+    const { ownerId } = getActiveRoomContext();
+    const storageKey = ownerId && ROOM_SCOPED_RESOURCES.includes(key)
+      ? `powerforecast_${ownerId}_${key}`
+      : `powerforecast_${key}`;
+    localStorage.setItem(storageKey, JSON.stringify(val));
   } catch (e) {
     console.error(e);
   }
 }
+
+// Backwards-compatible aliases
+const getStorage = getScopedStorage;
+const setStorage = setScopedStorage;
 
 // Clean slate: ensure no stale mock data is seeded
 if (typeof window !== "undefined" && !localStorage.getItem("powerforecast_clean_slate_v1")) {
@@ -120,7 +167,8 @@ const rawSupabaseDataProvider = refineSupabaseDataProvider(supabaseClient);
 /**
  * Resilient Hybrid DataProvider:
  * - Attempts Supabase Cloud database first
- * - Injects authenticated user_id automatically on creations
+ * - Scopes queries and writes by currently active room owner_id
+ * - Blocks mutations when user is in View-Only mode
  * - Mirrors live fetched records to localStorage for instant hydration & offline fallback
  */
 export const resilientDataProvider: DataProvider = {
@@ -139,6 +187,18 @@ export const resilientDataProvider: DataProvider = {
         enrichedParams.pagination = { ...enrichedParams.pagination, mode: "off" };
       }
 
+      // Automatically scope room-specific resources to the active room owner
+      const { ownerId } = getActiveRoomContext();
+      if (ownerId && ROOM_SCOPED_RESOURCES.includes(params.resource)) {
+        const existingFilters = (enrichedParams.filters || []).filter(
+          (f: any) => f.field !== "user_id"
+        );
+        enrichedParams.filters = [
+          ...existingFilters,
+          { field: "user_id", operator: "eq", value: ownerId },
+        ];
+      }
+
       const res = await rawSupabaseDataProvider.getList<TData>(enrichedParams);
       devLog.api("Supabase DataProvider", `Fetched ${res?.data?.length || 0} records from [${params.resource}]`, res);
       
@@ -148,7 +208,16 @@ export const resilientDataProvider: DataProvider = {
       }
       return res;
     } catch (err: any) {
-      devLog.warn("Supabase DataProvider", `getList failed on remote [${params.resource}]: ${err.message}. Falling back to local storage.`);
+      const isSchemaCacheError =
+        err?.message?.includes("schema cache") ||
+        err?.code === "PGRST204" ||
+        err?.code === "PGRST205" ||
+        err?.code === "42P01";
+      if (isSchemaCacheError) {
+        devLog.info("Supabase DataProvider", `Remote [${params.resource}] not in schema cache. Resiliently using local storage.`);
+      } else {
+        devLog.warn("Supabase DataProvider", `getList failed on remote [${params.resource}]: ${err.message}. Falling back to local storage.`);
+      }
       return localDataProvider.getList<TData>(params);
     }
   },
@@ -168,25 +237,21 @@ export const resilientDataProvider: DataProvider = {
   },
 
   create: async <TData extends BaseRecord = BaseRecord, TVariables = {}>(params: any): Promise<any> => {
+    const { ownerId, role } = getActiveRoomContext();
+
+    // Guard View-only guests from mutating room state
+    if (role === "viewer" && ROOM_SCOPED_RESOURCES.includes(params.resource)) {
+      throw new Error("View-Only access: You do not have permission to add items to this room.");
+    }
+
     const useLocalMock = import.meta.env.VITE_USE_LOCAL_MOCK === "true";
     if (useLocalMock) {
       return localDataProvider.create<TData, TVariables>(params);
     }
     try {
-      // Auto-inject authenticated user_id (or Household Owner user_id if Family Member)
+      // Auto-inject effective room owner_id
       const sessionUser = (await supabaseClient.auth.getSession()).data.session?.user;
-      let effectiveUserId = sessionUser?.id;
-      if (effectiveUserId) {
-        try {
-          const linkedRaw = localStorage.getItem(`powerforecast_household_linked_owner_${effectiveUserId}`);
-          if (linkedRaw) {
-            const linked = JSON.parse(linkedRaw);
-            if (linked?.owner_id) {
-              effectiveUserId = linked.owner_id;
-            }
-          }
-        } catch {}
-      }
+      const effectiveUserId = ownerId || sessionUser?.id;
 
       let enrichedVariables = { ...(params.variables as any) };
       if (effectiveUserId && !enrichedVariables.user_id) {
@@ -236,6 +301,10 @@ export const resilientDataProvider: DataProvider = {
   },
 
   update: async <TData extends BaseRecord = BaseRecord, TVariables = {}>(params: any): Promise<any> => {
+    const { role } = getActiveRoomContext();
+    if (role === "viewer" && ROOM_SCOPED_RESOURCES.includes(params.resource)) {
+      throw new Error("View-Only access: You do not have permission to modify items in this room.");
+    }
     const useLocalMock = import.meta.env.VITE_USE_LOCAL_MOCK === "true";
     if (useLocalMock) {
       return localDataProvider.update<TData, TVariables>(params);
@@ -285,6 +354,10 @@ export const resilientDataProvider: DataProvider = {
   },
 
   deleteOne: async <TData extends BaseRecord = BaseRecord, TVariables = {}>(params: any): Promise<any> => {
+    const { role } = getActiveRoomContext();
+    if (role === "viewer" && ROOM_SCOPED_RESOURCES.includes(params.resource)) {
+      throw new Error("View-Only access: You do not have permission to delete items from this room.");
+    }
     const useLocalMock = import.meta.env.VITE_USE_LOCAL_MOCK === "true";
     if (useLocalMock) {
       return localDataProvider.deleteOne<TData, TVariables>(params);

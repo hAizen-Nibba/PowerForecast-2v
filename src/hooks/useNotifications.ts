@@ -188,6 +188,57 @@ export function useNotifications({
     };
   }, [appliances, prefs.enabled, prefs.planQuotaAlert]);
 
+  // 1.2 Inverter Cruising Mode Transition Notification (Monitors 60m threshold)
+  useEffect(() => {
+    if (!prefs.enabled) return;
+
+    const checkInverterCruisingTransitions = () => {
+      const running = appliances.filter((a) => a.is_currently_on && a.last_turned_on_at);
+      const now = Date.now();
+
+      running.forEach((app) => {
+        const cat = (app.category || "").toLowerCase();
+        const isAc = cat.includes("air condition") || cat.includes("aircon");
+        const isInverter =
+          app.is_inverter === true ||
+          (app.energy_rating && /inverter/i.test(app.energy_rating)) ||
+          (app.ai_metadata?.is_inverter === true) ||
+          /inverter/i.test(app.name);
+
+        if (isAc && isInverter) {
+          const startTime = new Date(app.last_turned_on_at!).getTime();
+          const elapsedMinutes = (now - startTime) / 60000;
+
+          // If reached 60 minutes (cruising mode entered)
+          if (elapsedMinutes >= 60) {
+            const cruisingKey = `inverter-cruising-${app.id}-${app.last_turned_on_at}`;
+            if (!sentAlertsRef.current.has(cruisingKey)) {
+              sentAlertsRef.current.add(cruisingKey);
+
+              const cruisingWatts =
+                Number(app.cruising_watts) > 0
+                  ? Number(app.cruising_watts)
+                  : Number(app.ai_metadata?.cruising_watts) > 0
+                  ? Number(app.ai_metadata?.cruising_watts)
+                  : Math.round(app.watts * 0.42);
+
+              sendNotification({
+                title: `🍃 Inverter Cruising Active: ${app.name}`,
+                body: `Pull-down stage complete (1 hr). Power draw dropped to cruising mode (~${cruisingWatts}W) to maintain target temperature.`,
+                tag: `inverter-cruising-${app.id}`,
+                urgency: "info",
+              });
+            }
+          }
+        }
+      });
+    };
+
+    checkInverterCruisingTransitions();
+    const interval = setInterval(checkInverterCruisingTransitions, 15000);
+    return () => clearInterval(interval);
+  }, [appliances, prefs.enabled, sendNotification]);
+
   // 2. Real-Time High Wattage Surge Spike Monitor (Every 15s)
   useEffect(() => {
     if (!prefs.enabled || !prefs.surgeAlert) return;

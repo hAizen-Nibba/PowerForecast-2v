@@ -57,12 +57,12 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenSidebar 
         WebkitBackdropFilter: "blur(20px)",
         borderTop: "1px solid",
         borderColor: (theme) =>
-          theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)",
+          theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
         boxShadow: (theme) =>
           theme.palette.mode === "dark"
             ? "0 -4px 20px rgba(0, 0, 0, 0.4)"
-            : "0 -2px 16px rgba(0, 0, 0, 0.06)",
-        pb: "env(safe-area-inset-bottom, 8px)",
+            : "0 -2px 16px rgba(15, 23, 42, 0.05)",
+        pb: "calc(env(safe-area-inset-bottom, 8px) + 2px)",
         pt: 0.5,
         px: 0.5,
         justifyContent: "space-between",
@@ -138,8 +138,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenSidebar 
             <Typography
               variant="caption"
               sx={{
-                fontSize: "0.575rem",
-                fontWeight: isActive ? 800 : 500,
+                fontSize: "clamp(0.525rem, 1.8vw, 0.625rem)",
+                fontWeight: isActive ? 800 : 600,
                 letterSpacing: "-0.02em",
                 mt: 0.15,
                 lineHeight: 1.1,
@@ -190,7 +190,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenSidebar 
         <Typography
           variant="caption"
           sx={{
-            fontSize: "0.575rem",
+            fontSize: "clamp(0.525rem, 1.8vw, 0.625rem)",
             fontWeight: 600,
             letterSpacing: "-0.02em",
             mt: 0.15,

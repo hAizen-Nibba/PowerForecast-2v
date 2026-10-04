@@ -24,6 +24,7 @@ import { useCreate, useUpdate, useDelete } from "@refinedev/core";
 import { supabaseClient } from "../../lib/supabaseClient";
 import { devLog } from "../../lib/devLogger";
 import { useConfirm } from "../common/ConfirmProvider";
+import { useRoom } from "../../context/RoomContext";
 
 interface SpaceManagementModalProps {
   isOpen: boolean;
@@ -44,6 +45,7 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
   onDeleted,
   onCreated,
 }) => {
+  const { canEdit } = useRoom();
   const [name, setName] = useState("");
   const [tariffType, setTariffType] = useState<"residential" | "commercial">("residential");
   const [isDeletingLocal, setIsDeletingLocal] = useState(false);
@@ -65,7 +67,7 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!canEdit || !name.trim()) return;
 
     if (spaceToEdit) {
       updateSpace(
@@ -105,7 +107,7 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
   };
 
   const handleDelete = async () => {
-    if (!spaceToEdit) return;
+    if (!canEdit || !spaceToEdit) return;
     if (!canDelete) {
       await confirm({
         title: "Action Restricted",
@@ -320,7 +322,7 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
                 size="small"
                 startIcon={<DeleteIcon />}
                 onClick={handleDelete}
-                disabled={isDeletingLocal}
+                disabled={isDeletingLocal || !canEdit}
                 sx={{ fontWeight: 700 }}
               >
                 {isDeletingLocal ? "Deleting..." : "Delete Space"}
@@ -346,7 +348,7 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
               type="submit"
               variant="contained"
               size="small"
-              disabled={isCreating || isUpdating || isDeletingLocal}
+              disabled={isCreating || isUpdating || isDeletingLocal || !canEdit}
               startIcon={<SaveIcon />}
               sx={{ fontWeight: 700 }}
             >

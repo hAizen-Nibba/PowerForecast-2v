@@ -47,6 +47,7 @@ import {
 } from "recharts";
 import { UserAppliance, ApplianceList, DailyApplianceUsage, ApplianceUsageLog, SimulatedApplianceUsage } from "../../types";
 import { useList } from "@refinedev/core";
+import { useTheme } from "@mui/material/styles";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
 import { calculateKwh, calculateApplianceKwh, calculateCost, DEFAULT_EFFECTIVE_RATE } from "../../lib/dailyUsageService";
 import { useLanguage } from "../../context/LanguageContext";
@@ -54,6 +55,8 @@ import { useToast } from "../common/ToastProvider";
 import { saveSimulatedAppliance } from "../../lib/simulationService";
 
 export const ForecastingView: React.FC = () => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const { t, language } = useLanguage();
   const { showSuccess, showError } = useToast();
   const [genRateDelta, setGenRateDelta] = useState<number>(0);
@@ -847,9 +850,9 @@ export const ForecastingView: React.FC = () => {
                       <stop offset="95%" stopColor="#00e5c9" stopOpacity={0.0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.12} />
-                  <XAxis dataKey="day" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} unit=" ₱" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)"} />
+                  <XAxis dataKey="day" tick={{ fontSize: 11, fill: isDark ? "#8b949e" : "#475569" }} stroke={isDark ? "rgba(255, 255, 255, 0.15)" : "#cbd5e1"} />
+                  <YAxis tick={{ fontSize: 11, fill: isDark ? "#8b949e" : "#475569" }} stroke={isDark ? "rgba(255, 255, 255, 0.15)" : "#cbd5e1"} unit=" ₱" />
                   <RechartsTooltip
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {

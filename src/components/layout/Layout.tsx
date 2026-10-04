@@ -11,6 +11,8 @@ import { SystemTestingBanner } from "../common/SystemTestingBanner";
 import { useColorMode } from "../../theme/AppTheme";
 import { TourProvider } from "../tour/TourProvider";
 import { useStopwatchMidnightRollover } from "../../hooks/useStopwatchMidnightRollover";
+import { ViewOnlyBanner } from "../rooms/ViewOnlyBanner";
+import { useRoom } from "../../context/RoomContext";
 
 export const Layout: React.FC = () => {
   const location = useLocation();
@@ -18,6 +20,7 @@ export const Layout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAiScannerOpen, setIsAiScannerOpen] = useState(false);
   const { mode, toggleColorMode } = useColorMode();
+  const { activeRoom } = useRoom();
 
   // Continuous background midnight auto-save & rollover for overnight active circuit sessions
   useStopwatchMidnightRollover();
@@ -66,16 +69,20 @@ export const Layout: React.FC = () => {
         {/* HubSpot-Style Testing Phase Announcement Banner Strip */}
         <SystemTestingBanner variant="app" />
 
+        {/* View-Only Mode Banner */}
+        <ViewOnlyBanner />
+
         <Box
+          key={activeRoom?.room_id || "room-root"}
           component="main"
           sx={{
             flexGrow: 1,
-            px: { xs: 2, sm: 3, md: 4, lg: 4.5 },
-            py: { xs: 2.5, sm: 3.5, md: 4 },
-            maxWidth: 1360,
+            px: { xs: 1.5, sm: 2.5, md: 3.5, lg: 4 },
+            py: { xs: 2, sm: 3, md: 3.5 },
+            maxWidth: 1440,
             width: "100%",
             mx: "auto",
-            pb: { xs: "calc(110px + env(safe-area-inset-bottom, 20px))", sm: "calc(120px + env(safe-area-inset-bottom, 20px))", lg: 8 },
+            pb: { xs: "calc(88px + env(safe-area-inset-bottom, 16px))", sm: "calc(96px + env(safe-area-inset-bottom, 16px))", lg: 6 },
             boxSizing: "border-box",
           }}
         >

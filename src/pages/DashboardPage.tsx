@@ -37,12 +37,16 @@ import { calculateMeralcoBill } from "../lib/meralcoCalculator";
 import { useNotifications } from "../hooks/useNotifications";
 import { useLanguage } from "../context/LanguageContext";
 import { useToast } from "../components/common/ToastProvider";
-import { formatDateToKey, DEFAULT_EFFECTIVE_RATE } from "../lib/dailyUsageService";
+import { formatDateToKey, DEFAULT_EFFECTIVE_RATE, getApplianceEffectiveRunningWatts } from "../lib/dailyUsageService";
 import { getMeralcoTariff, MeralcoTariffData, DEFAULT_MERALCO_TARIFF } from "../lib/meralcoRateService";
 import { getEffectiveApplianceRate } from "../lib/sessionService";
 
+import Tooltip from "@mui/material/Tooltip";
+import { useRoom } from "../context/RoomContext";
+
 export const DashboardPage: React.FC = () => {
   const { t } = useLanguage();
+  const { isViewer, canEdit } = useRoom();
   const { showSuccess } = useToast();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPelpModalOpen, setIsPelpModalOpen] = useState(false);
@@ -112,18 +116,21 @@ export const DashboardPage: React.FC = () => {
 
   const activeAppliances = appliances.filter((a: UserAppliance) => a.is_active !== false);
   const runningAppliances = activeAppliances.filter((a: UserAppliance) => a.is_currently_on);
-  const activeWattage = runningAppliances.reduce(
-    (acc: number, curr: UserAppliance) => acc + curr.watts * (curr.quantity || 1),
-    0
-  );
+  const activeWattage = runningAppliances.reduce((acc: number, curr: UserAppliance) => {
+    if (!curr.last_turned_on_at) return acc + curr.watts * (curr.quantity || 1);
+    const start = new Date(curr.last_turned_on_at).getTime();
+    const diffMinutes = Math.max(0, (now - start) / 60000);
+    const telemetry = getApplianceEffectiveRunningWatts(curr, diffMinutes);
+    return acc + telemetry.effectiveWatts;
+  }, 0);
 
   // Today's Measured Spend = saved daily_appliance_usage records today + live running stopwatches
   const liveSessionCost = runningAppliances.reduce((acc, curr) => {
     if (!curr.last_turned_on_at) return acc;
     const start = new Date(curr.last_turned_on_at).getTime();
     const diffSeconds = Math.max(0, (now - start) / 1000);
-    const totalWatts = curr.watts * (curr.quantity || 1);
-    const accumulatedKwh = (totalWatts / 1000) * (diffSeconds / 3600);
+    const telemetry = getApplianceEffectiveRunningWatts(curr, diffSeconds / 60);
+    const accumulatedKwh = (telemetry.effectiveWatts / 1000) * (diffSeconds / 3600);
     const rate = getEffectiveApplianceRate(curr);
     return acc + accumulatedKwh * rate;
   }, 0);
@@ -132,8 +139,8 @@ export const DashboardPage: React.FC = () => {
     if (!curr.last_turned_on_at) return acc;
     const start = new Date(curr.last_turned_on_at).getTime();
     const diffSeconds = Math.max(0, (now - start) / 1000);
-    const totalWatts = curr.watts * (curr.quantity || 1);
-    return acc + (totalWatts / 1000) * (diffSeconds / 3600);
+    const telemetry = getApplianceEffectiveRunningWatts(curr, diffSeconds / 60);
+    return acc + (telemetry.effectiveWatts / 1000) * (diffSeconds / 3600);
   }, 0);
 
   const loggedTodayCost = todayUsageRecords.reduce((acc, curr) => acc + (Number(curr.estimated_cost) || 0), 0);
@@ -253,14 +260,19 @@ export const DashboardPage: React.FC = () => {
               </Button>
             ) : (
               <>
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={() => setIsAddModalOpen(true)}
-                  startIcon={<PlusIcon />}
-                >
-                  {t("dash.addAppliance", "Add Appliance")}
-                </Button>
+                <Tooltip title={isViewer ? "View-Only Mode: Adding appliances is restricted to Admins" : ""}>
+                  <span>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      disabled={isViewer}
+                      onClick={() => setIsAddModalOpen(true)}
+                      startIcon={<PlusIcon />}
+                    >
+                      {t("dash.addAppliance", "Add Appliance")}
+                    </Button>
+                  </span>
+                </Tooltip>
                 <Button
                   variant="outlined"
                   size="small"
@@ -303,7 +315,15 @@ export const DashboardPage: React.FC = () => {
           <Typography variant="h3" sx={{ fontWeight: 900, fontFamily: "monospace", my: 0.5, letterSpacing: "-0.02em" }}>
             {activeWattage} <Typography component="span" variant="body2" sx={{ color: "text.secondary", fontWeight: 600 }}>Watts</Typography>
           </Typography>
-          <Typography variant="caption" sx={{ color: "#00e5c9", fontWeight: 700, fontFamily: "monospace", display: "block" }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
+              fontWeight: 700,
+              fontFamily: "monospace",
+              display: "block",
+            }}
+          >
             ₱{((activeWattage / 1000) * effectiveRate).toFixed(2)}/hr {t("dash.runningRate", "running rate")}
           </Typography>
         </Paper>
@@ -316,7 +336,7 @@ export const DashboardPage: React.FC = () => {
             title={t("dash.consolidatedBill", "Consolidated Monthly Bill")}
             value={`₱${spaceAnalytics.consolidatedTotalBill.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             subtitle={spaces.length > 1 ? `${t("dash.combinedAcross", "Combined across")} ${spaces.length} ${t("dash.spaces", "spaces")}` : "Household projected bill"}
-            icon={<BoltIcon sx={{ color: "#00e5c9" }} />}
+            icon={<BoltIcon sx={{ color: (theme) => theme.palette.mode === "dark" ? "#00e5c9" : "primary.main" }} />}
             trend={{ value: `${spaces.length} Spaces`, direction: "neutral" }}
             highlight
           />
@@ -344,7 +364,7 @@ export const DashboardPage: React.FC = () => {
             title={t("dash.todaySpend", "Today's Measured Spend")}
             value={`₱${todayTotalCost.toFixed(2)}`}
             subtitle={`${todayTotalKwh.toFixed(2)} kWh recorded today`}
-            icon={<ClockIcon sx={{ color: runningAppliances.length > 0 ? "#00e5c9" : "success.main" }} />}
+            icon={<ClockIcon sx={{ color: runningAppliances.length > 0 ? "primary.main" : "success.main" }} />}
             trend={{
               value: runningAppliances.length > 0 ? `${runningAppliances.length} Live Active` : `${todayUsageRecords.length} Logged`,
               direction: runningAppliances.length > 0 ? "up" : "neutral",
@@ -362,12 +382,12 @@ export const DashboardPage: React.FC = () => {
             borderRadius: 1.5,
             border: "1px solid",
             borderColor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.18)" : "rgba(13, 148, 136, 0.18)",
+              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.18)" : "divider",
           }}
         >
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1.5 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-              <Box sx={{ p: 1, borderRadius: 1, bgcolor: "primary.main", color: "#0c1b18", display: "flex" }}>
+              <Box sx={{ p: 1, borderRadius: 1, bgcolor: "primary.main", color: "primary.contrastText", display: "flex" }}>
                 <WalletIcon fontSize="small" />
               </Box>
               <Box>

@@ -1196,9 +1196,9 @@ export const AnalyticsView: React.FC = () => {
         <Box sx={{ height: 260, width: "100%" }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={MONTHLY_TREND_DATA} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.12} />
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} unit=" kWh" />
+              <CartesianGrid strokeDasharray="3 3" stroke={isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)"} />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: isDark ? "#8b949e" : "#475569" }} stroke={isDark ? "rgba(255, 255, 255, 0.15)" : "#cbd5e1"} />
+              <YAxis tick={{ fontSize: 11, fill: isDark ? "#8b949e" : "#475569" }} stroke={isDark ? "rgba(255, 255, 255, 0.15)" : "#cbd5e1"} unit=" kWh" />
               <Tooltip
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {

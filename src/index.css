@@ -48,32 +48,32 @@
 /* ===== Light Mode Variables ===== */
 [data-theme="light"],
 .light {
-  --page-bg: #f4f6f8;
-  --topbar-bg: #1a222c;
-  --sidebar-bg: #141b24;
-  --sidebar-active: #009e88;
-  --sidebar-hover: rgba(255, 255, 255, 0.12);
-  --card-bg: rgba(255, 255, 255, 0.94);
-  --card-border: rgba(0, 158, 136, 0.18);
-  --card-glow-bg: rgba(255, 255, 255, 0.98);
-  --text-primary: #111827;
-  --text-secondary: #374151;
-  --text-muted: #6b7280;
+  --page-bg: #f8fafc;
+  --topbar-bg: #ffffff;
+  --sidebar-bg: #ffffff;
+  --sidebar-active: rgba(13, 148, 136, 0.12);
+  --sidebar-hover: rgba(0, 0, 0, 0.04);
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --card-glow-bg: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
   --input-bg: #ffffff;
-  --input-border: rgba(0, 158, 136, 0.24);
-  --input-focus: #009e88;
-  --input-text: #111827;
-  --accent: #009e88;
-  --accent-text: #007564;
-  --accent-glow: rgba(0, 158, 136, 0.12);
+  --input-border: #cbd5e1;
+  --input-focus: #0d9488;
+  --input-text: #0f172a;
+  --accent: #0d9488;
+  --accent-text: #0f766e;
+  --accent-glow: rgba(13, 148, 136, 0.15);
   --highlight: #d97706;
-  --divider: rgba(0, 158, 136, 0.15);
-  --toggle-label-color: #ffffff;
+  --divider: #e2e8f0;
+  --toggle-label-color: #0f172a;
   --overlay-bg: rgba(255, 255, 255, 0.95);
 
-  --bento-tab-active-bg: #009e88;
+  --bento-tab-active-bg: #0d9488;
   --bento-tab-active-text: #ffffff;
-  --bento-tab-inactive-text: #4b5563;
+  --bento-tab-inactive-text: #475569;
 }
 
 html {
@@ -222,6 +222,15 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 229, 201, 0.5);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb,
+.light ::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.16);
+}
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover,
+.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(13, 148, 136, 0.45);
 }
 
 /* ===== Android & Mobile Touch Fluidity Optimizations ===== */

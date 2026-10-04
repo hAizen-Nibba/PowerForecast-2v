@@ -41,6 +41,8 @@ import { useTour } from "../../hooks/useTour";
 import { ROUTE_TO_TOUR_PAGE } from "../tour/tourSteps";
 import { useLanguage } from "../../context/LanguageContext";
 import { MeralcoRatePopover } from "./MeralcoRatePopover";
+import { RoomSwitcher } from "../rooms/RoomSwitcher";
+import { useRoom } from "../../context/RoomContext";
 
 interface HeaderProps {
   onOpenSidebar: () => void;
@@ -178,9 +180,21 @@ export const Header: React.FC<HeaderProps> = ({
               data-tour="header-db-status"
               icon={
                 dbStatus.ok ? (
-                  <CloudDoneIcon sx={{ color: "#34d399 !important", fontSize: "15px !important" }} />
+                  <CloudDoneIcon
+                    sx={{
+                      color: (theme) =>
+                        theme.palette.mode === "dark" ? "#34d399 !important" : "#059669 !important",
+                      fontSize: "15px !important",
+                    }}
+                  />
                 ) : (
-                  <CloudOffIcon sx={{ color: "#f87171 !important", fontSize: "15px !important" }} />
+                  <CloudOffIcon
+                    sx={{
+                      color: (theme) =>
+                        theme.palette.mode === "dark" ? "#f87171 !important" : "#dc2626 !important",
+                      fontSize: "15px !important",
+                    }}
+                  />
                 )
               }
               label={dbStatus.ok ? t("header.dbLive", "Supabase Live") : t("header.localMode", "Local Mode")}
@@ -188,10 +202,31 @@ export const Header: React.FC<HeaderProps> = ({
               sx={{
                 fontWeight: 700,
                 fontSize: "0.6875rem",
-                bgcolor: dbStatus.ok ? "rgba(52, 211, 153, 0.12)" : "rgba(248, 113, 113, 0.12)",
-                color: dbStatus.ok ? "#34d399" : "#f87171",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark"
+                    ? dbStatus.ok
+                      ? "rgba(52, 211, 153, 0.12)"
+                      : "rgba(248, 113, 113, 0.12)"
+                    : dbStatus.ok
+                    ? "rgba(5, 150, 105, 0.1)"
+                    : "rgba(220, 38, 38, 0.1)",
+                color: (theme) =>
+                  theme.palette.mode === "dark"
+                    ? dbStatus.ok
+                      ? "#34d399"
+                      : "#f87171"
+                    : dbStatus.ok
+                    ? "#059669"
+                    : "#dc2626",
                 border: "1px solid",
-                borderColor: dbStatus.ok ? "rgba(52, 211, 153, 0.3)" : "rgba(248, 113, 113, 0.3)",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark"
+                    ? dbStatus.ok
+                      ? "rgba(52, 211, 153, 0.3)"
+                      : "rgba(248, 113, 113, 0.3)"
+                    : dbStatus.ok
+                    ? "rgba(5, 150, 105, 0.3)"
+                    : "rgba(220, 38, 38, 0.3)",
                 display: { xs: "none", sm: "inline-flex" },
                 height: 26,
               }}
@@ -202,6 +237,9 @@ export const Header: React.FC<HeaderProps> = ({
           <Box data-tour="header-rate-popover">
             <MeralcoRatePopover />
           </Box>
+
+          {/* Active Room Code & Room Switcher */}
+          <RoomSwitcher />
         </Box>
 
         {/* Center: Live Time / Date */}
@@ -245,6 +283,7 @@ export const Header: React.FC<HeaderProps> = ({
                 size="small"
                 disabled={isTourActive}
                 sx={{
+                  display: { xs: "none", sm: "inline-flex" },
                   bgcolor: (theme) =>
                     theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(0, 158, 136, 0.08)",
                   border: "1px solid",
@@ -255,7 +294,7 @@ export const Header: React.FC<HeaderProps> = ({
                   borderRadius: 1,
                   "&:hover": {
                     bgcolor: "primary.main",
-                    color: "#0c1b18",
+                    color: (theme) => (theme.palette.mode === "dark" ? "#0c1b18" : "#ffffff"),
                     borderColor: "primary.main",
                   },
                   transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",

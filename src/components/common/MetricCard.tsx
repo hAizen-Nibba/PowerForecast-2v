@@ -63,13 +63,17 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           left: "15%",
           right: "15%",
           height: 2.5,
-          bgcolor: "#00e5c9",
+          bgcolor: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "primary.main"),
           borderRadius: "3px 3px 0 0",
-          boxShadow: "0 -2px 10px rgba(0, 229, 201, 0.6)",
+          boxShadow: (theme) =>
+            theme.palette.mode === "dark"
+              ? "0 -2px 10px rgba(0, 229, 201, 0.6)"
+              : "0 -2px 10px rgba(13, 148, 136, 0.35)",
         } : {},
         "&:hover": onClick ? {
           transform: "translateY(-2px)",
-          borderColor: "rgba(0, 229, 201, 0.4)",
+          borderColor: (theme) =>
+            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.4)" : "rgba(13, 148, 136, 0.4)",
         } : {},
       }}
     >

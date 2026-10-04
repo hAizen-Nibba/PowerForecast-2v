@@ -3,6 +3,106 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.7.2bv",
+    version: "3.7.2bv",
+    git_commit_tag: "3.7.2bv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.7.2bv - Merge upstream v3.7.2av updates (Room-Code system, PC/Laptop Workload Mode Picker, Inverter AC stage telemetry, and persistent stopwatch storage) while preserving PR #47 design overhaul (Stack Template landing page, neutral zinc auth cards, Inter typography, and shadcn UI primitives)",
+  },
+  {
+    id: "3.7.2av",
+    version: "3.7.2av",
+    git_commit_tag: "3.7.2av",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Developer",
+    source: "github",
+    description:
+      "3.7.2av - Hotfix: Guard RoomService RPC and RoomContext room sync against unauthenticated invocations during new account registration, prevent premature active user caching on unconfirmed signups, and stamp email verification registration timestamp",
+  },
+  {
+    id: "3.7.2v",
+    version: "3.7.2v",
+    git_commit_tag: "3.7.2v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Developer",
+    source: "github",
+    description:
+      "3.7.2v - Implement Smart 1-Tap PC & Laptop Workload Mode Picker (Idle / Office / Gaming), dynamic Inverter AC Pull-down vs Cruising stage telemetry, on-the-fly mode switching, and real-time live stopwatch cruising alerts",
+  },
+  {
+    id: "3.7.1av",
+    version: "3.7.1av",
+    git_commit_tag: "3.7.1av",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Developer",
+    source: "github",
+    description:
+      "3.7.1av - Hotfix: Resolve stopwatch and simulation plan persistence with resilient dual-write room-scoped storage, add unified SQL patch migration for simulated_appliance_usage and room member RPCs, and add smart circuit breakers to suppress repeated 42703 RPC console errors",
+  },
+  {
+    id: "3.7.1v",
+    version: "3.7.1v",
+    git_commit_tag: "3.7.1v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Developer",
+    source: "github",
+    description:
+      "3.7.1v - Enhance UI fluidity across all resolutions (compact mobile 320px-480px, tablet 640px-1024px, and ultrawide monitors) and harmonize light mode consistency across all views, charts, and navigation components",
+  },
+  {
+    id: "3.7.0dv",
+    version: "3.7.0dv",
+    git_commit_tag: "3.7.0dv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.7.0dv - Fix rapid-fire infinite fetching loop: convert Sidebar room-change synchronization into an isolated event listener to eliminate re-render cascading refetches",
+  },
+  {
+    id: "3.7.0cv",
+    version: "3.7.0cv",
+    git_commit_tag: "3.7.0cv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.7.0cv - Fix room data overlap across room switching: enforce strict active room owner scoping in DataProvider, partition local fallback storage per room owner, trigger global React Query cache invalidation in switchRoom, and key layout viewports by active room ID for clean component remounts",
+  },
+  {
+    id: "3.7.0bv",
+    version: "3.7.0bv",
+    git_commit_tag: "3.7.0bv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.7.0bv - Fix list_my_rooms SQL column reference from non-existent acc.name to acc.full_name, provide standalone patch migration, and implement resilient direct-table query fallback in RoomService",
+  },
+  {
+    id: "3.7.0av",
+    version: "3.7.0av",
+    git_commit_tag: "3.7.0av",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.7.0av - Fix deployment build failure: restore missing JSX fragment in DashboardPage, add missing Tooltip and icon imports in PelpCatalog and Sidebar, fix DeleteOutlined import in RoomMembersPanel, and prune orphaned invite code in SettingsView",
+  },
+  {
+    id: "3.7.0v",
+    version: "3.7.0v",
+    git_commit_tag: "3.7.0v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.7.0v - Revamp Household Multi-User into Supabase Room-Code system: automatic Main Room provisioning (<<Username>>'s Room), header Room Switcher with dropdown and join code modal, Admin vs View-only role hierarchy, real-time RLS widening with loophole mitigation, and interactive members management panel",
+  },
+  {
     id: "3.6.0dv",
     version: "3.6.0dv",
     git_commit_tag: "3.6.0dv",

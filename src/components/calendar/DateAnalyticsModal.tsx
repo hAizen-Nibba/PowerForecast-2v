@@ -34,6 +34,7 @@ import {
   calculateApplianceKwh,
   calculateCost,
   DEFAULT_EFFECTIVE_RATE,
+  isComputerCategory,
 } from "../../lib/dailyUsageService";
 import {
   switchOnCircuit,
@@ -42,8 +43,11 @@ import {
   deleteSessionLog,
   getEffectiveApplianceRate,
 } from "../../lib/sessionService";
+import { PcWorkloadProfile } from "../../lib/pcHardwareService";
+import { PcWorkloadModeModal } from "../appliances/PcWorkloadModeModal";
 import { useToast } from "../common/ToastProvider";
 import { useLiveTicker, formatElapsedHms } from "../../hooks/useLiveTicker";
+import { useRoom } from "../../context/RoomContext";
 
 interface DateAnalyticsModalProps {
   isOpen: boolean;
@@ -88,6 +92,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
   logs = [],
   onUsageSaved,
 }) => {
+  const { canEdit } = useRoom();
   const [activeTab, setActiveTab] = useState<number>(0);
   const { showSuccess, showError, showInfo } = useToast();
 
@@ -237,8 +242,26 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
     };
   }, [timelineData]);
 
+  const [pcModeAppliance, setPcModeAppliance] = useState<UserAppliance | null>(null);
+
+  const handleSelectPcMode = async (mode: PcWorkloadProfile, watts: number) => {
+    if (!pcModeAppliance) return;
+    const app = pcModeAppliance;
+    setPcModeAppliance(null);
+    const res = await switchOnCircuit(app, { workloadMode: mode, sessionWatts: watts });
+    if (res.success) {
+      const modeLabel = mode === "heavy" ? "Gaming" : mode === "light" ? "Idle / Light" : "Office / Standard";
+      showInfo(`Started stopwatch for ${app.name} (${modeLabel} mode, ~${watts}W). Live tracking active.`);
+      if (onUsageSaved) onUsageSaved();
+    }
+  };
+
   // Live Power Switch Toggle
   const handleTogglePower = async (app: UserAppliance) => {
+    if (!canEdit) {
+      showInfo("View-only members cannot toggle circuits.");
+      return;
+    }
     if (!isToday) {
       showInfo("Live stopwatch switches can only be operated on today's date.");
       return;
@@ -254,6 +277,10 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
         if (onUsageSaved) onUsageSaved();
       }
     } else {
+      if (isComputerCategory(app.category, app.name)) {
+        setPcModeAppliance(app);
+        return;
+      }
       const res = await switchOnCircuit(app);
       if (res.success) {
         showInfo(`Started stopwatch for ${app.name}. Live tracking active.`);
@@ -270,7 +297,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
   // Save Past Session
   const handleSavePastSession = async () => {
-    if (!targetPastApp) return;
+    if (!canEdit || !targetPastApp) return;
 
     const [sh, sm] = pastStartHour.split(":").map(Number);
     const [eh, em] = pastEndHour.split(":").map(Number);
@@ -301,6 +328,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
 
   // Delete Session Block
   const handleDeleteSession = async () => {
+    if (!canEdit) return;
     if (!inspectingSession || !inspectingSession.block.logId) return;
     const { block, appliance } = inspectingSession;
     const logId = block.logId;
@@ -516,10 +544,11 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                           <Switch
                             size="small"
                             checked={Boolean(isRunning)}
+                            disabled={!canEdit}
                             onChange={() => handleTogglePower(appliance)}
                             color="success"
                           />
-                        ) : (
+                        ) : canEdit ? (
                           <Chip
                             label="+ Log"
                             size="small"
@@ -527,7 +556,7 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
                             onClick={() => handleOpenPastSessionModal(appliance)}
                             sx={{ height: 20, fontSize: "0.625rem", cursor: "pointer" }}
                           />
-                        )}
+                        ) : null}
                       </Box>
 
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: 0.25 }}>
@@ -762,12 +791,24 @@ export const DateAnalyticsModal: React.FC<DateAnalyticsModalProps> = ({
           </Paper>
         </DialogContent>
         <DialogActions sx={{ p: 2, justifyContent: "space-between" }}>
-          <Button color="error" startIcon={<DeleteIcon />} onClick={handleDeleteSession}>
-            Delete Session
-          </Button>
+          {canEdit && (
+            <Button color="error" startIcon={<DeleteIcon />} onClick={handleDeleteSession}>
+              Delete Session
+            </Button>
+          )}
           <Button onClick={() => setInspectingSession(null)}>Done</Button>
         </DialogActions>
       </Dialog>
+
+      {/* PC Workload Mode 1-Tap Picker Modal */}
+      {pcModeAppliance && (
+        <PcWorkloadModeModal
+          open={Boolean(pcModeAppliance)}
+          onClose={() => setPcModeAppliance(null)}
+          appliance={pcModeAppliance}
+          onSelectMode={handleSelectPcMode}
+        />
+      )}
     </Dialog>
   );
 };

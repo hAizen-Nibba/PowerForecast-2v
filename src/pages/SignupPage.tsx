@@ -119,7 +119,11 @@ export const SignupPage: React.FC = () => {
             showError(msg);
             return;
           }
-          showSuccess("Account created successfully! Welcome to PowerForecast.");
+          if (data?.redirectTo?.includes("verify-email")) {
+            showSuccess("Account created! Please check your email to verify your account.");
+          } else {
+            showSuccess("Account created successfully! Welcome to PowerForecast.");
+          }
           navigate(data?.redirectTo || "/dashboard");
         },
         onError: (err: any) => {
