@@ -60,27 +60,27 @@ export const ROUTE_TO_TOUR_PAGE: Record<string, TourPage> = {
 
 export const PAGE_METADATA: Record<TourPage, { title: Record<TourLanguage, string>; icon: string }> = {
   dashboard: {
-    title: { en: 'Dashboard & Telemetry', tl: 'Dashboard at Telemetry' },
+    title: { en: 'Dashboard & Telemetry', tl: 'Dashboard & Telemetry' },
     icon: 'Dashboard',
   },
   calculator: {
-    title: { en: 'Meralco Bill Calculator', tl: 'Kalkulador ng Meralco Bill' },
+    title: { en: 'Meralco Bill Calculator', tl: 'Meralco Bill Calculator' },
     icon: 'Calculate',
   },
   appliances: {
-    title: { en: 'Appliances Hub & Spaces', tl: 'Sentro ng Kagamitan at Espasyo' },
+    title: { en: 'Appliances Hub & Spaces', tl: 'Appliance Hub & Spaces' },
     icon: 'Bolt',
   },
   calendar: {
-    title: { en: 'Smart Calendar & TOU', tl: 'Matalinong Kalendaryo' },
+    title: { en: 'Smart Calendar & TOU', tl: 'Smart Calendar & Schedule' },
     icon: 'CalendarToday',
   },
   analytics: {
-    title: { en: 'Analytics & Vampire Loss', tl: 'Pagsusuri at Vampire Load' },
+    title: { en: 'Analytics & Vampire Loss', tl: 'Analytics & Vampire Loss' },
     icon: 'Insights',
   },
   forecasting: {
-    title: { en: 'Predictive Forecasting', tl: 'Prediksyon at Sitwasyon' },
+    title: { en: 'Predictive Forecasting', tl: 'Predictive Forecasting' },
     icon: 'AutoGraph',
   },
 };
@@ -90,7 +90,7 @@ const dashboardTour: PageTour = {
   pageName: 'dashboard',
   pageTitle: {
     en: 'Dashboard & Live Telemetry Tour',
-    tl: 'Gabay sa Dashboard at Live Telemetry',
+    tl: 'Dashboard & Live Telemetry Tour',
   },
   steps: [
     {
@@ -104,9 +104,9 @@ const dashboardTour: PageTour = {
             'This real-time telemetry card monitors your aggregate household draw right now. See total running wattage (W), the number of active appliances, and your live billing velocity (₱/hour) computed against your actual Meralco tariff.',
         },
         tl: {
-          title: 'Live Konsumo ng Kuryente at Real-Time Telemetry',
+          title: 'Live Power Load & Real-Time Telemetry',
           description:
-            'Ipinapakita sa real-time telemetry card na ito ang kabuuang lakas ng kuryente na ginagamit ngayon. Makikita rito ang kabuuang wattage (W), bilang ng nakabukas na gamit, at bilis ng gastos (₱/oras) batay sa iyong Meralco rate.',
+            'Ipinapakita sa telemetry card na ito ang kabuuang lakas ng kuryente na ginagamit ngayon. Makikita ang running wattage (W), active appliances, at live cost rate (₱/oras) batay sa iyong Meralco tariff.',
         },
       },
     },
@@ -121,9 +121,9 @@ const dashboardTour: PageTour = {
             'Quickly switch across all PowerForecast modules: Bill Calculator, Appliance Inventory, Smart Calendar, Analytics, Forecasting, and API Documentation.',
         },
         tl: {
-          title: 'Menu ng Navigasyon',
+          title: 'Unified Navigation Menu',
           description:
-            'Mabilis na lumipat sa iba\'t ibang bahagi ng app: Bill Calculator, Sentro ng Kagamitan, Smart Calendar, Analytics, Forecasting, at Dokumentasyon.',
+            'Mabilis na lumipat sa iba\'t ibang features ng app: Bill Calculator, Appliance Hub, Smart Calendar, Analytics, Forecasting, at API Docs.',
         },
       },
     },
@@ -138,9 +138,9 @@ const dashboardTour: PageTour = {
             'Live connectivity indicator monitoring Supabase cloud sync and network latency. PowerForecast operates seamlessly offline using local caching and synchronizes changes automatically upon reconnection.',
         },
         tl: {
-          title: 'Koneksyon sa Cloud at Offline Mode',
+          title: 'Cloud Sync & Offline Mode',
           description:
-            'Palatandaan ng live na koneksyon sa Supabase cloud. Gumagana pa rin ang PowerForecast kahit walang internet gamit ang lokal na memorya at awtomatikong magsi-sync muli pagbalik ng koneksyon.',
+            'Live status ng koneksyon sa Supabase cloud. Gumagana pa rin ang PowerForecast kahit offline gamit ang local cache, at awtomatikong magsi-sync kusa pagbalik ng internet.',
         },
       },
     },
@@ -155,9 +155,9 @@ const dashboardTour: PageTour = {
             'Track cumulative monthly energy (kWh), current accrued cost, active circuits online, and daily average pacing. These metrics balance recorded telemetry with your baseline quota.',
         },
         tl: {
-          title: 'Buwanang Naitalang Konsumo at Target',
+          title: 'Month-to-Date Consumption & Quotas',
           description:
-            'Subaybayan ang naipong kWh ngayong buwan, kasalukuyang bayarin, bilang ng bukas na kagamitan, at arawang takbo. Binabalanse nito ang naitalang konsumo at ang iyong itinakdang quota.',
+            'Subaybayan ang naipong kWh ngayong buwan, kasalukuyang bayarin sa Meralco, active circuits online, at daily average burn rate.',
         },
       },
     },
@@ -172,9 +172,9 @@ const dashboardTour: PageTour = {
             'Turn appliances on and off in real time with a single click. PowerForecast automatically calculates running time and live cost accumulation with midnight rollover protection.',
         },
         tl: {
-          title: 'Interactive na Kontrol ng mga Kagamitan',
+          title: 'Interactive Appliance Controls',
           description:
-            'I-on o i-off ang mga kagamitan sa isang pindot lang sa real-time. Awtomatikong kinakalkula ng PowerForecast ang tagal ng paggamit at naipong halaga nang may proteksyon sa midnight rollover.',
+            'I-on o i-off ang appliances sa isang click para sa real-time stopwatch session. Awtomatikong kinakalkula ang running time at live cost nang may midnight rollover protection.',
         },
       },
     },
@@ -189,9 +189,9 @@ const dashboardTour: PageTour = {
             'Visual breakdown of your energy consumption by category — discover whether cooling, refrigeration, laundry, or entertainment accounts for the bulk of your power draw.',
         },
         tl: {
-          title: 'Hatid ng Konsumo Bawat Kategorya',
+          title: 'Energy Distribution bawat Category',
           description:
-            'Visual na distribusyon ng iyong kuryente bawat kategorya — alamin kung cooling, refrigeration, laundry, o entertainment ang pinakamalaking humihigop ng kuryente.',
+            'Visual breakdown ng kuryente bawat category — alamin kung cooling, refrigeration, laundry, o entertainment ang pinakamalaking humihigop ng kuryente.',
         },
       },
     },
@@ -206,9 +206,9 @@ const dashboardTour: PageTour = {
             'Shortcuts to quickly open the Meralco Bill Calculator, manage appliances, schedule calendar routines, or explore deep analytics.',
         },
         tl: {
-          title: 'Mabilis na Aksyon at Shortcut',
+          title: 'Quick Actions Launchpad',
           description:
-            'Diretsong shortcut patungo sa Bill Calculator, pamamahala ng kagamitan, pag-iskedyul sa kalendaryo, o pagsusuri sa analytics.',
+            'Diretsong shortcuts patungo sa Bill Calculator, Appliance Hub, Smart Calendar, o deep analytics.',
         },
       },
     },
@@ -220,7 +220,7 @@ const calculatorTour: PageTour = {
   pageName: 'calculator',
   pageTitle: {
     en: 'Meralco Bill Calculator Tour',
-    tl: 'Gabay sa Kalkulador ng Meralco Bill',
+    tl: 'Meralco Bill Calculator Tour',
   },
   steps: [
     {
@@ -234,9 +234,9 @@ const calculatorTour: PageTour = {
             'Toggle between standard Meralco Residential rates and General Power Commercial tariffs with unbundled demand and generation structures.',
         },
         tl: {
-          title: 'Pagpili ng Taripa (Residential vs Komersyal)',
+          title: 'Tariff Selection (Residential vs Commercial)',
           description:
-            'Pumili sa pagitan ng karaniwang Meralco Residential rate at General Power Commercial tariff na may unbundled demand at generation structure.',
+            'Pumili sa pagitan ng standard Meralco Residential rates at General Power Commercial tariffs na may unbundled demand at generation rates.',
         },
       },
     },
@@ -251,9 +251,9 @@ const calculatorTour: PageTour = {
             'Customize or inspect the generation charge per kWh. Meralco generation costs fluctuate monthly per ERC pass-through rules — adjust or test scenario rates here.',
         },
         tl: {
-          title: 'Base Generation Charge at ERC Pass-Through',
+          title: 'Generation Charge & ERC Pass-Through',
           description:
-            'Baguhin o suriin ang generation charge kada kWh. Ang singil sa generation ng Meralco ay nagbabago buwan-buwan ayon sa ERC — maaari mong subukan ang iba\'t ibang presyo rito.',
+            'I-customize o suriin ang generation charge kada kWh. Ang generation charge ng Meralco ay nagbabago buwan-buwan ayon sa ERC pass-through — pwede kang mag-test ng scenarios dito.',
         },
       },
     },
@@ -268,9 +268,9 @@ const calculatorTour: PageTour = {
             'Quickly adjust monthly kWh consumption from 0 to 1,000+ kWh to see instant projected charges and observe lifeline subsidy thresholds (≤100 kWh).',
         },
         tl: {
-          title: 'Slider ng Buwanang Konsumo (kWh)',
+          title: 'Monthly Consumption Slider (kWh)',
           description:
-            'Mabilisang i-adjust ang konsumo mula 0 hanggang 1,000+ kWh upang makita agad ang halaga ng kuryente at ang mga diskwento sa lifeline subsidy (≤100 kWh).',
+            'I-adjust ang monthly kWh consumption mula 0 hanggang 1,000+ kWh para makita agad ang bill impact at lifeline subsidy brackets (≤100 kWh).',
         },
       },
     },
@@ -285,9 +285,9 @@ const calculatorTour: PageTour = {
             'Your complete projected Meralco electric bill with effective rate per kWh, power supply costs, and other regulated grid pass-through fees.',
         },
         tl: {
-          title: 'Kabuuang Tinatayang Halaga ng Bill',
+          title: 'Total Projected Bill',
           description:
-            'Ang kumpletong projected electric bill sa Meralco kasama ang effective rate bawat kWh, power supply costs, at iba pang bayarin sa grid.',
+            'Kumpletong projected electric bill sa Meralco kasama ang effective rate bawat kWh, generation charge, at iba pang unbundled grid pass-through fees.',
         },
       },
     },
@@ -302,9 +302,9 @@ const calculatorTour: PageTour = {
             'Full transparent breakdown of statutory bill components: Generation, Transmission, System Loss, Distribution, Subsidies, Government Taxes (VAT), and Universal Charges.',
         },
         tl: {
-          title: 'Distribusyon ng Unbundled Charges ng ERC',
+          title: 'ERC Unbundled Cost Breakdown',
           description:
-            'Maliwanag na breakdown ng lahat ng bahagi ng singil sa kuryente: Generation, Transmission, System Loss, Distribution, Subsidies, Buwis ng Gobyerno (VAT), at Universal Charges.',
+            'Transparent na breakdown ng lahat ng components: Generation, Transmission, System Loss, Distribution, Subsidies, Government Taxes (VAT), at Universal Charges.',
         },
       },
     },
@@ -319,9 +319,9 @@ const calculatorTour: PageTour = {
             'Simulate monthly bill savings by trimming daily usage hours across your appliances. See immediate peso and kWh reductions.',
         },
         tl: {
-          title: 'Simulator ng Pagtitipid (What-If)',
+          title: 'What-If Savings Simulator',
           description:
-            'I-simulate kung gaano kalaki ang matitipid sa buwanang bill sa pamamagitan ng pagbawas ng oras ng paggamit ng mga kagamitan. Makikita agad ang bawas sa piso at kWh.',
+            'I-simulate kung gaano kalaki ang matitipid sa monthly bill sa pamamagitan ng pagbawas ng daily usage hours sa appliances mo.',
         },
       },
     },
@@ -333,7 +333,7 @@ const appliancesTour: PageTour = {
   pageName: 'appliances',
   pageTitle: {
     en: 'Appliances Hub & Spaces Tour',
-    tl: 'Gabay sa Sentro ng Kagamitan at Espasyo',
+    tl: 'Appliances Hub & Spaces Tour',
   },
   steps: [
     {
@@ -347,9 +347,9 @@ const appliancesTour: PageTour = {
             'Organize your appliances across different properties or zones — like Main House, Rental Suite, Garage Workshop, or Commercial Unit — each with its own tariff.',
         },
         tl: {
-          title: 'Mga Espasyo at Sub-Meter Tabs',
+          title: 'Multi-Space Sub-Metering Tabs',
           description:
-            'Ayusin ang mga kagamitan ayon sa iba\'t ibang lugar o sub-meter — tulad ng Bahay, Paupahan, Tindahan/Negosyo, o Workshop — bawat isa ay may sariling taripa.',
+            'I-organize ang appliances ayon sa spaces o sub-meters — tulad ng Main House, Rental Suite, o Negosyo — bawat isa may sariling custom tariff.',
         },
       },
     },
@@ -364,9 +364,9 @@ const appliancesTour: PageTour = {
             'Configure space names, assign residential or commercial rates, or adjust sub-meter parameters for dedicated space accounting.',
         },
         tl: {
-          title: 'Pamamahala at Setting ng Espasyo',
+          title: 'Space Settings & Tariffs',
           description:
-            'I-customize ang pangalan ng espasyo, magtalaga ng residential o commercial tariff, o mag-ayos ng sub-meter parameters para sa tumpak na pagtutuos.',
+            'I-customize ang space names, magtalaga ng residential o commercial Meralco tariff, at ayusin ang sub-meter parameters.',
         },
       },
     },
@@ -376,14 +376,14 @@ const appliancesTour: PageTour = {
       page: 'appliances',
       copy: {
         en: {
-          title: 'Pre-Loaded Appliance Library & Custom Add',
+          title: 'Pre-Loaded Appliance Library & AI Scanner',
           description:
-            'Add custom appliances or choose from hundreds of pre-calibrated Philippine household presets with verified wattage, standby draws, and DOE PELP ratings.',
+            'Add custom appliances, scan nameplate stickers with AI Vision, or choose from hundreds of verified DOE PELP presets with calibrated wattages and standby loss.',
         },
         tl: {
-          title: 'Magdagdag ng Kagamitan at Library ng Presets',
+          title: 'Appliance Library, Presets & AI Scanner',
           description:
-            'Magdagdag ng sariling gamit o pumili mula sa daan-daang pre-calibrated na gamit sa Pilipinas na may tamang wattage, standby loss, at DOE PELP ratings.',
+            'Magdagdag ng custom appliances, mag-scan ng nameplate gamit ang AI Vision, o pumili mula sa daan-daang verified DOE PELP presets na may tamang wattage at standby loss.',
         },
       },
     },
@@ -398,9 +398,9 @@ const appliancesTour: PageTour = {
             'Instantly search through your devices or filter by room (Living Room, Kitchen, Bedroom, Office). Sort by wattage or cost impact.',
         },
         tl: {
-          title: 'Paghahanap at Pag-filter ayon sa Kwarto',
+          title: 'Search, Room Filter & Sorting',
           description:
-            'Mabilis na hanapin ang kagamitan gamit ang search bar o i-filter ayon sa kwarto (Sala, Kusina, Kwarto, Opisina). I-sort ayon sa lakas ng konsumo o gastos.',
+            'Mabilisang hanapin ang appliances gamit ang search bar o i-filter ayon sa room (Living Room, Kitchen, Bedroom, Office). I-sort ayon sa wattage o monthly cost.',
         },
       },
     },
@@ -415,9 +415,9 @@ const appliancesTour: PageTour = {
             'Inspect wattage, daily operational hours, monthly cost share, and inverter efficiency grade. Toggle the switch to track live running sessions.',
         },
         tl: {
-          title: 'Card ng Kagamitan at Live Kontrol',
+          title: 'Appliance Card & Real-Time Controls',
           description:
-            'Tingnan ang wattage, oras ng paggamit bawat araw, buwanang halaga, at inverter efficiency grade. I-click ang switch para simulan ang pagtatala ng konsumo.',
+            'Suriin ang wattage, daily hours, monthly spend, at inverter efficiency rating. I-toggle ang switch para simulan ang live tracking session.',
         },
       },
     },
@@ -429,7 +429,7 @@ const calendarTour: PageTour = {
   pageName: 'calendar',
   pageTitle: {
     en: 'Smart Calendar & Time-of-Use Tour',
-    tl: 'Gabay sa Matalinong Kalendaryo',
+    tl: 'Smart Calendar & Schedule Tour',
   },
   steps: [
     {
@@ -438,14 +438,14 @@ const calendarTour: PageTour = {
       page: 'calendar',
       copy: {
         en: {
-          title: 'Billing Cycle & Window Navigator',
+          title: 'Billing Cycle & Cutoff Navigator',
           description:
             'Navigate between billing cycles or calendar months. Customize your exact Meralco meter read cutoff dates for cycle-accurate cost matching.',
         },
         tl: {
-          title: 'Tagapamahala ng Billing Cycle',
+          title: 'Billing Cycle & Cutoff Navigator',
           description:
-            'Magpalipat-lipat sa billing cycles o buwan. Itakda ang eksaktong araw ng meter reading ng Meralco para sa tumpak na pagtutugma ng bill.',
+            'Lumipat sa iba\'t ibang billing cycles at calendar months. Itakda ang eksaktong meter read cutoff date ng Meralco para match ang bill cycle mo.',
         },
       },
     },
@@ -455,14 +455,14 @@ const calendarTour: PageTour = {
       page: 'calendar',
       copy: {
         en: {
-          title: 'Visual Status Legend',
+          title: 'Visual Status Legend & Day Types',
           description:
-            'Color-coded indicators distinguish baseline quota, simulated schedule, net savings, and heavy peak load days at a single glance.',
+            'Color-coded indicators distinguish logged actual stopwatch sessions, routine baselines, custom simulated schedules, and net savings.',
         },
         tl: {
-          title: 'Gabay sa Kulay ng Konsumo at Peak Status',
+          title: 'Visual Status Legend & Day Types',
           description:
-            'Mga palatandaan sa kulay upang madaling makilala ang baseline quota, simulated schedule, matitipid, at mga araw na may mataas na peak load.',
+            'Color-coded indicators para madaling makilala ang logged sessions sa stopwatch, routine baseline, custom simulated schedules, at net savings.',
         },
       },
     },
@@ -472,14 +472,14 @@ const calendarTour: PageTour = {
       page: 'calendar',
       copy: {
         en: {
-          title: 'Baseline vs Simulated Telemetry',
+          title: 'Actual vs Simulated Period KPIs',
           description:
-            'Compare your expected baseline period cost against simulated schedule totals, showing your net projected savings or variance.',
+            'Compare your verified actual spend against simulated schedules, tracking measured kWh and projected savings versus baseline.',
         },
         tl: {
-          title: 'Paghahambing ng Baseline at Na-simulate na Konsumo',
+          title: 'Actual vs Simulated Period KPIs',
           description:
-            'Ikumpara ang inaasahang baseline cost laban sa na-simulate na iskedyul, at makita ang kabuuang tinatayang matitipid o diperensya.',
+            'Ikumpara ang verified actual spend laban sa simulated schedules, at subaybayan ang measured kWh at projected savings kumpara sa baseline.',
         },
       },
     },
@@ -489,14 +489,14 @@ const calendarTour: PageTour = {
       page: 'calendar',
       copy: {
         en: {
-          title: 'Monthly Heatmap & Load Calendar',
+          title: 'Interactive Monthly Heatmap Grid',
           description:
             'Day-by-day interactive calendar displaying logged energy draw (kWh) and peso value for each day of the month.',
         },
         tl: {
-          title: 'Buwanang Kalendaryo ng Konsumo',
+          title: 'Interactive Monthly Heatmap Grid',
           description:
-            'Araw-araw na kalendaryo na nagpapakita ng naitalang kuryente (kWh) at halaga sa piso para sa bawat araw ng buwan.',
+            'Araw-araw na calendar grid na nagpapakita ng naitalang kuryente (kWh) at halaga sa piso para sa bawat araw ng buwan.',
         },
       },
     },
@@ -506,14 +506,14 @@ const calendarTour: PageTour = {
       page: 'calendar',
       copy: {
         en: {
-          title: 'Daily Log & Hourly Time-of-Use Details',
+          title: 'Daily Log & Appliance Details',
           description:
-            'Click any day cell to open an hourly breakdown modal, view active appliances, or log actual meter readings for that date.',
+            'Click any day cell to open the details modal, view active appliances, or log actual meter readings for that date.',
         },
         tl: {
-          title: 'Arawang Tala at Oras-oras na Detalye',
+          title: 'Daily Log & Appliance Details',
           description:
-            'Pindutin ang anumang araw upang buksan ang oras-oras na breakdown, makita ang ginamit na appliances, o magtala ng metro reading.',
+            'Pindutin ang kahit anong araw para buksan ang details modal, makita ang ginamit na appliances, o magtala ng meter reading.',
         },
       },
     },
@@ -525,7 +525,7 @@ const analyticsTour: PageTour = {
   pageName: 'analytics',
   pageTitle: {
     en: 'Analytics & Energy Audit Tour',
-    tl: 'Gabay sa Pagsusuri at Energy Audit',
+    tl: 'Analytics & Energy Audit Tour',
   },
   steps: [
     {
@@ -539,9 +539,9 @@ const analyticsTour: PageTour = {
             'High-level audit metrics covering total monthly kWh, forecasted bill, DOE PELP compliance rating, and standby loss totals.',
         },
         tl: {
-          title: 'Mga KPI ng Konsumo at Kahusayan sa Enerhiya',
+          title: 'Energy Volume & Efficiency KPIs',
           description:
-            'Mahahalagang sukatan tulad ng buwanang kWh volume, tinatayang bill, marka sa DOE PELP efficiency, at kabuuang standby loss.',
+            'High-level audit metrics: monthly kWh volume, forecasted spend, DOE PELP efficiency rating, at standby loss totals.',
         },
       },
     },
@@ -556,9 +556,9 @@ const analyticsTour: PageTour = {
             'Audit phantom energy consumed by appliances left plugged in on standby mode. See monthly and annual costs, plus potential cutoff savings.',
         },
         tl: {
-          title: 'Pagsusuri ng Vampire Load at Standby Loss',
+          title: 'Standby Vampire Load Audit',
           description:
-            'Alamin ang kuryenteng nasasayang sa mga nakasaksak na kagamitan kahit nakapatay. Makikita ang buwanan at taunang halaga at potensyal na matitipid.',
+            'Alamin ang kuryenteng nasasayang sa mga nakasaksak na appliances kahit nakapatay (phantom load). Makikita ang monthly at annual costs at potential cutoff savings.',
         },
       },
     },
@@ -568,18 +568,17 @@ const analyticsTour: PageTour = {
       page: 'analytics',
       copy: {
         en: {
-          title: 'Pareto Ranking (80/20 Rule) & Categories',
+          title: 'Category Share & Pareto (80/20 Rule)',
           description:
             'Identifies your top energy-consuming devices following the 80/20 rule. Focus your energy-saving efforts where they make the largest financial impact.',
         },
         tl: {
-          title: 'Ranggo ng Gamit (Pareto 80/20) at Bahagi ng Kategorya',
+          title: 'Category Share & Pareto (80/20 Rule)',
           description:
-            'Tinutukoy ang mga kagamitang pinakamalakas kumonsumo batay sa 80/20 rule. Ipunla ang pagtitipid sa mga gamit na may pinakamalaking epekto sa bill.',
+            'Tinutukoy ang top energy-consuming appliances gamit ang 80/20 rule para malaman kung saan pinakamalaki ang matitipid.',
         },
       },
     },
-
     {
       id: 'analytics-historical-trend',
       placement: 'top',
@@ -591,9 +590,9 @@ const analyticsTour: PageTour = {
             'Compare active billing cycle telemetry alongside recorded history and forward-looking baseline projections based on your appliance routines.',
         },
         tl: {
-          title: 'Kasaysayan ng Konsumo at Baseline Trend',
+          title: 'Multi-Month Trend & Baseline Forecast',
           description:
-            'Subaybayan ang takbo ng kuryente sa mga nakaraang buwan at ihambing ang kasalukuyang billing cycle sa iyong karaniwang baseline.',
+            'Subaybayan ang takbo ng kuryente sa mga nakaraang buwan at ihambing ang kasalukuyang billing cycle sa iyong routine baseline.',
         },
       },
     },
@@ -608,9 +607,9 @@ const analyticsTour: PageTour = {
             'Practical, tailored recommendations based on your appliance load profile and Meralco tariff structure to optimize your monthly expenses.',
         },
         tl: {
-          title: 'Matalinong Payo at Rekomendasyon ng AI',
+          title: 'AI Energy Audit & Actionable Insights',
           description:
-            'Mga partikular at praktikal na payo na binuo batay sa iyong mga kagamitan at Meralco tariff para mapababa ang buwanang bill.',
+            'Praktikal na recommendations mula sa AI batay sa iyong appliances at Meralco tariff para mapababa ang monthly bill.',
         },
       },
     },
@@ -622,7 +621,7 @@ const forecastingTour: PageTour = {
   pageName: 'forecasting',
   pageTitle: {
     en: 'Predictive Energy Forecasting Tour',
-    tl: 'Gabay sa Prediksyon ng Enerhiya',
+    tl: 'Predictive Energy Forecasting Tour',
   },
   steps: [
     {
@@ -636,9 +635,9 @@ const forecastingTour: PageTour = {
             'Switch forecast models between individual spaces or evaluate consolidated projections across all properties combined.',
         },
         tl: {
-          title: 'Saklaw ng Prediksyon at Pagpili ng Espasyo',
+          title: 'Forecast Scope & Target Space',
           description:
-            'Pumili kung para sa partikular na espasyo o para sa pinagsama-samang konsumo ng lahat ng ari-arian ang prediksyon.',
+            'Pumili kung para sa partikular na space o para sa pinagsama-samang konsumo ng buong bahay ang projection.',
         },
       },
     },
@@ -653,9 +652,9 @@ const forecastingTour: PageTour = {
             'Blends month-to-date recorded actuals with remaining days projection based on your daily appliance routines for maximum forecasting accuracy.',
         },
         tl: {
-          title: 'Telemetry ng Kasalukuyang Ikot ng Pagsingil',
+          title: 'Active Billing Cycle Run-Rate Telemetry',
           description:
-            'Pinagsasama ang naitalang aktwal na konsumo at ang prediksyon para sa mga natitirang araw batay sa iyong pang-araw-araw na routine.',
+            'Pinagsasama ang month-to-date recorded actuals at ang projection para sa remaining days batay sa daily appliance routines mo.',
         },
       },
     },
@@ -670,9 +669,9 @@ const forecastingTour: PageTour = {
             'Set your monthly electricity spending cap, monitor daily burn rate, and receive proactive breach day projections with safe daily kWh allowances.',
         },
         tl: {
-          title: 'Bantay sa Buwanang Badyet at Alerto sa Paglabis',
+          title: 'Monthly Budget Sentinel & Breach Guard',
           description:
-            'Magtakda ng buwanang limitasyon sa gastos, bantayan ang bilis ng paggamit, at alamin kung anong araw posibleng lumampas sa badyet upang maagapan.',
+            'Magtakda ng monthly budget cap, bantayan ang daily burn rate, at alamin kung anong araw posibleng lumampas sa budget para maagapan.',
         },
       },
     },
@@ -687,9 +686,9 @@ const forecastingTour: PageTour = {
             'Authentic ERC unbundled cost decomposition showing generation, distribution, transmission, system loss, and government taxes (VAT).',
         },
         tl: {
-          title: 'Talaan ng Tinatayang Bill sa Meralco (Virtual Bill)',
+          title: 'Projected Meralco Statement ("Virtual Bill")',
           description:
-            'Eksaktong unbundled na presyo ng ERC na naghihiwalay sa singil sa henerasyon, distribusyon, transmisyon, system loss, at mga buwis sa gobyerno.',
+            'Eksaktong ERC unbundled cost breakdown na naghihiwalay sa generation, distribution, transmission, system loss, at government taxes (VAT).',
         },
       },
     },
@@ -704,9 +703,9 @@ const forecastingTour: PageTour = {
             'Adjust runtime sliders on specific appliances to simulate real-time bill impacts and test whether your plan achieves your monthly budget target.',
         },
         tl: {
-          title: 'Interactive na "What-If" Appliance Studio',
+          title: 'Interactive "What-If" Appliance Studio',
           description:
-            'I-adjust ang oras ng paggamit ng bawat kagamitan upang makita agad ang pagbabago sa buwanang bill at kung aabot ito sa iyong itinakdang badyet.',
+            'I-adjust ang runtime sliders sa specific appliances para makita agad ang real-time effect sa monthly bill at kung pasok sa target budget mo.',
         },
       },
     },
@@ -721,9 +720,9 @@ const forecastingTour: PageTour = {
             'Contextual advisories explaining regulatory pass-through charges, fuel cost adjustments, and energy conservation tips.',
         },
         tl: {
-          title: 'Opisyal na Abiso ng ERC at Meralco',
+          title: 'ERC & Meralco Regulatory Advisory',
           description:
-            'Mga paliwanag ukol sa mga pass-through charges, fuel adjustments, at opisyal na gabay sa matalinong paggamit ng kuryente.',
+            'Contextual advisories ukol sa regulatory pass-through charges, fuel cost adjustments, at energy-saving tips.',
         },
       },
     },

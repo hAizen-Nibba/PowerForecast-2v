@@ -68,8 +68,8 @@ function getInitialCompletedPages(): Record<TourPage, boolean> {
 
 function getSavedLanguage(): TourLanguage {
   try {
-    const saved = localStorage.getItem(LANG_STORAGE_KEY);
-    if (saved === 'en' || saved === 'tl') return saved;
+    const saved = localStorage.getItem(LANG_STORAGE_KEY) || localStorage.getItem('powerforecast_language');
+    if (saved === 'en' || saved === 'tl') return saved as TourLanguage;
   } catch {
     // fallback
   }
@@ -79,6 +79,7 @@ function getSavedLanguage(): TourLanguage {
 function saveLanguage(lang: TourLanguage) {
   try {
     localStorage.setItem(LANG_STORAGE_KEY, lang);
+    localStorage.setItem('powerforecast_language', lang);
   } catch {
     // silently skip
   }

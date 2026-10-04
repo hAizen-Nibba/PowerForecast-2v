@@ -47,6 +47,7 @@ import { PelpCatalogTabContent } from "./PelpCatalogTabContent";
 import { AiVisionScannerTabContent } from "./AiVisionScannerTabContent";
 import { PcSpecBuilderSection } from "./PcSpecBuilderSection";
 import { useRoom } from "../../context/RoomContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { tokens } from "../../theme/tokens";
 
 interface ApplianceModalProps {
@@ -65,6 +66,7 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
   initialTab = 0,
 }) => {
   const { canEdit } = useRoom();
+  const { language } = useLanguage();
   const [activeTab, setActiveTab] = useState<number>(initialTab);
 
   // Manual Entry Form states
@@ -801,18 +803,34 @@ export const ApplianceModal: React.FC<ApplianceModalProps> = ({
                             <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1, mt: 0.25 }}>
                               <InfoIcon sx={{ fontSize: 16, color: "text.secondary", mt: 0.25 }} />
                               <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.4 }}>
-                                {isFridge ? (
-                                  <>
-                                    <strong>Bakit mahalaga ito?</strong> Ang Inverter Refrigerator / Freezer ay may tuluy-tuloy na thermal insulation at nagme-maintain sa mababang cruising draw (~33% o sa in-input mong running watts tulad ng 200W–350W sa chest freezers). Mas accurate ang projection ng iyong Meralco bill kumpara sa fixed-speed. Kung ordinaryong ref ito, i-toggle lang ng <strong>OFF</strong>.
-                                  </>
-                                ) : isWasher ? (
-                                  <>
-                                    <strong>Bakit mahalaga ito?</strong> Ang Inverter Direct Drive motor ay nag-a-adjust ng bilis depende sa bigat ng labada para makatipid sa kuryente. Kung ordinaryong washing machine ito, i-toggle lang ng <strong>OFF</strong>.
-                                  </>
+                                {language === "tl" ? (
+                                  isFridge ? (
+                                    <>
+                                      <strong>Bakit importante ito?</strong> Mababa lang ang tuluy-tuloy na cruising draw ng Inverter Refrigerator (~33% o custom watts mo tulad ng 200W–350W sa chest freezers) para mapanatili ang lamig. Mas accurate ang projection ng Meralco bill mo kumpara sa fixed-speed. Kung ordinaryong ref ito, i-toggle lang ng <strong>OFF</strong>.
+                                    </>
+                                  ) : isWasher ? (
+                                    <>
+                                      <strong>Bakit importante ito?</strong> Kusang nag-a-adjust ang Inverter Direct Drive motor depende sa bigat ng labada para makabawas sa kuryente. Kung ordinaryong washing machine ito, i-toggle lang ng <strong>OFF</strong>.
+                                    </>
+                                  ) : (
+                                    <>
+                                      <strong>Bakit importante ito?</strong> Kusang bumababa ang wattage ng Inverter Aircon (cruising mode @ ~42% o custom draw mo) kapag lumamig na ang kwarto. Mas accurate ang projection ng Meralco bill mo kumpara sa fixed-speed. Kung ordinaryong aircon lang ito, i-toggle lang ng <strong>OFF</strong>.
+                                    </>
+                                  )
                                 ) : (
-                                  <>
-                                    <strong>Bakit mahalaga ito?</strong> Ang Inverter Aircon ay awtomatikong nagbabawas ng kuryente (cruising mode @ ~42% o custom draw mo) kapag lumamig na ang kwarto. Mas accurate ang projection ng iyong Meralco bill kumpara sa fixed-speed. Kung ordinaryong aircon ito, i-toggle lang ng <strong>OFF</strong>.
-                                  </>
+                                  isFridge ? (
+                                    <>
+                                      <strong>Why does this matter?</strong> An Inverter Refrigerator or Freezer maintains low continuous cruising power (~33% or your custom draw like 200W–350W for chest freezers) to preserve cold temperatures efficiently. This ensures your projected Meralco bill is far more accurate than assuming fixed-speed full wattage. If this is a conventional non-inverter unit, simply toggle this <strong>OFF</strong>.
+                                    </>
+                                  ) : isWasher ? (
+                                    <>
+                                      <strong>Why does this matter?</strong> An Inverter Direct Drive motor dynamically adjusts its running speed based on load weight to save electricity. If this is a standard fixed-speed washing machine, simply toggle this <strong>OFF</strong>.
+                                    </>
+                                  ) : (
+                                    <>
+                                      <strong>Why does this matter?</strong> An Inverter Aircon automatically reduces power (cruising mode @ ~42% or your custom draw) once the room reaches target temperature. This ensures your projected Meralco bill matches real-world savings rather than assuming full fixed-speed wattage. If this is a conventional non-inverter unit, simply toggle this <strong>OFF</strong>.
+                                    </>
+                                  )
                                 )}
                               </Typography>
                             </Box>

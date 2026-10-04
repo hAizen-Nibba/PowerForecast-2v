@@ -285,16 +285,25 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({
             height: targetRect.height + SPOTLIGHT_PADDING * 2,
             borderRadius: 1.5,
             border: '2px solid',
-            borderColor: '#00e5c9',
-            boxShadow: '0 0 0 4px rgba(0, 229, 201, 0.25), 0 0 24px rgba(0, 229, 201, 0.35)',
+            borderColor: (theme) => (theme.palette.mode === 'dark' ? '#fafafa' : '#09090b'),
+            boxShadow: (theme) =>
+              theme.palette.mode === 'dark'
+                ? '0 0 0 3px rgba(255, 255, 255, 0.16), 0 8px 32px rgba(0, 0, 0, 0.85)'
+                : '0 0 0 3px rgba(9, 9, 11, 0.12), 0 8px 24px rgba(0, 0, 0, 0.15)',
             pointerEvents: 'none',
             zIndex: 99982,
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            animation: 'tourPulse 2.5s infinite ease-in-out',
+            animation: 'tourPulse 2.8s infinite ease-in-out',
             '@keyframes tourPulse': {
-              '0%': { boxShadow: '0 0 0 3px rgba(0, 229, 201, 0.2), 0 0 16px rgba(0, 229, 201, 0.3)' },
-              '50%': { boxShadow: '0 0 0 7px rgba(0, 229, 201, 0.35), 0 0 28px rgba(0, 229, 201, 0.5)' },
-              '100%': { boxShadow: '0 0 0 3px rgba(0, 229, 201, 0.2), 0 0 16px rgba(0, 229, 201, 0.3)' },
+              '0%': {
+                boxShadow: '0 0 0 3px rgba(255, 255, 255, 0.16), 0 8px 32px rgba(0, 0, 0, 0.85)',
+              },
+              '50%': {
+                boxShadow: '0 0 0 5px rgba(255, 255, 255, 0.28), 0 12px 40px rgba(0, 0, 0, 0.95)',
+              },
+              '100%': {
+                boxShadow: '0 0 0 3px rgba(255, 255, 255, 0.16), 0 8px 32px rgba(0, 0, 0, 0.85)',
+              },
             },
           }}
         />
@@ -328,13 +337,13 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({
                 p: { xs: 2.25, sm: 2.75 },
                 borderRadius: 2,
                 bgcolor: (theme) =>
-                  theme.palette.mode === 'dark' ? 'rgba(23, 26, 31, 0.96)' : 'rgba(255, 255, 255, 0.98)',
+                  theme.palette.mode === 'dark' ? '#121215' : '#ffffff',
                 border: '1px solid',
                 borderColor: (theme) =>
-                  theme.palette.mode === 'dark' ? 'rgba(0, 229, 201, 0.35)' : 'rgba(13, 148, 136, 0.28)',
+                  theme.palette.mode === 'dark' ? '#27272a' : '#e4e4e7',
                 boxShadow: (theme) =>
                   theme.palette.mode === 'dark'
-                    ? '0 20px 60px rgba(0, 0, 0, 0.65), 0 0 24px rgba(0, 229, 201, 0.1)'
+                    ? '0 20px 60px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.06)'
                     : '0 16px 45px rgba(15, 23, 42, 0.12)',
                 backdropFilter: 'blur(20px)',
                 position: 'relative',
@@ -350,19 +359,19 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({
                         currentModuleMeta?.title[language] || fullTourProgress.pageName
                       }`}
                       sx={{
-                        fontWeight: 800,
+                        fontWeight: 700,
                         fontSize: '0.6875rem',
                         bgcolor: (theme) =>
-                          theme.palette.mode === 'dark' ? 'rgba(0, 229, 201, 0.15)' : 'rgba(13, 148, 136, 0.1)',
-                        color: 'primary.main',
+                          theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+                        color: 'text.primary',
                         border: '1px solid',
                         borderColor: (theme) =>
-                          theme.palette.mode === 'dark' ? 'rgba(0, 229, 201, 0.3)' : 'rgba(13, 148, 136, 0.25)',
+                          theme.palette.mode === 'dark' ? '#27272a' : '#e4e4e7',
                         maxWidth: 260,
                       }}
                     />
                   ) : (
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: '0.6875rem' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: '0.6875rem' }}>
                       {currentTourTitle || 'PowerForecast Tour'}
                     </Typography>
                   )}
@@ -377,7 +386,7 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({
                       startIcon={<TranslateIcon sx={{ fontSize: '13px !important' }} />}
                       sx={{
                         fontSize: '0.6875rem',
-                        fontWeight: 800,
+                        fontWeight: 700,
                         minWidth: 42,
                         py: 0.25,
                         px: 0.75,
@@ -385,6 +394,7 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({
                         textTransform: 'none',
                         color: 'text.secondary',
                         bgcolor: 'action.hover',
+                        '&:hover': { color: 'text.primary' },
                       }}
                     >
                       {language.toUpperCase()}
@@ -435,7 +445,7 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({
               <Typography
                 variant="subtitle1"
                 sx={{
-                  fontWeight: 900,
+                  fontWeight: 800,
                   color: 'text.primary',
                   letterSpacing: '-0.01em',
                   mb: 0.75,
@@ -471,15 +481,15 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({
                       endIcon={<SkipNextIcon sx={{ fontSize: '14px !important' }} />}
                       sx={{
                         fontSize: '0.6875rem',
-                        fontWeight: 700,
+                        fontWeight: 600,
                         textTransform: 'none',
                         color: 'text.secondary',
                         p: 0,
                         minWidth: 0,
-                        '&:hover': { color: 'primary.main' },
+                        '&:hover': { color: 'text.primary' },
                       }}
                     >
-                      {language === 'tl' ? 'Laktawan itong modyul' : 'Skip module'}
+                      {language === 'tl' ? 'I-skip itong module' : 'Skip module'}
                     </Button>
                   )}
                 </Box>
@@ -487,13 +497,13 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({
                   variant="determinate"
                   value={progressPct}
                   sx={{
-                    height: 5,
-                    borderRadius: 3,
+                    height: 4,
+                    borderRadius: 2,
                     bgcolor: (theme) =>
                       theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
                     '& .MuiLinearProgress-bar': {
-                      borderRadius: 3,
-                      bgcolor: '#00e5c9',
+                      borderRadius: 2,
+                      bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#fafafa' : '#09090b'),
                     },
                   }}
                 />
@@ -507,7 +517,7 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({
                   disabled={isFirstStep}
                   startIcon={<ArrowBackIcon sx={{ fontSize: '16px !important' }} />}
                   sx={{
-                    fontWeight: 700,
+                    fontWeight: 600,
                     textTransform: 'none',
                     fontSize: '0.8125rem',
                     borderRadius: 1,
@@ -526,18 +536,21 @@ export const TourOverlay: React.FC<TourOverlayProps> = ({
                     onClick={onNext}
                     endIcon={isLastStep ? <CheckIcon sx={{ fontSize: '16px !important' }} /> : <ArrowForwardIcon sx={{ fontSize: '16px !important' }} />}
                     sx={{
-                      fontWeight: 800,
+                      fontWeight: 700,
                       textTransform: 'none',
                       fontSize: '0.8125rem',
                       borderRadius: 1,
                       px: 2,
-                      py: 0.75,
-                      bgcolor: '#00e5c9',
-                      color: '#0a1715',
-                      boxShadow: '0 4px 14px rgba(0, 229, 201, 0.3)',
+                      py: 0.7,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === 'dark' ? '#fafafa' : '#09090b',
+                      color: (theme) =>
+                        theme.palette.mode === 'dark' ? '#09090b' : '#fafafa',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
                       '&:hover': {
-                        bgcolor: '#00c7ae',
-                        boxShadow: '0 6px 18px rgba(0, 229, 201, 0.4)',
+                        bgcolor: (theme) =>
+                          theme.palette.mode === 'dark' ? '#e4e4e7' : '#18181b',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
                       },
                     }}
                   >

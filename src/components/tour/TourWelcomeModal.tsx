@@ -82,15 +82,15 @@ const WELCOME_COPY: Record<
     pendingBadge: 'Pending',
   },
   tl: {
-    badge: 'Matalinong Gabay sa Sistema',
-    heading: 'Maligayang Pagdating sa PowerForecast',
-    body: 'Alamin ang bawat sulok ng app mula ulo hanggang paa. Matutunan kung paano mag-simulate ng wattage, kalkulahin ang unbundled Meralco rates, mag-iskedyul ng appliances sa kalendaryo, at hulaan ang bill sa katapusan ng buwan.',
-    startFull: 'Simulan ang Buong Gabay ng App',
-    startFullSub: 'Komprehensibong paglalakbay sa 6 na modyul (~4-5 min)',
-    startPage: 'Gabay sa Pahinang Ito Lamang',
-    startPageSub: 'Mabilisang pagsusuri ng kasalukuyang modyul',
-    skip: 'Laktawan muna ang gabay',
-    modulesTitle: 'Mga Modyul ng Sistema',
+    badge: 'Interactive Guided System Tour',
+    heading: 'Welcome sa PowerForecast',
+    body: 'Alamin ang bawat features ng app mula simula hanggang dulo. Matutunan kung paano mag-simulate ng wattage, kalkulahin ang unbundled Meralco rates, mag-iskedyul sa Smart Calendar, at mag-forecast ng monthly electric bills nang may mataas na accuracy.',
+    startFull: 'Simulan ang Full Walkthrough ng App',
+    startFullSub: 'Kumpletong tour sa 6 na modules (~4-5 min)',
+    startPage: 'Tour sa Page na Ito Lamang',
+    startPageSub: 'Mabilisang walkthrough ng kasalukuyang module',
+    skip: 'I-skip muna ang tour',
+    modulesTitle: 'Mga Module ng App & Coverage',
     completedBadge: 'Tapos na',
     currentBadge: 'Kasalukuyan',
     pendingBadge: 'Hindi pa',
@@ -119,7 +119,7 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
       slotProps={{
         backdrop: {
           sx: {
-            bgcolor: 'rgba(0, 0, 0, 0.78)',
+            bgcolor: 'rgba(0, 0, 0, 0.82)',
             backdropFilter: 'blur(16px)',
           },
         },
@@ -132,7 +132,7 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
         p: 2,
       }}
     >
-      <Fade in={open} timeout={350}>
+      <Fade in={open} timeout={300}>
         <Paper
           elevation={0}
           sx={{
@@ -142,14 +142,14 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
             p: { xs: 2.75, sm: 4 },
             borderRadius: 2,
             bgcolor: (theme) =>
-              theme.palette.mode === 'dark' ? 'rgba(23, 26, 31, 0.98)' : 'rgba(255, 255, 255, 0.98)',
+              theme.palette.mode === 'dark' ? '#121215' : '#ffffff',
             border: '1px solid',
             borderColor: (theme) =>
-              theme.palette.mode === 'dark' ? 'rgba(0, 229, 201, 0.35)' : 'rgba(13, 148, 136, 0.3)',
+              theme.palette.mode === 'dark' ? '#27272a' : '#e4e4e7',
             boxShadow: (theme) =>
               theme.palette.mode === 'dark'
-                ? '0 28px 90px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 229, 201, 0.12)'
-                : '0 20px 70px rgba(15, 23, 42, 0.15)',
+                ? '0 24px 70px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.06)'
+                : '0 20px 70px rgba(15, 23, 42, 0.12)',
             backdropFilter: 'blur(28px)',
             overflow: 'hidden',
           }}
@@ -172,7 +172,7 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
             <CloseIcon fontSize="small" />
           </Box>
 
-          {/* Decorative background glow */}
+          {/* Decorative subtle ambient glow */}
           <Box
             sx={{
               position: 'absolute',
@@ -182,8 +182,11 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
               width: 320,
               height: 220,
               borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(0, 229, 201, 0.22) 0%, transparent 70%)',
-              filter: 'blur(45px)',
+              background: (theme) =>
+                theme.palette.mode === 'dark'
+                  ? 'radial-gradient(circle, rgba(255, 255, 255, 0.06) 0%, transparent 70%)'
+                  : 'radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 70%)',
+              filter: 'blur(40px)',
               pointerEvents: 'none',
             }}
           />
@@ -191,19 +194,19 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
           {/* Header Badge */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 1.5 }}>
             <Chip
-              icon={<ExploreIcon sx={{ fontSize: '15px !important', color: 'primary.main !important' }} />}
+              icon={<ExploreIcon sx={{ fontSize: '15px !important', color: '#10b981 !important' }} />}
               label={copy.badge}
               size="small"
               sx={{
-                fontWeight: 800,
+                fontWeight: 700,
                 fontSize: '0.6875rem',
-                letterSpacing: '0.04em',
+                letterSpacing: '0.03em',
                 bgcolor: (theme) =>
-                  theme.palette.mode === 'dark' ? 'rgba(0, 229, 201, 0.12)' : 'rgba(13, 148, 136, 0.08)',
-                color: 'primary.main',
+                  theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+                color: 'text.primary',
                 border: '1px solid',
                 borderColor: (theme) =>
-                  theme.palette.mode === 'dark' ? 'rgba(0, 229, 201, 0.3)' : 'rgba(13, 148, 136, 0.25)',
+                  theme.palette.mode === 'dark' ? '#27272a' : '#e4e4e7',
               }}
             />
           </Box>
@@ -212,7 +215,7 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
           <Typography
             variant="h5"
             sx={{
-              fontWeight: 900,
+              fontWeight: 800,
               textAlign: 'center',
               letterSpacing: '-0.02em',
               mb: 1,
@@ -252,10 +255,11 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
                 p: 0.5,
                 borderRadius: 2,
                 border: '1px solid',
-                borderColor: 'divider',
+                borderColor: (theme) =>
+                  theme.palette.mode === 'dark' ? '#27272a' : '#e4e4e7',
                 '& .MuiToggleButton-root': {
                   textTransform: 'none',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: '0.75rem',
                   px: 2,
                   py: 0.5,
@@ -264,13 +268,13 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
                   color: 'text.secondary',
                   '&.Mui-selected': {
                     bgcolor: (theme) =>
-                      theme.palette.mode === 'dark' ? '#00e5c9' : '#0d9488',
-                    color: (theme) => (theme.palette.mode === 'dark' ? '#0b1614' : '#ffffff'),
-                    fontWeight: 800,
-                    boxShadow: '0 2px 8px rgba(0, 229, 201, 0.25)',
+                      theme.palette.mode === 'dark' ? '#fafafa' : '#09090b',
+                    color: (theme) => (theme.palette.mode === 'dark' ? '#09090b' : '#fafafa'),
+                    fontWeight: 700,
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
                     '&:hover': {
                       bgcolor: (theme) =>
-                        theme.palette.mode === 'dark' ? '#00e5c9' : '#0d9488',
+                        theme.palette.mode === 'dark' ? '#e4e4e7' : '#18181b',
                     },
                   },
                 },
@@ -288,15 +292,16 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
               mb: 3,
               borderRadius: 1.5,
               bgcolor: (theme) =>
-                theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : '#f8fafc',
+                theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : '#f8fafc',
               border: '1px solid',
-              borderColor: 'divider',
+              borderColor: (theme) =>
+                theme.palette.mode === 'dark' ? '#27272a' : '#e4e4e7',
             }}
           >
             <Typography
               variant="caption"
               sx={{
-                fontWeight: 800,
+                fontWeight: 700,
                 color: 'text.secondary',
                 textTransform: 'uppercase',
                 letterSpacing: '0.08em',
@@ -325,26 +330,26 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
                         bgcolor: (theme) =>
                           isCurrent
                             ? theme.palette.mode === 'dark'
-                              ? 'rgba(0, 229, 201, 0.09)'
-                              : 'rgba(13, 148, 136, 0.08)'
+                              ? 'rgba(255, 255, 255, 0.05)'
+                              : 'rgba(0, 0, 0, 0.04)'
                             : theme.palette.mode === 'dark'
                             ? 'rgba(255, 255, 255, 0.02)'
                             : '#ffffff',
                         border: '1px solid',
                         borderColor: isCurrent
-                          ? 'primary.main'
+                          ? (theme) => (theme.palette.mode === 'dark' ? '#fafafa' : '#09090b')
                           : isCompleted
-                          ? 'success.main'
-                          : 'divider',
+                          ? '#10b981'
+                          : (theme) => (theme.palette.mode === 'dark' ? '#27272a' : '#e4e4e7'),
                         transition: 'all 0.15s ease',
                       }}
                     >
                       <Box
                         sx={{
                           color: isCurrent
-                            ? 'primary.main'
+                            ? 'text.primary'
                             : isCompleted
-                            ? 'success.main'
+                            ? '#10b981'
                             : 'text.secondary',
                           display: 'flex',
                           alignItems: 'center',
@@ -369,11 +374,11 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
                           {isCompleted ? (
-                            <Typography variant="caption" sx={{ color: 'success.main', fontSize: '0.625rem', fontWeight: 700 }}>
+                            <Typography variant="caption" sx={{ color: '#10b981', fontSize: '0.625rem', fontWeight: 700 }}>
                               ✓ {copy.completedBadge}
                             </Typography>
                           ) : isCurrent ? (
-                            <Typography variant="caption" sx={{ color: 'primary.main', fontSize: '0.625rem', fontWeight: 700 }}>
+                            <Typography variant="caption" sx={{ color: 'text.primary', fontSize: '0.625rem', fontWeight: 700 }}>
                               ● {copy.currentBadge}
                             </Typography>
                           ) : (
@@ -397,17 +402,23 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
               variant="contained"
               size="large"
               onClick={onStartFull}
-              startIcon={<RocketIcon />}
+              startIcon={<RocketIcon sx={{ fontSize: 18 }} />}
               sx={{
-                fontWeight: 800,
+                fontWeight: 700,
                 borderRadius: 1.25,
                 py: 1.35,
                 textTransform: 'none',
                 fontSize: '0.9375rem',
-                boxShadow: (theme) =>
-                  theme.palette.mode === 'dark'
-                    ? '0 6px 24px rgba(0, 229, 201, 0.35)'
-                    : '0 4px 18px rgba(13, 148, 136, 0.25)',
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'dark' ? '#fafafa' : '#09090b',
+                color: (theme) =>
+                  theme.palette.mode === 'dark' ? '#09090b' : '#fafafa',
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.2)',
+                '&:hover': {
+                  bgcolor: (theme) =>
+                    theme.palette.mode === 'dark' ? '#e4e4e7' : '#18181b',
+                  boxShadow: '0 6px 18px rgba(0, 0, 0, 0.3)',
+                },
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -419,9 +430,9 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
                 component="span"
                 variant="caption"
                 sx={{
-                  opacity: 0.85,
+                  opacity: 0.8,
                   fontSize: '0.6875rem',
-                  fontWeight: 600,
+                  fontWeight: 500,
                   textTransform: 'none',
                 }}
               >
@@ -434,19 +445,20 @@ export const TourWelcomeModal: React.FC<TourWelcomeModalProps> = ({
               variant="outlined"
               size="medium"
               onClick={onStartPage}
-              startIcon={<ExploreIcon />}
+              startIcon={<ExploreIcon sx={{ fontSize: 17 }} />}
               sx={{
-                fontWeight: 700,
+                fontWeight: 600,
                 borderRadius: 1.25,
                 py: 1,
                 textTransform: 'none',
                 fontSize: '0.84rem',
-                borderColor: 'divider',
+                borderColor: (theme) =>
+                  theme.palette.mode === 'dark' ? '#27272a' : '#e4e4e7',
                 color: 'text.primary',
                 '&:hover': {
-                  borderColor: 'primary.main',
-                  bgcolor: (theme) =>
-                    theme.palette.mode === 'dark' ? 'rgba(0, 229, 201, 0.08)' : 'rgba(13, 148, 136, 0.06)',
+                  borderColor: (theme) =>
+                    theme.palette.mode === 'dark' ? '#52525b' : '#a1a1aa',
+                  bgcolor: 'action.hover',
                 },
                 display: 'flex',
                 flexDirection: 'column',

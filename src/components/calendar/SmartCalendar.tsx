@@ -380,6 +380,7 @@ export const SmartCalendar: React.FC = () => {
             <Button
               variant="outlined"
               size="small"
+              data-tour="calendar-billing-period"
               startIcon={<DateRangeIcon sx={{ fontSize: 15 }} />}
               onClick={() => setIsBillingModalOpen(true)}
               sx={{
@@ -556,7 +557,7 @@ export const SmartCalendar: React.FC = () => {
 
       {/* 3. Top KPI Cards */}
       {calendarTab === "actual" ? (
-        <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+        <Grid container spacing={{ xs: 1.5, sm: 2 }} data-tour="calendar-kpi-summary">
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <MetricCard
               title="ACTUAL SPEND TO DATE"
@@ -592,7 +593,7 @@ export const SmartCalendar: React.FC = () => {
           </Grid>
         </Grid>
       ) : (
-        <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+        <Grid container spacing={{ xs: 1.5, sm: 2 }} data-tour="calendar-kpi-summary">
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <MetricCard
               title="BASELINE QUOTA"
@@ -634,6 +635,7 @@ export const SmartCalendar: React.FC = () => {
 
       {/* 4. Calendar Controls Navigator & Month Grid */}
       <SectionCard
+        dataTour="calendar-grid"
         title={
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
@@ -700,7 +702,7 @@ export const SmartCalendar: React.FC = () => {
           </Box>
         }
         headerActions={
-          <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 2 }}>
+          <Box data-tour="calendar-legend" sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 2 }}>
             {calendarTab === "actual" ? (
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                 <Box
@@ -865,6 +867,7 @@ export const SmartCalendar: React.FC = () => {
                 <Grid size={1} key={`actual-${dateKey}-${idx}`}>
                   <Paper
                     variant="outlined"
+                    data-tour={idx === 0 ? "calendar-day-click" : undefined}
                     onClick={() => {
                       setSelectedMobileDate(dayDate);
                       if (typeof window !== "undefined" && window.innerWidth >= 600) {
@@ -1125,6 +1128,7 @@ export const SmartCalendar: React.FC = () => {
               <Grid size={1} key={`sim-${dateKey}-${idx}`}>
                 <Paper
                   variant="outlined"
+                  data-tour={idx === 0 ? "calendar-day-click" : undefined}
                   onClick={() => {
                     setSelectedMobileDate(dayDate);
                     if (typeof window !== "undefined" && window.innerWidth >= 600) {

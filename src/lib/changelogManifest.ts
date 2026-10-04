@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.8v",
+    version: "3.8.8v",
+    git_commit_tag: "3.8.8v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.8v - Modernize tour UI to Obsidian scheme, fix DOM tour targets, and harmonize natural bilingual localization",
+  },
+  {
     id: "3.8.7bv",
     version: "3.8.7bv",
     git_commit_tag: "3.8.7bv",

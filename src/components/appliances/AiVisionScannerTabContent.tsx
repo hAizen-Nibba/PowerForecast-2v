@@ -45,6 +45,7 @@ import { devLog } from "../../lib/devLogger";
 import { DuplicateApplianceModal } from "./DuplicateApplianceModal";
 import { PcSpecBuilderSection } from "./PcSpecBuilderSection";
 import { useRoom } from "../../context/RoomContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { tokens } from "../../theme/tokens";
 
 interface AiVisionScannerTabContentProps {
@@ -58,6 +59,7 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
   onSelectedListIdChange,
   onClose,
 }) => {
+  const { language } = useLanguage();
   const { canEdit } = useRoom();
   const [categoryHint, setCategoryHint] = useState<string>("Auto-Detect from Photo");
   const [isScanning, setIsScanning] = useState(false);
@@ -959,11 +961,17 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
                           <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
                             <InfoIcon sx={{ fontSize: 16, color: "text.secondary", mt: 0.25 }} />
                             <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.4 }}>
-                              {isFridge
-                                ? "Na-detect ng Gemini AI na Inverter ang unit na ito. Tumatakbo ito sa mababang cruising draw (~33% o custom watts mo tulad ng 200W–350W sa chest freezers) para imantina ang lamig."
+                              {language === "tl"
+                                ? isFridge
+                                  ? "Na-detect ng Gemini AI na Inverter ang unit na ito. Tumatakbo ito sa mababang cruising draw (~33% o custom watts mo tulad ng 200W–350W sa chest freezers) para mapanatili ang lamig."
+                                  : isWasher
+                                  ? "Na-detect ng Gemini AI na Inverter ang unit na ito. Variable-speed motor ang gamit nito para makatipid sa kuryente."
+                                  : "Na-detect ng Gemini AI na Inverter ang unit na ito. Pag lumamig na ang kwarto, bababa ang compressor sa cruising mode (~42% o custom draw mo). Kung fixed-speed ito, i-toggle lang ng OFF bago i-save."
+                                : isFridge
+                                ? "Gemini AI detected this unit is an Inverter. It maintains low continuous cruising draw (~33% or your custom watts like 200W–350W on chest freezers) to preserve cold efficiently."
                                 : isWasher
-                                ? "Na-detect ng Gemini AI na Inverter ang unit na ito. Variable-speed motor ang ginagamit nito para makatipid sa kuryente."
-                                : "Na-detect ng Gemini AI na Inverter ang unit na ito. Pag lumamig na ang kwarto, bababa ang compressor sa cruising mode (~42% o custom draw mo). Kung fixed-speed ito, i-toggle lang ng OFF bago i-save."}
+                                ? "Gemini AI detected this unit is an Inverter. It uses a variable-speed motor to optimize power based on load weight."
+                                : "Gemini AI detected this unit is an Inverter. Once the room reaches target temperature, the compressor steps down to cruising mode (~42% or your custom draw). If this is a fixed-speed unit, simply toggle OFF before saving."}
                             </Typography>
                           </Box>
                         </Box>

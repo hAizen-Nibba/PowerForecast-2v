@@ -732,28 +732,32 @@ export const ForecastingView: React.FC = () => {
           </SectionCard>
 
           {/* 5. NEW: Monthly Budget Sentinel & Breach Guard */}
-          <BudgetSentinelCard
-            budgetTarget={budgetTarget}
-            onBudgetTargetChange={handleBudgetTargetChange}
-            mtdCost={mtdActuals.actualCost}
-            mtdKwh={mtdActuals.actualKwh}
-            forecastedBill={trajectoryForecast.forecastedBill}
-            forecastedKwh={trajectoryForecast.forecastedKwh}
-            daysInActiveMonth={daysInActiveMonth}
-            elapsedDays={elapsedDays}
-            remainingDays={remainingDays}
-            effectiveBurnRate={trajectoryForecast.effectiveBurnRate}
-            topApplianceName={topHeavyApplianceName}
-            language={language}
-          />
+          <Box data-tour="forecasting-budget-sentinel">
+            <BudgetSentinelCard
+              budgetTarget={budgetTarget}
+              onBudgetTargetChange={handleBudgetTargetChange}
+              mtdCost={mtdActuals.actualCost}
+              mtdKwh={mtdActuals.actualKwh}
+              forecastedBill={trajectoryForecast.forecastedBill}
+              forecastedKwh={trajectoryForecast.forecastedKwh}
+              daysInActiveMonth={daysInActiveMonth}
+              elapsedDays={elapsedDays}
+              remainingDays={remainingDays}
+              effectiveBurnRate={trajectoryForecast.effectiveBurnRate}
+              topApplianceName={topHeavyApplianceName}
+              language={language}
+            />
+          </Box>
 
           {/* 6. NEW: Projected Meralco Statement Breakdown ("Virtual Bill") */}
-          <VirtualMeralcoBillCard
-            forecastedKwh={trajectoryForecast.forecastedKwh}
-            tariffType={tariffType}
-            activeMonthName={activeMonthName}
-            language={language}
-          />
+          <Box data-tour="forecasting-virtual-bill">
+            <VirtualMeralcoBillCard
+              forecastedKwh={trajectoryForecast.forecastedKwh}
+              tariffType={tariffType}
+              activeMonthName={activeMonthName}
+              language={language}
+            />
+          </Box>
 
           {/* 7. Interactive What-If Appliance Runtime Studio */}
           <SectionCard
