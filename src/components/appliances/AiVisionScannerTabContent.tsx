@@ -45,6 +45,7 @@ import { devLog } from "../../lib/devLogger";
 import { DuplicateApplianceModal } from "./DuplicateApplianceModal";
 import { PcSpecBuilderSection } from "./PcSpecBuilderSection";
 import { useRoom } from "../../context/RoomContext";
+import { tokens } from "../../theme/tokens";
 
 interface AiVisionScannerTabContentProps {
   selectedListId: string;
@@ -383,12 +384,12 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
             variant="outlined"
             sx={{
               p: 1.5,
-              borderRadius: 1.5,
+              borderRadius: 1,
               bgcolor: editIsInverter
-                ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.05)" : "rgba(13, 148, 136, 0.04)")
+                ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle)
                 : "action.hover",
               borderColor: editIsInverter
-                ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)")
+                ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong)
                 : "divider",
               display: "flex",
               alignItems: "center",
@@ -516,7 +517,7 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
                 px: 2.5,
                 py: 1,
                 fontSize: "0.875rem",
-                boxShadow: "0 4px 14px rgba(0, 229, 201, 0.25)",
+                boxShadow: "none",
               }}
             >
               Take Photo with Camera
@@ -828,12 +829,12 @@ export const AiVisionScannerTabContent: React.FC<AiVisionScannerTabContentProps>
                       variant="outlined"
                       sx={{
                         p: 2,
-                        borderRadius: 1.5,
+                        borderRadius: 1,
                         bgcolor: editIsInverter
-                          ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.05)" : "rgba(13, 148, 136, 0.04)")
+                          ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle)
                           : "action.hover",
                         borderColor: editIsInverter
-                          ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)")
+                          ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong)
                           : "divider",
                       }}
                     >

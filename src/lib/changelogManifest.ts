@@ -13,6 +13,16 @@ export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
       "3.8.4v - Button Contrast Optimization & Notification Center Architecture: Fixed button and text contrast across light and dark modes for Join With Code, removed raw telemetry UID badge from active profile banner, consolidated comprehensive notification configuration (sensitivity presets, hardware chimes/haptics, load surge watts, budget milestones, peak hours) into Settings Notifications tab, and transformed the header popover into an interactive Notification Logs Feed.",
   },
   {
+    id: "3.8.3bv",
+    version: "3.8.3bv",
+    git_commit_tag: "3.8.3bv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.3bv - Production-Grade Settings Revamp: Re-architected settings into responsive categorized tabs (General & Tours, Household & Sharing, Notifications & Alerts, Security & Account); removed redundant appearance theme picker and developer SMTP engine diagnostics; added active user telemetry identity banner and synchronized URL search params (?tab=).",
+  },
+  {
     id: "3.8.3v",
     version: "3.8.3v",
     git_commit_tag: "3.8.3v",
@@ -20,7 +30,7 @@ export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
-      "3.8.3v - Production-Grade Settings Revamp: Re-architected settings into responsive categorized tabs (General & Tours, Household & Sharing, Notifications & Alerts, Security & Account); removed redundant appearance theme picker and developer SMTP engine diagnostics; added active user telemetry identity banner and synchronized URL search params (?tab=).",
+      "3.8.3v - Appliances Hub Modernization & Theme Alignment: Fully aligned Appliances Hub with Google Stitch / Shadcn Zinc tokens; integrated PageHeader and SectionCard architectural primitives; eliminated legacy cyan glows and gradients in favor of crisp 1px zinc borders and restrained emerald telemetry accents; streamlined toolbar controls and upgraded companion modals (Space Management, PC Workload, Inverter setup).",
   },
   {
     id: "3.8.2v",

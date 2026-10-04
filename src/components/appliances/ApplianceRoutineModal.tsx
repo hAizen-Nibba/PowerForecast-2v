@@ -34,6 +34,7 @@ import {
   isCompressorInverterCategory,
 } from "../../lib/dailyUsageService";
 import { useToast } from "../common/ToastProvider";
+import { tokens } from "../../theme/tokens";
 
 interface ApplianceRoutineModalProps {
   isOpen: boolean;
@@ -204,9 +205,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                 : "0 20px 60px rgba(15, 23, 42, 0.12)",
             border: "1px solid",
             borderColor: (theme) =>
-              theme.palette.mode === "dark"
-                ? "rgba(0, 229, 201, 0.25)"
-                : "#e2e8f0",
+              theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
             color: "text.primary",
           },
         },
@@ -316,12 +315,12 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
             variant="outlined"
             sx={{
               p: 2,
-              borderRadius: 1.5,
+              borderRadius: 1,
               bgcolor: isInverter
-                ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.05)" : "rgba(13, 148, 136, 0.04)")
+                ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle)
                 : "action.hover",
               borderColor: isInverter
-                ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)")
+                ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong)
                 : "divider",
               transition: "all 0.2s ease-in-out",
             }}
@@ -369,7 +368,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                   mt: 1.5,
                   pt: 1.5,
                   borderTop: "1px dashed",
-                  borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.2)" : "rgba(13, 148, 136, 0.2)"),
+                  borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
                   display: "flex",
                   flexDirection: "column",
                   gap: 1.5,
@@ -380,19 +379,19 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                     <Chip
                       size="small"
                       label="Thermal Duty: Steady Cruising (1/3 Cycle)"
-                      sx={{ fontWeight: 700, fontSize: "0.6875rem", bgcolor: (theme) => theme.palette.mode === "dark" ? "#1e293b" : "#f1f5f9" }}
+                      sx={{ fontWeight: 700, fontSize: "0.6875rem", bgcolor: (theme) => theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface }}
                     />
                   ) : isWasher ? (
                     <Chip
                       size="small"
                       label="Inverter Direct Drive Motor"
-                      sx={{ fontWeight: 700, fontSize: "0.6875rem", bgcolor: (theme) => theme.palette.mode === "dark" ? "#1e293b" : "#f1f5f9" }}
+                      sx={{ fontWeight: 700, fontSize: "0.6875rem", bgcolor: (theme) => theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface }}
                     />
                   ) : (
                     <Chip
                       size="small"
                       label={`1st Hr Cooldown: ${watts}W (100%)`}
-                      sx={{ fontWeight: 700, fontSize: "0.6875rem", bgcolor: (theme) => theme.palette.mode === "dark" ? "#1e293b" : "#f1f5f9" }}
+                      sx={{ fontWeight: 700, fontSize: "0.6875rem", bgcolor: (theme) => theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface }}
                     />
                   )}
 
@@ -407,7 +406,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                   <Chip
                     size="small"
                     label={`Effective: ~${isFridge ? activeCruisingWatts : Math.round((dailyKwh * 1000) / (hoursPerDay || 1))}W @ ${hoursPerDay}h`}
-                    sx={{ fontWeight: 800, fontSize: "0.6875rem", bgcolor: "primary.main", color: "#ffffff" }}
+                    sx={{ fontWeight: 800, fontSize: "0.6875rem", bgcolor: (theme) => theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary, color: (theme) => theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg }}
                   />
                 </Box>
 
@@ -415,10 +414,10 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
                 <Box
                   sx={{
                     p: 1.5,
-                    borderRadius: 1.25,
-                    bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.04)" : "rgba(13, 148, 136, 0.03)",
+                    borderRadius: 1,
+                    bgcolor: (theme) => theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
                     border: "1px solid",
-                    borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.15)" : "rgba(13, 148, 136, 0.15)",
+                    borderColor: (theme) => theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                   }}
                 >
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1, mb: 1 }}>
@@ -585,7 +584,7 @@ export const ApplianceRoutineModal: React.FC<ApplianceRoutineModalProps> = ({
             bgcolor: (theme) =>
               theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.75)" : "#f8fafc",
             borderColor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "#e2e8f0",
+              theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
             display: "flex",
             flexDirection: "column",
             gap: 1.25,

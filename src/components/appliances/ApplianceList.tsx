@@ -27,26 +27,23 @@ import {
   Home as HomeIcon,
   Store as StoreIcon,
   Settings as SettingsIcon,
-  Create as PenIcon,
   CameraAlt as CameraIcon,
   Refresh as RefreshIcon,
   Block as BlockIcon,
 } from "@mui/icons-material";
+import { PageHeader } from "../common/PageHeader";
+import { SectionCard } from "../common/SectionCard";
+import { tokens } from "../../theme/tokens";
 import { UserAppliance, ApplianceList as ApplianceSpace, STREAMLINED_CATEGORIES } from "../../types";
 import { useList, useDelete, useUpdate, useCreate } from "@refinedev/core";
 import { ApplianceModal } from "./ApplianceModal";
-import { PelpCatalogModal } from "./PelpCatalogModal";
 import { SpaceManagementModal } from "./SpaceManagementModal";
-import { AiVisionScannerModal } from "../vision/AiVisionScannerModal";
 import { useToast } from "../common/ToastProvider";
 import { useConfirm } from "../common/ConfirmProvider";
-import { devLog } from "../../lib/devLogger";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
 import { switchOnCircuit, switchOffCircuit, getEffectiveApplianceRate } from "../../lib/sessionService";
 import {
-  calculateKwh,
   calculateApplianceKwh,
-  calculateCost,
   normalizeApplianceCategory,
   isCompressorInverterCategory,
   isComputerCategory,
@@ -61,10 +58,10 @@ interface ApplianceListProps {
 }
 
 export const ApplianceList: React.FC<ApplianceListProps> = () => {
-  const { canEdit, isViewer } = useRoom();
+  const { canEdit } = useRoom();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedRoom, setSelectedRoom] = useState("all");
+  const [selectedRoom] = useState("all");
   const [activeSpaceId, setActiveSpaceId] = useState<string>("");
 
   // Modals state
@@ -361,200 +358,384 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
   if (spaces.length === 0) {
     if (!canEdit) {
       return (
-        <Box sx={{ maxWidth: 640, mx: "auto", py: { xs: 4, sm: 6 } }}>
-          <Card
-            sx={{
-              p: { xs: 3, sm: 4.5 },
-              borderRadius: 1.5,
-              textAlign: "center",
-              border: "1px solid",
-              borderColor: "divider",
-            }}
-          >
+        <Box sx={{ maxWidth: 540, mx: "auto", py: { xs: 4, sm: 6 } }}>
+          <SectionCard noPadding>
+            <Box sx={{ p: { xs: 3, sm: 4.5 }, textAlign: "center" }}>
+              <Box
+                sx={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 1,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                  border: "1px solid",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                  color: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  mb: 2,
+                }}
+              >
+                <BoltIcon sx={{ fontSize: 24 }} />
+              </Box>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                No Spaces Configured Yet
+              </Typography>
+              <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6 }}>
+                You are currently viewing this room in <strong>View-only</strong> mode. Please ask a Room Admin or the Room Owner to set up spaces and add appliances.
+              </Typography>
+            </Box>
+          </SectionCard>
+        </Box>
+      );
+    }
+    return (
+      <Box sx={{ maxWidth: 580, mx: "auto", py: { xs: 4, sm: 6 } }}>
+        <SectionCard noPadding>
+          <Box sx={{ p: { xs: 3, sm: 4.5 }, textAlign: "center" }}>
             <Box
               sx={{
-                width: 64,
-                height: 64,
-                borderRadius: "50%",
-                bgcolor: "rgba(0, 229, 201, 0.15)",
-                color: "primary.main",
+                width: 48,
+                height: 48,
+                borderRadius: 1,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
                 mb: 2,
               }}
             >
-              <BoltIcon sx={{ fontSize: 32 }} />
+              <BoltIcon sx={{ fontSize: 24 }} />
             </Box>
-            <Typography variant="h5" sx={{ fontWeight: 900, mb: 1 }}>
-              No Spaces Configured Yet
+            <Typography variant="h5" sx={{ fontWeight: 600, mb: 1, letterSpacing: "-0.02em" }}>
+              Welcome to Appliances Hub
             </Typography>
-            <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6 }}>
-              You are currently viewing this room in <strong>View-only</strong> mode. Please ask a Room Admin or the Room Owner to set up spaces and add appliances.
+            <Typography variant="body2" sx={{ color: "text.secondary", mb: 3.5, lineHeight: 1.6 }}>
+              Organize your appliances into physical spaces (such as your Main Residence, Bakery, or Rental Unit) for exact sub-metering and unbundled tariff calculations.
             </Typography>
-          </Card>
-        </Box>
-      );
-    }
-    return (
-      <Box sx={{ maxWidth: 640, mx: "auto", py: { xs: 4, sm: 6 } }}>
-        <Card sx={{
-          p: { xs: 3, sm: 4.5 },
-          borderRadius: 1.5,
-          textAlign: "center",
-          border: "1px solid",
-          borderColor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(13, 148, 136, 0.25)",
-        }}>
-          <Box
-            sx={{
-              width: 64,
-              height: 64,
-              borderRadius: "50%",
-              bgcolor: "rgba(0, 229, 201, 0.15)",
-              color: "primary.main",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              mb: 2,
-            }}
-          >
-            <BoltIcon sx={{ fontSize: 32 }} />
-          </Box>
-          <Typography variant="h4" sx={{ fontWeight: 900, mb: 1, letterSpacing: "-0.02em" }}>
-            Welcome to Appliances Hub
-          </Typography>
-          <Typography variant="body2" sx={{ color: "text.secondary", mb: 3.5, lineHeight: 1.6 }}>
-            Organize your appliances into physical spaces (such as your Main Residence, Bakery, or Rental Unit) for exact sub-metering and unbundled tariff calculations.
-          </Typography>
 
-          <form onSubmit={handleCreateInitialSpace}>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, textAlign: "left" }}>
-              <TextField
-                label="Space Name"
-                placeholder="e.g. Main Residence or Cafe Store"
-                value={initialSpaceName}
-                onChange={(e) => setInitialSpaceName(e.target.value)}
-                required
-                fullWidth
-              />
+            <form onSubmit={handleCreateInitialSpace}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, textAlign: "left" }}>
+                <TextField
+                  label="Space Name"
+                  placeholder="e.g. Main Residence or Cafe Store"
+                  value={initialSpaceName}
+                  onChange={(e) => setInitialSpaceName(e.target.value)}
+                  required
+                  fullWidth
+                  size="small"
+                />
 
-              <Box>
-                <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: "block" }}>
-                  Select Tariff Classification
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <Paper
-                      variant="outlined"
-                      onClick={() => setInitialTariffType("residential")}
-                      sx={{
-                        p: 2,
-                        borderRadius: 1.25,
-                        cursor: "pointer",
-                        textAlign: "center",
-                        border: "1px solid",
-                        borderColor: (theme) =>
-                          initialTariffType === "residential"
-                            ? theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.35)" : "rgba(13, 148, 136, 0.35)"
-                            : "divider",
-                        bgcolor: (theme) =>
-                          initialTariffType === "residential"
-                            ? theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.06)" : "rgba(13, 148, 136, 0.05)"
-                            : "transparent",
-                        transition: "all 0.15s ease",
-                        "&:hover": {
-                          borderColor: (theme) =>
-                            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.45)" : "rgba(13, 148, 136, 0.45)",
-                        },
-                      }}
-                    >
-                      <HomeIcon sx={{ color: initialTariffType === "residential" ? "primary.main" : "text.secondary", fontSize: 28, mb: 0.5 }} />
-                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: initialTariffType === "residential" ? "primary.main" : "text.primary" }}>
-                        Residential
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem", mt: 0.5 }}>
-                        230V Stepped Tiers & Lifeline
-                      </Typography>
-                    </Paper>
+                <Box>
+                  <Typography variant="caption" sx={{ fontWeight: 600, mb: 1, display: "block", color: "text.secondary" }}>
+                    Select Tariff Classification
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Paper
+                        variant="outlined"
+                        onClick={() => setInitialTariffType("residential")}
+                        sx={{
+                          p: 2,
+                          borderRadius: 1,
+                          cursor: "pointer",
+                          textAlign: "center",
+                          border: "1px solid",
+                          borderColor: (theme) => {
+                            const isDark = theme.palette.mode === "dark";
+                            return initialTariffType === "residential"
+                              ? isDark ? tokens.dark.primary : tokens.light.primary
+                              : isDark ? tokens.dark.borderSubtle : tokens.light.borderSubtle;
+                          },
+                          bgcolor: (theme) => {
+                            const isDark = theme.palette.mode === "dark";
+                            return initialTariffType === "residential"
+                              ? isDark ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle
+                              : "transparent";
+                          },
+                          transition: "border-color 0.15s ease",
+                        }}
+                      >
+                        <HomeIcon sx={{ fontSize: 24, mb: 0.5, color: "text.primary" }} />
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                          Residential
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem", mt: 0.5 }}>
+                          230V Stepped Tiers & Lifeline
+                        </Typography>
+                      </Paper>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Paper
+                        variant="outlined"
+                        onClick={() => setInitialTariffType("commercial")}
+                        sx={{
+                          p: 2,
+                          borderRadius: 1,
+                          cursor: "pointer",
+                          textAlign: "center",
+                          border: "1px solid",
+                          borderColor: (theme) => {
+                            const isDark = theme.palette.mode === "dark";
+                            return initialTariffType === "commercial"
+                              ? isDark ? tokens.dark.primary : tokens.light.primary
+                              : isDark ? tokens.dark.borderSubtle : tokens.light.borderSubtle;
+                          },
+                          bgcolor: (theme) => {
+                            const isDark = theme.palette.mode === "dark";
+                            return initialTariffType === "commercial"
+                              ? isDark ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle
+                              : "transparent";
+                          },
+                          transition: "border-color 0.15s ease",
+                        }}
+                      >
+                        <StoreIcon sx={{ fontSize: 24, mb: 0.5, color: "text.primary" }} />
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                          Commercial
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem", mt: 0.5 }}>
+                          General Power Flat Rate
+                        </Typography>
+                      </Paper>
+                    </Grid>
                   </Grid>
+                </Box>
 
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <Paper
-                      variant="outlined"
-                      onClick={() => setInitialTariffType("commercial")}
-                      sx={{
-                        p: 2,
-                        borderRadius: 1.25,
-                        cursor: "pointer",
-                        textAlign: "center",
-                        border: "1px solid",
-                        borderColor: (theme) =>
-                          initialTariffType === "commercial"
-                            ? theme.palette.mode === "dark" ? "rgba(244, 63, 94, 0.4)" : "rgba(225, 29, 72, 0.35)"
-                            : "divider",
-                        bgcolor: (theme) =>
-                          initialTariffType === "commercial"
-                            ? theme.palette.mode === "dark" ? "rgba(244, 63, 94, 0.06)" : "rgba(244, 63, 94, 0.04)"
-                            : "transparent",
-                        transition: "all 0.15s ease",
-                        "&:hover": {
-                          borderColor: (theme) =>
-                            theme.palette.mode === "dark" ? "rgba(244, 63, 94, 0.55)" : "rgba(225, 29, 72, 0.45)",
-                        },
-                      }}
-                    >
-                      <StoreIcon sx={{ color: initialTariffType === "commercial" ? "secondary.main" : "text.secondary", fontSize: 28, mb: 0.5 }} />
-                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: initialTariffType === "commercial" ? "secondary.main" : "text.primary" }}>
-                        Commercial
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem", mt: 0.5 }}>
-                        General Power Flat Rate
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                </Grid>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={isCreatingSpace}
+                  startIcon={<PlusIcon />}
+                  sx={{
+                    py: 1.25,
+                    borderRadius: 1,
+                    fontWeight: 600,
+                    textTransform: "none",
+                    mt: 1,
+                    bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary),
+                    color: (theme) => (theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg),
+                  }}
+                >
+                  {isCreatingSpace ? "Creating Space..." : "Create Space & Start Adding Appliances"}
+                </Button>
               </Box>
-
-              <Button
-                type="submit"
-                variant="contained"
-                size="large"
-                disabled={isCreatingSpace}
-                startIcon={<PlusIcon />}
-                sx={{ py: 1.5, borderRadius: 2.5, fontWeight: 800, mt: 1 }}
-              >
-                {isCreatingSpace ? "Creating Space..." : "Create Space & Start Adding Appliances"}
-              </Button>
-            </Box>
-          </form>
-        </Card>
+            </form>
+          </Box>
+        </SectionCard>
       </Box>
     );
   }
 
   // -------------------------------------------------------------
-  // 2. BENTO-STYLE MULTI-SPACE HUB (ACTIVE SPACE VIEW)
+  // 2. MODERN REFINED MULTI-SPACE HUB (ACTIVE SPACE VIEW)
   // -------------------------------------------------------------
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3 } }}>
-      {/* Bento Row 1: Space Switcher Bar & Add Space */}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1.5 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+      {/* Page Header */}
+      <PageHeader
+        title="Appliances Hub"
+        subtitle={
+          activeSpace
+            ? `Sub-metered circuit inventory for "${activeSpace.name}" (${spaceTariffType === "commercial" ? "Commercial Tariff" : "Residential Tariff"}).`
+            : "Manage circuits, physical spaces, and energy loads with sub-metered unbundled tariffs."
+        }
+        badge={
+          <Chip
+            size="small"
+            label={`${currentSpaceAppliances.length} ${currentSpaceAppliances.length === 1 ? "device" : "devices"}`}
+            sx={{
+              fontWeight: 600,
+              fontSize: "0.75rem",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+              color: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+            }}
+          />
+        }
+        actions={
+          <Box data-tour="appliance-add-buttons" sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+            <Tooltip title={!canEdit ? "View-only members cannot add spaces" : ""}>
+              <span>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled={!canEdit}
+                  startIcon={<PlusIcon fontSize="small" />}
+                  onClick={() => {
+                    setSpaceToEdit(null);
+                    setIsSpaceModalOpen(true);
+                  }}
+                  sx={{
+                    fontWeight: 600,
+                    textTransform: "none",
+                    borderRadius: 1,
+                    borderColor: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                    color: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                    "&:hover": {
+                      borderColor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover,
+                    },
+                  }}
+                >
+                  New Space
+                </Button>
+              </span>
+            </Tooltip>
+
+            <Tooltip title={!canEdit ? "View-only members cannot import appliances" : ""}>
+              <span>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled={!canEdit}
+                  startIcon={<DatabaseIcon fontSize="small" />}
+                  onClick={() => {
+                    if (!canEdit) return;
+                    setApplianceToEdit(null);
+                    setAddModalInitialTab(1);
+                    setIsAddModalOpen(true);
+                  }}
+                  sx={{
+                    fontWeight: 600,
+                    textTransform: "none",
+                    borderRadius: 1,
+                    borderColor: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                    color: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                    "&:hover": {
+                      borderColor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover,
+                    },
+                  }}
+                >
+                  PELP Catalog
+                </Button>
+              </span>
+            </Tooltip>
+
+            <Tooltip title={!canEdit ? "View-only members cannot scan appliances" : ""}>
+              <span>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled={!canEdit}
+                  startIcon={<CameraIcon fontSize="small" />}
+                  onClick={() => {
+                    if (!canEdit) return;
+                    setApplianceToEdit(null);
+                    setAddModalInitialTab(2);
+                    setIsAddModalOpen(true);
+                  }}
+                  sx={{
+                    fontWeight: 600,
+                    textTransform: "none",
+                    borderRadius: 1,
+                    borderColor: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                    color: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                    "&:hover": {
+                      borderColor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover,
+                    },
+                  }}
+                >
+                  AI Scan
+                </Button>
+              </span>
+            </Tooltip>
+
+            <Tooltip title={!canEdit ? "View-only members cannot add appliances" : ""}>
+              <span>
+                <Button
+                  variant="contained"
+                  size="small"
+                  disabled={!canEdit}
+                  startIcon={<PlusIcon fontSize="small" />}
+                  onClick={() => {
+                    setApplianceToEdit(null);
+                    setAddModalInitialTab(0);
+                    setIsAddModalOpen(true);
+                  }}
+                  sx={{
+                    fontWeight: 600,
+                    textTransform: "none",
+                    borderRadius: 1,
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary,
+                    color: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg,
+                    "&:hover": {
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? "#e4e4e7" : "#27272a",
+                    },
+                  }}
+                >
+                  Add Appliance
+                </Button>
+              </span>
+            </Tooltip>
+          </Box>
+        }
+      />
+
+      {/* Space Switcher Tabs */}
+      <Box
+        data-tour="appliance-space-tabs"
+        sx={{
+          borderBottom: "1px solid",
+          borderColor: (theme) =>
+            theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+        }}
+      >
         <Tabs
-          data-tour="appliance-space-tabs"
           value={activeSpaceId}
           onChange={(_, val) => setActiveSpaceId(val)}
           variant="scrollable"
           scrollButtons="auto"
           sx={{
-            minHeight: 44,
+            minHeight: 40,
+            "& .MuiTabs-indicator": {
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary,
+              height: 2,
+            },
             "& .MuiTab-root": {
-              minHeight: 44,
-              borderRadius: 2.5,
+              minHeight: 40,
               textTransform: "none",
-              fontWeight: 700,
-              px: 2.25,
-              mr: 1,
+              fontWeight: 600,
+              fontSize: "0.875rem",
+              px: 2,
+              color: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.textMuted : tokens.light.textMuted,
+              "&.Mui-selected": {
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+              },
             },
           }}
         >
@@ -568,6 +749,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               }
               return false;
             }).length;
+
             return (
               <Tab
                 key={s.id}
@@ -580,15 +762,36 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                     <Chip
                       label={count}
                       size="small"
-                      color="primary"
-                      variant={activeSpaceId === s.id ? "filled" : "outlined"}
-                      sx={{ height: 18, minWidth: 22, fontSize: "0.625rem", fontWeight: 800 }}
+                      sx={{
+                        height: 18,
+                        minWidth: 20,
+                        fontSize: "0.625rem",
+                        fontWeight: 600,
+                        bgcolor: (theme) =>
+                          activeSpaceId === s.id
+                            ? theme.palette.mode === "dark"
+                              ? tokens.dark.active
+                              : tokens.light.active
+                            : "transparent",
+                        border: "1px solid",
+                        borderColor: (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                        color: (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
+                      }}
                     />
                     <Chip
                       label={s.tariff_type === "commercial" ? "Commercial" : "Residential"}
                       size="small"
-                      color={s.tariff_type === "commercial" ? "secondary" : "default"}
-                      sx={{ height: 18, fontSize: "0.625rem", fontWeight: 800 }}
+                      sx={{
+                        height: 18,
+                        fontSize: "0.625rem",
+                        fontWeight: 600,
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                        color: (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.textMuted : tokens.light.textMuted,
+                      }}
                     />
                   </Box>
                 }
@@ -596,297 +799,256 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
             );
           })}
         </Tabs>
-
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Tooltip title={!canEdit ? "View-only members cannot add spaces" : ""}>
-            <span>
-              <Button
-                variant="contained"
-                size="small"
-                color="secondary"
-                disabled={!canEdit}
-                startIcon={<PlusIcon />}
-                onClick={() => {
-                  setSpaceToEdit(null);
-                  setIsSpaceModalOpen(true);
-                }}
-                sx={{ borderRadius: 2, fontWeight: 800 }}
-              >
-                Add Space
-              </Button>
-            </span>
-          </Tooltip>
-        </Box>
       </Box>
 
-      {/* Bento Row 2: Active Space Banner Tile */}
-      <Card
-        sx={{
-          p: { xs: 2.5, sm: 3.5 },
-          borderRadius: 1.5,
-          background: (theme) =>
-            theme.palette.mode === "dark"
-              ? "linear-gradient(135deg, rgba(20, 23, 27, 0.95) 0%, rgba(26, 30, 35, 0.9) 100%)"
-              : "linear-gradient(135deg, #ffffff 0%, #f4f6ff 100%)",
-          border: "1px solid",
-          borderColor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.18)" : "rgba(13, 148, 136, 0.18)",
-          display: "flex",
-          flexDirection: { xs: "column", md: "row" },
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", md: "center" },
-          gap: 2.5,
-        }}
-      >
-        <Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
+      {/* Active Space Summary Card */}
+      <SectionCard
+        title={
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <Box
               sx={{
-                width: 46,
-                height: 46,
-                borderRadius: 1.25,
-                bgcolor: spaceTariffType === "commercial" ? "secondary.main" : "primary.main",
-                color: spaceTariffType === "commercial" ? "#ffffff" : "#0c1b18",
+                width: 38,
+                height: 38,
+                borderRadius: 1,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 4px 14px rgba(0, 229, 201, 0.3)",
                 flexShrink: 0,
               }}
             >
-              {spaceTariffType === "commercial" ? <StoreIcon sx={{ color: "#ffffff" }} /> : <HomeIcon sx={{ color: "#0c1b18" }} />}
+              {spaceTariffType === "commercial" ? <StoreIcon fontSize="small" /> : <HomeIcon fontSize="small" />}
             </Box>
             <Box>
-              <Typography variant="h5" sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: "1rem",
+                  color: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                  lineHeight: 1.25,
+                }}
+              >
                 {activeSpace?.name}
               </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.textMuted : tokens.light.textMuted,
+                  fontSize: "0.75rem",
+                }}
+              >
                 {spaceTariffType === "commercial"
-                  ? "Commercial General Power Tariff • Flat distribution & commercial metering"
-                  : "Residential 230V Tariff • Stepped distribution tiers & Lifeline subsidy"}
+                  ? "Commercial General Power Tariff • Flat distribution"
+                  : "Residential 230V Tariff • Stepped tiers & Lifeline subsidy"}
               </Typography>
             </Box>
           </Box>
-        </Box>
-
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexWrap: "wrap" }}>
-          <Chip
-            icon={<SpeedIcon sx={{ color: "#00e5c9 !important" }} />}
-            label={`Load: ${spaceTotalWatts} W`}
-            sx={{ fontWeight: 800, bgcolor: "rgba(0, 229, 201, 0.08)", border: "1px solid rgba(0, 229, 201, 0.25)", color: "#00e5c9" }}
-          />
-          <Chip
-            label={`${activeSpaceAppliances.length} Active${blacklistedCount > 0 ? ` • ${blacklistedCount} Excluded` : " Appliances"}`}
-            color="primary"
-            variant="outlined"
-            sx={{ fontWeight: 700 }}
-          />
-          {blacklistedCount > 0 && (
-            <Tooltip title={`${blacklistedCount} appliance(s) are currently blacklisted and excluded from Smart Calendar and Forecasting calculations.`}>
-              <Chip
-                icon={<BlockIcon sx={{ fontSize: "14px !important", color: "#f59e0b !important" }} />}
-                label={`${blacklistedCount} Blacklisted`}
-                size="small"
-                sx={{
-                  fontWeight: 800,
-                  bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.12)" : "rgba(245, 158, 11, 0.08)"),
-                  color: (theme) => (theme.palette.mode === "dark" ? "#fbbf24" : "#b45309"),
-                  border: "1px solid",
-                  borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.35)" : "rgba(245, 158, 11, 0.3)"),
-                }}
-              />
+        }
+        headerActions={
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+            <Tooltip title={!canEdit ? "View-only members cannot configure spaces" : ""}>
+              <span>
+                <Button
+                  data-tour="appliance-space-manage"
+                  variant="outlined"
+                  size="small"
+                  disabled={!canEdit}
+                  startIcon={<SettingsIcon fontSize="small" />}
+                  onClick={() => {
+                    setSpaceToEdit(activeSpace);
+                    setIsSpaceModalOpen(true);
+                  }}
+                  sx={{
+                    borderRadius: 1,
+                    fontWeight: 500,
+                    fontSize: "0.75rem",
+                    textTransform: "none",
+                    borderColor: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                    color: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
+                    "&:hover": {
+                      borderColor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
+                    },
+                  }}
+                >
+                  Configure
+                </Button>
+              </span>
             </Tooltip>
-          )}
-          <Chip
-            label={`₱${spaceBillCalc.totalBill.toFixed(2)} / mo`}
-            color={spaceTariffType === "commercial" ? "secondary" : "default"}
-            sx={{ fontWeight: 800, fontFamily: "monospace" }}
-          />
-          <Tooltip title={!canEdit ? "View-only members cannot configure spaces" : ""}>
-            <span>
+
+            {spaces.length > 1 && canEdit && (
               <Button
-                data-tour="appliance-space-manage"
                 variant="outlined"
+                color="error"
                 size="small"
-                disabled={!canEdit}
-                startIcon={<SettingsIcon />}
+                startIcon={<TrashIcon fontSize="small" />}
                 onClick={() => {
                   setSpaceToEdit(activeSpace);
                   setIsSpaceModalOpen(true);
                 }}
-                sx={{ borderRadius: 1, fontWeight: 700 }}
-              >
-                Configure
-              </Button>
-            </span>
-          </Tooltip>
-          {spaces.length > 1 && canEdit && (
-            <Button
-              variant="outlined"
-              color="error"
-              size="small"
-              startIcon={<TrashIcon />}
-              onClick={() => {
-                setSpaceToEdit(activeSpace);
-                setIsSpaceModalOpen(true);
-              }}
-              sx={{ borderRadius: 1, fontWeight: 700 }}
-            >
-              Delete Space
-            </Button>
-          )}
-          {currentSpaceAppliances.length > 0 && canEdit && (
-            <Button
-              variant="outlined"
-              color="error"
-              size="small"
-              startIcon={<DeleteSweepIcon />}
-              onClick={handleClearAll}
-              sx={{ borderRadius: 1, fontWeight: 700 }}
-            >
-              Clear All
-            </Button>
-          )}
-        </Box>
-      </Card>
-
-      {/* Bento Row 3: Unified Add Appliance Action Bar */}
-      <Paper
-        variant="outlined"
-        data-tour="appliance-add-buttons"
-        sx={{
-          p: 2.25,
-          borderRadius: 1.5,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: 2,
-          bgcolor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.03)" : "rgba(0, 158, 136, 0.02)",
-          border: "1px solid",
-          borderColor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.15)" : "rgba(13, 148, 136, 0.15)",
-          transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-          "&:hover": {
-            borderColor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.35)" : "rgba(13, 148, 136, 0.35)",
-            boxShadow: "0 4px 20px rgba(0, 229, 201, 0.08)",
-          },
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-          <Tooltip title={!canEdit ? "View-only members cannot add appliances" : ""}>
-            <span>
-              <Button
-                variant="contained"
-                color="primary"
-                size="large"
-                disabled={!canEdit}
-                startIcon={<PlusIcon />}
-                onClick={() => {
-                  setApplianceToEdit(null);
-                  setAddModalInitialTab(0);
-                  setIsAddModalOpen(true);
-                }}
                 sx={{
-                  fontWeight: 800,
-                  px: 3,
-                  py: 1.1,
-                  borderRadius: 1.25,
-                  boxShadow: canEdit ? "0 4px 16px rgba(0, 229, 201, 0.25)" : "none",
-                  fontSize: "0.9375rem",
+                  borderRadius: 1,
+                  fontWeight: 500,
+                  fontSize: "0.75rem",
                   textTransform: "none",
                 }}
               >
-                + Add Appliance
+                Delete Space
               </Button>
-            </span>
-          </Tooltip>
-          <Box sx={{ display: { xs: "none", md: "block" } }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-              Add custom devices, import from 12k+ certified PELP models, or scan energy stickers
-            </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-              Choose from Manual Entry, Official DOE PELP Database, or AI Vision Camera Scan
-            </Typography>
+            )}
+
+            {currentSpaceAppliances.length > 0 && canEdit && (
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
+                startIcon={<DeleteSweepIcon fontSize="small" />}
+                onClick={handleClearAll}
+                sx={{
+                  borderRadius: 1,
+                  fontWeight: 500,
+                  fontSize: "0.75rem",
+                  textTransform: "none",
+                }}
+              >
+                Clear All
+              </Button>
+            )}
           </Box>
-        </Box>
-
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Chip
-            icon={<PenIcon sx={{ fontSize: "14px !important" }} />}
-            label="Manual"
-            size="small"
-            variant="outlined"
-            disabled={!canEdit}
-            onClick={() => {
-              if (!canEdit) return;
-              setApplianceToEdit(null);
-              setAddModalInitialTab(0);
-              setIsAddModalOpen(true);
-            }}
-            sx={{ cursor: canEdit ? "pointer" : "default", fontWeight: 600 }}
-          />
-          <Chip
-            icon={<DatabaseIcon sx={{ fontSize: "14px !important" }} />}
-            label="PELP Catalog"
-            size="small"
-            variant="outlined"
-            disabled={!canEdit}
-            onClick={() => {
-              if (!canEdit) return;
-              setApplianceToEdit(null);
-              setAddModalInitialTab(1);
-              setIsAddModalOpen(true);
-            }}
-            sx={{ cursor: canEdit ? "pointer" : "default", fontWeight: 600 }}
-          />
-          <Chip
-            icon={<CameraIcon sx={{ fontSize: "14px !important" }} />}
-            label="AI Scan"
-            size="small"
-            color="primary"
-            variant="outlined"
-            disabled={!canEdit}
-            onClick={() => {
-              if (!canEdit) return;
-              setApplianceToEdit(null);
-              setAddModalInitialTab(2);
-              setIsAddModalOpen(true);
-            }}
-            sx={{ cursor: canEdit ? "pointer" : "default", fontWeight: 700 }}
-          />
-        </Box>
-      </Paper>
-
-      {/* Bento Row 4: Search & Filters */}
-      <Box data-tour="appliance-filters" sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, alignItems: "center", justifyContent: "space-between" }}>
-        <TextField
-
-          size="small"
-          placeholder="Search appliances in this space..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" sx={{ color: "text.secondary" }} />
-                </InputAdornment>
-              ),
-            },
+        }
+      >
+        {/* Telemetry metrics strip */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 1.5,
           }}
-          sx={{ width: { xs: "100%", sm: 340 } }}
-        />
+        >
+          <Chip
+            icon={<SpeedIcon sx={{ fontSize: "15px !important", color: "text.secondary" }} />}
+            label={`Load: ${spaceTotalWatts.toLocaleString()} W`}
+            size="small"
+            sx={{
+              fontWeight: 600,
+              fontSize: "0.75rem",
+              fontVariantNumeric: "tabular-nums",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+            }}
+          />
 
-        <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", width: { xs: "100%", sm: "auto" } }}>
+          <Chip
+            label={`${activeSpaceAppliances.length} Active`}
+            size="small"
+            sx={{
+              fontWeight: 600,
+              fontSize: "0.75rem",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+            }}
+          />
+
+          {blacklistedCount > 0 && (
+            <Tooltip title={`${blacklistedCount} appliance(s) are blacklisted and excluded from Forecasting calculations.`}>
+              <Chip
+                icon={<BlockIcon sx={{ fontSize: "14px !important", color: (theme) => (theme.palette.mode === "dark" ? tokens.dark.warn : tokens.light.warn) }} />}
+                label={`${blacklistedCount} Blacklisted`}
+                size="small"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: "0.75rem",
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.warnBg : tokens.light.warnBg),
+                  color: (theme) => (theme.palette.mode === "dark" ? tokens.dark.warn : tokens.light.warn),
+                  border: "1px solid",
+                  borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.warnBorder : tokens.light.warnBorder),
+                }}
+              />
+            </Tooltip>
+          )}
+
+          <Chip
+            label={`₱${spaceBillCalc.totalBill.toFixed(2)} / mo`}
+            size="small"
+            sx={{
+              fontWeight: 700,
+              fontSize: "0.75rem",
+              fontVariantNumeric: "tabular-nums",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+            }}
+          />
+        </Box>
+      </SectionCard>
+
+      {/* Search & Filter Toolbar */}
+      <Box
+        data-tour="appliance-filters"
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          gap: 1.5,
+          alignItems: { xs: "stretch", sm: "center" },
+          justifyContent: "space-between",
+        }}
+      >
+        <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", flex: 1, maxWidth: { xs: "100%", sm: 540 } }}>
+          <TextField
+            size="small"
+            placeholder="Search appliances, brands, models..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            fullWidth
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" sx={{ color: "text.secondary" }} />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 1,
+                fontSize: "0.875rem",
+              },
+            }}
+          />
+
           <TextField
             select
             size="small"
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            sx={{ minWidth: 170 }}
+            sx={{
+              minWidth: { xs: 130, sm: 170 },
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 1,
+                fontSize: "0.875rem",
+              },
+            }}
           >
             <MenuItem value="all">All Categories</MenuItem>
             {STREAMLINED_CATEGORIES.map((cat) => (
@@ -895,6 +1057,25 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
               </MenuItem>
             ))}
           </TextField>
+        </Box>
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, justifyContent: { xs: "space-between", sm: "flex-end" } }}>
+          <Chip
+            size="small"
+            label={`Showing ${filteredAppliances.length} of ${currentSpaceAppliances.length}`}
+            sx={{
+              fontSize: "0.75rem",
+              fontWeight: 500,
+              fontVariantNumeric: "tabular-nums",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+              color: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.textMuted : tokens.light.textMuted,
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+            }}
+          />
 
           <Tooltip title="Sync & Refresh from Database">
             <IconButton
@@ -904,7 +1085,21 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                 if (spacesRes?.refetch) spacesRes.refetch();
                 showInfo("Syncing appliances with Supabase database...");
               }}
-              sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1.25, p: 0.9 }}
+              sx={{
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                borderRadius: 1,
+                p: 0.8,
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
+                "&:hover": {
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover,
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
+                },
+              }}
             >
               <RefreshIcon fontSize="small" />
             </IconButton>
@@ -912,26 +1107,43 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
         </Box>
       </Box>
 
-      {/* Bento Row 5: Space Appliances Grid */}
-      <Grid container spacing={{ xs: 2, sm: 2.5 }}>
+      {/* Appliances Grid */}
+      <Grid container spacing={2}>
         {filteredAppliances.length === 0 ? (
           <Grid size={12}>
-            <Paper sx={{ p: 6, textAlign: "center", borderRadius: 1.25, border: "1px dashed", borderColor: "divider" }}>
-              <BoltIcon sx={{ fontSize: 48, opacity: 0.3, mb: 1 }} />
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                No appliances in "{activeSpace?.name}" yet.
-              </Typography>
-              <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
-                Use the "+ Add Appliance" button above to add custom devices, import from the certified DOE PELP database, or scan energy stickers with AI.
-              </Typography>
-            </Paper>
+            <SectionCard noPadding>
+              <Box sx={{ p: 5, textAlign: "center" }}>
+                <Box
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 1,
+                    mx: "auto",
+                    mb: 1.5,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                    color: "text.secondary",
+                  }}
+                >
+                  <BoltIcon sx={{ fontSize: 24 }} />
+                </Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  No appliances found in "{activeSpace?.name}"
+                </Typography>
+                <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
+                  Use the "+ Add Appliance" button above to add custom devices, import from the certified DOE PELP database, or scan energy stickers with AI.
+                </Typography>
+              </Box>
+            </SectionCard>
           </Grid>
         ) : (
           filteredAppliances.map((app: UserAppliance, appIdx: number) => {
             const isBlacklisted = app.is_active === false;
             const w = Number(app.watts) || 0;
             const h = Number(app.hours_per_day) || 0;
-            const q = Number(app.quantity) || 1;
             const d = Number(app.days_per_month) || 30;
 
             const supportsInverter = isCompressorInverterCategory(app.category);
@@ -974,97 +1186,72 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                 <Card
                   data-tour={appIdx === 0 ? "appliance-card" : undefined}
                   sx={{
-                    p: { xs: 2.25, sm: 2.5 },
-                    borderRadius: 1.5,
-                    border: isBlacklisted ? "1px dashed" : "1px solid",
-                    borderColor: (theme) =>
-                      isBlacklisted
-                        ? theme.palette.mode === "dark"
-                          ? "rgba(245, 158, 11, 0.45)"
-                          : "rgba(217, 119, 6, 0.4)"
-                        : isOn
-                          ? theme.palette.mode === "dark"
-                            ? "#00e5c9"
-                            : "#0d9488"
-                          : theme.palette.mode === "dark"
-                            ? "rgba(255, 255, 255, 0.06)"
-                            : "#e2e8f0",
-                    bgcolor: (theme) =>
-                      isBlacklisted
-                        ? theme.palette.mode === "dark"
-                          ? "rgba(22, 24, 28, 0.88)"
-                          : "rgba(254, 243, 199, 0.12)"
-                        : isOn
-                          ? theme.palette.mode === "dark"
-                            ? "rgba(0, 229, 201, 0.05)"
-                            : "rgba(13, 148, 136, 0.04)"
-                          : theme.palette.mode === "dark"
-                            ? "rgba(20, 24, 28, 0.75)"
-                            : "background.paper",
-                    boxShadow: (theme) =>
-                      isOn
-                        ? theme.palette.mode === "dark"
-                          ? "0 0 16px rgba(0, 229, 201, 0.25)"
-                          : "0 0 16px rgba(13, 148, 136, 0.2)"
-                        : "none",
-                    opacity: isBlacklisted ? 0.82 : 1,
+                    p: 2.25,
+                    borderRadius: 1,
+                    border: "1px solid",
+                    borderStyle: isBlacklisted ? "dashed" : "solid",
+                    borderColor: (theme) => {
+                      const isDark = theme.palette.mode === "dark";
+                      if (isBlacklisted) return isDark ? tokens.dark.warnBorder : tokens.light.warnBorder;
+                      if (isOn) return isDark ? tokens.dark.live : tokens.light.live;
+                      return isDark ? tokens.dark.borderSubtle : tokens.light.borderSubtle;
+                    },
+                    bgcolor: (theme) => {
+                      const isDark = theme.palette.mode === "dark";
+                      if (isBlacklisted) return isDark ? "rgba(245, 158, 11, 0.04)" : "rgba(245, 158, 11, 0.03)";
+                      if (isOn) return isDark ? tokens.dark.liveBg : tokens.light.liveBg;
+                      return isDark ? tokens.dark.card : tokens.light.card;
+                    },
+                    backgroundImage: "none",
+                    boxShadow: "none",
+                    opacity: isBlacklisted ? 0.8 : 1,
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
                     position: "relative",
-                    transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                    transition: "border-color 0.15s ease, background-color 0.15s ease",
                     "&:hover": {
-                      borderColor: (theme) =>
-                        isBlacklisted
-                          ? theme.palette.mode === "dark"
-                            ? "rgba(245, 158, 11, 0.7)"
-                            : "rgba(217, 119, 6, 0.6)"
-                          : isOn
-                            ? theme.palette.mode === "dark"
-                              ? "#00e5c9"
-                              : "#0d9488"
-                            : theme.palette.mode === "dark"
-                              ? "rgba(0, 229, 201, 0.45)"
-                              : "rgba(13, 148, 136, 0.4)",
-                      transform: "translateY(-3px)",
-                      boxShadow: (theme) =>
-                        theme.palette.mode === "dark"
-                          ? "0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(0, 229, 201, 0.12)"
-                          : "0 8px 24px rgba(13, 148, 136, 0.12)",
+                      borderColor: (theme) => {
+                        const isDark = theme.palette.mode === "dark";
+                        if (isBlacklisted) return isDark ? tokens.dark.warn : tokens.light.warn;
+                        if (isOn) return isDark ? tokens.dark.live : tokens.light.live;
+                        return isDark ? tokens.dark.borderStrong : tokens.light.borderStrong;
+                      },
                     },
                   }}
                 >
                   <Box>
-                    {/* Top Row: Category, Blacklist badge, Room Tag & Start Stopwatch Button */}
+                    {/* Top Row: Category, Blacklist badge, Room Tag & Start/Stop Button */}
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5, gap: 1 }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
                         <Chip
                           label={app.category}
                           size="small"
                           sx={{
-                            fontWeight: 700,
-                            fontSize: "0.7rem",
+                            fontWeight: 600,
+                            fontSize: "0.6875rem",
                             bgcolor: (theme) =>
-                              theme.palette.mode === "dark"
-                                ? "rgba(0, 229, 201, 0.1)"
-                                : "rgba(13, 148, 136, 0.08)",
+                              theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
                             color: (theme) =>
-                              theme.palette.mode === "dark" ? "#00e5c9" : "#0f766e",
+                              theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
+                            border: "1px solid",
+                            borderColor: (theme) =>
+                              theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                           }}
                         />
                         {isBlacklisted && (
                           <Tooltip title="Blacklisted: Excluded from Smart Calendar, Forecasting, and Monthly Projections.">
                             <Chip
-                              icon={<BlockIcon sx={{ fontSize: "13px !important", color: "#f59e0b !important" }} />}
+                              icon={<BlockIcon sx={{ fontSize: "13px !important" }} />}
                               label="Blacklisted"
                               size="small"
                               sx={{
-                                fontWeight: 800,
+                                fontWeight: 600,
                                 fontSize: "0.6875rem",
-                                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.16)" : "rgba(245, 158, 11, 0.1)"),
-                                color: (theme) => (theme.palette.mode === "dark" ? "#fbbf24" : "#b45309"),
+                                bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.warnBg : tokens.light.warnBg),
+                                color: (theme) => (theme.palette.mode === "dark" ? tokens.dark.warn : tokens.light.warn),
                                 border: "1px solid",
-                                borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.4)" : "rgba(245, 158, 11, 0.3)"),
+                                borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.warnBorder : tokens.light.warnBorder),
                               }}
                             />
                           </Tooltip>
@@ -1075,9 +1262,10 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                             size="small"
                             variant="outlined"
                             sx={{
-                              fontWeight: 600,
+                              fontWeight: 500,
                               fontSize: "0.6875rem",
-                              borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "#cbd5e1"),
+                              borderColor: (theme) =>
+                                theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                               color: "text.secondary",
                             }}
                           />
@@ -1092,7 +1280,7 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                             : isBlacklisted
                             ? "Appliance is blacklisted — click restore below to enable stopwatch"
                             : isOn
-                            ? "Stop Live Stopwatch (Auto-logs duration and energy into today's session records)"
+                            ? "Stop Live Stopwatch (Auto-logs duration and energy into today's records)"
                             : "Start Live Stopwatch (Track real-time energy & cost)"
                         }
                       >
@@ -1100,7 +1288,6 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                           <Button
                             size="small"
                             variant={isOn ? "contained" : "outlined"}
-                            color={isOn ? "error" : "primary"}
                             disabled={isBlacklisted || !canEdit}
                             onClick={() => togglePower(app)}
                             startIcon={
@@ -1111,26 +1298,44 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                               )
                             }
                             sx={{
-                              py: 0.3,
-                              px: 1.2,
-                              minHeight: 28,
-                              fontSize: "0.7rem",
-                              fontWeight: 800,
-                              borderRadius: 1.5,
+                              py: 0.25,
+                              px: 1.25,
+                              minHeight: 26,
+                              fontSize: "0.6875rem",
+                              fontWeight: 600,
+                              borderRadius: 1,
                               textTransform: "none",
                               ...(isOn
                                 ? {
-                                    bgcolor: "#ef4444",
+                                    bgcolor: (theme) =>
+                                      theme.palette.mode === "dark" ? tokens.dark.error : tokens.light.error,
                                     color: "#ffffff",
-                                    boxShadow: "0 0 10px rgba(239, 68, 68, 0.45)",
-                                    "&:hover": { bgcolor: "#dc2626" },
+                                    "&:hover": {
+                                      bgcolor: "#dc2626",
+                                    },
                                   }
                                 : {
-                                    borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.4)" : "#0d9488"),
-                                    color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
-                                    bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(13, 148, 136, 0.06)"),
+                                    borderColor: (theme) => {
+                                      const isDark = theme.palette.mode === "dark";
+                                      return isDark ? tokens.dark.liveBorder : tokens.light.liveBorder;
+                                    },
+                                    color: (theme) => {
+                                      const isDark = theme.palette.mode === "dark";
+                                      return isDark ? tokens.dark.live : tokens.light.live;
+                                    },
+                                    bgcolor: (theme) => {
+                                      const isDark = theme.palette.mode === "dark";
+                                      return isDark ? tokens.dark.liveBg : tokens.light.liveBg;
+                                    },
                                     "&:hover": {
-                                      bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.2)" : "rgba(13, 148, 136, 0.12)"),
+                                      borderColor: (theme) => {
+                                        const isDark = theme.palette.mode === "dark";
+                                        return isDark ? tokens.dark.live : tokens.light.live;
+                                      },
+                                      bgcolor: (theme) => {
+                                        const isDark = theme.palette.mode === "dark";
+                                        return isDark ? "rgba(52, 211, 153, 0.18)" : "rgba(5, 150, 105, 0.18)";
+                                      },
                                     },
                                   }),
                             }}
@@ -1142,7 +1347,15 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                     </Box>
 
                     {/* Appliance Name & Details */}
-                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: "0.9375rem",
+                        color: "text.primary",
+                        lineHeight: 1.3,
+                      }}
+                    >
                       {app.name}
                     </Typography>
                     <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
@@ -1155,16 +1368,20 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                         <>
                           <Tooltip title={`Inverter Cruising: ~${cruisingWatts}W ${isFridge ? "steady continuous maintenance (1/3 duty cycle)" : "maintenance mode after cooldown"}${isCustomCruising ? " (Custom User Override)" : ""}`}>
                             <Chip
-                              icon={<BoltIcon sx={{ fontSize: "14px !important", color: "#00e5c9 !important" }} />}
-                              label={`Inverter (${isCustomCruising ? `Custom ~${cruisingWatts}W` : `~${cruisingWatts}W avg`})`}
+                              icon={<BoltIcon sx={{ fontSize: "13px !important" }} />}
+                              label={`Inverter (~${cruisingWatts}W)`}
                               size="small"
                               sx={{
-                                fontWeight: 800,
+                                fontWeight: 600,
                                 fontSize: "0.6875rem",
-                                bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(13, 148, 136, 0.1)",
-                                color: (theme) => theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488",
+                                fontVariantNumeric: "tabular-nums",
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                                color: (theme) =>
+                                  theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
                                 border: "1px solid",
-                                borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)",
+                                borderColor: (theme) =>
+                                  theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                               }}
                             />
                           </Tooltip>
@@ -1172,33 +1389,65 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                             label={`Peak ${app.watts}W`}
                             size="small"
                             variant="outlined"
-                            sx={{ fontWeight: 700, fontSize: "0.6875rem" }}
+                            sx={{
+                              fontWeight: 600,
+                              fontSize: "0.6875rem",
+                              fontVariantNumeric: "tabular-nums",
+                              borderColor: (theme) =>
+                                theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                            }}
                           />
                         </>
                       ) : (
                         <Chip
-                          icon={<BoltIcon sx={{ fontSize: "14px !important", color: "#ffd54f !important" }} />}
+                          icon={<BoltIcon sx={{ fontSize: "13px !important" }} />}
                           label={`${app.watts} W`}
                           size="small"
-                          sx={{ fontWeight: 800 }}
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: "0.6875rem",
+                            fontVariantNumeric: "tabular-nums",
+                            bgcolor: (theme) =>
+                              theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                            border: "1px solid",
+                            borderColor: (theme) =>
+                              theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                          }}
                         />
                       )}
                       {app.quantity > 1 && (
                         <Chip
                           label={`Qty: ${app.quantity}`}
                           size="small"
-                          sx={{ fontWeight: 700 }}
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: "0.6875rem",
+                            bgcolor: (theme) =>
+                              theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                          }}
                         />
                       )}
                       <Chip
                         label={`${app.hours_per_day}h/day`}
                         size="small"
                         variant="outlined"
-                        sx={{ fontWeight: 600 }}
+                        sx={{
+                          fontWeight: 500,
+                          fontSize: "0.6875rem",
+                          fontVariantNumeric: "tabular-nums",
+                          borderColor: (theme) =>
+                            theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                        }}
                       />
                     </Box>
 
-                    <Divider sx={{ my: 1.5 }} />
+                    <Divider
+                      sx={{
+                        my: 1.5,
+                        borderColor: (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                      }}
+                    />
 
                     {/* Monthly estimated cost */}
                     <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 1 }}>
@@ -1206,7 +1455,16 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                         <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem" }}>
                           Monthly Cost ({spaceTariffType === "commercial" ? "Commercial" : "Residential"})
                         </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.main", letterSpacing: "-0.01em" }}>
+                        <Typography
+                          variant="subtitle1"
+                          sx={{
+                            fontWeight: 700,
+                            fontVariantNumeric: "tabular-nums",
+                            letterSpacing: "-0.01em",
+                            color: (theme) =>
+                              theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                          }}
+                        >
                           ₱{monthlyCost.toFixed(2)}
                         </Typography>
                       </Box>
@@ -1214,7 +1472,15 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                         <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem" }}>
                           Energy Load
                         </Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: "monospace" }}>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontWeight: 600,
+                            fontVariantNumeric: "tabular-nums",
+                            color: (theme) =>
+                              theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
+                          }}
+                        >
                           {monthlyKwh.toFixed(1)} kWh/mo
                         </Typography>
                       </Box>
@@ -1222,38 +1488,56 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                   </Box>
 
                   {/* Card Footer with Rate & Actions */}
-                  <Box sx={{ mt: 2, pt: 1.5, borderTop: "1px solid", borderColor: "divider", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box
+                    sx={{
+                      mt: 1.75,
+                      pt: 1.25,
+                      borderTop: "1px solid",
+                      borderColor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
                     {isOn ? (
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "success.main", flexWrap: "wrap" }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
                         <Box
                           sx={{
-                            width: 8,
-                            height: 8,
+                            width: 7,
+                            height: 7,
                             borderRadius: "50%",
-                            bgcolor: "success.main",
-                            boxShadow: "0 0 8px #00e5c9",
+                            bgcolor: (theme) =>
+                              theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live,
+                            boxShadow: (theme) =>
+                              theme.palette.mode === "dark"
+                                ? `0 0 6px ${tokens.dark.live}`
+                                : `0 0 6px ${tokens.light.live}`,
                             animation: "pulse 1.5s infinite",
                           }}
                         />
-                        <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace", fontSize: "0.75rem" }}>
-                          {getRunningDuration(app.last_turned_on_at)} <span style={{ opacity: 0.8 }}>• ₱{liveSpent.toFixed(4)}</span>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontWeight: 700,
+                            fontVariantNumeric: "tabular-nums",
+                            fontSize: "0.75rem",
+                            color: (theme) =>
+                              theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live,
+                          }}
+                        >
+                          {getRunningDuration(app.last_turned_on_at)} <span style={{ opacity: 0.75 }}>• ₱{liveSpent.toFixed(3)}</span>
                         </Typography>
-                        {(() => {
-                          const start = new Date(app.last_turned_on_at!).getTime();
-                          const diffMinutes = Math.max(0, (now - start) / 60000);
-                          const telemetry = getApplianceEffectiveRunningWatts(app, diffMinutes);
-                          return (
-                            <Chip
-                              label={telemetry.badgeText}
-                              color={telemetry.badgeColor}
-                              size="small"
-                              sx={{ height: 18, fontSize: "0.625rem", fontWeight: 700 }}
-                            />
-                          );
-                        })()}
                       </Box>
                     ) : (
-                      <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: "text.secondary",
+                          fontSize: "0.6875rem",
+                          fontVariantNumeric: "tabular-nums",
+                        }}
+                      >
                         ₱{hourlyRate.toFixed(2)}/hr rate
                       </Typography>
                     )}
@@ -1275,17 +1559,13 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                             disabled={!canEdit}
                             onClick={() => handleToggleBlacklist(app)}
                             sx={{
-                              color: isBlacklisted ? "#f59e0b" : "text.secondary",
-                              bgcolor: isBlacklisted
-                                ? (theme) =>
-                                  theme.palette.mode === "dark"
-                                    ? "rgba(245, 158, 11, 0.16)"
-                                    : "rgba(245, 158, 11, 0.1)"
-                                : "transparent",
-                              border: isBlacklisted ? "1px solid rgba(245, 158, 11, 0.35)" : "none",
+                              p: 0.6,
+                              color: isBlacklisted
+                                ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.warn : tokens.light.warn)
+                                : "text.secondary",
                               "&:hover": {
-                                bgcolor: isBlacklisted ? "rgba(245, 158, 11, 0.25)" : "action.hover",
-                                color: isBlacklisted ? "#fbbf24" : "warning.main",
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover,
                               },
                             }}
                           >
@@ -1302,6 +1582,14 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                             onClick={() => {
                               setApplianceToEdit(app);
                               setIsAddModalOpen(true);
+                            }}
+                            sx={{
+                              p: 0.6,
+                              color: "text.secondary",
+                              "&:hover": {
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover,
+                              },
                             }}
                           >
                             <EditIcon fontSize="small" />
@@ -1329,6 +1617,13 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
                                 deleteAppliance({ resource: "user_appliances", id: app.id });
                                 showInfo(`Removed ${app.name}`);
                               }
+                            }}
+                            sx={{
+                              p: 0.6,
+                              "&:hover": {
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover,
+                              },
                             }}
                           >
                             <TrashIcon fontSize="small" />

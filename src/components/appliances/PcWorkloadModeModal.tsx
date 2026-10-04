@@ -24,6 +24,7 @@ import {
   PcWorkloadProfile,
   WorkloadOptionPreset,
 } from "../../lib/pcHardwareService";
+import { tokens } from "../../theme/tokens";
 
 interface PcWorkloadModeModalProps {
   open: boolean;
@@ -48,24 +49,12 @@ export const PcWorkloadModeModal: React.FC<PcWorkloadModeModalProps> = ({
   const getModeIcon = (id: PcWorkloadProfile) => {
     switch (id) {
       case "light":
-        return <LightIcon sx={{ color: "#34d399", fontSize: 28 }} />;
+        return <LightIcon sx={{ color: (theme) => (theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live), fontSize: 24 }} />;
       case "heavy":
-        return <GamingIcon sx={{ color: "#f87171", fontSize: 28 }} />;
+        return <GamingIcon sx={{ color: (theme) => (theme.palette.mode === "dark" ? tokens.dark.error : tokens.light.error), fontSize: 24 }} />;
       case "standard":
       default:
-        return <WorkIcon sx={{ color: "#60a5fa", fontSize: 28 }} />;
-    }
-  };
-
-  const getBadgeColor = (id: PcWorkloadProfile) => {
-    switch (id) {
-      case "light":
-        return "success";
-      case "heavy":
-        return "error";
-      case "standard":
-      default:
-        return "primary";
+        return <WorkIcon sx={{ color: "text.primary", fontSize: 24 }} />;
     }
   };
 
@@ -83,31 +72,32 @@ export const PcWorkloadModeModal: React.FC<PcWorkloadModeModalProps> = ({
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 3,
-            p: 1,
+            borderRadius: 1,
             backgroundImage: "none",
             bgcolor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(18, 24, 38, 0.95)" : "background.paper",
-            backdropFilter: "blur(12px)",
-            border: (theme) =>
-              `1px solid ${
-                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)"
-              }`,
-            boxShadow: 24,
+              theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
+            border: "1px solid",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+            boxShadow: "none",
           },
         },
       }}
     >
-      <DialogTitle sx={{ pb: 1, pt: 2, px: 2.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
+      <DialogTitle sx={{ pb: 1.5, pt: 2, px: 2.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, minWidth: 0 }}>
           <Box
             sx={{
-              width: 40,
-              height: 40,
-              borderRadius: 2,
+              width: 34,
+              height: 34,
+              borderRadius: 1,
               bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(96, 165, 250, 0.15)" : "rgba(37, 99, 235, 0.1)",
-              color: "primary.main",
+                theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+              color: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -117,7 +107,7 @@ export const PcWorkloadModeModal: React.FC<PcWorkloadModeModalProps> = ({
             {isLaptop ? <LaptopIcon fontSize="small" /> : <DesktopIcon fontSize="small" />}
           </Box>
           <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2 }} noWrap>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.2 }} noWrap>
               {appliance.name}
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -137,67 +127,67 @@ export const PcWorkloadModeModal: React.FC<PcWorkloadModeModalProps> = ({
             display: "block",
             mb: 2,
             color: "text.secondary",
-            fontWeight: 500,
+            lineHeight: 1.5,
           }}
         >
           Computers dynamically adjust power based on task load. Tap a mode to start tracking with calibrated real-world telemetry:
         </Typography>
 
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
           {presets.map((preset) => (
             <Paper
               key={preset.id}
               onClick={() => handleCardClick(preset)}
               variant="outlined"
               sx={{
-                p: 2,
-                borderRadius: 2.5,
+                p: 1.75,
+                borderRadius: 1,
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
                 gap: 1.5,
-                transition: "all 0.18s cubic-bezier(0.4, 0, 0.2, 1)",
-                borderWidth: preset.id === "standard" ? 2 : 1,
+                transition: "border-color 0.15s ease, background-color 0.15s ease",
+                border: "1px solid",
                 borderColor: (theme) =>
                   preset.id === "standard"
-                    ? "primary.main"
-                    : theme.palette.mode === "dark"
-                    ? "rgba(255, 255, 255, 0.1)"
-                    : "rgba(0, 0, 0, 0.1)",
+                    ? theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary
+                    : theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                 bgcolor: (theme) =>
                   preset.id === "standard"
-                    ? theme.palette.mode === "dark"
-                      ? "rgba(37, 99, 235, 0.08)"
-                      : "rgba(37, 99, 235, 0.03)"
+                    ? theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle
                     : "transparent",
                 "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: (theme) =>
-                    theme.palette.mode === "dark"
-                      ? "0 6px 20px rgba(0, 0, 0, 0.4)"
-                      : "0 6px 16px rgba(0, 0, 0, 0.08)",
-                  borderColor: "primary.main",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
                   bgcolor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.02)",
+                    theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover,
                 },
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.75, minWidth: 0 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {getModeIcon(preset.id)}
                 </Box>
                 <Box sx={{ minWidth: 0 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {preset.label}
                     </Typography>
                     {preset.id === "standard" && (
                       <Chip
                         label="Standard"
                         size="small"
-                        color="primary"
-                        sx={{ height: 18, fontSize: "0.625rem", fontWeight: 700 }}
+                        sx={{
+                          height: 18,
+                          fontSize: "0.625rem",
+                          fontWeight: 600,
+                          bgcolor: (theme) =>
+                            theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
+                          border: "1px solid",
+                          borderColor: (theme) =>
+                            theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                        }}
                       />
                     )}
                   </Box>
@@ -209,14 +199,16 @@ export const PcWorkloadModeModal: React.FC<PcWorkloadModeModalProps> = ({
 
               <Box sx={{ textAlign: "right", flexShrink: 0 }}>
                 <Chip
-                  icon={<BoltIcon sx={{ fontSize: "14px !important" }} />}
+                  icon={<BoltIcon sx={{ fontSize: "13px !important" }} />}
                   label={`~${preset.watts}W`}
-                  color={getBadgeColor(preset.id) as any}
+                  size="small"
                   variant="outlined"
                   sx={{
-                    fontFamily: "monospace",
-                    fontWeight: 800,
+                    fontVariantNumeric: "tabular-nums",
+                    fontWeight: 600,
                     fontSize: "0.75rem",
+                    borderColor: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                   }}
                 />
               </Box>
@@ -226,10 +218,18 @@ export const PcWorkloadModeModal: React.FC<PcWorkloadModeModalProps> = ({
       </DialogContent>
 
       <DialogActions sx={{ px: 2.5, pb: 2, pt: 1, justifyContent: "space-between" }}>
-        <Typography variant="caption" sx={{ color: "text.secondary", fontStyle: "italic" }}>
+        <Typography variant="caption" sx={{ color: "text.secondary" }}>
           Peak PSU: {appliance.watts}W
         </Typography>
-        <Button size="small" onClick={onClose} sx={{ textTransform: "none", color: "text.secondary" }}>
+        <Button
+          size="small"
+          onClick={onClose}
+          sx={{
+            textTransform: "none",
+            color: "text.secondary",
+            fontWeight: 500,
+          }}
+        >
           Cancel
         </Button>
       </DialogActions>

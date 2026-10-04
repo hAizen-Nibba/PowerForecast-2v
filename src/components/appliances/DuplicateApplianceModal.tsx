@@ -27,6 +27,7 @@ import {
   Edit as EditIcon,
 } from "@mui/icons-material";
 import { UserAppliance } from "../../types";
+import { tokens } from "../../theme/tokens";
 
 const COMMON_ROOMS = [
   "Master Bedroom",
@@ -209,8 +210,12 @@ export const DuplicateApplianceModal: React.FC<DuplicateApplianceModalProps> = (
                 mb: 1.5,
                 borderRadius: 1.25,
                 cursor: "pointer",
-                borderColor: choice === "combine" ? "primary.main" : "divider",
-                bgcolor: choice === "combine" ? "rgba(0, 229, 201, 0.08)" : "transparent",
+                borderColor: choice === "combine"
+                  ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary)
+                  : (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
+                bgcolor: choice === "combine"
+                  ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle)
+                  : "transparent",
                 transition: "all 0.15s ease",
               }}
             >
@@ -240,8 +245,12 @@ export const DuplicateApplianceModal: React.FC<DuplicateApplianceModalProps> = (
                 p: 2,
                 borderRadius: 1.25,
                 cursor: "pointer",
-                borderColor: choice === "separate" ? "primary.main" : "divider",
-                bgcolor: choice === "separate" ? "rgba(0, 229, 201, 0.08)" : "transparent",
+                borderColor: choice === "separate"
+                  ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary)
+                  : (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
+                bgcolor: choice === "separate"
+                  ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle)
+                  : "transparent",
                 transition: "all 0.15s ease",
               }}
             >
