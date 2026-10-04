@@ -1,0 +1,40 @@
+name: Auto-Sync Meralco Rates
+
+on:
+  schedule:
+    # Runs at 06:00 UTC on the 5th, 10th, 15th, and 20th of every month
+    - cron: '0 6 5,10,15,20 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-rates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install Dependencies
+        run: npm install --include=dev
+
+      - name: Fetch and Parse Latest Meralco Rates
+        run: npm run update-rates
+
+      - name: Commit & Push Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if [[ -n $(git status --porcelain public/rates.json) ]]; then
+            git add public/rates.json
+            git commit -m "chore(rates): auto-update official Meralco electricity rates [skip ci]"
+            git push origin main
+          else
+            echo "No rate changes detected."
+          fi
