@@ -29,8 +29,9 @@ import { UserAppliance, ApplianceList, DailyApplianceUsage, ApplianceUsageLog, S
 import { useList } from "@refinedev/core";
 import { useTheme } from "@mui/material/styles";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
-import { calculateApplianceKwh, calculateCost, DEFAULT_EFFECTIVE_RATE } from "../../lib/dailyUsageService";
+import { calculateApplianceKwh, calculateCost, DEFAULT_EFFECTIVE_RATE, formatDateToKey } from "../../lib/dailyUsageService";
 import { useLanguage } from "../../context/LanguageContext";
+import { useBillingPeriod } from "../../context/BillingPeriodContext";
 import { useToast } from "../common/ToastProvider";
 import { saveSimulatedAppliance } from "../../lib/simulationService";
 import { BudgetSentinelCard } from "./BudgetSentinelCard";
@@ -149,30 +150,63 @@ export const ForecastingView: React.FC = () => {
     return new Set(targetAppliances.map((a) => a.id));
   }, [targetAppliances]);
 
-  // Active Billing Cycle Timeline Telemetry (e.g. Current Month)
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonthIdx = now.getMonth();
-  const currentMonthStr = String(currentMonthIdx + 1).padStart(2, "0");
-  const activeMonthKey = `${currentYear}-${currentMonthStr}`;
-  const daysInActiveMonth = new Date(currentYear, currentMonthIdx + 1, 0).getDate();
-  const elapsedDays = Math.min(now.getDate(), daysInActiveMonth);
-  const remainingDays = Math.max(0, daysInActiveMonth - elapsedDays);
+  // Global Billing Period Context: Now (Active Cycle) vs Future (Next Billing Cycle)
+  const {
+    activeCycle,
+    futureCycles,
+    forecastingHorizon,
+    setForecastingHorizon,
+    getCycleTariff,
+  } = useBillingPeriod();
 
-  const activeMonthName = now.toLocaleString("en-US", { month: "long", year: "numeric" });
+  // Next cycle (Upcoming cycle after active cutoff)
+  const nextCycle = useMemo(() => {
+    return futureCycles.find((c) => c.status === "future") || futureCycles[1] || activeCycle;
+  }, [futureCycles, activeCycle]);
+
+  // Target cycle being projected based on selected horizon
+  const targetCycle = useMemo(() => {
+    if (forecastingHorizon === "next_cycle") {
+      return nextCycle;
+    }
+    return activeCycle;
+  }, [forecastingHorizon, nextCycle, activeCycle]);
+
+  const targetTariff = useMemo(() => {
+    return getCycleTariff(targetCycle);
+  }, [getCycleTariff, targetCycle]);
+
+  const now = new Date();
+  const cycleDaysCount = targetCycle.days.length;
+  const targetCycleStartKey = useMemo(() => formatDateToKey(targetCycle.startDate), [targetCycle]);
+  const targetCycleEndKey = useMemo(() => formatDateToKey(targetCycle.endDate), [targetCycle]);
+
+  // Active Billing Cycle Timeline Telemetry
+  const elapsedDays = useMemo(() => {
+    if (forecastingHorizon === "next_cycle") return 0;
+    const diff = Math.ceil((now.getTime() - targetCycle.startDate.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.min(cycleDaysCount, Math.max(1, diff));
+  }, [forecastingHorizon, now, targetCycle.startDate, cycleDaysCount]);
+
+  const remainingDays = useMemo(() => {
+    if (forecastingHorizon === "next_cycle") return cycleDaysCount;
+    return Math.max(0, cycleDaysCount - elapsedDays);
+  }, [forecastingHorizon, cycleDaysCount, elapsedDays]);
+
+  const activeMonthName = targetCycle.label;
 
   // Active space tariff
   const activeSpace = spaces.find((s) => s.id === selectedSpaceId);
   const tariffType: "residential" | "commercial" = activeSpace?.tariff_type || "residential";
 
-  // 2. Month-To-Date (MTD) Actual Logged Telemetry
+  // 2. Month-To-Date (MTD) Actual Logged Telemetry (Within target cycle)
   const mtdActuals = useMemo(() => {
     let actualKwh = 0;
     let actualCost = 0;
     const loggedDatesSet = new Set<string>();
 
     dailyRecords.forEach((rec) => {
-      if (rec.usage_date && rec.usage_date.startsWith(activeMonthKey) && targetApplianceIds.has(rec.appliance_id)) {
+      if (rec.usage_date && rec.usage_date >= targetCycleStartKey && rec.usage_date <= targetCycleEndKey && targetApplianceIds.has(rec.appliance_id)) {
         actualKwh += Number(rec.kwh_consumed) || 0;
         actualCost += Number(rec.estimated_cost) || 0;
         if (Number(rec.hours_used) > 0) {
@@ -181,8 +215,9 @@ export const ForecastingView: React.FC = () => {
       }
     });
 
-    // Factor in live currently running stopwatch sessions for Today
-    const runningTargetApps = targetAppliances.filter((a) => a.is_currently_on);
+    // Factor in live currently running stopwatch sessions for Today (only in current active cycle)
+    const isTodayInCycle = formatDateToKey(now) >= targetCycleStartKey && formatDateToKey(now) <= targetCycleEndKey;
+    const runningTargetApps = isTodayInCycle ? targetAppliances.filter((a) => a.is_currently_on) : [];
     let liveSessionKwh = 0;
     let liveSessionCost = 0;
 
@@ -192,14 +227,14 @@ export const ForecastingView: React.FC = () => {
         const diffSeconds = Math.max(0, (liveNow - start) / 1000);
         const totalWatts = curr.watts * (curr.quantity || 1);
         const kwh = (totalWatts / 1000) * (diffSeconds / 3600);
-        const rate = curr.tariff_type === "commercial" ? 15.2 : 14.8261;
+        const rate = curr.tariff_type === "commercial" ? 15.2 : targetTariff.totalEffectiveRate;
         liveSessionKwh += kwh;
         liveSessionCost += kwh * rate;
       }
     });
 
     if (runningTargetApps.length > 0) {
-      const todayStr = `${activeMonthKey}-${String(now.getDate()).padStart(2, "0")}`;
+      const todayStr = formatDateToKey(now);
       loggedDatesSet.add(todayStr);
     }
 
@@ -214,9 +249,9 @@ export const ForecastingView: React.FC = () => {
       actualCost: Number(actualCost.toFixed(2)),
       loggedDaysCount,
       avgDailyLoggedKwh: Number(avgDailyLoggedKwh.toFixed(3)),
-      hasLoggedRecords: actualKwh > 0,
+      hasLoggedRecords: actualKwh > 0 && forecastingHorizon === "now",
     };
-  }, [dailyRecords, activeMonthKey, targetApplianceIds, targetAppliances, liveNow, now]);
+  }, [dailyRecords, targetCycleStartKey, targetCycleEndKey, targetApplianceIds, targetAppliances, liveNow, now, targetTariff.totalEffectiveRate, forecastingHorizon]);
 
   // 3. Daily Routine Baseline from User's Registered Inventory
   const routineBaseline = useMemo(() => {
@@ -235,8 +270,8 @@ export const ForecastingView: React.FC = () => {
       dailyStandbyKwh += (standbyWatts * nonOperatingHours * qty) / 1000;
     });
 
-    const monthlyBaselineKwh = Number((dailyKwh * daysInActiveMonth).toFixed(3));
-    const monthlyBaselineBill = calculateMeralcoBill(monthlyBaselineKwh, undefined, 0, false, tariffType).totalBill;
+    const monthlyBaselineKwh = Number((dailyKwh * cycleDaysCount).toFixed(3));
+    const monthlyBaselineBill = calculateMeralcoBill(monthlyBaselineKwh, targetTariff.generationRate, 0, false, tariffType).totalBill;
 
     return {
       dailyKwh: Number(dailyKwh.toFixed(3)),
@@ -244,32 +279,32 @@ export const ForecastingView: React.FC = () => {
       monthlyBaselineKwh,
       monthlyBaselineBill,
     };
-  }, [targetAppliances, daysInActiveMonth, tariffType]);
+  }, [targetAppliances, cycleDaysCount, targetTariff.generationRate, tariffType]);
 
-  // Map simulated kWh per date for the active month
+  // Map simulated kWh per date for the target cycle
   const simulatedDateMap = useMemo(() => {
     const map = new Map<string, number>();
     simulatedRecords.forEach((rec) => {
-      if (rec.usage_date && rec.usage_date.startsWith(activeMonthKey) && targetApplianceIds.has(rec.appliance_id)) {
+      if (rec.usage_date && rec.usage_date >= targetCycleStartKey && rec.usage_date <= targetCycleEndKey && targetApplianceIds.has(rec.appliance_id)) {
         map.set(rec.usage_date, (map.get(rec.usage_date) || 0) + (Number(rec.kwh_consumed) || 0));
       }
     });
     return map;
-  }, [simulatedRecords, activeMonthKey, targetApplianceIds]);
+  }, [simulatedRecords, targetCycleStartKey, targetCycleEndKey, targetApplianceIds]);
 
   // 4. End-of-Month Forecast (Actual Logged + Paced Run-Rate Extrapolation / Simulation Plan)
+  // 4. End-of-Cycle Forecast (Actual Logged + Paced Run-Rate Extrapolation / Simulation Plan)
   const trajectoryForecast = useMemo(() => {
     let forecastedKwh = 0;
     let projectedRemainingKwh = 0;
     let simulatedDaysCount = 0;
-    const unloggedDaysCount = Math.max(0, daysInActiveMonth - mtdActuals.loggedDaysCount);
+    const unloggedDaysCount = Math.max(0, cycleDaysCount - mtdActuals.loggedDaysCount);
 
-    // If user has recorded actuals, project remaining days using true measured daily burn rate
     const pacedDailyKwh = mtdActuals.avgDailyLoggedKwh > 0 ? mtdActuals.avgDailyLoggedKwh : routineBaseline.dailyKwh;
 
-    if (mtdActuals.hasLoggedRecords) {
-      for (let d = 1; d <= daysInActiveMonth; d++) {
-        const dateStr = `${activeMonthKey}-${String(d).padStart(2, "0")}`;
+    if (forecastingHorizon === "now" && mtdActuals.hasLoggedRecords) {
+      targetCycle.days.forEach((dayDate) => {
+        const dateStr = formatDateToKey(dayDate);
         const isLogged = dailyRecords.some(
           (r) => r.usage_date === dateStr && targetApplianceIds.has(r.appliance_id) && (Number(r.hours_used) > 0 || Number(r.kwh_consumed) > 0)
         );
@@ -281,36 +316,56 @@ export const ForecastingView: React.FC = () => {
             projectedRemainingKwh += pacedDailyKwh;
           }
         }
-      }
+      });
       forecastedKwh = Number((mtdActuals.actualKwh + projectedRemainingKwh).toFixed(3));
     } else {
-      for (let d = 1; d <= daysInActiveMonth; d++) {
-        const dateStr = `${activeMonthKey}-${String(d).padStart(2, "0")}`;
+      targetCycle.days.forEach((dayDate) => {
+        const dateStr = formatDateToKey(dayDate);
         if (simulatedDateMap.has(dateStr)) {
           forecastedKwh += simulatedDateMap.get(dateStr)!;
           simulatedDaysCount++;
         } else {
           forecastedKwh += routineBaseline.dailyKwh;
         }
-      }
+      });
       forecastedKwh = Number(forecastedKwh.toFixed(3));
       projectedRemainingKwh = forecastedKwh;
     }
 
-    const forecastedBill = calculateMeralcoBill(forecastedKwh, undefined, 0, false, tariffType).totalBill;
-    const effectiveBurnRate = daysInActiveMonth > 0 ? forecastedKwh / daysInActiveMonth : 0;
+    const multiplier = forecastingHorizon === "three_months" ? 3 : 1;
+    const effectiveForecastKwh = Number((forecastedKwh * multiplier).toFixed(3));
+
+    const forecastedBill = calculateMeralcoBill(effectiveForecastKwh, targetTariff.generationRate, 0, false, tariffType).totalBill;
+    const effectiveBurnRate = cycleDaysCount > 0 ? effectiveForecastKwh / (cycleDaysCount * multiplier) : 0;
 
     return {
-      forecastedKwh,
-      projectedRemainingKwh: Number(projectedRemainingKwh.toFixed(3)),
+      forecastedKwh: effectiveForecastKwh,
+      projectedRemainingKwh: Number((projectedRemainingKwh * multiplier).toFixed(3)),
       forecastedBill,
       unloggedDaysCount,
       simulatedDaysCount,
       effectiveBurnRate: Number(effectiveBurnRate.toFixed(3)),
       pacedDailyKwh: Number(pacedDailyKwh.toFixed(3)),
-      hasActualPace: mtdActuals.hasLoggedRecords,
+      hasActualPace: mtdActuals.hasLoggedRecords && forecastingHorizon === "now",
     };
-  }, [mtdActuals, routineBaseline, daysInActiveMonth, tariffType, activeMonthKey, dailyRecords, targetApplianceIds, simulatedDateMap]);
+  }, [
+    forecastingHorizon,
+    mtdActuals,
+    targetCycle.days,
+    cycleDaysCount,
+    routineBaseline.dailyKwh,
+    dailyRecords,
+    targetApplianceIds,
+    simulatedDateMap,
+    targetTariff.generationRate,
+    tariffType,
+  ]);
+
+  // Rate hike impact when looking at future cycle with the newly published tariff (₱9.70 vs ₱9.28)
+  const rateHikeVariance = useMemo(() => {
+    const genDelta = 9.7032 - 9.2826;
+    return Number((trajectoryForecast.forecastedKwh * genDelta).toFixed(2));
+  }, [trajectoryForecast.forecastedKwh]);
 
   // Identify top heavy energy hog appliance
   const topHeavyApplianceName = useMemo(() => {
@@ -332,10 +387,10 @@ export const ForecastingView: React.FC = () => {
       whatIfDailyKwh += calculateApplianceKwh(app, activeHours);
     });
 
-    const daysMultiplier = mtdActuals.hasLoggedRecords ? remainingDays : daysInActiveMonth;
+    const daysMultiplier = mtdActuals.hasLoggedRecords ? remainingDays : cycleDaysCount;
     const simulatedRemainingKwh = whatIfDailyKwh * daysMultiplier;
     const whatIfTotalKwh = Number(((mtdActuals.hasLoggedRecords ? mtdActuals.actualKwh : 0) + simulatedRemainingKwh).toFixed(3));
-    const whatIfBill = calculateMeralcoBill(whatIfTotalKwh, undefined, 0, false, tariffType).totalBill;
+    const whatIfBill = calculateMeralcoBill(whatIfTotalKwh, targetTariff.generationRate, 0, false, tariffType).totalBill;
     const billDelta = whatIfBill - trajectoryForecast.forecastedBill;
 
     return {
@@ -343,14 +398,14 @@ export const ForecastingView: React.FC = () => {
       whatIfBill,
       billDelta,
     };
-  }, [targetAppliances, whatIfHours, mtdActuals, remainingDays, daysInActiveMonth, tariffType, trajectoryForecast]);
+  }, [targetAppliances, whatIfHours, mtdActuals, remainingDays, cycleDaysCount, targetTariff.generationRate, tariffType, trajectoryForecast]);
 
   // 6. Appliance Pareto Breakdown (Ranked by Forecasted Energy Share)
   const paretoBreakdown = useMemo(() => {
     return targetAppliances
       .map((app) => {
         const hours = app.hours_per_day || 0;
-        const monthlyKwh = calculateApplianceKwh(app, hours) * daysInActiveMonth;
+        const monthlyKwh = calculateApplianceKwh(app, hours) * cycleDaysCount;
         const cost = calculateCost(monthlyKwh, DEFAULT_EFFECTIVE_RATE);
         const sharePercent = routineBaseline.monthlyBaselineKwh > 0 ? (monthlyKwh / routineBaseline.monthlyBaselineKwh) * 100 : 0;
 
@@ -362,7 +417,7 @@ export const ForecastingView: React.FC = () => {
         };
       })
       .sort((a, b) => b.monthlyKwh - a.monthlyKwh);
-  }, [targetAppliances, daysInActiveMonth, routineBaseline]);
+  }, [targetAppliances, cycleDaysCount, routineBaseline]);
 
   const handleResetWhatIf = () => {
     setWhatIfHours({});
@@ -379,11 +434,14 @@ export const ForecastingView: React.FC = () => {
     setIsSavingPlan(true);
     try {
       const remainingDates: string[] = [];
-      const startDay = now.getDate();
-      for (let d = startDay; d <= daysInActiveMonth; d++) {
-        remainingDates.push(`${activeMonthKey}-${String(d).padStart(2, "0")}`);
-      }
-      const unbundledRate = calculateMeralcoBill(100, undefined, 0, false, tariffType).effectiveRatePerKwh || 14.8;
+      const curKey = formatDateToKey(now);
+      targetCycle.days.forEach((dayDate) => {
+        const key = formatDateToKey(dayDate);
+        if (key >= curKey) {
+          remainingDates.push(key);
+        }
+      });
+      const unbundledRate = calculateMeralcoBill(100, targetTariff.generationRate, 0, false, tariffType).effectiveRatePerKwh || 14.8;
       for (const [appId, hours] of Object.entries(whatIfHours)) {
         const app = targetAppliances.find((a) => a.id === appId);
         if (!app) continue;
@@ -438,6 +496,148 @@ export const ForecastingView: React.FC = () => {
           />
         }
       />
+
+      {/* Prediction Horizon Selector Bar (Now vs Future Horizons) */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 1.5,
+          borderRadius: 1.25,
+          bgcolor: (theme) =>
+            theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+          border: "1px solid",
+          borderColor: (theme) =>
+            theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 1.5,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexWrap: "wrap" }}>
+          <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", color: "text.secondary" }}>
+            Prediction Horizon:
+          </Typography>
+
+          <Box sx={{ display: "inline-flex", gap: 0.75, flexWrap: "wrap" }}>
+            <Button
+              size="small"
+              variant={forecastingHorizon === "now" ? "contained" : "outlined"}
+              onClick={() => setForecastingHorizon("now")}
+              startIcon={<BoltIcon sx={{ fontSize: 15 }} />}
+              sx={{
+                borderRadius: 1,
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                textTransform: "none",
+                bgcolor: forecastingHorizon === "now"
+                  ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary)
+                  : "transparent",
+                color: forecastingHorizon === "now"
+                  ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg)
+                  : "text.primary",
+              }}
+            >
+              Now: Active Cutoff ({activeCycle.label})
+            </Button>
+            <Button
+              size="small"
+              variant={forecastingHorizon === "next_cycle" ? "contained" : "outlined"}
+              onClick={() => setForecastingHorizon("next_cycle")}
+              startIcon={<AutoGraphIcon sx={{ fontSize: 15 }} />}
+              sx={{
+                borderRadius: 1,
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                textTransform: "none",
+                bgcolor: forecastingHorizon === "next_cycle"
+                  ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary)
+                  : "transparent",
+                color: forecastingHorizon === "next_cycle"
+                  ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg)
+                  : "text.primary",
+              }}
+            >
+              Future: Next Cycle ({nextCycle.label})
+            </Button>
+            <Button
+              size="small"
+              variant={forecastingHorizon === "three_months" ? "contained" : "outlined"}
+              onClick={() => setForecastingHorizon("three_months")}
+              startIcon={<TimelineIcon sx={{ fontSize: 15 }} />}
+              sx={{
+                borderRadius: 1,
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                textTransform: "none",
+                bgcolor: forecastingHorizon === "three_months"
+                  ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary)
+                  : "transparent",
+                color: forecastingHorizon === "three_months"
+                  ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg)
+                  : "text.primary",
+              }}
+            >
+              Future: 3-Month Horizon
+            </Button>
+          </Box>
+        </Box>
+
+        <Chip
+          size="small"
+          icon={<ElectricBoltIcon sx={{ fontSize: 13 }} />}
+          label={`Applied Tariff: ${targetTariff.billingPeriod} (Gen: ₱${targetTariff.generationRate.toFixed(2)})`}
+          sx={{
+            fontWeight: 700,
+            fontSize: "0.75rem",
+            borderRadius: 0.75,
+            bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface),
+            border: "1px solid",
+            borderColor: "divider",
+          }}
+        />
+      </Paper>
+
+      {/* Meralco Rate Hike Impact Banner (When viewing future cycle with ₱9.70 tariff) */}
+      {forecastingHorizon === "next_cycle" && (
+        <Paper
+          elevation={0}
+          sx={{
+            p: 1.5,
+            borderRadius: 1.25,
+            bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)"),
+            border: "1px solid",
+            borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.25)" : "rgba(245, 158, 11, 0.2)"),
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 1.5,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+            <ScienceIcon sx={{ color: "#f59e0b", fontSize: 20 }} />
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.8125rem", color: "text.primary" }}>
+                Next Cycle Rate Adjustment Applied: October 2026 Tariff (₱9.70 Gen Rate)
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                Meralco announced the new ₱9.70/kWh generation charge. In accordance with utility cutoff rules, it takes effect for the upcoming cycle ({nextCycle.label}).
+              </Typography>
+            </Box>
+          </Box>
+          <Chip
+            size="small"
+            label={`Rate Hike Variance: +₱${rateHikeVariance.toFixed(2)}`}
+            sx={{
+              fontWeight: 700,
+              bgcolor: "#f59e0b",
+              color: "#000",
+            }}
+          />
+        </Paper>
+      )}
 
       {/* 2. Space Selector Tabs (When spaces exist) */}
       {spaces.length > 0 && (
@@ -765,7 +965,7 @@ export const ForecastingView: React.FC = () => {
               mtdKwh={mtdActuals.actualKwh}
               forecastedBill={trajectoryForecast.forecastedBill}
               forecastedKwh={trajectoryForecast.forecastedKwh}
-              daysInActiveMonth={daysInActiveMonth}
+              daysInActiveMonth={cycleDaysCount}
               elapsedDays={elapsedDays}
               remainingDays={remainingDays}
               effectiveBurnRate={trajectoryForecast.effectiveBurnRate}
@@ -781,6 +981,9 @@ export const ForecastingView: React.FC = () => {
               tariffType={tariffType}
               activeMonthName={activeMonthName}
               language={language}
+              genRate={targetTariff.generationRate}
+              tariffLabel={targetTariff.billingPeriod}
+              billingPeriodLabel={targetCycle.label}
             />
           </Box>
 

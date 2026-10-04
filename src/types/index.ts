@@ -278,10 +278,14 @@ export interface BillingPeriodConfig {
 }
 
 export interface BillingPeriodWindow {
+  id?: string;
   startDate: Date;
   endDate: Date;
   days: Date[];
   label: string;
   subLabel?: string;
   isCrossMonth: boolean;
+  status?: 'past' | 'present' | 'future';
+  totalKwh?: number;
+  totalCost?: number;
 }

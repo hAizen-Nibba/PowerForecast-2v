@@ -32,6 +32,7 @@ import {
   ContentCopy as CopyIcon,
   Group as GroupIcon,
   Add as AddIcon,
+  CalendarMonth as CalendarIcon,
 } from "@mui/icons-material";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useGetIdentity, useLogout } from "@refinedev/core";
@@ -43,6 +44,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { MeralcoRatePopover } from "./MeralcoRatePopover";
 import { useRoom } from "../../context/RoomContext";
 import { useToast } from "../common/ToastProvider";
+import { useBillingPeriod } from "../../context/BillingPeriodContext";
 
 interface HeaderProps {
   isDark?: boolean;
@@ -61,6 +63,7 @@ export const Header: React.FC<HeaderProps> = () => {
   const { mutate: logout } = useLogout();
   const { rooms, activeRoom, switchRoom, openJoinModal } = useRoom();
   const { showSuccess } = useToast();
+  const { config: billingConfig, setIsOnboardingModalOpen } = useBillingPeriod();
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
@@ -254,6 +257,30 @@ export const Header: React.FC<HeaderProps> = () => {
           <Box data-tour="header-rate-popover">
             <MeralcoRatePopover />
           </Box>
+
+          {/* Billing Cutoff Indicator Chip */}
+          <Tooltip title={`Utility Cutoff: ${billingConfig.mode === "recurring_cycle" ? `Day ${billingConfig.cycleStartDay} of each month` : "Calendar Month"}. Click to configure.`}>
+            <Chip
+              icon={<CalendarIcon sx={{ fontSize: "13px !important" }} />}
+              label={billingConfig.mode === "recurring_cycle" ? `Cutoff: ${billingConfig.cycleStartDay}th` : "Cutoff: 1st"}
+              onClick={() => setIsOnboardingModalOpen(true)}
+              size="small"
+              sx={{
+                cursor: "pointer",
+                fontWeight: 700,
+                fontSize: "0.72rem",
+                borderRadius: 1,
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "#f4f4f5"),
+                border: "1px solid",
+                borderColor: "divider",
+                display: { xs: "none", md: "inline-flex" },
+                "&:hover": {
+                  borderColor: "text.secondary",
+                  bgcolor: "action.hover",
+                },
+              }}
+            />
+          </Tooltip>
         </Box>
 
         {/* Right: Guided Tour, Notifications, and User Profile with Embedded Rooms/Household Dropdown */}

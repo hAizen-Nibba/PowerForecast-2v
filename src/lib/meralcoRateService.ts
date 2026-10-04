@@ -57,7 +57,7 @@ const CACHE_MAX_AGE_MS = 1000 * 60 * 60 * 12; // 12 hours
 
 // Fallback September 2026 official Meralco rates
 export const DEFAULT_MERALCO_TARIFF: MeralcoTariffData = {
-  generationRate: 9.7032,
+  generationRate: 9.2826,
   transmission: 1.2826,
   systemLoss: 0.8898,
   distribution: 1.2908,
@@ -77,7 +77,7 @@ export const DEFAULT_MERALCO_TARIFF: MeralcoTariffData = {
     {
       name: "Generation Charge (Gen Rate)",
       nameTl: "Halaga ng Paglikha (Gen Rate)",
-      ratePerKwh: 9.7032,
+      ratePerKwh: 9.2826,
       description: "Cost of electricity produced by power generation plants (PSA, IPP, WESM)",
       descriptionTl: "Halaga ng kuryenteng ginawa ng mga planta ng kuryente",
       category: "generation",
@@ -283,6 +283,61 @@ function buildComponents(genRate: number, totalRate: number): MeralcoTariffCompo
       icon: "🧾",
     },
   ];
+}
+
+export const MERALCO_SEPTEMBER_2026_TARIFF: MeralcoTariffData = {
+  generationRate: 9.2826,
+  transmission: 1.2826,
+  systemLoss: 0.8898,
+  distribution: 1.2908,
+  supplyAndMetering: 0.6293,
+  subsidies: -1.0162,
+  universalAndFitAll: 0.6575,
+  governmentTaxes: 1.2500,
+  totalEffectiveRate: 14.3218,
+  billingPeriod: "September 2026 Scheduled Tariff",
+  billingPeriodTl: "Nakatakdang Taripa ng Setyembre 2026",
+  lastSyncedAt: new Date().toISOString(),
+  status: "live",
+  trend: "down",
+  rateChange: -0.0409,
+  rateChangePercent: -0.28,
+  components: buildComponents(9.2826, 14.3218),
+};
+
+export const MERALCO_OCTOBER_2026_TARIFF: MeralcoTariffData = {
+  generationRate: 9.7032,
+  transmission: 1.2826,
+  systemLoss: 0.8898,
+  distribution: 1.2908,
+  supplyAndMetering: 0.6293,
+  subsidies: -1.0162,
+  universalAndFitAll: 0.6575,
+  governmentTaxes: 1.2954,
+  totalEffectiveRate: 14.7424,
+  billingPeriod: "October 2026 Scheduled Tariff",
+  billingPeriodTl: "Nakatakdang Taripa ng Oktubre 2026",
+  lastSyncedAt: new Date().toISOString(),
+  status: "live",
+  trend: "up",
+  rateChange: 0.4206,
+  rateChangePercent: 2.94,
+  components: buildComponents(9.7032, 14.7424),
+};
+
+/**
+ * Resolves the applicable tariff rate schedule for a specific billing cycle window.
+ * Billing rule: Cycles closing on or before Oct 15, 2026 apply the September 2026 schedule (Gen: ₱9.28).
+ * Cycles starting Oct 16, 2026 onwards apply the October 2026 schedule (Gen: ₱9.70).
+ */
+export function getTariffForBillingPeriod(cycleStart: Date, cycleEnd: Date): MeralcoTariffData {
+  const cutoffTime = cycleEnd.getTime();
+  const sepCutoffThreshold = new Date(2026, 9, 15, 23, 59, 59).getTime();
+
+  if (cutoffTime <= sepCutoffThreshold) {
+    return MERALCO_SEPTEMBER_2026_TARIFF;
+  }
+  return MERALCO_OCTOBER_2026_TARIFF;
 }
 
 /**

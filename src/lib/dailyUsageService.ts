@@ -1471,5 +1471,50 @@ export function resolveBillingPeriodWindow(
     label: `${monthNamesLong[month]} ${year}`,
     subLabel: `Standard Month • ${days.length} Days`,
     isCrossMonth: false,
+    id: `cycle-${formatDateToKey(startDate)}_${formatDateToKey(endDate)}`,
   };
+}
+
+/**
+ * Generates an array of historical (past), current (present), and projected (future) billing cycles.
+ */
+export function generateBillingPeriodCycles(
+  anchorDate: Date = new Date(),
+  config: BillingPeriodConfig = DEFAULT_BILLING_PERIOD_CONFIG,
+  pastCount: number = 3,
+  futureCount: number = 2
+): BillingPeriodWindow[] {
+  const cycles: BillingPeriodWindow[] = [];
+  const todayKey = formatDateToKey(new Date());
+
+  const year = anchorDate.getFullYear();
+  const month = anchorDate.getMonth();
+
+  for (let offset = -pastCount; offset <= futureCount; offset++) {
+    const cycleAnchor = new Date(year, month + offset, Math.min(anchorDate.getDate(), 28));
+    const win = resolveBillingPeriodWindow(cycleAnchor, config);
+
+    const startKey = formatDateToKey(win.startDate);
+    const endKey = formatDateToKey(win.endDate);
+    const id = `cycle-${startKey}_${endKey}`;
+
+    let status: 'past' | 'present' | 'future' = 'present';
+    if (todayKey < startKey) {
+      status = 'future';
+    } else if (todayKey > endKey) {
+      status = 'past';
+    } else {
+      status = 'present';
+    }
+
+    if (!cycles.some((c) => c.id === id)) {
+      cycles.push({
+        ...win,
+        id,
+        status,
+      });
+    }
+  }
+
+  return cycles;
 }

@@ -33,6 +33,9 @@ interface VirtualMeralcoBillCardProps {
   tariffType: "residential" | "commercial";
   activeMonthName: string;
   language: string;
+  genRate?: number;
+  tariffLabel?: string;
+  billingPeriodLabel?: string;
 }
 
 export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
@@ -40,9 +43,12 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
   tariffType,
   activeMonthName,
   language,
+  genRate,
+  tariffLabel,
+  billingPeriodLabel,
 }) => {
   const isCommercial = tariffType === "commercial";
-  const bill = calculateMeralcoBill(forecastedKwh, undefined, 0, false, tariffType);
+  const bill = calculateMeralcoBill(forecastedKwh, genRate, 0, false, tariffType);
 
   const totalBill = Math.max(0.01, bill.totalBill);
   const taxesTotal = bill.totalVat + bill.localFranchiseTax;
@@ -64,6 +70,14 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
   const isLifeline = !isCommercial && forecastedKwh <= 100;
   const lifelineBuffer = Math.max(0, 100 - forecastedKwh);
 
+  const displaySubtitle = billingPeriodLabel
+    ? language === "tl"
+      ? `Eksaktong unbundled ERC tariff computation para sa ${billingPeriodLabel} (${tariffLabel || "Opisyal na Taripa ng Meralco"}).`
+      : `Official ERC unbundled cost decomposition for ${billingPeriodLabel} (${tariffLabel || "Meralco Tariff"}).`
+    : language === "tl"
+    ? `Eksaktong unbundled ERC tariff computation para sa ${activeMonthName} batay sa iyong kabuuang prediksyon.`
+    : `Official ERC unbundled cost decomposition for ${activeMonthName} based on projected load.`;
+
   return (
     <SectionCard
       dataTour="forecasting-virtual-bill"
@@ -82,11 +96,7 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
           </span>
         </Box>
       }
-      subtitle={
-        language === "tl"
-          ? `Eksaktong unbundled ERC tariff computation para sa ${activeMonthName} batay sa iyong kabuuang prediksyon.`
-          : `Official ERC unbundled cost decomposition for ${activeMonthName} based on projected load.`
-      }
+      subtitle={displaySubtitle}
       headerActions={
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
           <Chip

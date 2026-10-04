@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.9.0v",
+    version: "3.9.0v",
+    git_commit_tag: "3.9.0v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.9.0v - Add Billing Cutoff Onboarding modal, cycle-aware tariff engine separating Sep (9.28) and Oct (9.70) schedules, Past & Present cycle sorting in Analytics, and Now vs Future horizon projections with rate hike variance in Forecasting.",
+  },
+  {
     id: "3.8.9v",
     version: "3.8.9v",
     git_commit_tag: "3.8.9v",

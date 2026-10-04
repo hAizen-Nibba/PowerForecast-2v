@@ -51,6 +51,7 @@ import {
   resolveBillingPeriodWindow,
 } from "../../lib/dailyUsageService";
 import { useRoom } from "../../context/RoomContext";
+import { useBillingPeriod } from "../../context/BillingPeriodContext";
 
 export const SmartCalendar: React.FC = () => {
   const { canEdit, isViewer } = useRoom();
@@ -75,8 +76,8 @@ export const SmartCalendar: React.FC = () => {
   const [selectedDateForSimModal, setSelectedDateForSimModal] = useState<Date | null>(null);
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>("all");
 
-  // Billing Period state & config modal
-  const [billingConfig, setBillingConfig] = useState<BillingPeriodConfig>(getStoredBillingPeriodConfig());
+  // Billing Period state from global context & config modal
+  const { config: billingConfig, updateConfig: updateGlobalBillingConfig } = useBillingPeriod();
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false);
 
   // Simulate Appliance modal state
@@ -150,8 +151,7 @@ export const SmartCalendar: React.FC = () => {
   }, [currentDate, billingConfig]);
 
   const handleSaveBillingConfig = (newConfig: BillingPeriodConfig) => {
-    setBillingConfig(newConfig);
-    setStoredBillingPeriodConfig(newConfig);
+    updateGlobalBillingConfig(newConfig);
     setIsBillingModalOpen(false);
   };
 

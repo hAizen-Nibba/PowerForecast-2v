@@ -44,6 +44,8 @@ import {
 } from "@mui/icons-material";
 import { RoomProvider, useRoom } from "./context/RoomContext";
 import { JoinRoomModal } from "./components/rooms/JoinRoomModal";
+import { BillingPeriodProvider } from "./context/BillingPeriodContext";
+import { BillingCutoffOnboardingModal } from "./components/onboarding/BillingCutoffOnboardingModal";
 
 const JoinRoomModalConsumer: React.FC = () => {
   const { isJoinModalOpen, closeJoinModal } = useRoom();
@@ -127,7 +129,8 @@ export const App: React.FC = () => {
       <LanguageProvider>
         <ToastProvider>
           <ConfirmProvider>
-            <HashRouter>
+            <BillingPeriodProvider>
+              <HashRouter>
           <Refine
             dataProvider={resilientDataProvider}
             authProvider={authProvider}
@@ -266,9 +269,11 @@ export const App: React.FC = () => {
               <VersionBadge />
               <PwaUpdateModal />
               <WhatsNewModal />
+              <BillingCutoffOnboardingModal />
             </RoomProvider>
           </Refine>
           </HashRouter>
+            </BillingPeriodProvider>
           </ConfirmProvider>
         </ToastProvider>
       </LanguageProvider>

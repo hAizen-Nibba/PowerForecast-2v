@@ -15,10 +15,16 @@ import Divider from "@mui/material/Divider";
 import Skeleton from "@mui/material/Skeleton";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
 import { useTheme } from "@mui/material/styles";
 import {
   BarChart as AnalyticsIcon,
   TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  CalendarMonth as CalendarIcon,
+  Sort as SortIcon,
   Bolt as BoltIcon,
   EnergySavingsLeaf as LeafIcon,
   Lightbulb as LightbulbIcon,
@@ -67,6 +73,8 @@ import {
   MAX_DAILY_AI_GENERATIONS,
 } from "../../lib/energyAiService";
 import { devLog } from "../../lib/devLogger";
+import { useBillingPeriod } from "../../context/BillingPeriodContext";
+import { formatDateToKey } from "../../lib/dailyUsageService";
 
 export const AnalyticsView: React.FC = () => {
   const theme = useTheme();
@@ -138,14 +146,36 @@ export const AnalyticsView: React.FC = () => {
     return list.filter((a) => a.is_active !== false);
   }, [appliances, spaces, selectedSpaceId]);
 
-  // Active Billing Cycle Timeline Key
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonthIdx = now.getMonth();
-  const currentMonthStr = String(currentMonthIdx + 1).padStart(2, "0");
-  const activeMonthKey = `${currentYear}-${currentMonthStr}`;
+  // Global Billing Period Context: Past, Present, and Cycle Tariff
+  const {
+    historicalCycles,
+    selectedAnalyticsCycle,
+    setSelectedAnalyticsCycle,
+    analyticsSortBy,
+    setAnalyticsSortBy,
+    getCycleTariff,
+    setIsConfigModalOpen,
+  } = useBillingPeriod();
 
-  // Aggregated Actual Measured Data for target appliances (Filtered to active billing month)
+  // Sort cycles by user preference
+  const sortedCycles = useMemo(() => {
+    const list = [...historicalCycles];
+    if (analyticsSortBy === "date_asc") {
+      return list.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+    }
+    // Default to date_desc (newest first)
+    return list.sort((a, b) => b.startDate.getTime() - a.startDate.getTime());
+  }, [historicalCycles, analyticsSortBy]);
+
+  const cycleStartKey = useMemo(() => formatDateToKey(selectedAnalyticsCycle.startDate), [selectedAnalyticsCycle]);
+  const cycleEndKey = useMemo(() => formatDateToKey(selectedAnalyticsCycle.endDate), [selectedAnalyticsCycle]);
+
+  // Dynamic ERC Tariff for the selected cycle
+  const cycleTariff = useMemo(() => {
+    return getCycleTariff(selectedAnalyticsCycle);
+  }, [getCycleTariff, selectedAnalyticsCycle]);
+
+  // Aggregated Actual Measured Data for target appliances strictly filtered within the selected cycle
   const actualAggregates = useMemo(() => {
     const targetIds = new Set(targetAppliances.map((a) => a.id));
     let totalKwh = 0;
@@ -154,8 +184,8 @@ export const AnalyticsView: React.FC = () => {
     const appMap: Record<string, number> = {};
 
     dailyUsageRecords.forEach((r) => {
-      // Filter by target space appliances and active billing cycle month
-      if (targetIds.has(r.appliance_id) && (!r.usage_date || r.usage_date.startsWith(activeMonthKey))) {
+      // Filter by target space appliances and selected billing cycle date window
+      if (targetIds.has(r.appliance_id) && r.usage_date && r.usage_date >= cycleStartKey && r.usage_date <= cycleEndKey) {
         const kwh = Number(r.kwh_consumed) || 0;
         const cost = Number(r.estimated_cost) || 0;
         totalKwh += kwh;
@@ -174,9 +204,9 @@ export const AnalyticsView: React.FC = () => {
       appMap,
       hasRecords: totalKwh > 0,
     };
-  }, [dailyUsageRecords, targetAppliances, activeMonthKey]);
+  }, [dailyUsageRecords, targetAppliances, cycleStartKey, cycleEndKey]);
 
-  // Aggregated Simulated Plan Data for target appliances (Filtered to active billing month)
+  // Aggregated Simulated Plan Data for target appliances strictly filtered within the selected cycle
   const simulatedAggregates = useMemo(() => {
     const targetIds = new Set(targetAppliances.map((a) => a.id));
     let totalKwh = 0;
@@ -185,7 +215,7 @@ export const AnalyticsView: React.FC = () => {
     const appMap: Record<string, number> = {};
 
     simulatedUsageRecords.forEach((r) => {
-      if (targetIds.has(r.appliance_id) && (!r.usage_date || r.usage_date.startsWith(activeMonthKey))) {
+      if (targetIds.has(r.appliance_id) && r.usage_date && r.usage_date >= cycleStartKey && r.usage_date <= cycleEndKey) {
         const kwh = Number(r.kwh_consumed) || 0;
         const cost = Number(r.estimated_cost) || 0;
         totalKwh += kwh;
@@ -204,7 +234,7 @@ export const AnalyticsView: React.FC = () => {
       appMap,
       hasRecords: totalKwh > 0,
     };
-  }, [simulatedUsageRecords, targetAppliances, activeMonthKey]);
+  }, [simulatedUsageRecords, targetAppliances, cycleStartKey, cycleEndKey]);
 
   const activeSpace = spaces.find((s) => s.id === selectedSpaceId);
   const isCommercialSelected = selectedSpaceId !== "all" && activeSpace?.tariff_type === "commercial";
@@ -287,8 +317,8 @@ export const AnalyticsView: React.FC = () => {
 
   const bill = useMemo(() => {
     const tariff = selectedSpaceId === "all" ? "residential" : tariffType;
-    return calculateMeralcoBill(activeEnergyVolume, undefined, 0, false, tariff);
-  }, [selectedSpaceId, activeEnergyVolume, tariffType]);
+    return calculateMeralcoBill(activeEnergyVolume, cycleTariff.generationRate, 0, false, tariff);
+  }, [selectedSpaceId, activeEnergyVolume, tariffType, cycleTariff]);
 
   const totalCost = bill.totalBill;
   const effectiveRate = activeEnergyVolume > 0 ? totalCost / activeEnergyVolume : bill.effectiveRatePerKwh || 14.8261;
@@ -841,6 +871,106 @@ export const AnalyticsView: React.FC = () => {
           </>
         }
       />
+
+      {/* Cycle-over-Cycle Navigation & Timeline Controls */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 1.5,
+          borderRadius: 1.25,
+          bgcolor: (theme) =>
+            theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+          border: "1px solid",
+          borderColor: (theme) =>
+            theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 1.5,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, flexWrap: "wrap" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+            <CalendarIcon sx={{ fontSize: 18, color: "primary.main" }} />
+            <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", color: "text.secondary" }}>
+              Billing Cycle:
+            </Typography>
+          </Box>
+
+          <FormControl size="small" sx={{ minWidth: 240 }}>
+            <Select
+              value={selectedAnalyticsCycle.id || ""}
+              onChange={(e) => {
+                const found = historicalCycles.find((c) => c.id === e.target.value);
+                if (found) setSelectedAnalyticsCycle(found);
+              }}
+              sx={{
+                fontSize: "0.8125rem",
+                fontWeight: 700,
+                borderRadius: 1,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
+              }}
+            >
+              {sortedCycles.map((c) => (
+                <MenuItem key={c.id} value={c.id} sx={{ fontSize: "0.8125rem" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <span>{c.label}</span>
+                    <Chip
+                      size="small"
+                      label={c.status === "present" ? "Present (Active)" : "Past (Closed)"}
+                      color={c.status === "present" ? "success" : "default"}
+                      sx={{ height: 18, fontSize: "0.65rem", fontWeight: 700 }}
+                    />
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          {/* Applied Tariff Pill */}
+          <Chip
+            size="small"
+            icon={<BoltIcon sx={{ fontSize: 14 }} />}
+            label={`${cycleTariff.billingPeriod} • Gen Rate: ₱${cycleTariff.generationRate.toFixed(2)}`}
+            sx={{
+              fontWeight: 700,
+              fontSize: "0.75rem",
+              borderRadius: 0.75,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
+              border: "1px solid",
+              borderColor: "divider",
+            }}
+          />
+        </Box>
+
+        {/* Sort Options */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>
+            Sort Records:
+          </Typography>
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <Select
+              value={analyticsSortBy}
+              onChange={(e) => setAnalyticsSortBy(e.target.value as any)}
+              sx={{
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                borderRadius: 1,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
+              }}
+            >
+              <MenuItem value="date_desc" sx={{ fontSize: "0.75rem" }}>Newest First</MenuItem>
+              <MenuItem value="date_asc" sx={{ fontSize: "0.75rem" }}>Oldest First</MenuItem>
+              <MenuItem value="highest_spend" sx={{ fontSize: "0.75rem" }}>Highest Spend (₱)</MenuItem>
+              <MenuItem value="highest_kwh" sx={{ fontSize: "0.75rem" }}>Highest Energy (kWh)</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+      </Paper>
 
       {/* 2. Space Filter Tabs */}
       <Paper
