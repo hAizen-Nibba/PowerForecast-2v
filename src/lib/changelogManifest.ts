@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.15v",
+    version: "3.8.15v",
+    git_commit_tag: "3.8.15v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.15v - Replace Monthly Consumption slider with numbers-only textbox and sync quick volume presets in Meralco Bill Calculator",
+  },
+  {
     id: "3.8.14v",
     version: "3.8.14v",
     git_commit_tag: "3.8.14v",

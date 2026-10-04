@@ -263,14 +263,14 @@ const calculatorTour: PageTour = {
       page: 'calculator',
       copy: {
         en: {
-          title: 'Monthly Consumption Slider',
+          title: 'Monthly Consumption Input',
           description:
-            'Quickly adjust monthly kWh consumption from 0 to 1,000+ kWh to see instant projected charges and observe lifeline subsidy thresholds (≤100 kWh).',
+            'Directly enter monthly kWh consumption to see instant projected charges and observe lifeline subsidy thresholds (≤100 kWh).',
         },
         tl: {
-          title: 'Monthly Consumption Slider (kWh)',
+          title: 'Monthly Consumption Input (kWh)',
           description:
-            'I-adjust ang monthly kWh consumption mula 0 hanggang 1,000+ kWh para makita agad ang bill impact at lifeline subsidy brackets (≤100 kWh).',
+            'Ilagay ang monthly kWh consumption para makita agad ang bill impact at lifeline subsidy brackets (≤100 kWh).',
         },
       },
     },

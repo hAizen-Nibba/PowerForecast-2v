@@ -4,7 +4,6 @@ import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
-import Slider from "@mui/material/Slider";
 import Checkbox from "@mui/material/Checkbox";
 import Divider from "@mui/material/Divider";
 import Chip from "@mui/material/Chip";
@@ -30,27 +29,29 @@ import { tokens } from "../../theme/tokens";
 export const MeralcoCalculator: React.FC = () => {
   const [activeTab, setActiveTab] = useState<number>(0);
   const [tariffType, setTariffType] = useState<"residential" | "commercial">("residential");
-  const [kwh, setKwh] = useState<number>(320);
+  const [kwh, setKwh] = useState<number | string>(320);
   const [genRate, setGenRate] = useState<number>(DEFAULT_MERALCO_RATES.defaultGenerationRate);
   const [otherCharges, setOtherCharges] = useState<number>(0);
   const [isSenior, setIsSenior] = useState<boolean>(false);
   const [showItemized, setShowItemized] = useState<boolean>(true);
+
+  const numericKwh = typeof kwh === "number" ? kwh : parseFloat(kwh) || 0;
 
   // What-If Simulation State
   const [simWatts, setSimWatts] = useState<number>(950);
   const [simHoursReduced, setSimHoursReduced] = useState<number>(2);
 
   const bill = useMemo(() => {
-    return calculateMeralcoBill(kwh, genRate, otherCharges, isSenior, tariffType);
-  }, [kwh, genRate, otherCharges, isSenior, tariffType]);
+    return calculateMeralcoBill(numericKwh, genRate, otherCharges, isSenior, tariffType);
+  }, [numericKwh, genRate, otherCharges, isSenior, tariffType]);
 
   useEffect(() => {
     devLog.telemetry(
       "Calculator",
-      `Unbundled ${tariffType} bill calculated for ${kwh} kWh: ₱${bill.totalBill.toLocaleString(undefined, { minimumFractionDigits: 2 })} (Effective: ₱${bill.effectiveRatePerKwh.toFixed(4)}/kWh)`,
+      `Unbundled ${tariffType} bill calculated for ${numericKwh} kWh: ₱${bill.totalBill.toLocaleString(undefined, { minimumFractionDigits: 2 })} (Effective: ₱${bill.effectiveRatePerKwh.toFixed(4)}/kWh)`,
       {
         tariffType,
-        volumeKwh: kwh,
+        volumeKwh: numericKwh,
         effectiveRate: bill.effectiveRatePerKwh,
         totalBillPHP: bill.totalBill,
         isLifelineEligible: bill.isLifelineEligible,
@@ -60,7 +61,7 @@ export const MeralcoCalculator: React.FC = () => {
         taxesTotal: bill.totalTaxesAndSubsidies,
       }
     );
-  }, [kwh, genRate, otherCharges, isSenior, tariffType, bill]);
+  }, [numericKwh, genRate, otherCharges, isSenior, tariffType, bill]);
 
   const simMonthlyKwhSaved = (simWatts * simHoursReduced * 30) / 1000;
   const simMonthlyPesosSaved = simMonthlyKwhSaved * (bill.effectiveRatePerKwh || 14.82);
@@ -330,57 +331,60 @@ export const MeralcoCalculator: React.FC = () => {
                     </Typography>
                   </Box>
 
-                  {/* Monthly kWh Slider */}
+                  {/* Monthly kWh Input */}
                   <Box data-tour="calculator-kwh-slider">
-                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>
-                        MONTHLY CONSUMPTION
-                      </Typography>
-                      <Chip
-                        label={`${kwh} kWh`}
-                        size="small"
-                        sx={{
-                          fontWeight: 700,
-                          fontVariantNumeric: "tabular-nums",
-                          borderRadius: 0.75,
-                          bgcolor: (theme) =>
-                            theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
-                          border: "1px solid",
-                          borderColor: (theme) =>
-                            theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
-                        }}
-                      />
-                    </Box>
-                    <Slider
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", display: "block", mb: 1 }}>
+                      MONTHLY CONSUMPTION (kWh)
+                    </Typography>
+                    <TextField
+                      type="text"
+                      inputMode="numeric"
+                      fullWidth
+                      size="small"
                       value={kwh}
-                      min={0}
-                      max={1000}
-                      step={5}
-                      onChange={(_, val) => setKwh(val as number)}
-                      valueLabelDisplay="auto"
-                      sx={{
-                        color: "text.primary",
-                        "& .MuiSlider-thumb": {
-                          bgcolor: "text.primary",
-                          "&:hover, &.Mui-focusVisible": {
-                            boxShadow: "none",
-                          },
-                        },
-                        "& .MuiSlider-track": {
-                          bgcolor: "text.primary",
-                        },
-                        "& .MuiSlider-rail": {
-                          bgcolor: (theme) =>
-                            theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/[^0-9.]/g, "");
+                        const parts = raw.split(".");
+                        const sanitized = parts.length > 2 ? `${parts[0]}.${parts.slice(1).join("")}` : raw;
+                        setKwh(sanitized);
+                      }}
+                      onKeyDown={(e) => {
+                        if (
+                          e.ctrlKey ||
+                          e.metaKey ||
+                          ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Enter"].includes(e.key)
+                        ) {
+                          return;
+                        }
+                        if (!/[0-9.]/.test(e.key)) {
+                          e.preventDefault();
+                        }
+                        if (e.key === "." && String(kwh).includes(".")) {
+                          e.preventDefault();
+                        }
+                      }}
+                      placeholder="e.g. 320"
+                      slotProps={{
+                        input: {
+                          endAdornment: (
+                            <Typography
+                              sx={{
+                                ml: 1,
+                                fontWeight: 700,
+                                color: "text.secondary",
+                                fontVariantNumeric: "tabular-nums",
+                                fontSize: "0.8125rem",
+                              }}
+                            >
+                              kWh
+                            </Typography>
+                          ),
                         },
                       }}
                     />
-                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>0 kWh (Lifeline)</Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>200 kWh</Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>500 kWh</Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>1000+ kWh</Typography>
-                    </Box>
+                    <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
+                      Enter your monthly energy consumption in kilowatt-hours (numbers only).
+                    </Typography>
                   </Box>
 
                   {/* Quick Presets */}
@@ -392,7 +396,7 @@ export const MeralcoCalculator: React.FC = () => {
                       {[100, 200, 300, 500].map((preset) => (
                         <Grid size={3} key={preset}>
                           <Button
-                            variant={kwh === preset ? "contained" : "outlined"}
+                            variant={Number(kwh) === preset ? "contained" : "outlined"}
                             fullWidth
                             size="small"
                             onClick={() => setKwh(preset)}
@@ -402,14 +406,14 @@ export const MeralcoCalculator: React.FC = () => {
                               borderRadius: 0.75,
                               borderColor: (theme) =>
                                 theme.palette.mode === "dark" ? tokens.dark.border : tokens.light.border,
-                              bgcolor: kwh === preset
+                              bgcolor: Number(kwh) === preset
                                 ? (theme) => theme.palette.mode === "dark" ? tokens.dark.fg : tokens.light.fg
                                 : "transparent",
-                              color: kwh === preset
+                              color: Number(kwh) === preset
                                 ? (theme) => theme.palette.mode === "dark" ? tokens.dark.bg : tokens.light.bg
                                 : "text.primary",
                               "&:hover": {
-                                bgcolor: kwh === preset
+                                bgcolor: Number(kwh) === preset
                                   ? (theme) => theme.palette.mode === "dark" ? tokens.dark.fg : tokens.light.fg
                                   : (theme) => theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover,
                               },
@@ -624,7 +628,7 @@ export const MeralcoCalculator: React.FC = () => {
                 </Box>
 
                 <Chip
-                  label={`Calculated for ${kwh} kWh (Effective: ₱${bill.effectiveRatePerKwh.toFixed(4)}/kWh)`}
+                  label={`Calculated for ${numericKwh} kWh (Effective: ₱${bill.effectiveRatePerKwh.toFixed(4)}/kWh)`}
                   size="small"
                   sx={{
                     mt: 2.5,
