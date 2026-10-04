@@ -65,6 +65,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const { data: identity } = useGetIdentity<any>();
   const { mutate: logout } = useLogout();
+  const { activeRoom } = useRoom();
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
@@ -118,19 +119,39 @@ export const Header: React.FC<HeaderProps> = ({
     return () => clearInterval(interval);
   }, []);
 
+  const getPageTitle = (pathname: string) => {
+    switch (pathname) {
+      case "/":
+      case "/dashboard":
+        return t("nav.dashboard", "Dashboard");
+      case "/appliances":
+        return t("nav.appliances", "Appliance Hub");
+      case "/calendar":
+        return t("nav.calendar", "Smart Calendar");
+      case "/analytics":
+        return t("nav.analytics", "Analytics");
+      case "/forecasting":
+        return t("nav.forecasting", "Forecasting");
+      case "/calculator":
+        return t("nav.calculator", "Bill Calculator");
+      case "/settings":
+        return t("header.settings", "Settings");
+      case "/api-docs":
+        return "API Documentation";
+      default:
+        return t("nav.dashboard", "Dashboard");
+    }
+  };
+
   return (
     <AppBar
       position="sticky"
       sx={{
         zIndex: (theme) => theme.zIndex.drawer + 1,
-        backdropFilter: "blur(20px)",
         bgcolor: (theme) =>
-          theme.palette.mode === "dark" ? "rgba(23, 25, 29, 0.82)" : "rgba(255, 255, 255, 0.88)",
+          theme.palette.mode === "dark" ? "#09090b" : "#ffffff",
         color: "text.primary",
-        boxShadow: (theme) =>
-          theme.palette.mode === "dark"
-            ? "0 4px 20px rgba(0, 0, 0, 0.3)"
-            : "0 2px 12px rgba(15, 23, 42, 0.04)",
+        boxShadow: "none",
         borderBottom: "1px solid",
         borderColor: "divider",
       }}
@@ -138,13 +159,13 @@ export const Header: React.FC<HeaderProps> = ({
       <Toolbar
         sx={{
           justifyContent: "space-between",
-          minHeight: { xs: 58, sm: 64 },
-          px: { xs: 2, sm: 3, md: 4 },
+          minHeight: { xs: 54, sm: 58 },
+          px: { xs: 2, sm: 2.5, md: 3 },
           gap: 1.5,
         }}
       >
-        {/* Left: Mobile Menu Toggle, Back button on Settings, DB Status, and Tariff Indicators */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+        {/* Left: Mobile Menu Toggle, Breadcrumbs, DB Status, and Tariff */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, minWidth: 0 }}>
           {location.pathname === "/settings" ? (
             <Button
               component={Link}
@@ -152,13 +173,14 @@ export const Header: React.FC<HeaderProps> = ({
               startIcon={<ArrowBackIcon />}
               size="small"
               variant="outlined"
-              color="primary"
+              color="inherit"
               sx={{
                 borderRadius: 1.25,
-                fontWeight: 700,
+                fontWeight: 600,
                 textTransform: "none",
                 fontSize: "0.8125rem",
                 mr: 0.5,
+                borderColor: "divider",
               }}
             >
               {t("common.backToDashboard", "Back to Dashboard")}
@@ -174,61 +196,45 @@ export const Header: React.FC<HeaderProps> = ({
             </IconButton>
           )}
 
+          {/* Breadcrumb Path Indicator */}
+          <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 0.75, mr: 0.5 }}>
+            <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.8125rem" }}>
+              {activeRoom?.room_name || "Home Room"}
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.disabled", fontSize: "0.8125rem" }}>
+              /
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.primary", fontWeight: 600, fontSize: "0.8125rem" }}>
+              {getPageTitle(location.pathname)}
+            </Typography>
+          </Box>
+
           {/* Database Connection Status Chip */}
           <Tooltip title={dbStatus.ok ? `Supabase Connected (${dbStatus.latency || 0}ms)` : "Supabase Offline / Local Mode"}>
             <Chip
               data-tour="header-db-status"
               icon={
-                dbStatus.ok ? (
-                  <CloudDoneIcon
-                    sx={{
-                      color: (theme) =>
-                        theme.palette.mode === "dark" ? "#34d399 !important" : "#059669 !important",
-                      fontSize: "15px !important",
-                    }}
-                  />
-                ) : (
-                  <CloudOffIcon
-                    sx={{
-                      color: (theme) =>
-                        theme.palette.mode === "dark" ? "#f87171 !important" : "#dc2626 !important",
-                      fontSize: "15px !important",
-                    }}
-                  />
-                )
+                <Box
+                  sx={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    bgcolor: dbStatus.ok ? "success.main" : "error.main",
+                    ml: "4px !important",
+                  }}
+                />
               }
-              label={dbStatus.ok ? t("header.dbLive", "Supabase Live") : t("header.localMode", "Local Mode")}
+              label={dbStatus.ok ? t("header.dbLive", "Synced") : t("header.localMode", "Offline")}
               size="small"
               sx={{
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: "0.6875rem",
-                bgcolor: (theme) =>
-                  theme.palette.mode === "dark"
-                    ? dbStatus.ok
-                      ? "rgba(52, 211, 153, 0.12)"
-                      : "rgba(248, 113, 113, 0.12)"
-                    : dbStatus.ok
-                    ? "rgba(5, 150, 105, 0.1)"
-                    : "rgba(220, 38, 38, 0.1)",
-                color: (theme) =>
-                  theme.palette.mode === "dark"
-                    ? dbStatus.ok
-                      ? "#34d399"
-                      : "#f87171"
-                    : dbStatus.ok
-                    ? "#059669"
-                    : "#dc2626",
+                bgcolor: "action.hover",
+                color: "text.secondary",
                 border: "1px solid",
-                borderColor: (theme) =>
-                  theme.palette.mode === "dark"
-                    ? dbStatus.ok
-                      ? "rgba(52, 211, 153, 0.3)"
-                      : "rgba(248, 113, 113, 0.3)"
-                    : dbStatus.ok
-                    ? "rgba(5, 150, 105, 0.3)"
-                    : "rgba(220, 38, 38, 0.3)",
+                borderColor: "divider",
                 display: { xs: "none", sm: "inline-flex" },
-                height: 26,
+                height: 24,
               }}
             />
           </Tooltip>
@@ -243,30 +249,35 @@ export const Header: React.FC<HeaderProps> = ({
         </Box>
 
         {/* Center: Live Time / Date */}
-        <Box sx={{ display: { xs: "none", lg: "flex" }, flexDirection: "column", alignItems: "center" }}>
-          <Typography variant="body2" sx={{ fontWeight: 800, fontFamily: "monospace", letterSpacing: "0.05em", lineHeight: 1.2 }}>
+        <Box sx={{ display: { xs: "none", xl: "flex" }, flexDirection: "column", alignItems: "center" }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums", letterSpacing: "0.02em", lineHeight: 1.2 }}>
             {timeStr}
           </Typography>
           <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", mt: 0.25 }}>
-            {dateStr} (GMT+8)
+            {dateStr}
           </Typography>
         </Box>
 
         {/* Right: AI Scanner CTA, Theme Switch, and User Profile */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           {onOpenAiScanner && (
             <Button
               data-tour="header-ai-scanner"
               variant="outlined"
               size="small"
               onClick={onOpenAiScanner}
-              startIcon={<SparklesIcon sx={{ color: "#ffd54f" }} />}
+              startIcon={<SparklesIcon sx={{ fontSize: 16, color: "text.secondary" }} />}
               sx={{
                 display: { xs: "none", sm: "inline-flex" },
-                borderRadius: 1,
-                borderColor: "primary.main",
-                fontWeight: 700,
+                borderRadius: 1.25,
+                borderColor: "divider",
+                fontWeight: 600,
+                color: "text.primary",
                 py: 0.5,
+                "&:hover": {
+                  bgcolor: "action.hover",
+                  borderColor: "text.secondary",
+                },
               }}
             >
               AI Scanner
@@ -284,20 +295,15 @@ export const Header: React.FC<HeaderProps> = ({
                 disabled={isTourActive}
                 sx={{
                   display: { xs: "none", sm: "inline-flex" },
-                  bgcolor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(0, 158, 136, 0.08)",
                   border: "1px solid",
-                  borderColor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(0, 158, 136, 0.2)",
-                  color: "primary.main",
+                  borderColor: "divider",
+                  color: "text.secondary",
                   p: 0.75,
-                  borderRadius: 1,
+                  borderRadius: 1.5,
                   "&:hover": {
-                    bgcolor: "primary.main",
-                    color: (theme) => (theme.palette.mode === "dark" ? "#0c1b18" : "#ffffff"),
-                    borderColor: "primary.main",
+                    bgcolor: "action.hover",
+                    color: "text.primary",
                   },
-                  transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
               >
                 <HelpIcon sx={{ fontSize: 18 }} />
@@ -313,15 +319,18 @@ export const Header: React.FC<HeaderProps> = ({
               color="inherit"
               size="small"
               sx={{
-                bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
                 border: "1px solid",
                 borderColor: "divider",
                 p: 0.75,
-                borderRadius: 2,
+                borderRadius: 1.5,
+                color: "text.secondary",
+                "&:hover": {
+                  bgcolor: "action.hover",
+                  color: "text.primary",
+                },
               }}
             >
-              {isDark ? <SunIcon sx={{ color: "#ffd54f", fontSize: 18 }} /> : <MoonIcon sx={{ color: "#4f46e5", fontSize: 18 }} />}
+              {isDark ? <SunIcon sx={{ color: "warning.main", fontSize: 18 }} /> : <MoonIcon sx={{ color: "text.primary", fontSize: 18 }} />}
             </IconButton>
           </Tooltip>
 
@@ -333,12 +342,15 @@ export const Header: React.FC<HeaderProps> = ({
               color="inherit"
               size="small"
               sx={{
-                bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
                 border: "1px solid",
                 borderColor: "divider",
                 p: 0.75,
-                borderRadius: 2,
+                borderRadius: 1.5,
+                color: "text.secondary",
+                "&:hover": {
+                  bgcolor: "action.hover",
+                  color: "text.primary",
+                },
               }}
             >
               <Badge
@@ -346,14 +358,14 @@ export const Header: React.FC<HeaderProps> = ({
                 color={notifPermission === "granted" ? "success" : notifPermission === "denied" ? "error" : "warning"}
                 sx={{
                   "& .MuiBadge-badge": {
-                    width: 7,
-                    height: 7,
-                    minWidth: 7,
+                    width: 6,
+                    height: 6,
+                    minWidth: 6,
                   },
                 }}
               >
                 {notifPermission === "granted" ? (
-                  <NotificationsActiveIcon sx={{ color: "primary.main", fontSize: 18 }} />
+                  <NotificationsActiveIcon sx={{ color: "text.primary", fontSize: 18 }} />
                 ) : (
                   <NotificationsIcon sx={{ color: "text.secondary", fontSize: 18 }} />
                 )}
@@ -369,27 +381,25 @@ export const Header: React.FC<HeaderProps> = ({
               display: "flex",
               alignItems: "center",
               gap: 1,
-              p: "4px 10px 4px 4px",
-              borderRadius: 2,
-              bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.04)",
+              p: "3px 8px 3px 3px",
+              borderRadius: 1.5,
               border: "1px solid",
               borderColor: "divider",
               cursor: "pointer",
-              "&:hover": { borderColor: "primary.main", transform: "translateY(-1px)" },
-              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+              "&:hover": { bgcolor: "action.hover", borderColor: "text.secondary" },
+              transition: "all 0.15s ease",
             }}
           >
             <Avatar
               src={identity?.avatar}
-              sx={{ width: 28, height: 28, bgcolor: "primary.main", fontSize: "0.75rem", fontWeight: 700 }}
+              sx={{ width: 26, height: 26, bgcolor: "primary.main", color: "primary.contrastText", fontSize: "0.75rem", fontWeight: 700 }}
             >
               {identity?.name?.charAt(0) || "U"}
             </Avatar>
             <Typography
               variant="caption"
               sx={{
-                fontWeight: 700,
+                fontWeight: 600,
                 maxWidth: 120,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -408,56 +418,54 @@ export const Header: React.FC<HeaderProps> = ({
             slotProps={{
               paper: {
                 sx: {
-                  minWidth: 230,
-                  p: 0.75,
-                  borderRadius: 1.25,
-                  boxShadow: (theme) =>
-                    theme.palette.mode === "dark"
-                      ? "0 8px 32px rgba(0, 0, 0, 0.5)"
-                      : "0 10px 30px rgba(0, 0, 0, 0.12)",
+                  minWidth: 220,
+                  p: 0.5,
+                  borderRadius: 1.5,
+                  boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.2)",
                   border: "1px solid",
-                  borderColor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(0, 0, 0, 0.08)",
+                  borderColor: "divider",
                   bgcolor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(23, 26, 31, 0.98)" : "#ffffff",
+                    theme.palette.mode === "dark" ? "#09090b" : "#ffffff",
                   color: "text.primary",
-                  backdropFilter: "blur(20px)",
                 },
               },
             }}
           >
             <Box sx={{ px: 2, py: 1.25 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "text.primary" }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
                 {identity?.name || "PowerForecast User"}
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.75 }}>
                 {identity?.email || "Authenticated Account"}
               </Typography>
               <Chip
-                icon={<ShieldIcon sx={{ fontSize: "12px !important", color: "#ffd54f !important" }} />}
+                icon={<ShieldIcon sx={{ fontSize: "12px !important", color: "warning.main !important" }} />}
                 label={t("header.ownerBadge", "Household Owner")}
                 size="small"
                 sx={{
                   height: 20,
                   fontSize: "0.625rem",
-                  fontWeight: 800,
-                  bgcolor: "rgba(255, 213, 79, 0.15)",
-                  color: "#ffd54f",
-                  border: "1px solid rgba(255, 213, 79, 0.3)",
+                  fontWeight: 600,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.12)" : "rgba(217, 119, 6, 0.1)",
+                  color: "warning.main",
+                  border: "1px solid",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.3)" : "rgba(217, 119, 6, 0.3)",
                 }}
               />
             </Box>
 
-            <Divider sx={{ my: 0.75 }} />
+            <Divider sx={{ my: 0.5 }} />
 
             <MenuItem
               onClick={() => {
                 setAnchorEl(null);
                 navigate("/settings");
               }}
-              sx={{ gap: 1.25, fontSize: "0.8125rem", fontWeight: 700, borderRadius: 1, py: 0.75, color: "text.primary" }}
+              sx={{ gap: 1.25, fontSize: "0.8125rem", fontWeight: 500, borderRadius: 1, py: 0.75, color: "text.primary" }}
             >
-              <SettingsIcon fontSize="small" sx={{ color: "primary.main" }} />
+              <SettingsIcon fontSize="small" sx={{ color: "text.secondary" }} />
               {t("header.settings", "Settings")}
             </MenuItem>
 
@@ -466,7 +474,7 @@ export const Header: React.FC<HeaderProps> = ({
                 setAnchorEl(null);
                 setIsLogoutConfirmOpen(true);
               }}
-              sx={{ gap: 1.25, color: "error.main", fontSize: "0.8125rem", fontWeight: 700, borderRadius: 1, py: 0.75 }}
+              sx={{ gap: 1.25, color: "error.main", fontSize: "0.8125rem", fontWeight: 500, borderRadius: 1, py: 0.75 }}
             >
               <LogoutIcon fontSize="small" />
               {t("header.signOut", "Sign Out")}
@@ -484,18 +492,16 @@ export const Header: React.FC<HeaderProps> = ({
                 sx: {
                   borderRadius: 1.5,
                   border: "1px solid",
-                  borderColor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(0, 0, 0, 0.12)",
+                  borderColor: "divider",
                   bgcolor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(23, 26, 31, 0.98)" : "#ffffff",
+                    theme.palette.mode === "dark" ? "#09090b" : "#ffffff",
                   color: "text.primary",
-                  backdropFilter: "blur(20px)",
                   p: 1,
                 },
               },
             }}
           >
-            <DialogTitle sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1.25, color: "text.primary" }}>
+            <DialogTitle sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 1.25, color: "text.primary" }}>
               <LogoutIcon sx={{ color: "error.main" }} />
               {t("header.confirmSignOut", "Confirm Sign Out")}
             </DialogTitle>
@@ -505,7 +511,7 @@ export const Header: React.FC<HeaderProps> = ({
               </Typography>
             </DialogContent>
             <DialogActions sx={{ p: 2 }}>
-              <Button onClick={() => setIsLogoutConfirmOpen(false)} sx={{ fontWeight: 700 }}>
+              <Button onClick={() => setIsLogoutConfirmOpen(false)} sx={{ fontWeight: 600 }}>
                 {t("header.cancel", "Cancel")}
               </Button>
               <Button
@@ -515,7 +521,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setIsLogoutConfirmOpen(false);
                   logout();
                 }}
-                sx={{ fontWeight: 800, borderRadius: 1.25, px: 2 }}
+                sx={{ fontWeight: 600, borderRadius: 1.5, px: 2 }}
               >
                 {t("header.signOut", "Sign Out")}
               </Button>

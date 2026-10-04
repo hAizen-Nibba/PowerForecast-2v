@@ -8,6 +8,7 @@ import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Paper from "@mui/material/Paper";
 import LinearProgress from "@mui/material/LinearProgress";
+import Tooltip from "@mui/material/Tooltip";
 import {
   Bolt as BoltIcon,
   Calculate as CalculatorIcon,
@@ -22,7 +23,10 @@ import {
   Home as HomeIcon,
   Store as StoreIcon,
   AccountBalanceWallet as WalletIcon,
+  ChevronRight as ChevronRightIcon,
 } from "@mui/icons-material";
+import { PageHeader } from "../components/common/PageHeader";
+import { SectionCard } from "../components/common/SectionCard";
 import { MetricCard } from "../components/common/MetricCard";
 import { LivePowerBoard } from "../components/dashboard/LivePowerBoard";
 import { ConsumptionDonut } from "../components/dashboard/ConsumptionDonut";
@@ -40,9 +44,8 @@ import { useToast } from "../components/common/ToastProvider";
 import { formatDateToKey, DEFAULT_EFFECTIVE_RATE, getApplianceEffectiveRunningWatts } from "../lib/dailyUsageService";
 import { getMeralcoTariff, MeralcoTariffData, DEFAULT_MERALCO_TARIFF } from "../lib/meralcoRateService";
 import { getEffectiveApplianceRate } from "../lib/sessionService";
-
-import Tooltip from "@mui/material/Tooltip";
 import { useRoom } from "../context/RoomContext";
+import { tokens } from "../theme/tokens";
 
 export const DashboardPage: React.FC = () => {
   const { t } = useLanguage();
@@ -206,192 +209,410 @@ export const DashboardPage: React.FC = () => {
   });
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3, md: 3.5 } }}>
-      {/* 1. Hero Welcome Header Card */}
-      <Card
-        data-tour="dashboard-hero"
-        sx={{
-          p: { xs: 2.5, sm: 3.5, md: 4 },
-          display: "flex",
-          flexDirection: { xs: "column", md: "row" },
-          alignItems: { xs: "flex-start", md: "center" },
-          justifyContent: "space-between",
-          gap: { xs: 2.5, md: 3.5 },
-          borderRadius: 1.5,
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <Box sx={{ maxWidth: 660 }}>
-          <Chip
-            icon={<BoltIcon sx={{ color: "#00e5c9 !important", fontSize: "14px !important" }} />}
-            label={t("dash.gridTelemetry", "Active Grid Telemetry")}
-            size="small"
+    <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3 } }}>
+      {/* Tier 0: Standardized Clean Page Header */}
+      <PageHeader
+        title={t("dash.title", "Dashboard")}
+        subtitle={t(
+          "dash.subtitle",
+          "Real-time grid telemetry, Meralco unbundled tariff projections, and sub-metering cost allocation."
+        )}
+        badge={
+          <Box
             sx={{
-              mb: 1.5,
-              fontWeight: 700,
-              fontSize: "0.75rem",
-              bgcolor: "rgba(0, 229, 201, 0.12)",
-              color: "#00e5c9",
-              border: "1px solid rgba(0, 229, 201, 0.3)",
-              height: 24,
-            }}
-          />
-
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.02em", mb: 0.75 }}>
-            {t("dash.title", "Energy & Tariff Dashboard")}
-          </Typography>
-
-          <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.6, mb: 2.5 }}>
-            {t("dash.subtitle", "Real-time household & business telemetry, Meralco unbundled tariff projections, DOE PELP certified inventory, and sub-metering cost split.")}
-          </Typography>
-
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.25 }}>
-            {spaces.length === 0 ? (
-              <Button
-                component={Link}
-                to="/appliances"
-                variant="contained"
-                size="small"
-                startIcon={<PlusIcon />}
-                sx={{ fontWeight: 800 }}
-              >
-                Create Your First Space
-              </Button>
-            ) : (
-              <>
-                <Tooltip title={isViewer ? "View-Only Mode: Adding appliances is restricted to Admins" : ""}>
-                  <span>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      disabled={isViewer}
-                      onClick={() => setIsAddModalOpen(true)}
-                      startIcon={<PlusIcon />}
-                    >
-                      {t("dash.addAppliance", "Add Appliance")}
-                    </Button>
-                  </span>
-                </Tooltip>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => setIsPelpModalOpen(true)}
-                  startIcon={<DatabaseIcon sx={{ color: "primary.light" }} />}
-                >
-                  {t("dash.pelpCatalog", "PELP Catalog")}
-                </Button>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => setIsAiScannerOpen(true)}
-                  startIcon={<SparklesIcon sx={{ color: "#00e5c9" }} />}
-                >
-                  {t("dash.aiScanner", "AI Scanner")}
-                </Button>
-              </>
-            )}
-          </Box>
-        </Box>
-
-        {/* Live Draw summary pill */}
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 2, sm: 2.5 },
-            borderRadius: 1.25,
-            bgcolor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.88)" : "rgba(240, 243, 246, 0.8)",
-            border: "1px solid",
-            borderColor: "divider",
-            minWidth: { xs: "100%", md: 240 },
-            textAlign: { xs: "left", md: "right" },
-            boxSizing: "border-box",
-          }}
-        >
-          <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>
-            {t("dash.currentDraw", "CURRENT DRAW LOAD")}
-          </Typography>
-          <Typography variant="h3" sx={{ fontWeight: 900, fontFamily: "monospace", my: 0.5, letterSpacing: "-0.02em" }}>
-            {activeWattage} <Typography component="span" variant="body2" sx={{ color: "text.secondary", fontWeight: 600 }}>Watts</Typography>
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{
-              color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
-              fontWeight: 700,
-              fontFamily: "monospace",
-              display: "block",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.75,
+              px: 1.25,
+              py: 0.4,
+              borderRadius: 10,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
             }}
           >
-            ₱{((activeWattage / 1000) * effectiveRate).toFixed(2)}/hr {t("dash.runningRate", "running rate")}
-          </Typography>
-        </Paper>
-      </Card>
+            <Box
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.emerald[400] : tokens.emerald[600],
+                boxShadow: (theme) =>
+                  theme.palette.mode === "dark"
+                    ? `0 0 6px ${tokens.emerald[500]}`
+                    : `0 0 4px ${tokens.emerald[500]}`,
+              }}
+            />
+            <Typography
+              variant="caption"
+              sx={{
+                fontSize: "0.6875rem",
+                fontWeight: 600,
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
+                letterSpacing: "0.02em",
+              }}
+            >
+              {t("dash.gridTelemetry", "Active Grid Telemetry")}
+            </Typography>
+          </Box>
+        }
+        actions={
+          spaces.length === 0 ? (
+            <Button
+              component={Link}
+              to="/appliances"
+              variant="contained"
+              size="small"
+              startIcon={<PlusIcon />}
+            >
+              Create Your First Space
+            </Button>
+          ) : (
+            <>
+              <Tooltip title={isViewer ? "View-Only Mode: Adding appliances is restricted to Admins" : ""}>
+                <span>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    disabled={isViewer}
+                    onClick={() => setIsAddModalOpen(true)}
+                    startIcon={<PlusIcon />}
+                  >
+                    {t("dash.addAppliance", "Add Appliance")}
+                  </Button>
+                </span>
+              </Tooltip>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setIsPelpModalOpen(true)}
+                startIcon={<DatabaseIcon sx={{ fontSize: 16 }} />}
+              >
+                {t("dash.pelpCatalog", "PELP Catalog")}
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setIsAiScannerOpen(true)}
+                startIcon={<SparklesIcon sx={{ fontSize: 16 }} />}
+              >
+                {t("dash.aiScanner", "AI Scanner")}
+              </Button>
+            </>
+          )
+        }
+      />
 
-      {/* 2. Main KPI Stat Cards */}
+      {/* Tier 1: Main KPI Stat Cards (Inverted Pyramid Apex) */}
       <Grid container spacing={{ xs: 2, sm: 2.5 }} data-tour="dashboard-kpi-cards">
+        {/* Card 1: Live Power Draw (Hero Telemetry) */}
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
-            title={t("dash.consolidatedBill", "Consolidated Monthly Bill")}
-            value={`₱${spaceAnalytics.consolidatedTotalBill.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            subtitle={spaces.length > 1 ? `${t("dash.combinedAcross", "Combined across")} ${spaces.length} ${t("dash.spaces", "spaces")}` : "Household projected bill"}
-            icon={<BoltIcon sx={{ color: (theme) => theme.palette.mode === "dark" ? "#00e5c9" : "primary.main" }} />}
-            trend={{ value: `${spaces.length} Spaces`, direction: "neutral" }}
-            highlight
+            dataTour="dashboard-hero"
+            title={t("dash.currentDraw", "CURRENT DRAW LOAD")}
+            value={`${activeWattage} W`}
+            liveDot={runningAppliances.length > 0}
+            subtitle={`₱${((activeWattage / 1000) * effectiveRate).toFixed(2)}/hr running rate`}
+            badge={
+              <Chip
+                label={`${runningAppliances.length} of ${appliances.length} ON`}
+                size="small"
+                sx={{
+                  height: 20,
+                  fontSize: "0.6875rem",
+                  fontWeight: 600,
+                  bgcolor: (theme) =>
+                    runningAppliances.length > 0
+                      ? theme.palette.mode === "dark"
+                        ? "rgba(52, 211, 153, 0.15)"
+                        : "rgba(5, 150, 105, 0.12)"
+                      : theme.palette.mode === "dark"
+                      ? tokens.dark.surfaceSubtle
+                      : tokens.light.surfaceSubtle,
+                  color: (theme) =>
+                    runningAppliances.length > 0
+                      ? theme.palette.mode === "dark"
+                        ? tokens.emerald[400]
+                        : tokens.emerald[700]
+                      : theme.palette.mode === "dark"
+                      ? tokens.dark.textMuted
+                      : tokens.light.textMuted,
+                  border: "1px solid",
+                  borderColor: (theme) =>
+                    runningAppliances.length > 0
+                      ? theme.palette.mode === "dark"
+                        ? "rgba(52, 211, 153, 0.3)"
+                        : "rgba(5, 150, 105, 0.25)"
+                      : theme.palette.mode === "dark"
+                      ? tokens.dark.borderSubtle
+                      : tokens.light.borderSubtle,
+                }}
+              />
+            }
+            icon={<SpeedIcon sx={{ fontSize: 16 }} />}
+            highlight={runningAppliances.length > 0}
           />
         </Grid>
+
+        {/* Card 2: Today's Measured Spend */}
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <MetricCard
-            title={t("dash.monthlyVolume", "Monthly Energy Volume")}
-            value={`${totalMonthlyKwh.toFixed(1)} kWh`}
-            subtitle={t("dash.totalRegistered", "Total registered load")}
-            icon={<TrendingUpIcon sx={{ color: "primary.light" }} />}
-            trend={{ value: totalMonthlyKwh <= 100 ? "Lifeline" : "Standard", direction: "neutral" }}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard
-            title={t("dash.activeAppliances", "Active Appliances")}
-            value={`${runningAppliances.length} / ${appliances.length}`}
-            subtitle={t("nav.circuitsOnline", "Circuits online")}
-            icon={<SpeedIcon sx={{ color: "success.main" }} />}
-            trend={{ value: `${runningAppliances.length} ON`, direction: "up" }}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <MetricCard
-            title={t("dash.todaySpend", "Today's Measured Spend")}
+            title={t("dash.todaySpend", "TODAY'S MEASURED SPEND")}
             value={`₱${todayTotalCost.toFixed(2)}`}
             subtitle={`${todayTotalKwh.toFixed(2)} kWh recorded today`}
-            icon={<ClockIcon sx={{ color: runningAppliances.length > 0 ? "primary.main" : "success.main" }} />}
             trend={{
-              value: runningAppliances.length > 0 ? `${runningAppliances.length} Live Active` : `${todayUsageRecords.length} Logged`,
+              value: runningAppliances.length > 0 ? `${runningAppliances.length} Active` : `${todayUsageRecords.length} Logged`,
               direction: runningAppliances.length > 0 ? "up" : "neutral",
             }}
+            icon={<ClockIcon sx={{ fontSize: 16 }} />}
+          />
+        </Grid>
+
+        {/* Card 3: Projected Monthly Bill */}
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <MetricCard
+            title={t("dash.consolidatedBill", "PROJECTED MONTHLY BILL")}
+            value={`₱${spaceAnalytics.consolidatedTotalBill.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            subtitle={spaces.length > 1 ? `${t("dash.combinedAcross", "Combined across")} ${spaces.length} ${t("dash.spaces", "spaces")}` : "Household projected bill"}
+            trend={{ value: `${spaces.length} ${spaces.length === 1 ? "Space" : "Spaces"}`, direction: "neutral" }}
+            icon={<BoltIcon sx={{ fontSize: 16 }} />}
+          />
+        </Grid>
+
+        {/* Card 4: Monthly Energy Volume */}
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <MetricCard
+            title={t("dash.monthlyVolume", "MONTHLY ENERGY VOLUME")}
+            value={`${totalMonthlyKwh.toFixed(1)} kWh`}
+            subtitle={t("dash.totalRegistered", "Total registered load")}
+            trend={{ value: totalMonthlyKwh <= 100 ? "Lifeline" : "Standard", direction: "neutral" }}
+            icon={<TrendingUpIcon sx={{ fontSize: 16 }} />}
           />
         </Grid>
       </Grid>
 
-      {/* 3. Sub-Metering & Space Cost Allocation (When Multiple Spaces Exist) */}
+      {/* Tier 2: Primary Telemetry & Split Rail (Live Board + Energy Distribution + Shortcuts) */}
+      <Grid container spacing={{ xs: 2.5, sm: 3 }} sx={{ alignItems: "stretch" }}>
+        {/* Left Column: Live Circuit Power Board */}
+        <Grid size={{ xs: 12, lg: 8 }} data-tour="dashboard-live-board" sx={{ display: "flex" }}>
+          <Box sx={{ width: "100%" }}>
+            <LivePowerBoard onOpenAddModal={handleOpenAddModal} />
+          </Box>
+        </Grid>
+
+        {/* Right Rail: Energy Distribution Donut & Quick Shortcuts Panel */}
+        <Grid size={{ xs: 12, lg: 4 }} sx={{ display: "flex" }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, width: "100%" }}>
+            {/* Donut Chart */}
+            <Box data-tour="dashboard-donut" sx={{ flexShrink: 0 }}>
+              <ConsumptionDonut appliances={appliances} />
+            </Box>
+
+            {/* Quick Shortcuts List Card */}
+            <Card
+              data-tour="dashboard-quick-actions"
+              sx={{
+                p: 2,
+                borderRadius: 1,
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
+                backgroundImage: "none",
+                boxShadow: "none",
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+              }}
+            >
+              <Box>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.textMuted : tokens.light.textMuted,
+                    fontWeight: 500,
+                    fontSize: "0.75rem",
+                    letterSpacing: "0.02em",
+                    textTransform: "uppercase",
+                    display: "block",
+                    mb: 1.5,
+                  }}
+                >
+                  Quick Modules
+                </Typography>
+
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  {[
+                    {
+                      title: "Bill Calculator",
+                      desc: "Unbundled tariff formulas & forecasting",
+                      icon: <CalculatorIcon sx={{ fontSize: 16 }} />,
+                      link: "/calculator",
+                    },
+                    {
+                      title: "Appliance Hub",
+                      desc: "Multi-space inventory & PELP match",
+                      icon: <BoltIcon sx={{ fontSize: 16 }} />,
+                      link: "/appliances",
+                    },
+                    {
+                      title: "Smart Scheduler",
+                      desc: "Circuit runtime planner & queue",
+                      icon: <CalendarIcon sx={{ fontSize: 16 }} />,
+                      link: "/calendar",
+                    },
+                  ].map((item) => (
+                    <Box
+                      key={item.link}
+                      component={Link}
+                      to={item.link}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        p: 1.25,
+                        borderRadius: 1,
+                        textDecoration: "none",
+                        color: "inherit",
+                        border: "1px solid",
+                        borderColor: "transparent",
+                        bgcolor: (theme) =>
+                          theme.palette.mode === "dark"
+                            ? tokens.dark.surfaceSubtle
+                            : tokens.light.surfaceSubtle,
+                        transition: "all 0.15s ease",
+                        "&:hover": {
+                          borderColor: (theme) =>
+                            theme.palette.mode === "dark"
+                              ? tokens.dark.borderStrong
+                              : tokens.light.borderStrong,
+                          transform: "translateX(2px)",
+                        },
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
+                        <Box
+                          sx={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: 0.75,
+                            bgcolor: (theme) =>
+                              theme.palette.mode === "dark"
+                                ? tokens.zinc[800]
+                                : tokens.zinc[200],
+                            color: (theme) =>
+                              theme.palette.mode === "dark"
+                                ? tokens.dark.textPrimary
+                                : tokens.light.textPrimary,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {item.icon}
+                        </Box>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 600,
+                              fontSize: "0.8125rem",
+                              color: (theme) =>
+                                theme.palette.mode === "dark"
+                                  ? tokens.dark.textPrimary
+                                  : tokens.light.textPrimary,
+                              lineHeight: 1.2,
+                            }}
+                          >
+                            {item.title}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: (theme) =>
+                                theme.palette.mode === "dark"
+                                  ? tokens.dark.textMuted
+                                  : tokens.light.textMuted,
+                              fontSize: "0.6875rem",
+                              display: "block",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {item.desc}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <ChevronRightIcon
+                        sx={{
+                          fontSize: 18,
+                          color: (theme) =>
+                            theme.palette.mode === "dark"
+                              ? tokens.dark.textMuted
+                              : tokens.light.textMuted,
+                          flexShrink: 0,
+                        }}
+                      />
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            </Card>
+          </Box>
+        </Grid>
+      </Grid>
+
+      {/* Tier 3: 24-Hour Activity & Load Timeline */}
+      <TodayActivityTimeline appliances={appliances} />
+
+      {/* Tier 4: Sub-Metering & Space Cost Allocation (When Multiple Spaces Exist) */}
       {spaces.length > 1 && (
         <Card
           data-tour="dashboard-space-split"
           sx={{
-            p: { xs: 2.5, sm: 3 },
-            borderRadius: 1.5,
+            p: { xs: 2.25, sm: 2.5 },
+            borderRadius: 1,
             border: "1px solid",
             borderColor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.18)" : "divider",
+              theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
+            backgroundImage: "none",
+            boxShadow: "none",
           }}
         >
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, flexWrap: "wrap", gap: 1.5 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-              <Box sx={{ p: 1, borderRadius: 1, bgcolor: "primary.main", color: "primary.contrastText", display: "flex" }}>
-                <WalletIcon fontSize="small" />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 1,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                  border: "1px solid",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                  color: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <WalletIcon sx={{ fontSize: 18 }} />
               </Box>
               <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, letterSpacing: "-0.01em" }}>
                   Space Sub-Billing & Expense Split
                 </Typography>
                 <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -402,19 +623,37 @@ export const DashboardPage: React.FC = () => {
 
             <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
               <Chip
-                icon={<HomeIcon sx={{ fontSize: "14px !important" }} />}
+                icon={<HomeIcon sx={{ fontSize: 14 }} />}
                 label={`Residential: ₱${spaceAnalytics.resTotalBill.toFixed(2)} (${spaceAnalytics.resPercent.toFixed(0)}%)`}
-                color="primary"
                 size="small"
-                sx={{ fontWeight: 700 }}
+                sx={{
+                  fontWeight: 600,
+                  fontSize: "0.6875rem",
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                  color: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                  border: "1px solid",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                }}
               />
               {spaceAnalytics.comTotalBill > 0 && (
                 <Chip
-                  icon={<StoreIcon sx={{ fontSize: "14px !important" }} />}
+                  icon={<StoreIcon sx={{ fontSize: 14 }} />}
                   label={`Commercial: ₱${spaceAnalytics.comTotalBill.toFixed(2)} (${spaceAnalytics.comPercent.toFixed(0)}%)`}
-                  color="secondary"
                   size="small"
-                  sx={{ fontWeight: 700 }}
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: "0.6875rem",
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                    color: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                    border: "1px solid",
+                    borderColor: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                  }}
                 />
               )}
             </Box>
@@ -424,13 +663,15 @@ export const DashboardPage: React.FC = () => {
             variant="determinate"
             value={spaceAnalytics.resPercent}
             sx={{
-              height: 10,
+              height: 6,
               borderRadius: 1,
-              bgcolor: "secondary.main",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.zinc[800] : tokens.zinc[200],
               "& .MuiLinearProgress-bar": {
-                bgcolor: "primary.main",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.zinc[400] : tokens.zinc[800],
               },
-              mb: 2.5,
+              mb: 2,
             }}
           />
 
@@ -441,14 +682,19 @@ export const DashboardPage: React.FC = () => {
                   variant="outlined"
                   sx={{
                     p: 2,
-                    borderRadius: 1.25,
+                    borderRadius: 1,
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
                     gap: 1.5,
-                    transition: "all 0.2s ease",
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                    borderColor: (theme) =>
+                      theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                    transition: "all 0.15s ease",
                     "&:hover": {
-                      borderColor: "primary.main",
+                      borderColor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
                       transform: "translateY(-1px)",
                     },
                   }}
@@ -456,11 +702,11 @@ export const DashboardPage: React.FC = () => {
                   <Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       {item.space.tariff_type === "commercial" ? (
-                        <StoreIcon fontSize="small" sx={{ color: "secondary.main" }} />
+                        <StoreIcon sx={{ fontSize: 16, color: "text.secondary" }} />
                       ) : (
-                        <HomeIcon fontSize="small" sx={{ color: "primary.main" }} />
+                        <HomeIcon sx={{ fontSize: 16, color: "text.secondary" }} />
                       )}
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                         {item.space.name}
                       </Typography>
                     </Box>
@@ -470,7 +716,16 @@ export const DashboardPage: React.FC = () => {
                   </Box>
 
                   <Box sx={{ textAlign: "right" }}>
-                    <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: item.space.tariff_type === "commercial" ? "secondary.main" : "primary.main" }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: 600,
+                        fontFamily: "monospace",
+                        fontVariantNumeric: "tabular-nums",
+                        color: (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                      }}
+                    >
                       ₱{item.bill.toFixed(2)}
                     </Typography>
                     <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", display: "block" }}>
@@ -484,91 +739,6 @@ export const DashboardPage: React.FC = () => {
         </Card>
       )}
 
-      {/* 4. Main Grid: Live Power Board & Energy Distribution Donut */}
-      <Grid container spacing={{ xs: 2.5, sm: 3 }}>
-        <Grid size={{ xs: 12, lg: 8 }} data-tour="dashboard-live-board">
-          <LivePowerBoard onOpenAddModal={handleOpenAddModal} />
-        </Grid>
-        <Grid size={{ xs: 12, lg: 4 }} data-tour="dashboard-donut">
-          <ConsumptionDonut appliances={appliances} />
-        </Grid>
-      </Grid>
-
-      {/* 5. Today's 24-Hour Activity & Load Timeline */}
-      <TodayActivityTimeline appliances={appliances} />
-
-      {/* 6. Quick Module Launchpad */}
-      <Grid container spacing={{ xs: 2, sm: 2.5 }} data-tour="dashboard-quick-actions">
-        {[
-          {
-            title: "Bill Calculator",
-            desc: "Unbundled residential & commercial rate formulas",
-            icon: <CalculatorIcon sx={{ color: "#ffd54f" }} />,
-            link: "/calculator",
-          },
-          {
-            title: "Appliance Hub",
-            desc: "Multi-space inventory & DOE PELP matching",
-            icon: <BoltIcon sx={{ color: "primary.light" }} />,
-            link: "/appliances",
-          },
-          {
-            title: "Smart Scheduler",
-            desc: "Runtime planner & circuit queue",
-            icon: <CalendarIcon sx={{ color: "success.light" }} />,
-            link: "/calendar",
-          },
-        ].map((item, idx) => (
-          <Grid size={{ xs: 12, sm: 4 }} key={idx}>
-            <Card
-              component={Link}
-              to={item.link}
-              sx={{
-                p: { xs: 2.25, sm: 2.5 },
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                textDecoration: "none",
-                color: "inherit",
-                borderRadius: 1.5,
-                "&:hover": {
-                  borderColor: "primary.main",
-                  transform: "translateY(-2px)",
-                },
-                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Box
-                  sx={{
-                    p: 1.25,
-                    borderRadius: 2,
-                    bgcolor: "action.hover",
-                    border: "1px solid",
-                    borderColor: "divider",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  {item.icon}
-                </Box>
-                <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                    {item.title}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                    {item.desc}
-                  </Typography>
-                </Box>
-              </Box>
-              <ArrowForwardIcon fontSize="small" sx={{ color: "primary.main", flexShrink: 0 }} />
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
       {/* Global Add Appliance Modal */}
       <ApplianceModal
         isOpen={isAddModalOpen}
@@ -577,6 +747,20 @@ export const DashboardPage: React.FC = () => {
           setSelectedSpaceIdForAdd(null);
         }}
         defaultListId={selectedSpaceIdForAdd || spaces[0]?.id || null}
+      />
+
+      {/* PELP Catalog Modal */}
+      <PelpCatalogModal
+        isOpen={isPelpModalOpen}
+        onClose={() => setIsPelpModalOpen(false)}
+        defaultListId={spaces[0]?.id || null}
+      />
+
+      {/* AI Vision Scanner Modal */}
+      <AiVisionScannerModal
+        isOpen={isAiScannerOpen}
+        onClose={() => setIsAiScannerOpen(false)}
+        defaultListId={spaces[0]?.id || null}
       />
 
       {/* Dashboard Space Setup Modal (Opens when no spaces exist or user adds a space) */}

@@ -52,6 +52,7 @@ import {
 import { PcWorkloadProfile, getApplianceWorkloadWatts } from "../../lib/pcHardwareService";
 import { PcWorkloadModeModal } from "../appliances/PcWorkloadModeModal";
 import { useRoom } from "../../context/RoomContext";
+import { tokens } from "../../theme/tokens";
 
 interface LivePowerBoardProps {
   onOpenAddModal: () => void;
@@ -185,21 +186,26 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <Box
               sx={{
-                width: 36,
-                height: 36,
+                width: 32,
+                height: 32,
                 borderRadius: 1,
-                bgcolor: "primary.main",
-                color: "#ffffff",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0,
               }}
             >
-              <BoltIcon sx={{ color: "#ffd54f" }} />
+              <BoltIcon sx={{ fontSize: 18 }} />
             </Box>
             <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, letterSpacing: "-0.01em" }}>
                 Live Circuit Power Board
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -341,16 +347,16 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
                       justifyContent: "space-between",
                       gap: 1.5,
                       borderColor: isOn
-                        ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.28)" : "rgba(13, 148, 136, 0.25)")
-                        : "divider",
+                        ? (theme) => (theme.palette.mode === "dark" ? "rgba(52, 211, 153, 0.3)" : "rgba(5, 150, 105, 0.3)")
+                        : (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
                       bgcolor: isOn
-                        ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.05)" : "rgba(13, 148, 136, 0.04)")
+                        ? (theme) => (theme.palette.mode === "dark" ? "rgba(52, 211, 153, 0.05)" : "rgba(5, 150, 105, 0.04)")
                         : "transparent",
-                      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                      transition: "all 0.15s ease",
                       "&:hover": {
                         borderColor: isOn
-                          ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.45)" : "rgba(13, 148, 136, 0.4)")
-                          : (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.35)" : "primary.main"),
+                          ? (theme) => (theme.palette.mode === "dark" ? "rgba(52, 211, 153, 0.6)" : "rgba(5, 150, 105, 0.6)")
+                          : (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong),
                         transform: "translateY(-1px)",
                       },
                     }}

@@ -53,7 +53,7 @@ export const Layout: React.FC = () => {
           display: "flex",
           flexDirection: "column",
           minWidth: 0,
-          pl: { xs: 0, lg: isSettings ? 0 : "260px" },
+          pl: { xs: 0, lg: isSettings ? 0 : "240px" },
           position: "relative",
           zIndex: 10,
           transition: "padding-left 0.24s cubic-bezier(0.4, 0, 0.2, 1)",

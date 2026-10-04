@@ -35,6 +35,7 @@ import {
 } from "../../lib/dailyUsageService";
 import { supabaseClient } from "../../lib/supabaseClient";
 import { useToast } from "../common/ToastProvider";
+import { tokens } from "../../theme/tokens";
 
 interface TodayActivityTimelineProps {
   appliances: UserAppliance[];
@@ -340,17 +341,12 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
         border: "1px solid",
         borderColor: (theme) =>
           activeLiveCount > 0
-            ? theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.2)" : "rgba(13, 148, 136, 0.2)"
-            : theme.palette.mode === "dark"
-            ? "rgba(255, 255, 255, 0.06)"
-            : "#e2e8f0",
+            ? theme.palette.mode === "dark" ? "rgba(52, 211, 153, 0.3)" : "rgba(5, 150, 105, 0.3)"
+            : theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
         bgcolor: (theme) =>
-          theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.85)" : "#ffffff",
-        boxShadow: (theme) =>
-          theme.palette.mode === "dark"
-            ? "0 4px 20px rgba(0, 0, 0, 0.4)"
-            : "0 2px 12px rgba(15, 23, 42, 0.04)",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
+        boxShadow: "none",
+        transition: "all 0.15s ease",
       }}
     >
       {/* Header */}
@@ -358,17 +354,23 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Box
             sx={{
-              p: 1,
+              width: 32,
+              height: 32,
               borderRadius: 1,
-              bgcolor: activeLiveCount > 0 ? "rgba(0, 229, 201, 0.15)" : "rgba(0, 229, 201, 0.1)",
-              color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+              border: "1px solid",
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+              color: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
             }}
           >
-            <TimelineIcon fontSize="small" />
+            <TimelineIcon sx={{ fontSize: 18 }} />
           </Box>
           <Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -486,10 +488,14 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                       sx={{
                         height: 16,
                         fontSize: "0.5625rem",
-                        fontWeight: 800,
+                        fontWeight: 600,
                         bgcolor: (theme) =>
-                          theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(13, 148, 136, 0.1)",
-                        color: (theme) => (theme.palette.mode === "dark" ? "primary.main" : "#0d9488"),
+                          theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                        color: (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.textMuted : tokens.light.textMuted,
+                        border: "1px solid",
+                        borderColor: (theme) =>
+                          theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                       }}
                     />
                     <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.625rem", fontWeight: 700 }}>
@@ -544,33 +550,23 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
 
                     const isLive = block.type === "live_active" || block.type === "live_stopwatch";
 
-                    const bgGradient =
-                      isLive
-                        ? "linear-gradient(90deg, #00e5c9 0%, #26c6da 100%)"
-                        : "linear-gradient(90deg, #009e88 0%, #00e5c9 100%)";
-
-                    const glowColor =
-                      isLive
-                        ? "0 0 10px rgba(0, 229, 201, 0.6)"
-                        : "0 0 8px rgba(0, 158, 136, 0.4)";
-
                     return (
                       <Tooltip
                         key={block.id}
                         arrow
                         title={
                           <Box sx={{ p: 0.5 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#fff" }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#fff" }}>
                               {app.name} ({isLive ? "Live Active Circuit" : "Logged Activity Session (Click to Edit / Delete)"})
                             </Typography>
                             <Typography variant="caption" sx={{ display: "block", color: "text.secondary" }}>
                               {block.startTimeStr} – {block.endTimeStr} ({block.durationHours.toFixed(2)} hrs)
                             </Typography>
-                            <Typography variant="caption" sx={{ display: "block", color: "#ffd54f", fontWeight: 800, mt: 0.5 }}>
+                            <Typography variant="caption" sx={{ display: "block", color: "text.primary", fontWeight: 600, mt: 0.5 }}>
                               {block.kwh.toFixed(3)} kWh • ₱{block.cost.toFixed(2)}
                             </Typography>
                             {block.type === "logged_session" && (
-                              <Typography variant="caption" sx={{ display: "block", color: "primary.light", fontWeight: 800, mt: 0.5 }}>
+                              <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontWeight: 600, mt: 0.5 }}>
                                 Click block to inspect / edit / delete
                               </Typography>
                             )}
@@ -583,17 +579,17 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                             position: "absolute",
                             left: `${leftPct}%`,
                             width: `${widthPct}%`,
-                            top: 2,
-                            bottom: 2,
-                            borderRadius: 1.5,
-                            background: bgGradient,
-                            boxShadow: glowColor,
+                            top: 3,
+                            bottom: 3,
+                            borderRadius: 0.5,
+                            bgcolor: isLive
+                              ? (theme) => (theme.palette.mode === "dark" ? tokens.emerald[400] : tokens.emerald[600])
+                              : (theme) => (theme.palette.mode === "dark" ? tokens.zinc[600] : tokens.zinc[400]),
                             cursor: block.type === "logged_session" ? "pointer" : "default",
-                            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                            transition: "all 0.15s ease",
                             "&:hover": {
-                              transform: "scaleY(1.15)",
+                              filter: "brightness(1.15)",
                               zIndex: 10,
-                              boxShadow: "0 0 14px rgba(255, 255, 255, 0.6)",
                             },
                           }}
                         />
@@ -634,8 +630,8 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                 bgcolor: "background.paper",
                 border: (theme) =>
                   theme.palette.mode === "dark"
-                    ? "1px solid rgba(0, 229, 201, 0.35)"
-                    : "1px solid rgba(13, 148, 136, 0.25)",
+                    ? `1px solid ${tokens.dark.borderSubtle}`
+                    : `1px solid ${tokens.light.borderSubtle}`,
                 boxShadow: (theme) =>
                   theme.palette.mode === "dark" ? "0 24px 64px rgba(0, 0, 0, 0.6)" : "0 12px 32px rgba(0, 0, 0, 0.12)",
                 color: "text.primary",
@@ -651,8 +647,13 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                   width: 38,
                   height: 38,
                   borderRadius: 1,
-                  bgcolor: (selectedBlockForAction.block.type === "live_active" || selectedBlockForAction.block.type === "live_stopwatch") ? "rgba(0, 229, 201, 0.2)" : "rgba(0, 229, 201, 0.15)",
-                  color: "primary.main",
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                  border: "1px solid",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                  color: (theme) =>
+                    theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -661,7 +662,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                 <TimerIcon />
               </Box>
               <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 900, lineHeight: 1.2 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
                   {selectedBlockForAction.appliance.name}
                 </Typography>
                 <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -691,19 +692,19 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
             >
               <Box>
                 <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>DURATION</Typography>
-                <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.main" }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: "monospace", fontVariantNumeric: "tabular-nums" }}>
                   {selectedBlockForAction.block.durationHours >= 1 ? `${selectedBlockForAction.block.durationHours.toFixed(1)} hrs` : `${Math.round(selectedBlockForAction.block.durationHours * 60)} mins`}
                 </Typography>
               </Box>
               <Box>
                 <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>ENERGY</Typography>
-                <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "secondary.main" }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: "monospace", fontVariantNumeric: "tabular-nums" }}>
                   {selectedBlockForAction.block.kwh.toFixed(3)} kWh
                 </Typography>
               </Box>
               <Box>
                 <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>EST. COST</Typography>
-                <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.main" }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: "monospace", fontVariantNumeric: "tabular-nums" }}>
                   ₱{selectedBlockForAction.block.cost.toFixed(2)}
                 </Typography>
               </Box>
@@ -717,28 +718,28 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                   p: 2,
                   borderRadius: 1.25,
                   bgcolor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.06)" : "rgba(13, 148, 136, 0.06)",
+                    theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
                   borderColor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.2)" : "rgba(13, 148, 136, 0.2)",
+                    theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                   display: "flex",
                   flexDirection: "column",
                   gap: 1,
                 }}
               >
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800 }}>ACTIVE TIME WINDOW</Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>ACTIVE TIME WINDOW</Typography>
                   {selectedBlockForAction.block.type !== "live_active" && selectedBlockForAction.block.type !== "live_stopwatch" && (
                     <Button
                       size="small"
                       startIcon={<TuneIcon sx={{ fontSize: 15 }} />}
                       onClick={() => setIsEditingBlockRange(true)}
-                      sx={{ textTransform: "none", fontWeight: 700, fontSize: "0.75rem" }}
+                      sx={{ textTransform: "none", fontWeight: 600, fontSize: "0.75rem" }}
                     >
                       Edit Time Range
                     </Button>
                   )}
                 </Box>
-                <Typography variant="body1" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
+                <Typography variant="body1" sx={{ fontWeight: 600, fontFamily: "monospace", fontVariantNumeric: "tabular-nums" }}>
                   {selectedBlockForAction.block.startTimeStr} ➔ {selectedBlockForAction.block.endTimeStr}
                 </Typography>
               </Paper>
@@ -749,15 +750,15 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
                   p: 2,
                   borderRadius: 1.25,
                   bgcolor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(13, 148, 136, 0.08)",
+                    theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
                   borderColor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(13, 148, 136, 0.25)",
+                    theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                   display: "flex",
                   flexDirection: "column",
                   gap: 2,
                 }}
               >
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "primary.main" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                   Adjust Start & End Timestamps
                 </Typography>
                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>

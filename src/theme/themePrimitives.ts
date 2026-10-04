@@ -1,16 +1,6 @@
-export const brand = {
-  50: '#e6fffa',
-  100: '#b2f5ea',
-  200: '#81e6d9',
-  300: '#4fd1c5',
-  400: '#26c6da',
-  500: '#00e5c9',
-  600: '#00c4aa',
-  700: '#009e88',
-  800: '#007564',
-  900: '#004d40',
-};
+import { zinc, emerald } from './tokens';
 
+export const brand = zinc;
 export const secondaryBrand = {
   50: '#fffbeb',
   100: '#fef3c7',
@@ -23,33 +13,21 @@ export const secondaryBrand = {
   800: '#92400e',
   900: '#78350f',
 };
-
-export const gray = {
-  50: '#f8fafc',
-  100: '#f1f5f9',
-  200: '#e2e8f0',
-  300: '#cbd5e1',
-  400: '#94a3b8',
-  500: '#64748b',
-  600: '#475569',
-  700: '#334155',
-  800: '#1e232a',
-  900: '#14171c',
-};
+export const gray = zinc;
 
 export const colorSchemes = {
   light: {
     palette: {
       primary: {
-        light: '#14b8a6',
-        main: '#0d9488',
-        dark: '#0f766e',
+        light: zinc[700],
+        main: zinc[900],
+        dark: zinc[950],
         contrastText: '#ffffff',
       },
       secondary: {
-        light: secondaryBrand[300],
-        main: secondaryBrand[500],
-        dark: secondaryBrand[700],
+        light: zinc[500],
+        main: zinc[700],
+        dark: zinc[900],
         contrastText: '#ffffff',
       },
       info: {
@@ -66,54 +44,54 @@ export const colorSchemes = {
       },
       error: {
         light: '#fca5a5',
-        main: '#e11d48',
-        dark: '#be123c',
+        main: '#dc2626',
+        dark: '#b91c1c',
         contrastText: '#ffffff',
       },
       success: {
-        light: '#86efac',
-        main: '#059669',
-        dark: '#047857',
+        light: emerald[400],
+        main: emerald[600],
+        dark: emerald[700],
         contrastText: '#ffffff',
       },
-      grey: gray,
-      divider: '#e2e8f0',
+      grey: zinc,
+      divider: '#e4e4e7',
       background: {
-        default: '#f8fafc',
+        default: '#ffffff',
         paper: '#ffffff',
       },
       text: {
-        primary: '#0f172a',
-        secondary: '#475569',
-        disabled: '#94a3b8',
+        primary: '#09090b',
+        secondary: '#52525b',
+        disabled: '#a1a1aa',
       },
       action: {
-        hover: 'rgba(13, 148, 136, 0.05)',
-        selected: 'rgba(13, 148, 136, 0.1)',
+        hover: 'rgba(0, 0, 0, 0.04)',
+        selected: 'rgba(0, 0, 0, 0.08)',
       },
     },
   },
   dark: {
     palette: {
       primary: {
-        light: brand[300],
-        main: brand[500],
-        dark: brand[700],
-        contrastText: '#0c1b18',
+        light: '#ffffff',
+        main: zinc[50],
+        dark: zinc[200],
+        contrastText: '#09090b',
       },
       secondary: {
-        light: secondaryBrand[300],
-        main: secondaryBrand[400],
-        dark: secondaryBrand[600],
-        contrastText: '#000000',
+        light: zinc[300],
+        main: zinc[400],
+        dark: zinc[500],
+        contrastText: '#09090b',
       },
       info: {
-        light: '#22d3ee',
-        main: '#06b6d4',
-        dark: '#0891b2',
+        light: '#38bdf8',
+        main: '#0ea5e9',
+        dark: '#0284c7',
       },
       warning: {
-        light: '#fcd34d',
+        light: '#fde047',
         main: '#f59e0b',
         dark: '#d97706',
       },
@@ -123,24 +101,25 @@ export const colorSchemes = {
         dark: '#dc2626',
       },
       success: {
-        light: '#5df2d6',
-        main: '#00e5c9',
-        dark: '#00b39b',
+        light: emerald[300],
+        main: emerald[400],
+        dark: emerald[500],
+        contrastText: '#09090b',
       },
-      grey: gray,
-      divider: 'rgba(255, 255, 255, 0.08)',
+      grey: zinc,
+      divider: '#27272a',
       background: {
-        default: '#17191d',
-        paper: '#202328',
+        default: '#09090b',
+        paper: '#09090b',
       },
       text: {
-        primary: '#f1f5f9',
-        secondary: '#8b949e',
-        disabled: '#555d69',
+        primary: '#fafafa',
+        secondary: '#a1a1aa',
+        disabled: '#71717a',
       },
       action: {
-        hover: 'rgba(0, 229, 201, 0.08)',
-        selected: 'rgba(0, 229, 201, 0.16)',
+        hover: 'rgba(255, 255, 255, 0.05)',
+        selected: 'rgba(255, 255, 255, 0.1)',
       },
     },
   },
@@ -150,31 +129,31 @@ export const typography = {
   fontFamily: ['"Inter"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'].join(','),
   h1: {
     fontFamily: '"Inter", sans-serif',
-    fontSize: '2.5rem',
-    fontWeight: 800,
+    fontSize: '2.25rem',
+    fontWeight: 700,
     lineHeight: 1.2,
-    letterSpacing: '-0.03em',
+    letterSpacing: '-0.025em',
   },
   h2: {
     fontFamily: '"Inter", sans-serif',
-    fontSize: '2rem',
+    fontSize: '1.75rem',
     fontWeight: 700,
     lineHeight: 1.25,
-    letterSpacing: '-0.025em',
+    letterSpacing: '-0.02em',
   },
   h3: {
     fontFamily: '"Inter", sans-serif',
     fontSize: '1.5rem',
-    fontWeight: 700,
+    fontWeight: 600,
     lineHeight: 1.3,
-    letterSpacing: '-0.02em',
+    letterSpacing: '-0.015em',
   },
   h4: {
     fontFamily: '"Inter", sans-serif',
     fontSize: '1.25rem',
     fontWeight: 600,
     lineHeight: 1.35,
-    letterSpacing: '-0.015em',
+    letterSpacing: '-0.01em',
   },
   h5: {
     fontFamily: '"Inter", sans-serif',
@@ -185,7 +164,7 @@ export const typography = {
   },
   h6: {
     fontFamily: '"Inter", sans-serif',
-    fontSize: '0.95rem',
+    fontSize: '0.9375rem',
     fontWeight: 600,
     lineHeight: 1.45,
     letterSpacing: '-0.005em',
@@ -206,9 +185,9 @@ export const typography = {
   },
   body1: {
     fontFamily: '"Inter", sans-serif',
-    fontSize: '0.925rem',
+    fontSize: '0.875rem',
     lineHeight: 1.55,
-    letterSpacing: '-0.011em',
+    letterSpacing: '-0.005em',
   },
   body2: {
     fontFamily: '"Inter", sans-serif',
@@ -219,8 +198,8 @@ export const typography = {
   button: {
     fontFamily: '"Inter", sans-serif',
     textTransform: 'none' as const,
-    fontWeight: 600,
-    letterSpacing: '-0.01em',
+    fontWeight: 500,
+    letterSpacing: '-0.005em',
   },
 };
 

@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
-import Chip from "@mui/material/Chip";
-import Divider from "@mui/material/Divider";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
@@ -11,30 +9,31 @@ import { UserAppliance, ApplianceList } from "../../types";
 import { PieChart as PieIcon } from "@mui/icons-material";
 import { useList } from "@refinedev/core";
 import { normalizeApplianceCategory } from "../../lib/dailyUsageService";
+import { tokens } from "../../theme/tokens";
 
 interface ConsumptionDonutProps {
   appliances: UserAppliance[];
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  "Air Conditioners": "#00e5c9",
-  "Refrigerators & Freezers": "#26c6da",
+  "Air Conditioners": "#38bdf8",
+  "Refrigerators & Freezers": "#3b82f6",
   "Computers & Laptops": "#6366f1",
   "Electric Fans": "#10b981",
   "Kitchen Appliances": "#f59e0b",
-  "Laundry & Cleaning": "#fbbf24",
+  "Laundry & Cleaning": "#8b5cf6",
   "TV & Entertainment": "#06b6d4",
-  "Lighting & Other": "#38bdf8",
+  "Lighting & Other": "#a1a1aa",
   "Electric Fans & Cooling": "#10b981",
   "Kitchen & Cooking": "#f59e0b",
   "Entertainment & Work": "#06b6d4",
   "Television Sets": "#06b6d4",
-  "Washing Machines": "#fbbf24",
-  "Lighting Products": "#38bdf8",
-  "Other": "#64748b",
+  "Washing Machines": "#8b5cf6",
+  "Lighting Products": "#a1a1aa",
+  "Other": "#71717a",
 };
 
-const SPACE_COLORS = ["#00e5c9", "#009e88", "#26c6da", "#fbbf24", "#38bdf8", "#f43f5e"];
+const SPACE_COLORS = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#06b6d4", "#f43f5e"];
 
 export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }) => {
   const [viewBy, setViewBy] = useState<"category" | "space">("category");
@@ -67,7 +66,7 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
   const categoryData = Object.keys(categoryTotals).map((cat) => ({
     name: cat,
     value: Math.round(categoryTotals[cat] * 10) / 10,
-    color: CATEGORY_COLORS[cat] || "#00e5c9",
+    color: CATEGORY_COLORS[cat] || "#a1a1aa",
   })).sort((a, b) => b.value - a.value);
 
   const spaceData = Object.keys(spaceTotals).map((sp, idx) => ({
@@ -84,8 +83,26 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
       <Box>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <PieIcon sx={{ color: "primary.main", fontSize: 20 }} />
-            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+            <Box
+              sx={{
+                width: 28,
+                height: 28,
+                borderRadius: 0.75,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <PieIcon sx={{ fontSize: 16 }} />
+            </Box>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, letterSpacing: "-0.01em" }}>
               Energy Distribution
             </Typography>
           </Box>
@@ -100,7 +117,7 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
                 px: 1,
                 py: 0,
                 fontSize: "0.6875rem",
-                fontWeight: 700,
+                fontWeight: 600,
                 textTransform: "none",
               },
             }}
@@ -133,27 +150,29 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
                           <Box
                             sx={{
                               p: 1.5,
-                              borderRadius: 2,
+                              borderRadius: 1,
                               bgcolor: (theme) =>
-                                theme.palette.mode === "dark" ? "rgba(23, 26, 31, 0.95)" : "#ffffff",
+                                theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
                               border: "1px solid",
                               borderColor: (theme) =>
-                                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "#e2e8f0",
+                                theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
                               boxShadow: (theme) =>
                                 theme.palette.mode === "dark"
-                                  ? "0 8px 24px rgba(0,0,0,0.4)"
-                                  : "0 4px 16px rgba(15, 23, 42, 0.08)",
+                                  ? "0 4px 12px rgba(0,0,0,0.5)"
+                                  : "0 2px 8px rgba(0,0,0,0.06)",
                             }}
                           >
-                            <Typography variant="caption" sx={{ fontWeight: 700, display: "block" }}>
+                            <Typography variant="caption" sx={{ fontWeight: 600, display: "block" }}>
                               {item.name}
                             </Typography>
                             <Typography
                               variant="caption"
                               sx={{
-                                fontWeight: 800,
-                                color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
+                                fontWeight: 600,
+                                color: (theme) =>
+                                  theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
                                 fontFamily: "monospace",
+                                fontVariantNumeric: "tabular-nums",
                               }}
                             >
                               {item.value} kWh ({((Number(item.value) / (totalKwh || 1)) * 100).toFixed(1)}%)
@@ -189,14 +208,14 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
                   pointerEvents: "none",
                 }}
               >
-                <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", letterSpacing: "-0.02em" }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, fontFamily: "monospace", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>
                   {Math.round(totalKwh)}
                 </Typography>
                 <Typography
                   variant="caption"
                   sx={{
-                    color: (theme) => (theme.palette.mode === "dark" ? "primary.light" : "primary.main"),
-                    fontWeight: 700,
+                    color: "text.secondary",
+                    fontWeight: 500,
                     fontSize: "0.6875rem",
                     textTransform: "uppercase",
                   }}
@@ -215,7 +234,7 @@ export const ConsumptionDonut: React.FC<ConsumptionDonutProps> = ({ appliances }
                       {item.name}
                     </Typography>
                   </Box>
-                  <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: "monospace", flexShrink: 0 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, fontFamily: "monospace", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
                     {item.value} kWh
                   </Typography>
                 </Box>

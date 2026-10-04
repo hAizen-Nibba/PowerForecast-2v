@@ -11,6 +11,7 @@ import {
   Menu as MenuIcon,
 } from "@mui/icons-material";
 import { useLanguage } from "../../context/LanguageContext";
+import { tokens } from "../../theme/tokens";
 
 interface MobileBottomNavProps {
   onOpenSidebar: () => void;
@@ -51,17 +52,15 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenSidebar 
         zIndex: 1300,
         bgcolor: (theme) =>
           theme.palette.mode === "dark"
-            ? "rgba(20, 22, 26, 0.94)"
-            : "rgba(255, 255, 255, 0.94)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
+            ? tokens.dark.surface
+            : tokens.light.surface,
         borderTop: "1px solid",
         borderColor: (theme) =>
-          theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0",
+          theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
         boxShadow: (theme) =>
           theme.palette.mode === "dark"
-            ? "0 -4px 20px rgba(0, 0, 0, 0.4)"
-            : "0 -2px 16px rgba(15, 23, 42, 0.05)",
+            ? "0 -1px 3px rgba(0, 0, 0, 0.4)"
+            : "0 -1px 3px rgba(0, 0, 0, 0.05)",
         pb: "calc(env(safe-area-inset-bottom, 8px) + 2px)",
         pt: 0.5,
         px: 0.5,
@@ -90,35 +89,33 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenSidebar 
               py: 0.25,
               textDecoration: "none",
               color: isActive
-                ? (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488")
-                : "text.secondary",
+                ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary)
+                : (theme) => (theme.palette.mode === "dark" ? tokens.dark.textMuted : tokens.light.textMuted),
               position: "relative",
               borderRadius: 1.5,
-              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+              transition: "all 0.15s ease",
               "&:active": {
-                transform: "scale(0.92)",
+                transform: "scale(0.95)",
               },
             }}
           >
-            {/* Active Top Glow Pill */}
+            {/* Active Top Bar Indicator */}
             {isActive && (
               <Box
                 sx={{
                   position: "absolute",
                   top: -4,
                   width: 20,
-                  height: 3,
-                  borderRadius: "0 0 4px 4px",
-                  bgcolor: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
-                  boxShadow: (theme) =>
-                    theme.palette.mode === "dark" ? "0 0 10px #00e5c9" : "0 0 6px rgba(13, 148, 136, 0.5)",
+                  height: 2,
+                  borderRadius: "1px",
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary),
                 }}
               />
             )}
 
             <Box
               sx={{
-                p: "3px",
+                p: "4px",
                 borderRadius: 1,
                 display: "flex",
                 alignItems: "center",
@@ -126,10 +123,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenSidebar 
                 bgcolor: isActive
                   ? (theme) =>
                       theme.palette.mode === "dark"
-                        ? "rgba(0, 229, 201, 0.12)"
-                        : "rgba(13, 148, 136, 0.1)"
+                        ? tokens.dark.surfaceSubtle
+                        : tokens.light.surfaceSubtle
                   : "transparent",
-                transition: "background-color 0.2s ease",
+                transition: "background-color 0.15s ease",
               }}
             >
               {item.icon}
@@ -139,9 +136,9 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ onOpenSidebar 
               variant="caption"
               sx={{
                 fontSize: "clamp(0.525rem, 1.8vw, 0.625rem)",
-                fontWeight: isActive ? 800 : 600,
-                letterSpacing: "-0.02em",
-                mt: 0.15,
+                fontWeight: isActive ? 600 : 500,
+                letterSpacing: "-0.01em",
+                mt: 0.25,
                 lineHeight: 1.1,
                 whiteSpace: "nowrap",
                 overflow: "hidden",

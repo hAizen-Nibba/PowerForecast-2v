@@ -62,6 +62,8 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     // Settings
     "settings.title": "Account & Household Settings",
     "settings.subtitle": "Manage your language preferences, invite family members with tailored roles, and manage your account security.",
+    "settings.themeTitle": "Appearance & Color Theme (Tema)",
+    "settings.themeSubtitle": "Choose between crisp clean light mode or high-contrast zinc dark mode. Your preference syncs automatically across all screens.",
     "settings.langTitle": "Language & Localization (Wika)",
     "settings.langSubtitle": "Choose your preferred interface and notification language.",
     "settings.householdTitle": "Household Sharing & Multi-User Access",
@@ -209,6 +211,8 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     // Settings
     "settings.title": "Mga Setting ng Account at Kasambahay",
     "settings.subtitle": "Pamahalaan ang iyong wika, mag-imbita ng mga kapamilya na may angkop na access, at pamahalaan ang seguridad ng account.",
+    "settings.themeTitle": "Itsura at Tema ng Kulay (Theme)",
+    "settings.themeSubtitle": "Pumili sa pagitan ng maliwanag na light mode o zinc dark mode. Awtomatikong magsi-sync ang iyong pinili sa lahat ng screen.",
     "settings.langTitle": "Wika at Lokalisasyon (Language)",
     "settings.langSubtitle": "Piliin ang nais mong wika para sa interface at mga abiso.",
     "settings.householdTitle": "Pagbabahagi sa Kasambahay at Pamilya",
