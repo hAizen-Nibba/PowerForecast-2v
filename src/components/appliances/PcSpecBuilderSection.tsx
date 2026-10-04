@@ -33,6 +33,7 @@ import {
   PcWorkloadProfile,
 } from "../../lib/pcHardwareService";
 import { CPU_CATALOG, GPU_CATALOG } from "../../lib/pcHardwareData";
+import { tokens } from "../../theme/tokens";
 
 interface PcSpecBuilderSectionProps {
   initialType?: "laptop" | "desktop_pc";
@@ -225,11 +226,15 @@ export const PcSpecBuilderSection: React.FC<PcSpecBuilderSectionProps> = ({
                 p: 1.25,
                 textAlign: "center",
                 cursor: "pointer",
-                border: "2px solid",
-                borderColor: workload === "light" ? "primary.main" : "transparent",
-                bgcolor: workload === "light" ? "rgba(0, 229, 201, 0.08)" : "background.paper",
-                transition: "all 0.15s ease-in-out",
-                borderRadius: 1.5,
+                border: "1px solid",
+                borderColor: (theme) => workload === "light"
+                  ? (theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary)
+                  : (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
+                bgcolor: (theme) => workload === "light"
+                  ? (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle)
+                  : "transparent",
+                transition: "border-color 0.15s ease",
+                borderRadius: 1,
               }}
             >
               <Typography variant="body2" sx={{ fontWeight: 700 }}>Light</Typography>
@@ -246,11 +251,15 @@ export const PcSpecBuilderSection: React.FC<PcSpecBuilderSectionProps> = ({
                 p: 1.25,
                 textAlign: "center",
                 cursor: "pointer",
-                border: "2px solid",
-                borderColor: workload === "standard" ? "primary.main" : "transparent",
-                bgcolor: workload === "standard" ? "rgba(0, 229, 201, 0.08)" : "background.paper",
-                transition: "all 0.15s ease-in-out",
-                borderRadius: 1.5,
+                border: "1px solid",
+                borderColor: (theme) => workload === "standard"
+                  ? (theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary)
+                  : (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
+                bgcolor: (theme) => workload === "standard"
+                  ? (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle)
+                  : "transparent",
+                transition: "border-color 0.15s ease",
+                borderRadius: 1,
               }}
             >
               <Typography variant="body2" sx={{ fontWeight: 700 }}>Standard</Typography>
@@ -267,11 +276,15 @@ export const PcSpecBuilderSection: React.FC<PcSpecBuilderSectionProps> = ({
                 p: 1.25,
                 textAlign: "center",
                 cursor: "pointer",
-                border: "2px solid",
-                borderColor: workload === "heavy" ? "primary.main" : "transparent",
-                bgcolor: workload === "heavy" ? "rgba(0, 229, 201, 0.08)" : "background.paper",
-                transition: "all 0.15s ease-in-out",
-                borderRadius: 1.5,
+                border: "1px solid",
+                borderColor: (theme) => workload === "heavy"
+                  ? (theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary)
+                  : (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
+                bgcolor: (theme) => workload === "heavy"
+                  ? (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle)
+                  : "transparent",
+                transition: "border-color 0.15s ease",
+                borderRadius: 1,
               }}
             >
               <Typography variant="body2" sx={{ fontWeight: 700 }}>Heavy</Typography>
@@ -305,11 +318,19 @@ export const PcSpecBuilderSection: React.FC<PcSpecBuilderSectionProps> = ({
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <Box sx={{ p: 1.5, bgcolor: "rgba(0, 229, 201, 0.05)", border: "1px dashed", borderColor: "primary.main", borderRadius: 1.5 }}>
+              <Box
+                sx={{
+                  p: 1.5,
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle),
+                  border: "1px dashed",
+                  borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong),
+                  borderRadius: 1,
+                }}
+              >
                 <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
                   Real-World Power Consumption:
                 </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 800, color: "primary.main" }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: "text.primary" }}>
                   ~{laptopRunning} Watts
                 </Typography>
                 <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -553,17 +574,17 @@ export const PcSpecBuilderSection: React.FC<PcSpecBuilderSectionProps> = ({
               <Box
                 sx={{
                   p: 1.5,
-                  bgcolor: "rgba(0, 229, 201, 0.06)",
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle),
                   border: "1px dashed",
-                  borderColor: "primary.main",
-                  borderRadius: 1.5,
+                  borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong),
+                  borderRadius: 1,
                 }}
               >
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     Active Running Power:
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 800, color: "primary.main" }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: "text.primary" }}>
                     ~{desktopCalc.totalRunningWatts} W
                   </Typography>
                 </Box>

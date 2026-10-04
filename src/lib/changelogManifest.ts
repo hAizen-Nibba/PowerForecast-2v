@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.3v",
+    version: "3.8.3v",
+    git_commit_tag: "3.8.3v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.3v - Appliances Hub Modernization & Theme Alignment: Fully aligned Appliances Hub with Google Stitch / Shadcn Zinc tokens; integrated PageHeader and SectionCard architectural primitives; eliminated legacy cyan glows and gradients in favor of crisp 1px zinc borders and restrained emerald telemetry accents; streamlined toolbar controls and upgraded companion modals (Space Management, PC Workload, Inverter setup).",
+  },
+  {
     id: "3.8.2v",
     version: "3.8.2v",
     git_commit_tag: "3.8.2v",

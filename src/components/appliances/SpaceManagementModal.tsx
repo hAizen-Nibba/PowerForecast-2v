@@ -25,6 +25,7 @@ import { supabaseClient } from "../../lib/supabaseClient";
 import { devLog } from "../../lib/devLogger";
 import { useConfirm } from "../common/ConfirmProvider";
 import { useRoom } from "../../context/RoomContext";
+import { tokens } from "../../theme/tokens";
 
 interface SpaceManagementModalProps {
   isOpen: boolean;
@@ -135,7 +136,6 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
 
     setIsDeletingLocal(true);
     try {
-      // 1. Reassign appliances in this space to fallback space (or null)
       if (fallbackSpace) {
         const { error: moveErr } = await supabaseClient
           .from("user_appliances")
@@ -154,7 +154,6 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
           .eq("list_id", spaceToEdit.id);
       }
 
-      // 2. Delete the space from appliance_lists
       deleteSpace(
         {
           resource: "appliance_lists",
@@ -164,9 +163,6 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
           onSuccess: () => {
             if (onDeleted) onDeleted(spaceToEdit.id);
             onClose();
-          },
-          onError: (err: any) => {
-            devLog.error("SpaceManagement", `Failed to delete space: ${err?.message}`, err);
           },
         }
       );
@@ -180,35 +176,44 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
   return (
     <Dialog open={isOpen} onClose={onClose} fullWidth maxWidth="xs">
       <form onSubmit={handleSubmit}>
-        <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 2 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 2.5, py: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
             <Box
               sx={{
-                width: 36,
-                height: 36,
+                width: 32,
+                height: 32,
                 borderRadius: 1,
-                bgcolor: tariffType === "commercial" ? "secondary.main" : "primary.main",
-                color: "#ffffff",
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                border: "1px solid",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                transition: "all 0.2s ease",
               }}
             >
               {tariffType === "commercial" ? <StoreIcon fontSize="small" /> : <HomeIcon fontSize="small" />}
             </Box>
-            <Typography variant="h6" sx={{ fontWeight: 800 }}>
-              {spaceToEdit ? "Edit Space / List" : "Add New Space / List"}
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              {spaceToEdit ? "Configure Space" : "Add New Space"}
             </Typography>
           </Box>
-          <IconButton onClick={onClose} size="small">
+          <IconButton onClick={onClose} size="small" sx={{ color: "text.secondary" }}>
             <CloseIcon fontSize="small" />
           </IconButton>
         </DialogTitle>
 
-        <Divider />
+        <Divider
+          sx={{
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+          }}
+        />
 
-        <DialogContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
+        <DialogContent sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
           <TextField
             required
             fullWidth
@@ -217,11 +222,16 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Master Bedroom, Bakery Shop"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 1,
+              },
+            }}
           />
 
           <Box>
-            <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 1 }}>
-              TARIFF CLASSIFICATION
+            <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", display: "block", mb: 1 }}>
+              Tariff Classification
             </Typography>
             <Grid container spacing={1.5}>
               <Grid size={6}>
@@ -230,27 +240,27 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
                   onClick={() => setTariffType("residential")}
                   sx={{
                     p: 1.5,
-                    borderRadius: 1.25,
+                    borderRadius: 1,
                     cursor: "pointer",
                     textAlign: "center",
                     border: "1px solid",
-                    borderColor: (theme) =>
-                      tariffType === "residential"
-                        ? theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.35)" : "rgba(13, 148, 136, 0.35)"
-                        : "divider",
-                    bgcolor: (theme) =>
-                      tariffType === "residential"
-                        ? theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.06)" : "rgba(13, 148, 136, 0.05)"
-                        : "transparent",
-                    transition: "all 0.15s ease",
-                    "&:hover": {
-                      borderColor: (theme) =>
-                        theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.45)" : "rgba(13, 148, 136, 0.45)",
+                    borderColor: (theme) => {
+                      const isDark = theme.palette.mode === "dark";
+                      return tariffType === "residential"
+                        ? isDark ? tokens.dark.primary : tokens.light.primary
+                        : isDark ? tokens.dark.borderSubtle : tokens.light.borderSubtle;
                     },
+                    bgcolor: (theme) => {
+                      const isDark = theme.palette.mode === "dark";
+                      return tariffType === "residential"
+                        ? isDark ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle
+                        : "transparent";
+                    },
+                    transition: "border-color 0.15s ease",
                   }}
                 >
-                  <HomeIcon sx={{ color: tariffType === "residential" ? "primary.main" : "text.secondary", mb: 0.5 }} />
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: tariffType === "residential" ? "primary.main" : "text.primary" }}>
+                  <HomeIcon sx={{ fontSize: 22, mb: 0.5, color: "text.primary" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                     Residential
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem" }}>
@@ -265,27 +275,27 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
                   onClick={() => setTariffType("commercial")}
                   sx={{
                     p: 1.5,
-                    borderRadius: 1.25,
+                    borderRadius: 1,
                     cursor: "pointer",
                     textAlign: "center",
                     border: "1px solid",
-                    borderColor: (theme) =>
-                      tariffType === "commercial"
-                        ? theme.palette.mode === "dark" ? "rgba(244, 63, 94, 0.4)" : "rgba(225, 29, 72, 0.35)"
-                        : "divider",
-                    bgcolor: (theme) =>
-                      tariffType === "commercial"
-                        ? theme.palette.mode === "dark" ? "rgba(244, 63, 94, 0.06)" : "rgba(244, 63, 94, 0.04)"
-                        : "transparent",
-                    transition: "all 0.15s ease",
-                    "&:hover": {
-                      borderColor: (theme) =>
-                        theme.palette.mode === "dark" ? "rgba(244, 63, 94, 0.55)" : "rgba(225, 29, 72, 0.45)",
+                    borderColor: (theme) => {
+                      const isDark = theme.palette.mode === "dark";
+                      return tariffType === "commercial"
+                        ? isDark ? tokens.dark.primary : tokens.light.primary
+                        : isDark ? tokens.dark.borderSubtle : tokens.light.borderSubtle;
                     },
+                    bgcolor: (theme) => {
+                      const isDark = theme.palette.mode === "dark";
+                      return tariffType === "commercial"
+                        ? isDark ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle
+                        : "transparent";
+                    },
+                    transition: "border-color 0.15s ease",
                   }}
                 >
-                  <StoreIcon sx={{ color: tariffType === "commercial" ? "secondary.main" : "text.secondary", mb: 0.5 }} />
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: tariffType === "commercial" ? "secondary.main" : "text.primary" }}>
+                  <StoreIcon sx={{ fontSize: 22, mb: 0.5, color: "text.primary" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                     Commercial
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.6875rem" }}>
@@ -300,11 +310,14 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
             variant="outlined"
             sx={{
               p: 1.5,
-              borderRadius: 2,
-              bgcolor: "action.hover",
+              borderRadius: 1,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
             }}
           >
-            <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", lineHeight: 1.5 }}>
               {tariffType === "residential"
                 ? "Residential rates include stepped distribution tiers (0–200, 201–300, 301–400, 401+ kWh) and Lifeline subsidies."
                 : "Commercial rates use General Power unbundled distribution and fixed commercial metering charges."}
@@ -312,25 +325,30 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
           </Paper>
         </DialogContent>
 
-        <Divider />
+        <Divider
+          sx={{
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+          }}
+        />
 
-        <DialogActions sx={{ p: 2.5, px: 3, display: "flex", justifyContent: "space-between" }}>
+        <DialogActions sx={{ p: 2, px: 2.5, display: "flex", justifyContent: "space-between" }}>
           {spaceToEdit ? (
             canDelete ? (
               <Button
                 color="error"
                 size="small"
-                startIcon={<DeleteIcon />}
+                startIcon={<DeleteIcon fontSize="small" />}
                 onClick={handleDelete}
                 disabled={isDeletingLocal || !canEdit}
-                sx={{ fontWeight: 700 }}
+                sx={{ fontWeight: 600, textTransform: "none" }}
               >
                 {isDeletingLocal ? "Deleting..." : "Delete Space"}
               </Button>
             ) : (
               <Tooltip title="Cannot delete the only remaining space">
                 <span>
-                  <Button color="error" size="small" startIcon={<DeleteIcon />} disabled sx={{ fontWeight: 700 }}>
+                  <Button color="error" size="small" startIcon={<DeleteIcon fontSize="small" />} disabled sx={{ fontWeight: 600, textTransform: "none" }}>
                     Delete Space
                   </Button>
                 </span>
@@ -341,7 +359,20 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
           )}
 
           <Box sx={{ display: "flex", gap: 1 }}>
-            <Button variant="outlined" size="small" onClick={onClose} sx={{ fontWeight: 700 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={onClose}
+              sx={{
+                fontWeight: 600,
+                textTransform: "none",
+                borderRadius: 1,
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
+              }}
+            >
               Cancel
             </Button>
             <Button
@@ -349,8 +380,16 @@ export const SpaceManagementModal: React.FC<SpaceManagementModalProps> = ({
               variant="contained"
               size="small"
               disabled={isCreating || isUpdating || isDeletingLocal || !canEdit}
-              startIcon={<SaveIcon />}
-              sx={{ fontWeight: 700 }}
+              startIcon={<SaveIcon fontSize="small" />}
+              sx={{
+                fontWeight: 600,
+                textTransform: "none",
+                borderRadius: 1,
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary,
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg,
+              }}
             >
               {spaceToEdit ? "Save Changes" : "Create Space"}
             </Button>
