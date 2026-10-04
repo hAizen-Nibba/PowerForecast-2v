@@ -5,7 +5,6 @@ import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { AiVisionScannerModal } from "../vision/AiVisionScannerModal";
-import { DevLogsFloatingWidget } from "../devlogs/DevLogsFloatingWidget";
 import { VersionBadge } from "../common/VersionBadge";
 import { SystemTestingBanner } from "../common/SystemTestingBanner";
 import { useColorMode } from "../../theme/AppTheme";
@@ -99,9 +98,6 @@ export const Layout: React.FC = () => {
         isOpen={isAiScannerOpen}
         onClose={() => setIsAiScannerOpen(false)}
       />
-
-      {/* Global Draggable Floating Dev Logs & Telemetry Widget */}
-      <DevLogsFloatingWidget />
 
       {/* Persistent Version Display on Bottom-Right Corner */}
       <VersionBadge />

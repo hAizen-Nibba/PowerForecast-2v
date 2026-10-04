@@ -91,6 +91,7 @@ import {
 } from "../../lib/pushNotificationService";
 import { RoomMembersPanel } from "../rooms/RoomMembersPanel";
 import { ChangePasswordCard } from "./ChangePasswordCard";
+import { SystemDevLogsCard } from "./SystemDevLogsCard";
 
 const SETTINGS_TABS = ["general", "household", "notifications", "security"] as const;
 type SettingsTabKey = (typeof SETTINGS_TABS)[number];
@@ -1781,6 +1782,9 @@ export const SettingsView: React.FC = () => {
               </Grid>
             </Grid>
           </Card>
+
+          {/* System Dev Logs & Telemetry Console */}
+          <SystemDevLogsCard />
 
           {/* Danger Zone: Account Deletion */}
           <Card

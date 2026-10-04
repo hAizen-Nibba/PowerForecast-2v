@@ -269,27 +269,22 @@ export function getSupabaseResetPasswordTemplate(): string {
 export function getSupabaseConfirmSignupTemplate(): string {
   return buildBrandedEmailHtml({
     preheader: 'Confirm your PowerForecast account registration',
-    badge: 'WELCOME',
+    badge: 'VERIFICATION',
     badgeColor: '#fafafa',
     badgeBg: '#18181b',
     badgeBorder: '#27272a',
-    headline: 'Welcome to PowerForecast!',
+    headline: 'Confirm Your Email Address',
     subheadline: 'Smart Energy Optimization & Real-Time Appliance Intelligence',
     bodyParagraphs: [
-      'Thank you for creating an account with PowerForecast! You are one step away from monitoring your electricity consumption, calculating Meralco appliance tariffs, and preventing monthly bill spikes.',
-      'Please confirm your email address (<strong style="color: #ffffff;">{{ .Email }}</strong>) using the verification code or confirmation button below:',
+      'Thank you for creating an account with PowerForecast! We received a registration request for <strong style="color: #ffffff;">{{ .Email }}</strong>.',
+      'Please click the confirmation button below to verify your email address and activate your account:',
     ],
-    highlightBox: {
-      label: 'ACCOUNT ACTIVATION CODE',
-      value: '{{ .Token }}',
-      sublabel: 'Enter this code in PowerForecast or click the button below to activate your account',
-    },
-    buttonText: 'Confirm My Account',
+    buttonText: 'Confirm Email Address',
     buttonUrl: '{{ .ConfirmationURL }}',
-    fallbackUrlLabel: 'Or open the direct confirmation URL below:',
+    fallbackUrlLabel: 'Prefer direct browser link? Copy and paste this URL:',
     fallbackUrl: '{{ .ConfirmationURL }}',
     securityNotice:
-      'If you did not sign up for PowerForecast, please ignore this email or contact support.',
+      'This activation link is single-use. If you did not create an account with PowerForecast, you can safely disregard this email.',
   });
 }
 

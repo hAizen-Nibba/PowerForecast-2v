@@ -8,7 +8,7 @@ export const SUPABASE_ANON_KEY =
 
 // Application Version - bump on every deployment according to user versioning rule
 export const APP_VERSION =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_APP_VERSION) || '3.8.13v';
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_APP_VERSION) || '3.8.14v';
 
 export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
