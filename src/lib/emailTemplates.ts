@@ -254,14 +254,10 @@ export function getSupabaseResetPasswordTemplate(): string {
     highlightBox: {
       label: '8-DIGIT CONFIRMATION CODE',
       value: '{{ .Token }}',
-      sublabel: 'Enter this 8-digit code in the PowerForecast prompt to confirm your identity and update your password',
+      sublabel: 'Return to your PowerForecast verification screen and enter this code to finalize your new password',
     },
-    buttonText: 'Reset Password via Browser',
-    buttonUrl: '{{ .ConfirmationURL }}',
-    fallbackUrlLabel: 'Prefer direct browser link? Copy and paste this URL:',
-    fallbackUrl: '{{ .ConfirmationURL }}',
     securityNotice:
-      'This password reset code and link are single-use and will expire in 24 hours. If you did not request this change, your password remains completely secure and you can safely disregard this email.',
+      'This password reset code is single-use and will expire in 24 hours. If you did not request this change, your password remains completely secure and you can safely disregard this email.',
   });
 }
 

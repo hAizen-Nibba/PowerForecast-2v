@@ -644,7 +644,7 @@ export const ForgotPasswordPage: React.FC = () => {
               </CardContent>
 
               <CardFooter className="flex justify-center border-t border-border/60 pt-3 pb-3 text-[11px] text-muted-foreground text-center">
-                Prefer an email link instead? You can also click the direct confirmation link sent to your email.
+                Enter the 8-digit verification code sent to your email address to set your new password.
               </CardFooter>
             </>
           )}

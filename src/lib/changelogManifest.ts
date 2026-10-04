@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.7av",
+    version: "3.8.7av",
+    git_commit_tag: "3.8.7av",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.7av - Remove browser redirect button and URL from Reset Password email template, enforce pure 8-digit OTP code recovery architecture, and eliminate redundant modal flow.",
+  },
+  {
     id: "3.8.7v",
     version: "3.8.7v",
     git_commit_tag: "3.8.7v",
