@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.4cv",
+    version: "3.8.4cv",
+    git_commit_tag: "3.8.4cv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.4cv - AI Vision Scanner Dropzone Optimization: Removed redundant mobile camera button, retained prominent Upload from Gallery button, implemented interactive drag-and-drop file upload with visual feedback states, and introduced clean focus behavior that hides the upload dropzone when a photo is staged.",
+  },
+  {
     id: "3.8.4bv",
     version: "3.8.4bv",
     git_commit_tag: "3.8.4bv",
