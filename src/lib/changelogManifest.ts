@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.7.2bv",
+    version: "3.7.2bv",
+    git_commit_tag: "3.7.2bv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.7.2bv - Merge upstream v3.7.2av updates (Room-Code system, PC/Laptop Workload Mode Picker, Inverter AC stage telemetry, and persistent stopwatch storage) while preserving PR #47 design overhaul (Stack Template landing page, neutral zinc auth cards, Inter typography, and shadcn UI primitives)",
+  },
+  {
     id: "3.7.2av",
     version: "3.7.2av",
     git_commit_tag: "3.7.2av",
@@ -93,6 +103,16 @@ export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
       "3.7.0v - Revamp Household Multi-User into Supabase Room-Code system: automatic Main Room provisioning (<<Username>>'s Room), header Room Switcher with dropdown and join code modal, Admin vs View-only role hierarchy, real-time RLS widening with loophole mitigation, and interactive members management panel",
   },
   {
+    id: "3.6.0dv",
+    version: "3.6.0dv",
+    git_commit_tag: "3.6.0dv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.6.0dv - Excise Developer Ecosystem & OpenAPI Docs banner section from LandingPage for a streamlined, focused user interface",
+  },
+  {
     id: "3.6.0cv",
     version: "3.6.0cv",
     git_commit_tag: "3.6.0cv",
@@ -113,6 +133,36 @@ export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
       "3.6.0bv - Merge upstream/main: integrate Google Gemini AI Energy Auditor with token quota preservation & intelligent fallback engine, real-time stopwatch telemetry & Live Load Circuits drawer, and Household Multi-User Access with role-based member permissions",
   },
   {
+    id: "3.5.0hv",
+    version: "3.5.0hv",
+    git_commit_tag: "3.5.0hv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.5.0hv - Clean up Hero section on LandingPage by removing the 3 CTA action buttons and 4 trust metric badge cards, delivering a focused, distraction-free headline and subtitle presentation",
+  },
+  {
+    id: "3.5.0gv",
+    version: "3.5.0gv",
+    git_commit_tag: "3.5.0gv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.5.0gv - Restore and merge all redesigned authentication views (LoginPage, SignupPage, ForgotPasswordPage, VerifyEmailPage, EmailVerifiedPage) and modal dialogs (WhatsNewModal, SystemChangelogModal, VersionBadge) with Stack Template neutral zinc design system and scoped .pf-auth theme tokens",
+  },
+  {
+    id: "3.5.0fv",
+    version: "3.5.0fv",
+    git_commit_tag: "3.5.0fv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.5.0fv - Standardize full webapp typography to the Stack Template design system: Inter variable font (weights 100-900 with optical sizing & stylistic sets), JetBrains Mono for telemetry, negative heading tracking, and unified typography across Tailwind and MUI themes",
+  },
+  {
     id: "3.5.0ev",
     version: "3.5.0ev",
     git_commit_tag: "3.5.0ev",
@@ -120,7 +170,7 @@ export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
-      "3.5.0ev - Upgrade Gemini AI Energy Auditor with long-term localStorage persistence across logout/refresh/system exit, 5 daily generation quota limit per user, appliance change detection banner, live stopwatch tracker telemetry, and expanded serverless prompt buffer",
+      "3.5.0ev - Apply Stack Template / shadcn neutral zinc landing page design overhaul, lightweight UI primitives (button, card, badge, separator), clean header navigation highlighting, and 100% original content preservation",
   },
   {
     id: "3.5.0dv",
