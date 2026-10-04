@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.7bv",
+    version: "3.8.7bv",
+    git_commit_tag: "3.8.7bv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.7bv - Unmount global PasswordRecoveryModal from App.tsx to prevent unwanted popup during in-app settings password update and eliminate dual-dialog conflicts.",
+  },
+  {
     id: "3.8.7av",
     version: "3.8.7av",
     git_commit_tag: "3.8.7av",

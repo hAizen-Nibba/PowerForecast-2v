@@ -25,7 +25,6 @@ import { EmailVerifiedPage } from "./pages/EmailVerifiedPage";
 import { VersionBadge } from "./components/common/VersionBadge";
 import { PwaUpdateModal } from "./components/common/PwaUpdateModal";
 import { WhatsNewModal } from "./components/common/WhatsNewModal";
-import { PasswordRecoveryModal } from "./components/common/PasswordRecoveryModal";
 import { ToastProvider } from "./components/common/ToastProvider";
 import { ConfirmProvider } from "./components/common/ConfirmProvider";
 import { LanguageProvider } from "./context/LanguageContext";
@@ -267,7 +266,6 @@ export const App: React.FC = () => {
               <VersionBadge />
               <PwaUpdateModal />
               <WhatsNewModal />
-              <PasswordRecoveryModal />
             </RoomProvider>
           </Refine>
           </HashRouter>
