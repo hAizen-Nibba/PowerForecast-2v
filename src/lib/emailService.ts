@@ -155,6 +155,10 @@ export async function sendEmail(options: SendEmailOptions): Promise<EmailResult>
         payload.html = html;
       } else if (type === 'household_invite') {
         payload.html = buildBrandedEmailHtml({
+          badge: 'TEAM INVITATION',
+          badgeColor: '#047857',
+          badgeBg: '#ecfdf5',
+          badgeBorder: '#a7f3d0',
           headline: 'Household Energy Team Invitation',
           bodyParagraphs: [`<strong>${data?.inviterName || 'A household member'}</strong> has invited you to join their smart household energy profile on PowerForecast.`],
           highlightBox: { label: 'Household Join Code', value: data?.inviteCode || 'PF-HH-0000' },
@@ -164,9 +168,11 @@ export async function sendEmail(options: SendEmailOptions): Promise<EmailResult>
       } else if (type === 'budget_alert') {
         payload.html = buildBrandedEmailHtml({
           badge: 'BUDGET ALERT',
-          badgeColor: '#ef4444',
+          badgeColor: '#b91c1c',
+          badgeBg: '#fef2f2',
+          badgeBorder: '#fecaca',
           headline: `Hello ${data?.userName || 'User'},`,
-          bodyParagraphs: [`Your household electricity consumption has reached <strong style="color: #f87171;">${data?.percentConsumed || '80%'}</strong> of your monthly target.`],
+          bodyParagraphs: [`Your household electricity consumption has reached <strong style="color: #dc2626;">${data?.percentConsumed || '80%'}</strong> of your monthly target.`],
           metricsTable: [
             { label: 'Current Usage', value: `${data?.currentKwh || 0} kWh` },
             { label: 'Target Budget', value: `${data?.budgetLimitKwh || 0} kWh` },
@@ -176,17 +182,21 @@ export async function sendEmail(options: SendEmailOptions): Promise<EmailResult>
       } else if (type === 'surge_alert') {
         payload.html = buildBrandedEmailHtml({
           badge: 'SURGE WARNING',
-          badgeColor: '#f59e0b',
+          badgeColor: '#b45309',
+          badgeBg: '#fffbeb',
+          badgeBorder: '#fde68a',
           headline: 'Active Load Warning',
           bodyParagraphs: [
-            `Your active telemetry monitor registered concurrent appliance wattage of <strong style="color: #fbbf24;">${data?.currentWatts} Watts</strong> at ${data?.timestamp || 'just now'}, exceeding your safety threshold limit of ${data?.thresholdWatts} Watts.`,
+            `Your active telemetry monitor registered concurrent appliance wattage of <strong style="color: #d97706;">${data?.currentWatts} Watts</strong> at ${data?.timestamp || 'just now'}, exceeding your safety threshold limit of ${data?.thresholdWatts} Watts.`,
             'Please check active high-draw equipment such as air conditioning units, induction cookers, or electric water heaters running concurrently.',
           ],
         });
       } else if (type === 'test_email') {
         payload.html = buildBrandedEmailHtml({
           badge: 'SMTP DIAGNOSTICS',
-          badgeColor: '#22c55e',
+          badgeColor: '#047857',
+          badgeBg: '#ecfdf5',
+          badgeBorder: '#a7f3d0',
           headline: 'Connection Verified!',
           bodyParagraphs: [
             'This test email confirms that your PowerForecast Resend Delivery Engine and Custom Domain SMTP (<strong>noreply@comugallery.me</strong>) are operational and delivering worldwide.',

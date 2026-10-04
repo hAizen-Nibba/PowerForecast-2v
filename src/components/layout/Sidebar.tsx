@@ -39,6 +39,8 @@ import {
   ArrowForward as ArrowForwardIcon,
   Visibility as VisibilityIcon,
   Add as AddIcon,
+  LightMode as SunIcon,
+  DarkMode as MoonIcon,
 } from "@mui/icons-material";
 import Tooltip from "@mui/material/Tooltip";
 import { useList, useGetIdentity, useLogout } from "@refinedev/core";
@@ -50,6 +52,8 @@ import { getMeralcoTariff, MeralcoTariffData, DEFAULT_MERALCO_TARIFF } from "../
 import { useRoom } from "../../context/RoomContext";
 import { switchOffCircuit } from "../../lib/sessionService";
 import { DEFAULT_EFFECTIVE_RATE } from "../../lib/dailyUsageService";
+import { useColorMode } from "../../theme/AppTheme";
+import { tokens } from "../../theme/tokens";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -58,7 +62,7 @@ interface SidebarProps {
   runningCount?: number;
 }
 
-const DRAWER_WIDTH = 260;
+const DRAWER_WIDTH = 240;
 
 export const Sidebar: React.FC<SidebarProps> = ({
   isOpen,
@@ -69,6 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { data: identity } = useGetIdentity<any>();
   const { mutate: logout } = useLogout();
   const { activeRoom, isAdmin, isViewer, openJoinModal } = useRoom();
+  const { mode, toggleColorMode } = useColorMode();
 
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isChangelogModalOpen, setIsChangelogModalOpen] = useState(false);
@@ -177,14 +182,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const totalSessionCost = runningAppliances.reduce((acc, curr) => acc + getAccumulatedPesos(curr), 0);
 
-  // Desktop navigation items (retained in permanent desktop sidebar)
-  const navItems = [
-    { label: t("nav.dashboard", "Dashboard"), icon: <DashboardIcon fontSize="small" />, path: "/dashboard" },
-    { label: t("nav.calculator", "Bill Calculator"), icon: <CalculatorIcon fontSize="small" />, path: "/calculator" },
-    { label: t("nav.appliances", "Appliance Hub"), icon: <BoltIcon fontSize="small" />, path: "/appliances" },
-    { label: t("nav.calendar", "Smart Calendar"), icon: <CalendarIcon fontSize="small" />, path: "/calendar" },
-    { label: t("nav.analytics", "Analytics"), icon: <AnalyticsIcon fontSize="small" />, path: "/analytics" },
-    { label: t("nav.forecasting", "Forecasting"), icon: <ShieldIcon fontSize="small" />, path: "/forecasting" },
+  // Desktop grouped navigation sections
+  const navSections = [
+    {
+      title: "Overview",
+      items: [
+        { label: t("nav.dashboard", "Dashboard"), icon: <DashboardIcon fontSize="small" />, path: "/dashboard" },
+      ],
+    },
+    {
+      title: "Energy",
+      items: [
+        { label: t("nav.appliances", "Appliance Hub"), icon: <BoltIcon fontSize="small" />, path: "/appliances" },
+        { label: t("nav.calendar", "Smart Calendar"), icon: <CalendarIcon fontSize="small" />, path: "/calendar" },
+      ],
+    },
+    {
+      title: "Insights",
+      items: [
+        { label: t("nav.analytics", "Analytics"), icon: <AnalyticsIcon fontSize="small" />, path: "/analytics" },
+        { label: t("nav.forecasting", "Forecasting"), icon: <ShieldIcon fontSize="small" />, path: "/forecasting" },
+        { label: t("nav.calculator", "Bill Calculator"), icon: <CalculatorIcon fontSize="small" />, path: "/calculator" },
+      ],
+    },
   ];
 
   /* -------------------------------------------------------------------------- */
@@ -201,15 +221,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           sx={{
             display: "flex",
             alignItems: "center",
-            gap: 1.5,
-            px: 2.5,
-            py: 2.25,
+            gap: 1.25,
+            px: 2,
+            py: 2,
             textDecoration: "none",
             color: "inherit",
             borderBottom: "1px solid",
             borderColor: "divider",
             "&:hover": { bgcolor: "action.hover" },
-            transition: "background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+            transition: "background-color 0.15s ease",
           }}
         >
           <Box
@@ -217,21 +237,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
             src="/Assets/LOGO.png"
             alt="PowerForecast Logo"
             sx={{
-              width: 38,
-              height: 38,
-              borderRadius: 2,
+              width: 30,
+              height: 30,
+              borderRadius: 1.5,
               objectFit: "contain",
-              filter: "drop-shadow(0 2px 8px rgba(0, 229, 201, 0.4))",
             }}
           />
           <Box>
             <Typography
               variant="subtitle2"
               sx={{
-                fontWeight: 800,
+                fontWeight: 700,
                 letterSpacing: "-0.01em",
-                color: (theme) => (theme.palette.mode === "dark" ? "#ffffff" : "#0f172a"),
+                color: "text.primary",
                 lineHeight: 1.2,
+                fontSize: "0.875rem",
               }}
             >
               PowerForecast
@@ -239,138 +259,137 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Typography
               variant="caption"
               sx={{
-                color: (theme) => (theme.palette.mode === "dark" ? "primary.light" : "primary.main"),
+                color: "text.secondary",
                 fontSize: "0.6875rem",
-                fontWeight: 700,
-                mt: 0.25,
+                fontWeight: 500,
                 display: "block",
               }}
             >
-              Meralco Energy Intel
+              Energy Intelligence
             </Typography>
           </Box>
         </Box>
 
-        {/* Navigation List */}
-        <List sx={{ px: 1.25, py: 1.75 }} data-tour="nav-sidebar">
-          {navItems.map((item) => {
-            const isActive =
-              location.pathname === item.path || (item.path === "/dashboard" && location.pathname === "/");
-            return (
-              <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
-                <ListItemButton
-                  component={Link}
-                  to={item.path}
-                  selected={isActive}
-                  onClick={onClose}
-                  sx={{
-                    borderRadius: 2,
-                    py: 1,
-                    px: 1.5,
-                    position: "relative",
-                    "&.Mui-selected": {
-                      bgcolor: (theme) =>
-                        theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(13, 148, 136, 0.1)",
-                      "&::before": {
-                        content: '""',
-                        position: "absolute",
-                        left: 0,
-                        top: "18%",
-                        bottom: "18%",
-                        width: 3,
-                        borderRadius: "0 4px 4px 0",
-                        bgcolor: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
-                      },
-                    },
-                  }}
-                >
-                  <ListItemIcon
-                    sx={{
-                      minWidth: 34,
-                      color: (theme) =>
-                        isActive ? (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488") : "text.secondary",
-                      transition: "color 0.2s ease",
-                    }}
-                  >
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={item.label}
-                    slotProps={{
-                      primary: {
-                        sx: {
-                          fontSize: "0.8125rem",
-                          fontWeight: isActive ? 800 : 500,
-                          color: (theme) =>
-                            isActive
-                              ? theme.palette.mode === "dark"
-                                ? "#ffffff"
-                                : "#0f766e"
-                              : "text.secondary",
-                          letterSpacing: "-0.01em",
-                        },
-                      },
-                    }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            );
-          })}
-
-        </List>
+        {/* Grouped Navigation List */}
+        <Box sx={{ px: 1, py: 1.5 }} data-tour="nav-sidebar">
+          {navSections.map((section, sIdx) => (
+            <Box key={section.title} sx={{ mb: sIdx < navSections.length - 1 ? 1.5 : 0 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  px: 1.5,
+                  py: 0.5,
+                  display: "block",
+                  fontSize: "0.6875rem",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  color: "text.disabled",
+                }}
+              >
+                {section.title}
+              </Typography>
+              <List disablePadding>
+                {section.items.map((item) => {
+                  const isActive =
+                    location.pathname === item.path || (item.path === "/dashboard" && location.pathname === "/");
+                  return (
+                    <ListItem key={item.path} disablePadding sx={{ mb: 0.25 }}>
+                      <ListItemButton
+                        component={Link}
+                        to={item.path}
+                        selected={isActive}
+                        onClick={onClose}
+                        sx={{
+                          borderRadius: 1.5,
+                          py: 0.85,
+                          px: 1.25,
+                          "&.Mui-selected": {
+                            bgcolor: (theme) =>
+                              theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)",
+                            color: "text.primary",
+                            "&:hover": {
+                              bgcolor: (theme) =>
+                                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
+                            },
+                          },
+                        }}
+                      >
+                        <ListItemIcon
+                          sx={{
+                            minWidth: 28,
+                            color: isActive ? "text.primary" : "text.secondary",
+                            transition: "color 0.15s ease",
+                          }}
+                        >
+                          {item.icon}
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={item.label}
+                          slotProps={{
+                            primary: {
+                              sx: {
+                                fontSize: "0.8125rem",
+                                fontWeight: isActive ? 600 : 450,
+                                color: isActive ? "text.primary" : "text.secondary",
+                                letterSpacing: "-0.01em",
+                              },
+                            },
+                          }}
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                  );
+                })}
+              </List>
+            </Box>
+          ))}
+        </Box>
       </Box>
 
       {/* Live Grid Load Card & Footer */}
-      <Box sx={{ p: 2, borderTop: "1px solid", borderColor: "divider" }}>
+      <Box sx={{ p: 1.75, borderTop: "1px solid", borderColor: "divider" }}>
         <Tooltip title="Click to view & control active live circuits" arrow placement="top">
           <Paper
             elevation={0}
             onClick={() => setIsLiveDrawerOpen(true)}
             sx={{
-              p: 1.75,
-              borderRadius: 1.25,
+              p: 1.5,
+              borderRadius: 1.5,
               bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.88)" : "#f8fafc",
+                theme.palette.mode === "dark" ? "#121215" : "#fcfcfc",
               border: "1px solid",
               borderColor: (theme) =>
                 runningCount > 0
                   ? theme.palette.mode === "dark"
-                    ? "rgba(0, 229, 201, 0.4)"
-                    : "rgba(13, 148, 136, 0.4)"
-                  : theme.palette.mode === "dark"
-                    ? "divider"
-                    : "#e2e8f0",
-              mb: 1.5,
+                    ? "rgba(52, 211, 153, 0.3)"
+                    : "rgba(5, 150, 105, 0.3)"
+                  : "divider",
+              mb: 1.25,
               cursor: "pointer",
-              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+              transition: "border-color 0.15s ease",
               "&:hover": {
-                borderColor: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
-                transform: "translateY(-1px)",
-                boxShadow: (theme) =>
-                  theme.palette.mode === "dark"
-                    ? "0 4px 16px rgba(0, 229, 201, 0.15)"
-                    : "0 4px 16px rgba(13, 148, 136, 0.12)",
+                borderColor: (theme) =>
+                  runningCount > 0
+                    ? theme.palette.mode === "dark"
+                      ? "rgba(52, 211, 153, 0.5)"
+                      : "rgba(5, 150, 105, 0.5)"
+                    : "text.disabled",
               },
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.75 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                 <Box
                   sx={{
-                    width: 8,
-                    height: 8,
+                    width: 7,
+                    height: 7,
                     borderRadius: "50%",
                     bgcolor: runningCount > 0 ? "success.main" : "text.disabled",
-                    boxShadow: (theme) =>
-                      runningCount > 0
-                        ? theme.palette.mode === "dark"
-                          ? "0 0 8px #00e5c9"
-                          : "0 0 8px rgba(5, 150, 105, 0.5)"
-                        : "none",
-                    transition: "all 0.3s ease",
+                    transition: "all 0.2s ease",
                   }}
                 />
-                <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", fontSize: "0.75rem" }}>
                   {t("nav.liveLoad", "Live Load")}
                 </Typography>
               </Box>
@@ -378,36 +397,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 label={`${runningCount} Active`}
                 size="small"
                 sx={{
-                  height: 20,
+                  height: 18,
                   fontSize: "0.6875rem",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   bgcolor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(13, 148, 136, 0.1)",
-                  color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
+                    runningCount > 0
+                      ? theme.palette.mode === "dark"
+                        ? "rgba(52, 211, 153, 0.12)"
+                        : "rgba(5, 150, 105, 0.1)"
+                      : "action.hover",
+                  color: (theme) => (runningCount > 0 ? "success.main" : "text.secondary"),
                   border: "1px solid",
                   borderColor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)",
+                    runningCount > 0
+                      ? theme.palette.mode === "dark"
+                        ? "rgba(52, 211, 153, 0.25)"
+                        : "rgba(5, 150, 105, 0.25)"
+                      : "transparent",
                 }}
               />
             </Box>
 
             <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
               <Typography
-                variant="h6"
+                variant="subtitle1"
                 sx={{
-                  fontWeight: 800,
-                  fontFamily: "monospace",
-                  color: (theme) => (theme.palette.mode === "dark" ? "#ffffff" : "#0f172a"),
+                  fontWeight: 700,
+                  fontVariantNumeric: "tabular-nums",
+                  color: "text.primary",
+                  lineHeight: 1.2,
                 }}
               >
-                {activeWattage} <Typography component="span" variant="caption" sx={{ color: "text.secondary" }}>W</Typography>
+                {activeWattage.toLocaleString()} <Typography component="span" variant="caption" sx={{ color: "text.secondary" }}>W</Typography>
               </Typography>
               <Typography
                 variant="caption"
                 sx={{
-                  color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
-                  fontFamily: "monospace",
-                  fontWeight: 700,
+                  color: "success.main",
+                  fontVariantNumeric: "tabular-nums",
+                  fontWeight: 600,
                 }}
               >
                 ₱{((activeWattage / 1000) * effectiveRate).toFixed(2)}/hr
@@ -416,16 +444,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {runningCount > 0 && (
               <>
-                <Divider sx={{ my: 1, borderColor: "divider" }} />
+                <Divider sx={{ my: 0.75, borderColor: "divider" }} />
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <CoinsIcon sx={{ fontSize: 13, color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488") }} />
-                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
-                      Session:
-                    </Typography>
-                  </Box>
-                  <Typography variant="caption" sx={{ color: "success.main", fontFamily: "monospace", fontWeight: 700 }}>
-                    ₱{totalSessionCost.toFixed(4)}
+                  <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+                    Session:
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "success.main", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+                    ₱{totalSessionCost.toFixed(2)}
                   </Typography>
                 </Box>
               </>
@@ -433,20 +458,74 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </Paper>
         </Tooltip>
 
+        {/* Desktop Theme Switcher Toggle */}
+        <Box
+          onClick={toggleColorMode}
+          role="button"
+          tabIndex={0}
+          aria-label={`Switch to ${mode === "dark" ? "Light" : "Dark"} Mode`}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            px: 1.25,
+            py: 0.75,
+            mb: 1.25,
+            borderRadius: 1,
+            cursor: "pointer",
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+            border: "1px solid",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+            transition: "all 0.15s ease",
+            "&:hover": {
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.zinc[800] : tokens.zinc[200],
+            },
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {mode === "dark" ? (
+              <SunIcon sx={{ fontSize: 15, color: "warning.main" }} />
+            ) : (
+              <MoonIcon sx={{ fontSize: 15, color: "text.primary" }} />
+            )}
+            <Typography variant="caption" sx={{ fontWeight: 600, color: "text.primary", fontSize: "0.75rem" }}>
+              {mode === "dark" ? "Light Mode" : "Dark Mode"}
+            </Typography>
+          </Box>
+          <Chip
+            size="small"
+            label={mode === "dark" ? "Dark" : "Light"}
+            sx={{
+              height: 18,
+              fontSize: "0.625rem",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.zinc[800] : tokens.zinc[200],
+              color: "text.secondary",
+            }}
+          />
+        </Box>
+
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 0.5 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <ShieldIcon sx={{ fontSize: 14, color: "success.main" }} />
+            <ShieldIcon sx={{ fontSize: 13, color: "text.disabled" }} />
             <Typography variant="caption" sx={{ fontSize: "0.6875rem", color: "text.secondary" }}>
-              Supabase Hybrid
+              Cloud Sync
             </Typography>
           </Box>
           <Typography
             variant="caption"
             sx={{
-              fontFamily: "monospace",
+              fontVariantNumeric: "tabular-nums",
               fontSize: "0.6875rem",
-              fontWeight: 700,
-              color: (theme) => (theme.palette.mode === "dark" ? "primary.light" : "primary.main"),
+              fontWeight: 600,
+              color: "text.secondary",
             }}
           >
             {APP_VERSION}
@@ -499,18 +578,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
             src="/Assets/LOGO.png"
             alt="PowerForecast Logo"
             sx={{
-              width: 32,
-              height: 32,
+              width: 30,
+              height: 30,
               borderRadius: 1.5,
               objectFit: "contain",
-              filter: "drop-shadow(0 2px 8px rgba(0, 229, 201, 0.4))",
             }}
           />
           <Box>
             <Typography
               variant="subtitle2"
               sx={{
-                fontWeight: 800,
+                fontWeight: 700,
                 color: "text.primary",
                 lineHeight: 1.15,
                 fontSize: "0.875rem",
@@ -521,13 +599,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Typography
               variant="caption"
               sx={{
-                color: (theme) => (theme.palette.mode === "dark" ? "primary.light" : "primary.main"),
+                color: "text.secondary",
                 fontSize: "0.6875rem",
-                fontWeight: 700,
+                fontWeight: 500,
                 display: "block",
               }}
             >
-              Meralco Energy Intel
+              Energy Intelligence
             </Typography>
           </Box>
         </Box>
@@ -541,11 +619,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             borderRadius: 1.5,
             border: "1px solid",
             borderColor: "divider",
-            bgcolor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)",
+            bgcolor: "transparent",
             "&:hover": {
-              bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
+              bgcolor: "action.hover",
             },
           }}
         >
@@ -558,27 +634,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
         elevation={0}
         sx={{
           p: 1.75,
-          borderRadius: 2,
+          borderRadius: 1.5,
           bgcolor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(24, 27, 34, 0.9)" : "rgba(241, 245, 249, 0.8)",
+            theme.palette.mode === "dark" ? "#121215" : "#fcfcfc",
           border: "1px solid",
-          borderColor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)",
+          borderColor: "divider",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
           <Avatar
             src={identity?.avatar}
             sx={{
-              width: 44,
-              height: 44,
+              width: 40,
+              height: 40,
               bgcolor: "primary.main",
-              color: "#0c1b18",
-              fontWeight: 800,
-              fontSize: "1.1rem",
-              border: "2px solid",
-              borderColor: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
-              boxShadow: "0 0 12px rgba(0, 229, 201, 0.3)",
+              color: "primary.contrastText",
+              fontWeight: 700,
+              fontSize: "1rem",
+              border: "1px solid",
+              borderColor: "divider",
             }}
           >
             {identity?.name?.charAt(0) || "U"}
@@ -587,7 +661,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Typography
               variant="subtitle2"
               sx={{
-                fontWeight: 800,
+                fontWeight: 700,
                 color: "text.primary",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
@@ -612,33 +686,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </Typography>
             {isViewer ? (
               <Chip
-                icon={<VisibilityIcon sx={{ fontSize: "11px !important", color: "#f59e0b !important" }} />}
+                icon={<VisibilityIcon sx={{ fontSize: "11px !important", color: "warning.main !important" }} />}
                 label={activeRoom ? `View-only · ${activeRoom.room_name}` : "View-only"}
                 size="small"
                 sx={{
                   height: 18,
                   fontSize: "0.625rem",
-                  fontWeight: 800,
+                  fontWeight: 600,
                   maxWidth: 160,
-                  bgcolor: "rgba(245, 158, 11, 0.12)",
-                  color: "#f59e0b",
-                  border: "1px solid rgba(245, 158, 11, 0.3)",
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.12)" : "rgba(217, 119, 6, 0.1)",
+                  color: "warning.main",
+                  border: "1px solid",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.3)" : "rgba(217, 119, 6, 0.3)",
                   mt: 0.5,
                   '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
                 }}
               />
             ) : (
               <Chip
-                icon={<ShieldIcon sx={{ fontSize: "11px !important", color: "#34d399 !important" }} />}
+                icon={<ShieldIcon sx={{ fontSize: "11px !important", color: "success.main !important" }} />}
                 label={activeRoom?.is_owner ? "Room Owner" : "Room Admin"}
                 size="small"
                 sx={{
                   height: 18,
                   fontSize: "0.625rem",
-                  fontWeight: 800,
-                  bgcolor: "rgba(52, 211, 153, 0.12)",
-                  color: "#34d399",
-                  border: "1px solid rgba(52, 211, 153, 0.3)",
+                  fontWeight: 600,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(52, 211, 153, 0.12)" : "rgba(5, 150, 105, 0.1)",
+                  color: "success.main",
+                  border: "1px solid",
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(52, 211, 153, 0.3)" : "rgba(5, 150, 105, 0.3)",
                   mt: 0.5,
                 }}
               />
@@ -656,16 +736,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           sx={{
             mb: 1,
             borderRadius: 1.5,
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: "0.75rem",
             py: 0.75,
             textTransform: "none",
-            borderColor: "rgba(0, 229, 201, 0.35)",
-            bgcolor: "rgba(0, 229, 201, 0.08)",
-            color: "primary.main",
+            borderColor: "divider",
+            color: "text.primary",
             "&:hover": {
-              bgcolor: "rgba(0, 229, 201, 0.16)",
-              borderColor: "primary.main",
+              bgcolor: "action.hover",
+              borderColor: "text.secondary",
             },
           }}
         >
@@ -681,15 +760,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => setIsLogoutConfirmOpen(true)}
           sx={{
             borderRadius: 1.5,
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: "0.75rem",
             py: 0.75,
             textTransform: "none",
-            borderColor: "rgba(239, 68, 68, 0.35)",
-            bgcolor: "rgba(239, 68, 68, 0.08)",
+            borderColor: "error.main",
+            color: "error.main",
             "&:hover": {
-              bgcolor: "rgba(239, 68, 68, 0.18)",
-              borderColor: "error.main",
+              bgcolor: "action.hover",
             },
           }}
         >
@@ -702,8 +780,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <Typography
           variant="caption"
           sx={{
-            fontWeight: 700,
-            color: "text.secondary",
+            fontWeight: 600,
+            color: "text.disabled",
             px: 0.5,
             textTransform: "uppercase",
             letterSpacing: "0.06em",
@@ -723,27 +801,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 borderRadius: 1.5,
                 py: 0.85,
                 px: 1.5,
-                bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
                 border: "1px solid",
-                borderColor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)",
+                borderColor: "divider",
                 "&:hover": {
-                  bgcolor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(13, 148, 136, 0.08)",
-                  borderColor: "primary.main",
+                  bgcolor: "action.hover",
+                  borderColor: "text.secondary",
                 },
                 transition: "all 0.15s ease",
               }}
             >
-              <ListItemIcon sx={{ minWidth: 32, color: "primary.main" }}>
+              <ListItemIcon sx={{ minWidth: 30, color: "text.secondary" }}>
                 <SettingsIcon sx={{ fontSize: 18 }} />
               </ListItemIcon>
               <ListItemText
                 primary={t("header.settings", "Settings")}
                 secondary="Preferences & App Configuration"
                 slotProps={{
-                  primary: { sx: { fontSize: "0.8125rem", fontWeight: 700 } },
+                  primary: { sx: { fontSize: "0.8125rem", fontWeight: 600 } },
                   secondary: { sx: { fontSize: "0.6875rem", color: "text.secondary" } },
                 }}
               />
@@ -761,27 +835,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 borderRadius: 1.5,
                 py: 0.85,
                 px: 1.5,
-                bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
                 border: "1px solid",
-                borderColor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)",
+                borderColor: "divider",
                 "&:hover": {
-                  bgcolor: (theme) =>
-                    theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(13, 148, 136, 0.08)",
-                  borderColor: "primary.main",
+                  bgcolor: "action.hover",
+                  borderColor: "text.secondary",
                 },
                 transition: "all 0.15s ease",
               }}
             >
-              <ListItemIcon sx={{ minWidth: 32, color: "primary.main" }}>
+              <ListItemIcon sx={{ minWidth: 30, color: "text.secondary" }}>
                 <ShieldIcon sx={{ fontSize: 18 }} />
               </ListItemIcon>
               <ListItemText
                 primary={t("nav.forecasting", "Forecasting")}
                 secondary="ML Demand & Tariff Forecasting"
                 slotProps={{
-                  primary: { sx: { fontSize: "0.8125rem", fontWeight: 700 } },
+                  primary: { sx: { fontSize: "0.8125rem", fontWeight: 600 } },
                   secondary: { sx: { fontSize: "0.6875rem", color: "text.secondary" } },
                 }}
               />
@@ -797,46 +867,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => setIsLiveDrawerOpen(true)}
         sx={{
           p: 1.75,
-          borderRadius: 2,
+          borderRadius: 1.5,
           bgcolor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(24, 27, 34, 0.88)" : "#f8fafc",
+            theme.palette.mode === "dark" ? "#121215" : "#fcfcfc",
           border: "1px solid",
           borderColor: (theme) =>
             runningCount > 0
               ? theme.palette.mode === "dark"
-                ? "rgba(0, 229, 201, 0.4)"
-                : "rgba(13, 148, 136, 0.4)"
-              : theme.palette.mode === "dark"
-                ? "divider"
-                : "#e2e8f0",
+                ? "rgba(52, 211, 153, 0.3)"
+                : "rgba(5, 150, 105, 0.3)"
+              : "divider",
           cursor: "pointer",
-          transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+          transition: "border-color 0.15s ease",
           "&:hover": {
-            borderColor: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
-            boxShadow: (theme) =>
-              theme.palette.mode === "dark"
-                ? "0 4px 16px rgba(0, 229, 201, 0.15)"
-                : "0 4px 16px rgba(13, 148, 136, 0.12)",
+            borderColor: (theme) =>
+              runningCount > 0
+                ? theme.palette.mode === "dark"
+                  ? "rgba(52, 211, 153, 0.5)"
+                  : "rgba(5, 150, 105, 0.5)"
+                : "text.disabled",
           },
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
             <Box
               sx={{
-                width: 8,
-                height: 8,
+                width: 7,
+                height: 7,
                 borderRadius: "50%",
                 bgcolor: runningCount > 0 ? "success.main" : "text.disabled",
-                boxShadow: (theme) =>
-                  runningCount > 0
-                    ? theme.palette.mode === "dark"
-                      ? "0 0 8px #00e5c9"
-                      : "0 0 8px rgba(5, 150, 105, 0.5)"
-                    : "none",
+                transition: "all 0.2s ease",
               }}
             />
-            <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
+            <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", fontSize: "0.75rem" }}>
               {t("nav.liveLoad", "Live Load")}
             </Typography>
           </Box>
@@ -844,15 +908,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
             label={`${runningCount} Active`}
             size="small"
             sx={{
-              height: 20,
+              height: 18,
               fontSize: "0.6875rem",
-              fontWeight: 700,
+              fontWeight: 600,
               bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(13, 148, 136, 0.1)",
-              color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
+                runningCount > 0
+                  ? theme.palette.mode === "dark"
+                    ? "rgba(52, 211, 153, 0.12)"
+                    : "rgba(5, 150, 105, 0.1)"
+                  : "action.hover",
+              color: (theme) => (runningCount > 0 ? "success.main" : "text.secondary"),
               border: "1px solid",
               borderColor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)",
+                runningCount > 0
+                  ? theme.palette.mode === "dark"
+                    ? "rgba(52, 211, 153, 0.25)"
+                    : "rgba(5, 150, 105, 0.25)"
+                  : "transparent",
             }}
           />
         </Box>
@@ -861,19 +933,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Typography
             variant="h6"
             sx={{
-              fontWeight: 800,
-              fontFamily: "monospace",
-              color: (theme) => (theme.palette.mode === "dark" ? "#ffffff" : "#0f172a"),
+              fontWeight: 700,
+              fontVariantNumeric: "tabular-nums",
+              color: "text.primary",
             }}
           >
-            {activeWattage} <Typography component="span" variant="caption" sx={{ color: "text.secondary" }}>W</Typography>
+            {activeWattage.toLocaleString()} <Typography component="span" variant="caption" sx={{ color: "text.secondary" }}>W</Typography>
           </Typography>
           <Typography
             variant="caption"
             sx={{
-              color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
-              fontFamily: "monospace",
-              fontWeight: 700,
+              color: "success.main",
+              fontVariantNumeric: "tabular-nums",
+              fontWeight: 600,
             }}
           >
             ₱{((activeWattage / 1000) * effectiveRate).toFixed(2)}/hr
@@ -884,14 +956,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <>
             <Divider sx={{ my: 1, borderColor: "divider" }} />
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <CoinsIcon sx={{ fontSize: 13, color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488") }} />
-                <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
-                  Active Session:
-                </Typography>
-              </Box>
-              <Typography variant="caption" sx={{ color: "success.main", fontFamily: "monospace", fontWeight: 700 }}>
-                ₱{totalSessionCost.toFixed(4)}
+              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem" }}>
+                Active Session:
+              </Typography>
+              <Typography variant="caption" sx={{ color: "success.main", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+                ₱{totalSessionCost.toFixed(2)}
               </Typography>
             </Box>
           </>
@@ -903,18 +972,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
         elevation={0}
         sx={{
           p: 1.75,
-          borderRadius: 2,
+          borderRadius: 1.5,
           bgcolor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(24, 27, 34, 0.88)" : "#f8fafc",
+            theme.palette.mode === "dark" ? "#121215" : "#fcfcfc",
           border: "1px solid",
-          borderColor: (theme) =>
-            theme.palette.mode === "dark" ? "divider" : "#e2e8f0",
+          borderColor: "divider",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-            <BoltIcon sx={{ fontSize: 17, color: "#ffd54f" }} />
-            <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
+            <BoltIcon sx={{ fontSize: 16, color: "warning.main" }} />
+            <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>
               Meralco Generation Rate
             </Typography>
           </Box>
@@ -928,7 +996,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <RefreshIcon
               sx={{
                 fontSize: 15,
-                color: "primary.main",
+                color: "text.secondary",
                 animation: isTariffRefreshing ? "spin 0.8s linear infinite" : "none",
                 "@keyframes spin": { "0%": { transform: "rotate(0deg)" }, "100%": { transform: "rotate(360deg)" } },
               }}
@@ -940,9 +1008,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Typography
             variant="h6"
             sx={{
-              fontWeight: 800,
-              fontFamily: "monospace",
-              color: (theme) => (theme.palette.mode === "dark" ? "#ffd54f" : "#d97706"),
+              fontWeight: 700,
+              fontVariantNumeric: "tabular-nums",
+              color: "text.primary",
             }}
           >
             ₱{tariff.generationRate.toFixed(4)} <Typography component="span" variant="caption" sx={{ color: "text.secondary" }}>/kWh</Typography>
@@ -951,9 +1019,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             variant="caption"
             sx={{
               color: "text.secondary",
-              fontFamily: "monospace",
+              fontVariantNumeric: "tabular-nums",
               fontSize: "0.6875rem",
-              fontWeight: 600,
+              fontWeight: 500,
             }}
           >
             Total: ₱{tariff.totalEffectiveRate.toFixed(4)}/kWh
@@ -969,27 +1037,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
         elevation={0}
         sx={{
           p: 1.75,
-          borderRadius: 2,
+          borderRadius: 1.5,
           bgcolor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(24, 27, 34, 0.88)" : "#f8fafc",
+            theme.palette.mode === "dark" ? "#121215" : "#fcfcfc",
           border: "1px solid",
-          borderColor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(13, 148, 136, 0.2)",
+          borderColor: "divider",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
             <Box
               sx={{
-                width: 8,
-                height: 8,
+                width: 7,
+                height: 7,
                 borderRadius: "50%",
                 bgcolor: dbStatus.ok ? "success.main" : "warning.main",
-                boxShadow: (theme) =>
-                  `0 0 8px ${dbStatus.ok ? theme.palette.success.main : theme.palette.warning.main}`,
               }}
             />
-            <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", fontSize: "0.6875rem" }}>
+            <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", fontSize: "0.6875rem" }}>
               {dbStatus.ok ? `Supabase Cloud (${dbStatus.latency || 45}ms)` : "Local / Offline"}
             </Typography>
           </Box>
@@ -998,13 +1063,68 @@ export const Sidebar: React.FC<SidebarProps> = ({
             label={APP_VERSION}
             size="small"
             sx={{
-              fontFamily: "monospace",
-              fontWeight: 700,
+              fontVariantNumeric: "tabular-nums",
+              fontWeight: 600,
               fontSize: "0.6875rem",
               height: 20,
-              bgcolor: "rgba(0, 229, 201, 0.12)",
-              color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
-              border: "1px solid rgba(0, 229, 201, 0.3)",
+              bgcolor: "action.hover",
+              color: "text.secondary",
+              border: "1px solid",
+              borderColor: "divider",
+            }}
+          />
+        </Box>
+
+        {/* Mobile Drawer Theme Switcher Toggle */}
+        <Box
+          onClick={toggleColorMode}
+          role="button"
+          tabIndex={0}
+          aria-label={`Switch to ${mode === "dark" ? "Light" : "Dark"} Mode`}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            px: 1.25,
+            py: 0.75,
+            my: 1,
+            borderRadius: 1,
+            cursor: "pointer",
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+            border: "1px solid",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+            transition: "all 0.15s ease",
+            "&:hover": {
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.zinc[800] : tokens.zinc[200],
+            },
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {mode === "dark" ? (
+              <SunIcon sx={{ fontSize: 16, color: "warning.main" }} />
+            ) : (
+              <MoonIcon sx={{ fontSize: 16, color: "text.primary" }} />
+            )}
+            <Typography variant="caption" sx={{ fontWeight: 600, color: "text.primary", fontSize: "0.75rem" }}>
+              {mode === "dark" ? "Light Mode" : "Dark Mode"}
+            </Typography>
+          </Box>
+          <Chip
+            size="small"
+            label={mode === "dark" ? "Dark" : "Light"}
+            sx={{
+              height: 18,
+              fontSize: "0.625rem",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.zinc[800] : tokens.zinc[200],
+              color: "text.secondary",
             }}
           />
         </Box>
@@ -1020,18 +1140,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             mt: 0.75,
             py: 0.75,
             fontSize: "0.75rem",
-            fontWeight: 800,
+            fontWeight: 600,
             textTransform: "none",
             borderRadius: 1.5,
-            color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0f766e"),
-            bgcolor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(13, 148, 136, 0.08)",
-            borderColor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.3)",
+            color: "text.primary",
+            borderColor: "divider",
             "&:hover": {
-              bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.16)" : "rgba(13, 148, 136, 0.15)",
-              borderColor: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
+              bgcolor: "action.hover",
+              borderColor: "text.secondary",
             },
           }}
         >
@@ -1056,13 +1172,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             width: { xs: "86vw", sm: 340 },
             maxWidth: 360,
             boxSizing: "border-box",
-            borderRadius: "16px 0 0 16px",
+            borderRadius: "12px 0 0 12px",
             borderLeft: "1px solid",
-            borderColor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(0, 0, 0, 0.1)",
+            borderColor: "divider",
             bgcolor: (theme) =>
-              theme.palette.mode === "dark" ? "rgba(20, 23, 28, 0.98)" : "#ffffff",
-            backdropFilter: "blur(20px)",
+              theme.palette.mode === "dark" ? "#09090b" : "#ffffff",
           },
         }}
       >
@@ -1095,18 +1209,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             sx: {
               borderRadius: 2,
               border: "1px solid",
-              borderColor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(0, 0, 0, 0.12)",
+              borderColor: "divider",
               bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(23, 26, 31, 0.98)" : "#ffffff",
+                theme.palette.mode === "dark" ? "#09090b" : "#ffffff",
               color: "text.primary",
-              backdropFilter: "blur(20px)",
               p: 1,
             },
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1.25, color: "text.primary" }}>
+        <DialogTitle sx={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 1.25, color: "text.primary" }}>
           <LogoutIcon sx={{ color: "error.main" }} />
           {t("header.confirmSignOut", "Confirm Sign Out")}
         </DialogTitle>
@@ -1116,7 +1228,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setIsLogoutConfirmOpen(false)} sx={{ fontWeight: 700 }}>
+          <Button onClick={() => setIsLogoutConfirmOpen(false)} sx={{ fontWeight: 600 }}>
             {t("header.cancel", "Cancel")}
           </Button>
           <Button
@@ -1127,7 +1239,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClose?.();
               logout();
             }}
-            sx={{ fontWeight: 800, borderRadius: 1.25, px: 2 }}
+            sx={{ fontWeight: 600, borderRadius: 1.5, px: 2 }}
           >
             {t("header.signOut", "Sign Out")}
           </Button>
@@ -1152,25 +1264,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
             sx: {
               borderRadius: 2,
               border: "1px solid",
-              borderColor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.3)",
+              borderColor: "divider",
               bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(20, 24, 28, 0.98)" : "#ffffff",
-              backdropFilter: "blur(20px)",
+                theme.palette.mode === "dark" ? "#09090b" : "#ffffff",
               p: 1,
             },
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "space-between", pb: 1 }}>
+        <DialogTitle sx={{ fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "space-between", pb: 1 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
             <Box
               sx={{
                 width: 32,
                 height: 32,
                 borderRadius: 1,
-                bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.15)" : "rgba(13, 148, 136, 0.1)"),
-                color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(52, 211, 153, 0.12)" : "rgba(5, 150, 105, 0.1)",
+                color: "success.main",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -1179,7 +1290,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <BoltIcon fontSize="small" />
             </Box>
             <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
                 Live Load Circuits
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -1201,7 +1312,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               mb: 2.5,
               borderRadius: 1.5,
               bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "#f1f5f9",
+                theme.palette.mode === "dark" ? "#121215" : "#f4f4f5",
               border: "1px solid",
               borderColor: "divider",
               display: "flex",
@@ -1215,15 +1326,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
                 Total Active Load
               </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.main" }}>
-                {activeWattage} <span style={{ fontSize: "0.875rem", fontWeight: 600 }}>Watts</span>
+              <Typography variant="h5" sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "text.primary" }}>
+                {activeWattage.toLocaleString()} <span style={{ fontSize: "0.875rem", fontWeight: 500 }}>Watts</span>
               </Typography>
             </Box>
             <Box sx={{ textAlign: "right" }}>
               <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
                 Current Running Burn
               </Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, fontFamily: "monospace", color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488") }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "success.main" }}>
                 ₱{((activeWattage / 1000) * effectiveRate).toFixed(2)}/hr
               </Typography>
             </Box>
@@ -1232,8 +1343,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Running Circuits List */}
           {runningAppliances.length === 0 ? (
             <Box sx={{ py: 4, textAlign: "center" }}>
-              <PowerIcon sx={{ fontSize: 48, color: "text.disabled", mb: 1, opacity: 0.5 }} />
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.secondary" }}>
+              <PowerIcon sx={{ fontSize: 44, color: "text.disabled", mb: 1, opacity: 0.5 }} />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "text.secondary" }}>
                 No circuits are currently active
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.5, maxWidth: 360, mx: "auto" }}>
@@ -1250,10 +1361,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     p: 1.75,
                     borderRadius: 1.5,
                     border: "1px solid",
-                    borderColor: (theme) =>
-                      theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(13, 148, 136, 0.2)",
+                    borderColor: "divider",
                     bgcolor: (theme) =>
-                      theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.04)" : "rgba(13, 148, 136, 0.03)",
+                      theme.palette.mode === "dark" ? "#121215" : "#fcfcfc",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
@@ -1264,46 +1374,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <Box
                         sx={{
-                          width: 8,
-                          height: 8,
+                          width: 7,
+                          height: 7,
                           borderRadius: "50%",
                           bgcolor: "success.main",
-                          boxShadow: "0 0 8px #00e5c9",
-                          animation: "pulse 1.5s infinite",
                         }}
                       />
-                      <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                         {app.name}
                       </Typography>
                       <Chip
                         label={`${app.watts * (app.quantity || 1)}W`}
                         size="small"
-                        sx={{ height: 20, fontSize: "0.6875rem", fontWeight: 700 }}
+                        sx={{ height: 20, fontSize: "0.6875rem", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}
                       />
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
-                      <Typography variant="caption" sx={{ color: "success.main", fontFamily: "monospace", fontWeight: 700 }}>
+                      <Typography variant="caption" sx={{ color: "success.main", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
                         ⏱ {getRunningDuration(app.last_turned_on_at)}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                        • ₱{getAccumulatedPesos(app).toFixed(4)} spent
+                      <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
+                        • ₱{getAccumulatedPesos(app).toFixed(2)} spent
                       </Typography>
                     </Box>
                   </Box>
 
                   <Button
                     size="small"
-                    variant="contained"
+                    variant="outlined"
                     color="error"
                     onClick={() => handleStopCircuit(app)}
                     sx={{
                       fontSize: "0.75rem",
-                      fontWeight: 800,
-                      borderRadius: 1.25,
+                      fontWeight: 600,
+                      borderRadius: 1.5,
                       textTransform: "none",
                       px: 1.5,
-                      bgcolor: "#ef4444",
-                      "&:hover": { bgcolor: "#dc2626" },
                     }}
                   >
                     Stop

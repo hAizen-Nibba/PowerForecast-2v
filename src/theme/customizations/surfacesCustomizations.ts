@@ -4,29 +4,26 @@ export const surfacesCustomizations: Components<Theme> = {
   MuiCard: {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
-        padding: 20,
+        padding: 24,
         gap: 16,
-        transition: 'all 240ms cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'border-color 150ms ease, box-shadow 150ms ease',
         backgroundColor: theme.palette.mode === 'dark' 
-          ? 'rgba(24, 27, 32, 0.85)' 
+          ? '#09090b' 
           : '#ffffff',
-        borderRadius: 12,
+        borderRadius: 8,
         border: `1px solid ${
           theme.palette.mode === 'dark' 
-            ? 'rgba(255, 255, 255, 0.07)' 
-            : '#e2e8f0'
+            ? '#27272a' 
+            : '#e4e4e7'
         }`,
-        backdropFilter: 'blur(16px)',
+        backgroundImage: 'none',
         boxShadow: theme.palette.mode === 'dark'
-          ? '0 4px 24px rgba(0, 0, 0, 0.45)'
-          : '0 2px 10px rgba(15, 23, 42, 0.04)',
+          ? '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+          : '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05)',
         '&:hover': {
           borderColor: theme.palette.mode === 'dark' 
-            ? 'rgba(0, 229, 201, 0.28)' 
-            : 'rgba(13, 148, 136, 0.28)',
-          boxShadow: theme.palette.mode === 'dark'
-            ? '0 8px 32px rgba(0, 0, 0, 0.55), 0 0 12px rgba(0, 229, 201, 0.05)'
-            : '0 8px 24px rgba(15, 23, 42, 0.08)',
+            ? '#3f3f46' 
+            : '#d4d4d8',
         },
       }),
     },
@@ -36,10 +33,15 @@ export const surfacesCustomizations: Components<Theme> = {
       root: ({ theme }: { theme: Theme }) => ({
         backgroundImage: 'none',
         backgroundColor: theme.palette.mode === 'dark' 
-          ? 'rgba(24, 27, 32, 0.9)' 
+          ? '#09090b' 
           : '#ffffff',
-        borderRadius: 10,
-        transition: 'background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease',
+        borderRadius: 8,
+        border: `1px solid ${
+          theme.palette.mode === 'dark' 
+            ? '#27272a' 
+            : '#e4e4e7'
+        }`,
+        transition: 'background-color 150ms ease, border-color 150ms ease',
       }),
     },
   },
@@ -47,22 +49,23 @@ export const surfacesCustomizations: Components<Theme> = {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
         backgroundColor: theme.palette.mode === 'dark' 
-          ? 'rgba(32, 35, 40, 0.75)' 
+          ? '#09090b' 
           : '#ffffff',
         border: `1px solid ${
           theme.palette.mode === 'dark' 
-            ? 'rgba(255, 255, 255, 0.08)' 
-            : '#e2e8f0'
+            ? '#27272a' 
+            : '#e4e4e7'
         }`,
-        borderRadius: '10px !important',
-        marginBottom: 10,
-        transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
+        borderRadius: '8px !important',
+        marginBottom: 8,
+        backgroundImage: 'none',
+        transition: 'border-color 150ms ease',
         '&:before': {
           display: 'none',
         },
         '&.Mui-expanded': {
-          margin: '0 0 10px 0',
-          borderColor: theme.palette.mode === 'dark' ? 'rgba(0, 229, 201, 0.4)' : 'rgba(13, 148, 136, 0.4)',
+          margin: '0 0 8px 0',
+          borderColor: theme.palette.mode === 'dark' ? '#3f3f46' : '#d4d4d8',
         },
       }),
     },
@@ -70,8 +73,8 @@ export const surfacesCustomizations: Components<Theme> = {
   MuiAccordionSummary: {
     styleOverrides: {
       root: {
-        padding: '0 18px',
-        minHeight: 52,
+        padding: '0 16px',
+        minHeight: 48,
         fontWeight: 600,
       },
     },
@@ -79,19 +82,19 @@ export const surfacesCustomizations: Components<Theme> = {
   MuiDialog: {
     styleOverrides: {
       paper: ({ theme }: { theme: Theme }) => ({
-        borderRadius: 14,
+        borderRadius: 12,
         backgroundColor: theme.palette.mode === 'dark' 
-          ? '#1b1e22' 
+          ? '#09090b' 
           : '#ffffff',
         border: `1px solid ${
           theme.palette.mode === 'dark' 
-            ? 'rgba(255, 255, 255, 0.12)' 
-            : '#e2e8f0'
+            ? '#27272a' 
+            : '#e4e4e7'
         }`,
         boxShadow: theme.palette.mode === 'dark' 
-          ? '0 24px 64px rgba(0, 0, 0, 0.65)' 
-          : '0 24px 64px rgba(15, 23, 42, 0.12)',
-        backdropFilter: 'blur(20px)',
+          ? '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)' 
+          : '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+        backgroundImage: 'none',
       }),
     },
   },

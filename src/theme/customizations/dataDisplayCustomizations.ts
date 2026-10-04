@@ -1,18 +1,19 @@
 import { Components, Theme } from '@mui/material/styles';
+import { zinc } from '../tokens';
 
 export const dataDisplayCustomizations: Components<Theme> = {
   MuiChip: {
     styleOverrides: {
       root: {
         borderRadius: 6,
-        fontWeight: 600,
+        fontWeight: 500,
         fontSize: '0.75rem',
         border: '1px solid transparent',
-        transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'all 150ms ease',
       },
       sizeSmall: {
-        borderRadius: 5,
-        height: 22,
+        borderRadius: 4,
+        height: 20,
         fontSize: '0.6875rem',
       },
     },
@@ -28,31 +29,31 @@ export const dataDisplayCustomizations: Components<Theme> = {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
         borderColor: theme.palette.divider,
-        padding: '12px 16px',
+        padding: '10px 14px',
         fontSize: '0.8125rem',
       }),
       head: ({ theme }: { theme: Theme }) => ({
-        fontWeight: 700,
+        fontWeight: 600,
         backgroundColor: theme.palette.mode === 'dark' 
-          ? 'rgba(23, 26, 31, 0.95)' 
-          : '#f8fafc',
+          ? '#09090b' 
+          : '#f4f4f5',
         color: theme.palette.text.secondary,
-        textTransform: 'uppercase',
-        fontSize: '0.6875rem',
-        letterSpacing: '0.05em',
+        textTransform: 'none',
+        fontSize: '0.75rem',
+        letterSpacing: 0,
       }),
     },
   },
   MuiTooltip: {
     styleOverrides: {
       tooltip: ({ theme }: { theme: Theme }) => ({
-        backgroundColor: theme.palette.mode === 'dark' ? '#141619' : '#1e293b',
-        color: '#ffffff',
+        backgroundColor: theme.palette.mode === 'dark' ? '#18181b' : '#18181b',
+        color: '#fafafa',
         fontSize: '0.75rem',
-        borderRadius: 8,
-        padding: '6px 10px',
-        boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
-        border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(0, 229, 201, 0.25)' : 'rgba(15, 23, 42, 0.1)'}`,
+        borderRadius: 6,
+        padding: '5px 8px',
+        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.3)',
+        border: `1px solid ${theme.palette.mode === 'dark' ? zinc[800] : zinc[700]}`,
       }),
     },
   },

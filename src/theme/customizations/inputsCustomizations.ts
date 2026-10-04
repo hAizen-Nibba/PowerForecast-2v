@@ -1,5 +1,5 @@
 import { Components, Theme, alpha } from '@mui/material/styles';
-import { brand, gray } from '../themePrimitives';
+import { zinc, emerald } from '../tokens';
 
 export const inputsCustomizations: Components<Theme> = {
   MuiButtonBase: {
@@ -10,9 +10,9 @@ export const inputsCustomizations: Components<Theme> = {
     styleOverrides: {
       root: {
         boxSizing: 'border-box',
-        transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'all 150ms ease',
         '&:focus-visible': {
-          outline: `3px solid ${alpha(brand[500], 0.5)}`,
+          outline: `2px solid ${zinc[400]}`,
           outlineOffset: '2px',
         },
       },
@@ -20,38 +20,43 @@ export const inputsCustomizations: Components<Theme> = {
   },
   MuiButton: {
     styleOverrides: {
-      root: ({ theme }: { theme: Theme }) => ({
+      root: () => ({
         boxShadow: 'none',
-        borderRadius: 8,
+        borderRadius: 6,
         textTransform: 'none',
-        fontWeight: 600,
-        letterSpacing: 0,
+        fontWeight: 500,
+        letterSpacing: '-0.005em',
         padding: '8px 16px',
-        transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'background-color 150ms ease, border-color 150ms ease, color 150ms ease',
         '&:hover': {
-          boxShadow: theme.palette.mode === 'dark'
-            ? '0 4px 14px rgba(0, 229, 201, 0.35)'
-            : '0 4px 12px rgba(13, 148, 136, 0.2)',
-          transform: 'translateY(-1px)',
+          boxShadow: 'none',
         },
         '&:active': {
-          transform: 'translateY(0)',
+          transform: 'none',
         },
       }),
       contained: ({ theme }: { theme: Theme }) => ({
-        backgroundColor: theme.palette.primary.main,
-        color: theme.palette.mode === 'dark' ? '#0c1b18' : '#ffffff',
-        fontWeight: 700,
+        backgroundColor: theme.palette.mode === 'dark' ? zinc[50] : zinc[900],
+        color: theme.palette.mode === 'dark' ? zinc[900] : '#ffffff',
+        fontWeight: 600,
         '&:hover': {
-          backgroundColor: theme.palette.mode === 'dark' ? '#1de9b6' : theme.palette.primary.dark,
+          backgroundColor: theme.palette.mode === 'dark' ? zinc[200] : zinc[800],
         },
       }),
       outlined: ({ theme }: { theme: Theme }) => ({
-        borderColor: alpha(theme.palette.primary.main, 0.35),
+        borderColor: theme.palette.mode === 'dark' ? zinc[800] : zinc[200],
         color: theme.palette.text.primary,
+        backgroundColor: 'transparent',
         '&:hover': {
-          borderColor: theme.palette.primary.main,
-          backgroundColor: alpha(theme.palette.primary.main, 0.08),
+          borderColor: theme.palette.mode === 'dark' ? zinc[700] : zinc[300],
+          backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
+        },
+      }),
+      text: ({ theme }: { theme: Theme }) => ({
+        color: theme.palette.text.secondary,
+        '&:hover': {
+          color: theme.palette.text.primary,
+          backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)',
         },
       }),
       sizeSmall: {
@@ -73,16 +78,12 @@ export const inputsCustomizations: Components<Theme> = {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
         boxShadow: 'none',
-        borderRadius: 8,
+        borderRadius: 6,
         color: theme.palette.text.secondary,
-        transition: 'all 180ms cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'background-color 150ms ease, color 150ms ease',
         '&:hover': {
-          backgroundColor: alpha(theme.palette.primary.main, 0.1),
+          backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
           color: theme.palette.text.primary,
-          transform: 'scale(1.05)',
-        },
-        '&:active': {
-          transform: 'scale(0.98)',
         },
       }),
     },
@@ -90,24 +91,23 @@ export const inputsCustomizations: Components<Theme> = {
   MuiOutlinedInput: {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
-        borderRadius: 8,
-        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(24, 27, 32, 0.75)' : '#ffffff',
-        borderColor: alpha(theme.palette.primary.main, 0.25),
-        transition: 'border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease',
+        borderRadius: 6,
+        backgroundColor: theme.palette.mode === 'dark' ? '#09090b' : '#ffffff',
+        transition: 'border-color 150ms ease, box-shadow 150ms ease',
         '& .MuiOutlinedInput-notchedOutline': {
-          borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : '#e2e8f0',
-          transition: 'border-color 180ms ease',
+          borderColor: theme.palette.mode === 'dark' ? zinc[800] : zinc[200],
+          transition: 'border-color 150ms ease',
         },
         '&:hover .MuiOutlinedInput-notchedOutline': {
-          borderColor: alpha(theme.palette.primary.main, 0.5),
+          borderColor: theme.palette.mode === 'dark' ? zinc[700] : zinc[300],
         },
         '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-          borderColor: theme.palette.primary.main,
-          borderWidth: '2px',
+          borderColor: theme.palette.mode === 'dark' ? zinc[400] : zinc[600],
+          borderWidth: '1px',
         },
       }),
       input: {
-        padding: '10px 14px',
+        padding: '9px 13px',
         fontSize: '0.875rem',
       },
     },
@@ -115,63 +115,63 @@ export const inputsCustomizations: Components<Theme> = {
   MuiSwitch: {
     styleOverrides: {
       root: {
-        width: 44,
+        width: 42,
         height: 24,
         padding: 0,
         display: 'flex',
       },
       switchBase: ({ theme }: { theme: Theme }) => ({
         padding: 2,
-        transition: 'transform 200ms cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'transform 180ms cubic-bezier(0.4, 0, 0.2, 1)',
         '&.Mui-checked': {
-          transform: 'translateX(20px)',
+          transform: 'translateX(18px)',
           color: '#ffffff',
           '& + .MuiSwitch-track': {
             opacity: 1,
-            backgroundColor: theme.palette.primary.main,
+            backgroundColor: theme.palette.mode === 'dark' ? emerald[500] : emerald[600],
           },
         },
       }),
       thumb: {
         width: 20,
         height: 20,
-        boxShadow: '0 2px 4px 0 rgba(0, 35, 11, 0.2)',
+        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.2)',
       },
       track: {
         borderRadius: 24 / 2,
         opacity: 1,
-        backgroundColor: gray[600],
+        backgroundColor: zinc[700],
         boxSizing: 'border-box',
-        transition: 'background-color 200ms ease',
+        transition: 'background-color 180ms ease',
       },
     },
   },
   MuiSlider: {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
-        color: theme.palette.primary.main,
-        height: 6,
-        padding: '13px 0',
+        color: theme.palette.mode === 'dark' ? emerald[400] : emerald[600],
+        height: 4,
+        padding: '12px 0',
       }),
       thumb: {
-        height: 18,
-        width: 18,
+        height: 16,
+        width: 16,
         backgroundColor: '#ffffff',
         border: '2px solid currentColor',
-        transition: 'box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1), transform 150ms cubic-bezier(0.4, 0, 0.2, 1)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+        transition: 'box-shadow 150ms ease, transform 150ms ease',
         '&:focus, &:hover, &.Mui-active, &.Mui-focusVisible': {
-          boxShadow: '0 0 0 8px rgba(0, 229, 201, 0.2)',
-          transform: 'scale(1.15)',
+          boxShadow: '0 0 0 6px rgba(16, 185, 129, 0.15)',
         },
       },
       track: {
-        height: 6,
-        borderRadius: 3,
+        height: 4,
+        borderRadius: 2,
       },
       rail: {
-        height: 6,
-        borderRadius: 3,
-        opacity: 0.3,
+        height: 4,
+        borderRadius: 2,
+        opacity: 0.25,
       },
     },
   },

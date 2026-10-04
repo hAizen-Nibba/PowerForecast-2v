@@ -1,6 +1,7 @@
 /**
  * PowerForecast Branded Email Templates
- * Responsive, dark-themed HTML email templates matching the PowerForecast brand aesthetic.
+ * Responsive, modern light-themed HTML email templates matching the PowerForecast brand aesthetic.
+ * Clean #ffffff cards, neutral #e4e4e7 borders, #09090b typography, and emerald accents.
  * Compatible with Supabase GoTrue Auth Templates and in-app transactional dispatchers.
  */
 
@@ -11,6 +12,8 @@ export interface EmailTemplateConfig {
   preheader?: string;
   badge?: string;
   badgeColor?: string;
+  badgeBg?: string;
+  badgeBorder?: string;
   headline: string;
   subheadline?: string;
   bodyParagraphs: string[];
@@ -34,7 +37,9 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
   const {
     preheader = 'PowerForecast Energy Notification',
     badge = 'ENERGY INTELLIGENCE',
-    badgeColor = '#00e5c9',
+    badgeColor = '#047857',
+    badgeBg = '#ecfdf5',
+    badgeBorder = '#a7f3d0',
     headline,
     subheadline,
     bodyParagraphs,
@@ -50,18 +55,18 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
   const paragraphsHtml = bodyParagraphs
     .map(
       (p) =>
-        `<p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #94a3b8;">${p}</p>`
+        `<p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6; color: #3f3f46;">${p}</p>`
     )
     .join('');
 
   const highlightHtml = highlightBox
     ? `
-      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 20px 0; background: #0c1017; border: 1px dashed rgba(0, 229, 201, 0.35); border-radius: 10px; padding: 18px 20px;">
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 20px 0; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 18px 20px;">
         <tr>
           <td align="center">
             <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b; margin-bottom: 6px;">${highlightBox.label}</div>
-            <div style="font-size: 26px; font-weight: 800; letter-spacing: 3px; color: #00e5c9; font-family: 'Courier New', monospace;">${highlightBox.value}</div>
-            ${highlightBox.sublabel ? `<div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">${highlightBox.sublabel}</div>` : ''}
+            <div style="font-size: 26px; font-weight: 800; letter-spacing: 3px; color: #047857; font-family: 'JetBrains Mono', 'Courier New', monospace;">${highlightBox.value}</div>
+            ${highlightBox.sublabel ? `<div style="font-size: 12px; color: #64748b; margin-top: 6px;">${highlightBox.sublabel}</div>` : ''}
           </td>
         </tr>
       </table>
@@ -70,14 +75,14 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
 
   const tableHtml = metricsTable && metricsTable.length > 0
     ? `
-      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 20px 0; background: #0e131b; border: 1px solid #1f2937; border-radius: 10px; overflow: hidden;">
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 20px 0; background: #ffffff; border: 1px solid #e4e4e7; border-radius: 8px; overflow: hidden;">
         ${metricsTable
           .map(
             (row, idx) => `
-          <tr style="${idx > 0 ? 'border-top: 1px solid #1f2937;' : ''}">
-            <td style="padding: 12px 18px; font-size: 14px; color: #94a3b8;">${row.label}</td>
+          <tr style="${idx > 0 ? 'border-top: 1px solid #f4f4f5;' : ''}">
+            <td style="padding: 12px 18px; font-size: 14px; color: #71717a;">${row.label}</td>
             <td style="padding: 12px 18px; font-size: 14px; font-weight: 700; text-align: right; color: ${
-              row.highlight ? '#00e5c9' : '#f1f5f9'
+              row.highlight ? '#047857' : '#09090b'
             };">${row.value}</td>
           </tr>`
           )
@@ -94,8 +99,8 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
           <td align="center">
             <table role="presentation" border="0" cellpadding="0" cellspacing="0">
               <tr>
-                <td align="center" style="border-radius: 8px; background-color: #00e5c9; background: linear-gradient(135deg, #00e5c9 0%, #00b4d8 100%);">
-                  <a href="${buttonActionUrl}" target="_blank" rel="noopener noreferrer" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 800; color: #0a1b18; text-decoration: none; padding: 14px 34px; border-radius: 8px; display: inline-block; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(0, 229, 201, 0.35);">
+                <td align="center" style="border-radius: 8px; background-color: #09090b;">
+                  <a href="${buttonActionUrl}" target="_blank" rel="noopener noreferrer" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 600; color: #ffffff; text-decoration: none; padding: 13px 32px; border-radius: 8px; display: inline-block; letter-spacing: 0.2px; background-color: #09090b; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);">
                     ${buttonText}
                   </a>
                 </td>
@@ -109,9 +114,9 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
 
   const fallbackHtml = buttonActionUrl
     ? `
-      <div style="background: #0a0d13; border: 1px solid #1a2330; border-radius: 8px; padding: 12px 16px; margin-top: 20px;">
-        <div style="font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 4px;">${fallbackUrlLabel}</div>
-        <a href="${buttonActionUrl}" target="_blank" rel="noopener noreferrer" style="font-size: 12px; color: #00e5c9; word-break: break-all; text-decoration: underline; line-height: 1.4;">${buttonActionUrl}</a>
+      <div style="background: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 8px; padding: 12px 16px; margin-top: 20px;">
+        <div style="font-size: 11px; font-weight: 600; color: #71717a; margin-bottom: 4px;">${fallbackUrlLabel}</div>
+        <a href="${buttonActionUrl}" target="_blank" rel="noopener noreferrer" style="font-size: 12px; color: #09090b; word-break: break-all; text-decoration: underline; line-height: 1.4;">${buttonActionUrl}</a>
       </div>
     `
     : '';
@@ -128,40 +133,40 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
   </style>
   <![endif]-->
 </head>
-<body style="margin: 0; padding: 0; background-color: #0b0e14; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
+<body style="margin: 0; padding: 0; background-color: #f4f4f5; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
   <!-- Preheader text (hidden in body but shown in inbox preview) -->
-  <div style="display: none; max-height: 0px; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; color: #0b0e14; opacity: 0;">
+  <div style="display: none; max-height: 0px; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; color: #f4f4f5; opacity: 0;">
     ${preheader}
   </div>
 
-  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #0b0e14; padding: 32px 12px;">
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f4f4f5; padding: 36px 12px;">
     <tr>
       <td align="center">
         <!-- Main Card Container -->
-        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 560px; background-color: #141a24; border: 1px solid #222d3d; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.6);">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 560px; background-color: #ffffff; border: 1px solid #e4e4e7; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);">
           
           <!-- Brand Header -->
           <tr>
-            <td style="padding: 28px 32px 20px 32px; border-bottom: 1px solid #1c2635; background: linear-gradient(180deg, #18202d 0%, #141a24 100%);">
+            <td style="padding: 24px 32px 20px 32px; border-bottom: 1px solid #f4f4f5; background-color: #ffffff;">
               <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
-                  <td style="vertical-align: middle; width: 44px;">
-                    <img src="${POWERFORECAST_LOGO_URL}" alt="PowerForecast" width="40" height="40" style="display: block; border-radius: 10px; border: 0;" />
+                  <td style="vertical-align: middle; width: 42px;">
+                    <img src="${POWERFORECAST_LOGO_URL}" alt="PowerForecast" width="36" height="36" style="display: block; border-radius: 8px; border: 1px solid #e4e4e7;" />
                   </td>
-                  <td style="vertical-align: middle; padding-left: 14px;">
+                  <td style="vertical-align: middle; padding-left: 12px;">
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 20px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px;">
-                          Power<span style="color: #00e5c9;">Forecast</span>
+                        <td style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 19px; font-weight: 800; color: #09090b; letter-spacing: -0.3px;">
+                          Power<span style="color: #10b981;">Forecast</span>
                         </td>
                         <td style="padding-left: 10px;">
-                          <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 10px; font-weight: 800; background: rgba(0, 229, 201, 0.12); color: ${badgeColor}; padding: 3px 8px; border-radius: 999px; letter-spacing: 0.5px; text-transform: uppercase; border: 1px solid rgba(0, 229, 201, 0.25);">
+                          <span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 10px; font-weight: 700; background-color: ${badgeBg}; color: ${badgeColor}; padding: 3px 8px; border-radius: 999px; letter-spacing: 0.5px; text-transform: uppercase; border: 1px solid ${badgeBorder};">
                             ${badge}
                           </span>
                         </td>
                       </tr>
                       <tr>
-                        <td colspan="2" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; font-weight: 500; color: #8b949e; letter-spacing: 0.3px; padding-top: 2px;">
+                        <td colspan="2" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; font-weight: 500; color: #71717a; letter-spacing: 0.2px; padding-top: 2px;">
                           Smart Energy Monitoring & Bill Forecasting
                         </td>
                       </tr>
@@ -176,13 +181,13 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
           <tr>
             <td style="padding: 32px 32px 24px 32px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
               
-              <h1 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; line-height: 1.3;">
+              <h1 style="margin: 0 0 10px 0; font-size: 22px; font-weight: 800; color: #09090b; letter-spacing: -0.3px; line-height: 1.3;">
                 ${headline}
               </h1>
 
               ${
                 subheadline
-                  ? `<p style="margin: 0 0 20px 0; font-size: 15px; color: #00e5c9; font-weight: 600;">${subheadline}</p>`
+                  ? `<p style="margin: 0 0 20px 0; font-size: 14px; color: #059669; font-weight: 600;">${subheadline}</p>`
                   : ''
               }
 
@@ -201,12 +206,12 @@ export function buildBrandedEmailHtml(config: EmailTemplateConfig): string {
 
           <!-- Security & Footer Divider -->
           <tr>
-            <td style="padding: 20px 32px 28px 32px; border-top: 1px solid #1c2635; background-color: #0f141d; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-              <p style="margin: 0 0 12px 0; font-size: 12px; line-height: 1.5; color: #64748b;">
+            <td style="padding: 20px 32px 24px 32px; border-top: 1px solid #f4f4f5; background-color: #fafafa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              <p style="margin: 0 0 10px 0; font-size: 12px; line-height: 1.5; color: #71717a;">
                 🛡️ <strong>Security Notice:</strong> ${securityNotice}
               </p>
-              <div style="font-size: 11px; line-height: 1.5; color: #475569;">
-                Dispatched via PowerForecast Verified SMTP (<strong style="color: #64748b;">noreply@comugallery.me</strong>).<br>
+              <div style="font-size: 11px; line-height: 1.5; color: #a1a1aa;">
+                Dispatched via PowerForecast Verified SMTP (<strong style="color: #71717a;">noreply@comugallery.me</strong>).<br>
                 © 2026 PowerForecast Refine. All rights reserved.
               </div>
             </td>
@@ -228,7 +233,7 @@ export function getSupabaseResetPasswordTemplate(): string {
   return buildBrandedEmailHtml({
     preheader: 'Reset your PowerForecast account password',
     badge: 'SECURITY',
-    badgeColor: '#00e5c9',
+    badgeColor: '#047857',
     headline: 'Reset Your Password',
     subheadline: 'A request was received to reset your password',
     bodyParagraphs: [
@@ -252,7 +257,7 @@ export function getSupabaseConfirmSignupTemplate(): string {
   return buildBrandedEmailHtml({
     preheader: 'Confirm your PowerForecast account registration',
     badge: 'WELCOME',
-    badgeColor: '#00e5c9',
+    badgeColor: '#047857',
     headline: 'Welcome to PowerForecast!',
     subheadline: 'Smart Energy Optimization & Real-Time Appliance Intelligence',
     bodyParagraphs: [
@@ -276,7 +281,7 @@ export function getSupabaseMagicLinkTemplate(): string {
   return buildBrandedEmailHtml({
     preheader: 'Your secure passwordless sign-in link for PowerForecast',
     badge: 'MAGIC LINK',
-    badgeColor: '#00e5c9',
+    badgeColor: '#047857',
     headline: 'Sign In to PowerForecast',
     subheadline: 'Passwordless instant authentication',
     bodyParagraphs: [
@@ -300,7 +305,7 @@ export function getSupabaseInviteUserTemplate(): string {
   return buildBrandedEmailHtml({
     preheader: 'You have been invited to join PowerForecast',
     badge: 'TEAM INVITATION',
-    badgeColor: '#00e5c9',
+    badgeColor: '#047857',
     headline: 'You Have Been Invited!',
     subheadline: 'Collaborative Household Energy Management',
     bodyParagraphs: [
@@ -324,7 +329,7 @@ export function getSupabaseChangeEmailTemplate(): string {
   return buildBrandedEmailHtml({
     preheader: 'Confirm change of email address for PowerForecast',
     badge: 'EMAIL UPDATE',
-    badgeColor: '#00e5c9',
+    badgeColor: '#047857',
     headline: 'Confirm Email Address Change',
     subheadline: 'Account security verification',
     bodyParagraphs: [

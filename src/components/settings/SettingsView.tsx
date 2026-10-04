@@ -79,6 +79,8 @@ import {
   Dashboard as DashboardIcon,
   AccessTime as ClockIcon,
   Timer as TimerIcon,
+  LightMode as SunIcon,
+  DarkMode as MoonIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useTour } from "../../hooks/useTour";
@@ -93,6 +95,8 @@ import { useGetIdentity, useLogout } from "@refinedev/core";
 import { useToast } from "../common/ToastProvider";
 import { supabaseClient } from "../../lib/supabaseClient";
 import { useLanguage, Language } from "../../context/LanguageContext";
+import { useColorMode } from "../../theme/AppTheme";
+import { tokens } from "../../theme/tokens";
 import { devLog } from "../../lib/devLogger";
 import {
   checkEmailDeliveryHealth,
@@ -119,6 +123,7 @@ export const SettingsView: React.FC = () => {
   const { mutate: logout } = useLogout();
   const { showSuccess, showError, showInfo } = useToast();
   const { language, setLanguage, t } = useLanguage();
+  const { mode, setColorMode } = useColorMode();
 
   // ── 1. Change Password State ─────────────────────────────
   const [currentPassword, setCurrentPassword] = useState("");
@@ -542,6 +547,171 @@ export const SettingsView: React.FC = () => {
           {t("settings.subtitle", "Manage your language preferences, invite family members with tailored roles, and manage your account security.")}
         </Typography>
       </Box>
+
+      {/* 0. Appearance & Color Theme Section */}
+      <Card
+        sx={{
+          p: { xs: 2.5, sm: 3 },
+          borderRadius: 1.5,
+          border: "1px solid",
+          borderColor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)"),
+          bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.7)" : "#ffffff"),
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5, flexWrap: "wrap", gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            {mode === "dark" ? (
+              <MoonIcon sx={{ color: "primary.main" }} />
+            ) : (
+              <SunIcon sx={{ color: "warning.main" }} />
+            )}
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
+              {t("settings.themeTitle", "Appearance & Color Theme (Tema)")}
+            </Typography>
+          </Box>
+          <Chip
+            size="small"
+            label={mode === "dark" ? "Dark Mode Active" : "Light Mode Active"}
+            color={mode === "dark" ? "default" : "primary"}
+            sx={{ fontWeight: 700, fontSize: "0.72rem", height: 24 }}
+          />
+        </Box>
+        <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 2.5 }}>
+          {t("settings.themeSubtitle", "Choose between crisp clean light mode or high-contrast zinc dark mode. Your preference syncs automatically across all screens.")}
+        </Typography>
+
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Paper
+              elevation={0}
+              onClick={() => setColorMode("light")}
+              sx={{
+                p: 2,
+                cursor: "pointer",
+                borderRadius: 1.5,
+                border: "2px solid",
+                borderColor: mode === "light" ? "primary.main" : "divider",
+                bgcolor: mode === "light" ? (theme) => (theme.palette.mode === "light" ? "rgba(16, 185, 129, 0.06)" : "rgba(16, 185, 129, 0.12)") : "background.paper",
+                transition: "all 0.15s ease-in-out",
+                "&:hover": {
+                  borderColor: "primary.main",
+                  transform: "translateY(-1px)",
+                },
+                display: "flex",
+                flexDirection: "column",
+                gap: 1.5,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Avatar sx={{ bgcolor: "warning.light", color: "warning.dark", width: 36, height: 36 }}>
+                    <SunIcon fontSize="small" />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                      Light Mode (Maliwanag)
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                      Crisp white surfaces, maximum daytime legibility
+                    </Typography>
+                  </Box>
+                </Box>
+                <Radio
+                  checked={mode === "light"}
+                  onChange={() => setColorMode("light")}
+                  value="light"
+                  name="color-mode-radio"
+                  color="primary"
+                />
+              </Box>
+              <Box
+                sx={{
+                  height: 48,
+                  borderRadius: 1,
+                  bgcolor: "#ffffff",
+                  border: "1px solid #e4e4e7",
+                  p: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <Box sx={{ width: 24, height: "100%", bgcolor: "#f4f4f5", borderRadius: 0.5 }} />
+                <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 0.5 }}>
+                  <Box sx={{ width: "40%", height: 8, bgcolor: "#18181b", borderRadius: 0.5 }} />
+                  <Box sx={{ width: "70%", height: 6, bgcolor: "#a1a1aa", borderRadius: 0.5 }} />
+                </Box>
+                <Box sx={{ width: 14, height: 14, borderRadius: "50%", bgcolor: "#10b981" }} />
+              </Box>
+            </Paper>
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Paper
+              elevation={0}
+              onClick={() => setColorMode("dark")}
+              sx={{
+                p: 2,
+                cursor: "pointer",
+                borderRadius: 1.5,
+                border: "2px solid",
+                borderColor: mode === "dark" ? "primary.main" : "divider",
+                bgcolor: mode === "dark" ? (theme) => (theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.12)" : "rgba(16, 185, 129, 0.06)") : "background.paper",
+                transition: "all 0.15s ease-in-out",
+                "&:hover": {
+                  borderColor: "primary.main",
+                  transform: "translateY(-1px)",
+                },
+                display: "flex",
+                flexDirection: "column",
+                gap: 1.5,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Avatar sx={{ bgcolor: "rgba(255,255,255,0.08)", color: "text.primary", width: 36, height: 36 }}>
+                    <MoonIcon fontSize="small" />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                      Dark Mode (Madilim)
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                      Deep zinc tones, easy on the eyes in low light
+                    </Typography>
+                  </Box>
+                </Box>
+                <Radio
+                  checked={mode === "dark"}
+                  onChange={() => setColorMode("dark")}
+                  value="dark"
+                  name="color-mode-radio"
+                  color="primary"
+                />
+              </Box>
+              <Box
+                sx={{
+                  height: 48,
+                  borderRadius: 1,
+                  bgcolor: "#09090b",
+                  border: "1px solid #27272a",
+                  p: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <Box sx={{ width: 24, height: "100%", bgcolor: "#18181b", borderRadius: 0.5 }} />
+                <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 0.5 }}>
+                  <Box sx={{ width: "40%", height: 8, bgcolor: "#f4f4f5", borderRadius: 0.5 }} />
+                  <Box sx={{ width: "70%", height: 6, bgcolor: "#71717a", borderRadius: 0.5 }} />
+                </Box>
+                <Box sx={{ width: 14, height: 14, borderRadius: "50%", bgcolor: "#10b981" }} />
+              </Box>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Card>
 
       {/* 1. Language Preferences Section */}
       <Card
@@ -1736,7 +1906,7 @@ export const SettingsView: React.FC = () => {
               </Box>
 
               {/* Live Preview Frame */}
-              <Box sx={{ borderRadius: 2, overflow: "hidden", border: "1px solid", borderColor: "divider", maxHeight: 380, bgcolor: "#0b0e14" }}>
+              <Box sx={{ borderRadius: 2, overflow: "hidden", border: "1px solid", borderColor: "divider", maxHeight: 380, bgcolor: (theme) => (theme.palette.mode === "dark" ? "#09090b" : "#f4f4f5") }}>
                 <iframe
                   title="Branded Email Preview"
                   srcDoc={

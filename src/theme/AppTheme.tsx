@@ -16,24 +16,31 @@ interface AppThemeProps {
 export const ColorModeContext = React.createContext<{
   mode: 'light' | 'dark';
   toggleColorMode: () => void;
+  setColorMode: (mode: 'light' | 'dark') => void;
 }>({
-  mode: 'dark',
+  mode: 'light',
   toggleColorMode: () => {},
+  setColorMode: () => {},
 });
 
 export const useColorMode = () => React.useContext(ColorModeContext);
 
 export function AppTheme({ children, mode: controlledMode }: AppThemeProps) {
   const [mode, setMode] = React.useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('powerforecast_theme');
-    return saved === 'light' || saved === 'dark' ? saved : 'dark';
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('powerforecast_theme');
+      if (saved === 'dark' || saved === 'light') return saved;
+      // Default to light mode out-of-the-box
+      return 'light';
+    }
+    return 'light';
   });
 
   const activeMode = controlledMode || mode;
 
-  const toggleColorMode = React.useCallback(() => {
-    setMode((prev) => {
-      const next = prev === 'dark' ? 'light' : 'dark';
+  const setColorMode = React.useCallback((next: 'light' | 'dark') => {
+    setMode(next);
+    if (typeof window !== 'undefined') {
       localStorage.setItem('powerforecast_theme', next);
       document.documentElement.setAttribute('data-theme', next);
       if (next === 'dark') {
@@ -43,18 +50,37 @@ export function AppTheme({ children, mode: controlledMode }: AppThemeProps) {
         document.documentElement.classList.remove('dark');
         document.documentElement.classList.add('light');
       }
+    }
+  }, []);
+
+  const toggleColorMode = React.useCallback(() => {
+    setMode((prev) => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('powerforecast_theme', next);
+        document.documentElement.setAttribute('data-theme', next);
+        if (next === 'dark') {
+          document.documentElement.classList.remove('light');
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+        }
+      }
       return next;
     });
   }, []);
 
   React.useEffect(() => {
-    document.documentElement.setAttribute('data-theme', activeMode);
-    if (activeMode === 'dark') {
-      document.documentElement.classList.remove('light');
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.classList.add('light');
+    if (typeof window !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', activeMode);
+      if (activeMode === 'dark') {
+        document.documentElement.classList.remove('light');
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+      }
     }
   }, [activeMode]);
 
@@ -81,8 +107,9 @@ export function AppTheme({ children, mode: controlledMode }: AppThemeProps) {
     () => ({
       mode: activeMode,
       toggleColorMode,
+      setColorMode,
     }),
-    [activeMode, toggleColorMode]
+    [activeMode, toggleColorMode, setColorMode]
   );
 
   return (

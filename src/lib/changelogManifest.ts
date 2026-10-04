@@ -3,6 +3,36 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.2v",
+    version: "3.8.2v",
+    git_commit_tag: "3.8.2v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.2v - Default Light Mode & Email Branding Overhaul: Configured Light Mode as the primary out-of-the-box default theme across AppTheme, index.html, and CSS custom properties; redesigned universal HTML email templates (Auth, SMTP diagnostics, Surge & Budget warnings) to modern light aesthetic with crisp #ffffff cards, neutral #e4e4e7 borders, and emerald accents.",
+  },
+  {
+    id: "3.8.1v",
+    version: "3.8.1v",
+    git_commit_tag: "3.8.1v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.1v - Full Light Mode Support: Permanent and synchronized light mode access across Desktop Sidebar, Mobile Drawer, Header, and Account Settings; persistent localStorage state with FOUC prevention in index.html; adaptive contrast tokens across all Dashboard and Admin cards.",
+  },
+  {
+    id: "3.8.0v",
+    version: "3.8.0v",
+    git_commit_tag: "3.8.0v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.0v - Production-grade admin design revamp: Unified Stack Template & Google Stitch zinc color system, eliminated legacy teal/glow artifacts across sidebar, header, and mobile nav, created PageHeader, SectionCard, and StatCard primitives, and restructured the dashboard into an inverted pyramid hierarchy with right rail shortcuts and full tour compatibility",
+  },
+  {
     id: "3.7.2bv",
     version: "3.7.2bv",
     git_commit_tag: "3.7.2bv",
