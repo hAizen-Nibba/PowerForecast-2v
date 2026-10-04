@@ -51,7 +51,7 @@ import { SystemChangelogModal } from "../changelog/SystemChangelogModal";
 import { getMeralcoTariff, MeralcoTariffData, DEFAULT_MERALCO_TARIFF } from "../../lib/meralcoRateService";
 import { useRoom } from "../../context/RoomContext";
 import { switchOffCircuit } from "../../lib/sessionService";
-import { DEFAULT_EFFECTIVE_RATE } from "../../lib/dailyUsageService";
+import { DEFAULT_EFFECTIVE_RATE, computeLiveSessionMetrics, getApplianceEffectiveRunningWatts } from "../../lib/dailyUsageService";
 import { useColorMode } from "../../theme/AppTheme";
 import { tokens } from "../../theme/tokens";
 
@@ -144,18 +144,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const runningAppliances = appliances.filter((a) => a.is_currently_on);
-  const activeWattage = runningAppliances.reduce((acc, curr) => acc + curr.watts * (curr.quantity || 1), 0);
+  const activeWattage = runningAppliances.reduce((acc, curr) => {
+    if (!curr.last_turned_on_at) return acc + curr.watts * (curr.quantity || 1);
+    const start = new Date(curr.last_turned_on_at).getTime();
+    const diffMinutes = Math.max(0, (now - start) / 60000);
+    const telemetry = getApplianceEffectiveRunningWatts(curr, diffMinutes);
+    return acc + telemetry.effectiveWatts;
+  }, 0);
   const runningCount = runningAppliances.length;
   const effectiveRate = tariff.totalEffectiveRate || DEFAULT_EFFECTIVE_RATE;
 
   const getAccumulatedPesos = (app: UserAppliance) => {
     if (!app.is_currently_on || !app.last_turned_on_at) return 0;
-    const start = new Date(app.last_turned_on_at).getTime();
-    const diffSeconds = Math.max(0, (now - start) / 1000);
-    const totalWatts = app.watts * (app.quantity || 1);
-    const accumulatedKwh = (totalWatts / 1000) * (diffSeconds / 3600);
-    const rate = app.tariff_type === "commercial" ? 15.2 : effectiveRate;
-    return accumulatedKwh * rate;
+    const metrics = computeLiveSessionMetrics(app, now);
+    return metrics.sessionCost;
   };
 
   const getRunningDuration = (turnedOnAt?: string | null) => {
@@ -169,13 +171,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const handleStopCircuit = async (app: UserAppliance) => {
-    await switchOffCircuit(app, effectiveRate);
+    await switchOffCircuit(app);
     if (appliancesRes?.refetch) appliancesRes.refetch();
   };
 
   const handleStopAllCircuits = async () => {
     for (const app of runningAppliances) {
-      await switchOffCircuit(app, effectiveRate);
+      await switchOffCircuit(app);
     }
     if (appliancesRes?.refetch) appliancesRes.refetch();
   };

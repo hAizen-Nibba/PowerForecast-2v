@@ -14,7 +14,7 @@ import {
   triggerNotificationVibration,
 } from "../lib/notificationService";
 import { sendSurgeAlertEmail, sendEnergyBudgetAlertEmail } from "../lib/emailService";
-import { formatDateToKey } from "../lib/dailyUsageService";
+import { formatDateToKey, computeLiveSessionMetrics } from "../lib/dailyUsageService";
 import { fetchSimulatedUsageRange } from "../lib/simulationService";
 import { devLog } from "../lib/devLogger";
 
@@ -118,9 +118,10 @@ export function useNotifications({
           if (!sentAlertsRef.current.has(alertKey)) {
             sentAlertsRef.current.add(alertKey);
 
-            const hours = (elapsedMs / (3600 * 1000)).toFixed(1);
-            const kwh = ((app.watts * (app.quantity || 1) * (elapsedMs / (3600 * 1000))) / 1000).toFixed(2);
-            const cost = (parseFloat(kwh) * 14.8261).toFixed(2);
+            const metrics = computeLiveSessionMetrics(app, now);
+            const hours = (metrics.elapsedMs / (3600 * 1000)).toFixed(1);
+            const kwh = metrics.sessionKwh.toFixed(2);
+            const cost = metrics.sessionCost.toFixed(2);
             const urgency = isHeavy || parseFloat(hours) >= 3 ? "critical" : "high";
 
             sendNotification({

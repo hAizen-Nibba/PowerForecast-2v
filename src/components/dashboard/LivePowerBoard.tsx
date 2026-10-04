@@ -42,6 +42,8 @@ import {
   calculateCost,
   isComputerCategory,
   getApplianceEffectiveRunningWatts,
+  computeLiveSessionMetrics,
+  resolveApplianceRate,
 } from "../../lib/dailyUsageService";
 import {
   switchOnCircuit,
@@ -170,12 +172,8 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
 
   const getAccumulatedPesos = (app: UserAppliance) => {
     if (!app.is_currently_on || !app.last_turned_on_at) return 0;
-    const start = new Date(app.last_turned_on_at).getTime();
-    const diffSeconds = Math.max(0, (now - start) / 1000);
-    const telemetry = getApplianceEffectiveRunningWatts(app, diffSeconds / 60);
-    const accumulatedKwh = (telemetry.effectiveWatts / 1000) * (diffSeconds / 3600);
-    const effectiveRate = getEffectiveApplianceRate(app);
-    return accumulatedKwh * effectiveRate;
+    const metrics = computeLiveSessionMetrics(app, now);
+    return metrics.sessionCost;
   };
 
   return (
@@ -331,8 +329,9 @@ export const LivePowerBoard: React.FC<LivePowerBoardProps> = ({ onOpenAddModal }
               const isOn = app.is_currently_on;
               const totalWatts = app.watts * (app.quantity || 1);
               const appSpace = app.list_id ? spacesMap[app.list_id] : undefined;
-              const effectiveRate = app.tariff_type === "commercial" ? 15.2 : 14.8261;
-              const hourlyRate = ((totalWatts / 1000) * effectiveRate).toFixed(2);
+              const effectiveRate = resolveApplianceRate(app);
+              const runningTelemetry = getApplianceEffectiveRunningWatts(app, 0);
+              const hourlyRate = ((runningTelemetry.effectiveWatts / 1000) * effectiveRate).toFixed(2);
               const liveSpent = getAccumulatedPesos(app);
 
               return (

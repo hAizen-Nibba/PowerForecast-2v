@@ -15,6 +15,22 @@ import { getApplianceWorkloadWatts, PcWorkloadProfile } from "./pcHardwareServic
 export const DEFAULT_EFFECTIVE_RATE = 14.8261;
 
 /**
+ * Resolves the effective rate per kWh based on space/appliance tariff type or custom override
+ */
+export function resolveApplianceRate(
+  app?: Partial<UserAppliance> | null,
+  overrideRate?: number
+): number {
+  if (overrideRate !== undefined && overrideRate > 0) {
+    return overrideRate;
+  }
+  if (app?.tariff_type === "commercial") {
+    return 15.2;
+  }
+  return DEFAULT_EFFECTIVE_RATE; // 14.8261 PHP / kWh
+}
+
+/**
  * Formats a Date object into a YYYY-MM-DD string according to local timezone.
  */
 export function formatDateToKey(d: Date): string {
@@ -554,6 +570,182 @@ export function splitSessionAcrossDays(startTime: Date, endTime: Date): DaySessi
   return slices;
 }
 
+export interface LiveSessionSliceMetric {
+  dateKey: string;
+  hours: number;
+  sliceKwh: number;
+  sliceCost: number;
+  deltaKwh: number;
+  deltaCost: number;
+}
+
+export interface LiveSessionMetrics {
+  elapsedMs: number;
+  elapsedHours: number;
+  sessionKwh: number;
+  sessionCost: number;
+  rate: number;
+  telemetry: ApplianceRunningWattsTelemetry;
+  slices: LiveSessionSliceMetric[];
+  todayDeltaKwh: number;
+  todayDeltaCost: number;
+}
+
+/**
+ * Computes live active stopwatch telemetry, exact elapsed energy (kWh), and cost
+ * with unified mathematical parity across all UI bentos, forecasting actuals, and stop action.
+ */
+export function computeLiveSessionMetrics(
+  app: Partial<UserAppliance>,
+  nowMs: number = Date.now(),
+  options?: {
+    dailyRecords?: DailyApplianceUsage[];
+    overrideRate?: number;
+  }
+): LiveSessionMetrics {
+  const defaultTelemetry: ApplianceRunningWattsTelemetry = {
+    effectiveWatts: 0,
+    stage: "constant",
+    badgeText: "0W",
+    badgeColor: "default",
+  };
+
+  const rate = resolveApplianceRate(app, options?.overrideRate);
+
+  if (!app.is_currently_on || !app.last_turned_on_at) {
+    return {
+      elapsedMs: 0,
+      elapsedHours: 0,
+      sessionKwh: 0,
+      sessionCost: 0,
+      rate,
+      telemetry: defaultTelemetry,
+      slices: [],
+      todayDeltaKwh: 0,
+      todayDeltaCost: 0,
+    };
+  }
+
+  const start = new Date(app.last_turned_on_at);
+  if (isNaN(start.getTime())) {
+    return {
+      elapsedMs: 0,
+      elapsedHours: 0,
+      sessionKwh: 0,
+      sessionCost: 0,
+      rate,
+      telemetry: defaultTelemetry,
+      slices: [],
+      todayDeltaKwh: 0,
+      todayDeltaCost: 0,
+    };
+  }
+
+  const now = new Date(nowMs);
+  const diffMs = Math.max(0, now.getTime() - start.getTime());
+  const elapsedHours = diffMs / 3600000;
+  const elapsedMinutes = diffMs / 60000;
+
+  const telemetry = getApplianceEffectiveRunningWatts(app, elapsedMinutes);
+  const sessionKwh = calculateApplianceKwh(app, elapsedHours);
+  const sessionCost = calculateCost(sessionKwh, rate);
+
+  const rawSlices = splitSessionAcrossDays(start, now);
+  const todayKey = formatDateToKey(now);
+
+  const dailyRecords = options?.dailyRecords || [];
+
+  const slices: LiveSessionSliceMetric[] = rawSlices.map((slice) => {
+    const sliceKwh = calculateApplianceKwh(app, slice.hours);
+    const sliceCost = calculateCost(sliceKwh, rate);
+
+    // Find if a recorded row exists for this appliance and date
+    const existing = dailyRecords.find(
+      (r) => r.appliance_id === app.id && r.usage_date === slice.dateKey
+    );
+
+    let deltaKwh = sliceKwh;
+    let deltaCost = sliceCost;
+
+    if (existing && Number(existing.hours_used) > 0) {
+      const existingHours = Number(existing.hours_used);
+      const existingKwh = Number(existing.kwh_consumed) || 0;
+      const existingCost = Number(existing.estimated_cost) || 0;
+
+      const combinedHours = Math.min(24, existingHours + slice.hours);
+      const combinedKwh = calculateApplianceKwh(app, combinedHours);
+      const combinedCost = calculateCost(combinedKwh, rate);
+
+      deltaKwh = Math.max(0, combinedKwh - existingKwh);
+      deltaCost = Math.max(0, combinedCost - existingCost);
+    }
+
+    return {
+      dateKey: slice.dateKey,
+      hours: slice.hours,
+      sliceKwh,
+      sliceCost,
+      deltaKwh: Number(deltaKwh.toFixed(4)),
+      deltaCost: Number(deltaCost.toFixed(2)),
+    };
+  });
+
+  const todaySlice = slices.find((s) => s.dateKey === todayKey);
+  const todayDeltaKwh = todaySlice ? todaySlice.deltaKwh : 0;
+  const todayDeltaCost = todaySlice ? todaySlice.deltaCost : 0;
+
+  return {
+    elapsedMs: diffMs,
+    elapsedHours,
+    sessionKwh,
+    sessionCost,
+    rate,
+    telemetry,
+    slices,
+    todayDeltaKwh,
+    todayDeltaCost,
+  };
+}
+
+/**
+ * Computes aggregated live delta energy & cost for a list of running appliances
+ * matching an optional date filter (e.g. today or the active month).
+ */
+export function sumLiveDeltaForRange(
+  appliances: UserAppliance[],
+  nowMs: number = Date.now(),
+  dailyRecords: DailyApplianceUsage[] = [],
+  datePredicate?: (dateKey: string) => boolean,
+  overrideRate?: number
+): { deltaKwh: number; deltaCost: number; activeRunningCount: number; liveRunningWatts: number } {
+  let deltaKwh = 0;
+  let deltaCost = 0;
+  let activeRunningCount = 0;
+  let liveRunningWatts = 0;
+
+  for (const app of appliances) {
+    if (!app.is_currently_on || !app.last_turned_on_at) continue;
+    activeRunningCount++;
+
+    const metrics = computeLiveSessionMetrics(app, nowMs, { dailyRecords, overrideRate });
+    liveRunningWatts += metrics.telemetry.effectiveWatts;
+
+    for (const slice of metrics.slices) {
+      if (!datePredicate || datePredicate(slice.dateKey)) {
+        deltaKwh += slice.deltaKwh;
+        deltaCost += slice.deltaCost;
+      }
+    }
+  }
+
+  return {
+    deltaKwh: Number(deltaKwh.toFixed(3)),
+    deltaCost: Number(deltaCost.toFixed(2)),
+    activeRunningCount,
+    liveRunningWatts,
+  };
+}
+
 export interface TimeInterval {
   startHour: number;
   endHour: number;
@@ -1028,7 +1220,8 @@ export async function reconcileOvernightRunningStopwatches(
       for (const slice of pastSlices) {
         const sliceMinutes = Math.max(1, Math.round(slice.hours * 60));
         const sliceKwh = calculateApplianceKwh(app, slice.hours);
-        const sliceCost = calculateCost(sliceKwh, effectiveRate);
+        const appRate = resolveApplianceRate(app, effectiveRate !== DEFAULT_EFFECTIVE_RATE ? effectiveRate : undefined);
+        const sliceCost = calculateCost(sliceKwh, appRate);
 
         // 1. Insert completed log for yesterday/past day
         await supabaseClient.from("appliance_usage_logs").insert({
@@ -1053,7 +1246,7 @@ export async function reconcileOvernightRunningStopwatches(
         const currentHours = existing ? Number(existing.hours_used || 0) : 0;
         const totalHours = Math.max(0, Math.min(24, Number((currentHours + slice.hours).toFixed(2))));
         const kwh = calculateApplianceKwh(app, totalHours);
-        const cost = calculateCost(kwh, effectiveRate);
+        const cost = calculateCost(kwh, appRate);
 
         await supabaseClient.from("daily_appliance_usage").upsert(
           {
@@ -1154,7 +1347,7 @@ export function computeActualDayMetrics(
   dateKey: string,
   loggedUsageForDay: DailyApplianceUsage[],
   appliances: UserAppliance[],
-  effectiveRate: number = DEFAULT_EFFECTIVE_RATE
+  effectiveRate?: number
 ): ActualDayMetricSummary {
   const activeAppliances = appliances.filter((a) => a.is_active !== false);
   const targetApplianceIds = new Set(activeAppliances.map((a) => a.id));
@@ -1167,22 +1360,19 @@ export function computeActualDayMetrics(
   // Check if today and any circuit is actively running
   const todayKey = formatDateToKey(new Date());
   if (dateKey === todayKey) {
-    appliances.forEach((app) => {
-      if (app.is_currently_on && app.last_turned_on_at) {
-        hasActiveCircuits = true;
-        const start = new Date(app.last_turned_on_at);
-        const now = new Date();
-        if (!isNaN(start.getTime())) {
-          const slices = splitSessionAcrossDays(start, now);
-          const daySlice = slices.find((s) => s.dateKey === dateKey);
-          if (daySlice && daySlice.hours > 0) {
-            const appKwh = calculateApplianceKwh(app, daySlice.hours);
-            liveRunningKwh += appKwh;
-            liveRunningCost += calculateCost(appKwh, effectiveRate);
-          }
-        }
-      }
-    });
+    const runningAppliances = activeAppliances.filter((a) => a.is_currently_on && a.last_turned_on_at);
+    if (runningAppliances.length > 0) {
+      hasActiveCircuits = true;
+      const liveSummary = sumLiveDeltaForRange(
+        runningAppliances,
+        Date.now(),
+        filteredLogged,
+        (d) => d === dateKey,
+        effectiveRate
+      );
+      liveRunningKwh = liveSummary.deltaKwh;
+      liveRunningCost = liveSummary.deltaCost;
+    }
   }
 
   if (filteredLogged.length > 0 || liveRunningKwh > 0) {

@@ -2,12 +2,13 @@ import { createClient } from '@supabase/supabase-js';
 import { devLog } from './devLogger';
 
 export const SUPABASE_URL =
-  import.meta.env.VITE_SUPABASE_URL || 'https://ezjzuggagfnkjmbcakta.supabase.co';
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || 'https://ezjzuggagfnkjmbcakta.supabase.co';
 export const SUPABASE_ANON_KEY =
-  import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_gfiWW-NqpccAsARI5pO4Kg_qzOTY6Az';
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || 'sb_publishable_gfiWW-NqpccAsARI5pO4Kg_qzOTY6Az';
 
 // Application Version - bump on every deployment according to user versioning rule
-export const APP_VERSION = import.meta.env.VITE_APP_VERSION || '3.8.9v';
+export const APP_VERSION =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_APP_VERSION) || '3.8.10v';
 
 export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {

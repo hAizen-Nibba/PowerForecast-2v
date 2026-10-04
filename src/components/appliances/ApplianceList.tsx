@@ -48,6 +48,7 @@ import {
   isCompressorInverterCategory,
   isComputerCategory,
   getApplianceEffectiveRunningWatts,
+  computeLiveSessionMetrics,
 } from "../../lib/dailyUsageService";
 import { PcWorkloadProfile } from "../../lib/pcHardwareService";
 import { PcWorkloadModeModal } from "./PcWorkloadModeModal";
@@ -190,12 +191,8 @@ export const ApplianceList: React.FC<ApplianceListProps> = () => {
 
   const getLiveSpent = (app: UserAppliance) => {
     if (!app.is_currently_on || !app.last_turned_on_at) return 0;
-    const start = new Date(app.last_turned_on_at).getTime();
-    const diffSeconds = Math.max(0, (now - start) / 1000);
-    const telemetry = getApplianceEffectiveRunningWatts(app, diffSeconds / 60);
-    const accumulatedKwh = (telemetry.effectiveWatts / 1000) * (diffSeconds / 3600);
-    const rate = getEffectiveApplianceRate(app);
-    return accumulatedKwh * rate;
+    const metrics = computeLiveSessionMetrics(app, now);
+    return metrics.sessionCost;
   };
 
   // First-time space submission handler

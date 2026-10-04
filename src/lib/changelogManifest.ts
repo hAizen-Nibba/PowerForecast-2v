@@ -3,6 +3,16 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.10v",
+    version: "3.8.10v",
+    git_commit_tag: "3.8.10v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.10v - Harmonize live stopwatch and predictive forecasting calculations with unified live session engine and tariff parity",
+  },
+  {
     id: "3.8.9v",
     version: "3.8.9v",
     git_commit_tag: "3.8.9v",

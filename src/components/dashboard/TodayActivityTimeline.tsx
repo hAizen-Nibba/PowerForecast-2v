@@ -27,8 +27,10 @@ import { UserAppliance, ApplianceUsageLog, DailyApplianceUsage } from "../../typ
 import {
   formatDateToKey,
   calculateKwh,
+  calculateApplianceKwh,
   calculateCost,
   DEFAULT_EFFECTIVE_RATE,
+  resolveApplianceRate,
   splitSessionAcrossDays,
   deductSessionDailyUsage,
   accumulateLiveSessionDailyUsage,
@@ -191,12 +193,14 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
           ? new Date(block.rawLog.ended_at)
           : new Date(oldStart.getTime() + oldMinutes * 60000);
 
+        const appRate = resolveApplianceRate(appliance);
+
         await deductSessionDailyUsage({
           appliance_id: appliance.id,
           durationMinutes: oldMinutes,
           watts: appliance.watts,
           quantity: appliance.quantity || 1,
-          effectiveRate: DEFAULT_EFFECTIVE_RATE,
+          effectiveRate: appRate,
           user_id: appliance.user_id || null,
           startTime: oldStart,
           endTime: oldEnd,
@@ -218,7 +222,7 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
           durationMinutes,
           watts: appliance.watts,
           quantity: appliance.quantity || 1,
-          effectiveRate: DEFAULT_EFFECTIVE_RATE,
+          effectiveRate: appRate,
           user_id: appliance.user_id || null,
           startTime: start,
           endTime: end,
@@ -278,8 +282,9 @@ export const TodayActivityTimeline: React.FC<TodayActivityTimelineProps> = ({ ap
         const matchingSlice = slices.find((s) => s.dateKey === todayKey);
 
         if (matchingSlice) {
-          const liveKwh = calculateKwh(app.watts, matchingSlice.hours, app.quantity || 1);
-          const liveCost = calculateCost(liveKwh, DEFAULT_EFFECTIVE_RATE);
+          const liveKwh = calculateApplianceKwh(app, matchingSlice.hours);
+          const liveRate = resolveApplianceRate(app);
+          const liveCost = calculateCost(liveKwh, liveRate);
 
           sessionBlocks.push({
             id: `live-${app.id}`,

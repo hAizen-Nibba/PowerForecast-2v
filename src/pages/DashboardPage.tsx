@@ -41,7 +41,7 @@ import { calculateMeralcoBill } from "../lib/meralcoCalculator";
 import { useNotifications } from "../hooks/useNotifications";
 import { useLanguage } from "../context/LanguageContext";
 import { useToast } from "../components/common/ToastProvider";
-import { formatDateToKey, DEFAULT_EFFECTIVE_RATE, getApplianceEffectiveRunningWatts } from "../lib/dailyUsageService";
+import { formatDateToKey, DEFAULT_EFFECTIVE_RATE, getApplianceEffectiveRunningWatts, sumLiveDeltaForRange } from "../lib/dailyUsageService";
 import { getMeralcoTariff, MeralcoTariffData, DEFAULT_MERALCO_TARIFF } from "../lib/meralcoRateService";
 import { getEffectiveApplianceRate } from "../lib/sessionService";
 import { useRoom } from "../context/RoomContext";
@@ -97,14 +97,20 @@ export const DashboardPage: React.FC = () => {
     return () => clearInterval(interval);
   }, [appliances]);
 
-  // Synchronize circuit toggles across views
+  // Synchronize circuit toggles and session sync across views
   useEffect(() => {
     const handleCircuitToggled = () => {
       if (listResponse?.refetch) listResponse.refetch();
       if (dailyUsageRes?.refetch) dailyUsageRes.refetch();
     };
     window.addEventListener("powerforecast_circuit_toggled", handleCircuitToggled);
-    return () => window.removeEventListener("powerforecast_circuit_toggled", handleCircuitToggled);
+    window.addEventListener("powerforecast_session_sync", handleCircuitToggled);
+    window.addEventListener("powerforecast_stopwatch_rollover", handleCircuitToggled);
+    return () => {
+      window.removeEventListener("powerforecast_circuit_toggled", handleCircuitToggled);
+      window.removeEventListener("powerforecast_session_sync", handleCircuitToggled);
+      window.removeEventListener("powerforecast_stopwatch_rollover", handleCircuitToggled);
+    };
   }, [listResponse, dailyUsageRes]);
 
   const handleOpenAddModal = () => {
@@ -128,23 +134,15 @@ export const DashboardPage: React.FC = () => {
   }, 0);
 
   // Today's Measured Spend = saved daily_appliance_usage records today + live running stopwatches
-  const liveSessionCost = runningAppliances.reduce((acc, curr) => {
-    if (!curr.last_turned_on_at) return acc;
-    const start = new Date(curr.last_turned_on_at).getTime();
-    const diffSeconds = Math.max(0, (now - start) / 1000);
-    const telemetry = getApplianceEffectiveRunningWatts(curr, diffSeconds / 60);
-    const accumulatedKwh = (telemetry.effectiveWatts / 1000) * (diffSeconds / 3600);
-    const rate = getEffectiveApplianceRate(curr);
-    return acc + accumulatedKwh * rate;
-  }, 0);
-
-  const liveSessionKwh = runningAppliances.reduce((acc, curr) => {
-    if (!curr.last_turned_on_at) return acc;
-    const start = new Date(curr.last_turned_on_at).getTime();
-    const diffSeconds = Math.max(0, (now - start) / 1000);
-    const telemetry = getApplianceEffectiveRunningWatts(curr, diffSeconds / 60);
-    return acc + (telemetry.effectiveWatts / 1000) * (diffSeconds / 3600);
-  }, 0);
+  const todayKeyStr = formatDateToKey(new Date(now));
+  const liveSummary = sumLiveDeltaForRange(
+    runningAppliances,
+    now,
+    todayUsageRecords,
+    (d) => d === todayKeyStr
+  );
+  const liveSessionCost = liveSummary.deltaCost;
+  const liveSessionKwh = liveSummary.deltaKwh;
 
   const loggedTodayCost = todayUsageRecords.reduce((acc, curr) => acc + (Number(curr.estimated_cost) || 0), 0);
   const loggedTodayKwh = todayUsageRecords.reduce((acc, curr) => acc + (Number(curr.kwh_consumed) || 0), 0);

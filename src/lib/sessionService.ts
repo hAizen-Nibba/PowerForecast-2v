@@ -8,6 +8,8 @@ import {
   deductSessionDailyUsage,
   savePastSessionWithAllocation,
   DEFAULT_EFFECTIVE_RATE,
+  resolveApplianceRate,
+  computeLiveSessionMetrics,
 } from "./dailyUsageService";
 import { getScopedStorage, setScopedStorage } from "../providers/dataProvider";
 import { PcWorkloadProfile } from "./pcHardwareService";
@@ -19,10 +21,7 @@ const activeSessionLocks = new Set<string>();
  * Resolves the effective rate per kWh based on space/appliance tariff type
  */
 export function getEffectiveApplianceRate(app: UserAppliance): number {
-  if (app.tariff_type === "commercial") {
-    return 15.2;
-  }
-  return DEFAULT_EFFECTIVE_RATE; // 14.8261 PHP / kWh
+  return resolveApplianceRate(app);
 }
 
 /**
@@ -202,7 +201,8 @@ export async function switchOffCircuit(
   }
 
   activeSessionLocks.add(app.id);
-  const rate = effectiveRate || getEffectiveApplianceRate(app);
+  const end = new Date();
+  const rate = resolveApplianceRate(app, effectiveRate);
 
   try {
     let durationMinutes = 0;
@@ -211,14 +211,13 @@ export async function switchOffCircuit(
 
     if (app.last_turned_on_at) {
       const start = new Date(app.last_turned_on_at);
-      const end = new Date();
 
       if (!isNaN(start.getTime())) {
+        const liveMetrics = computeLiveSessionMetrics(app, end.getTime(), { overrideRate: rate });
         const diffMs = Math.max(1000, end.getTime() - start.getTime());
         durationMinutes = Math.max(1, Math.round(diffMs / 60000));
-        const durationHours = diffMs / 3600000;
-        appKwh = calculateApplianceKwh(app, durationHours);
-        appCost = calculateCost(appKwh, rate);
+        appKwh = liveMetrics.sessionKwh;
+        appCost = liveMetrics.sessionCost;
 
         const activeWorkload = app.active_workload_mode || app.ai_metadata?.active_workload_mode || null;
         const activeWatts = app.active_session_watts || app.ai_metadata?.active_session_watts || null;

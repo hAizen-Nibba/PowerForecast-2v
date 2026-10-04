@@ -29,7 +29,13 @@ import { UserAppliance, ApplianceList, DailyApplianceUsage, ApplianceUsageLog, S
 import { useList } from "@refinedev/core";
 import { useTheme } from "@mui/material/styles";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
-import { calculateApplianceKwh, calculateCost, DEFAULT_EFFECTIVE_RATE } from "../../lib/dailyUsageService";
+import {
+  calculateApplianceKwh,
+  calculateCost,
+  DEFAULT_EFFECTIVE_RATE,
+  sumLiveDeltaForRange,
+} from "../../lib/dailyUsageService";
+import { useLiveTicker } from "../../hooks/useLiveTicker";
 import { useLanguage } from "../../context/LanguageContext";
 import { useToast } from "../common/ToastProvider";
 import { saveSimulatedAppliance } from "../../lib/simulationService";
@@ -102,7 +108,7 @@ export const ForecastingView: React.FC = () => {
     pagination: { mode: "off" },
   }) as any;
 
-  // Synchronize circuit toggles and simulation updates across views
+  // Synchronize circuit toggles, stop actions, and simulation updates across views
   useEffect(() => {
     const handleUpdate = () => {
       if (dailyUsageRes?.refetch) dailyUsageRes.refetch();
@@ -110,9 +116,13 @@ export const ForecastingView: React.FC = () => {
       if (appliancesRes?.refetch) appliancesRes.refetch();
     };
     window.addEventListener("powerforecast_circuit_toggled", handleUpdate);
+    window.addEventListener("powerforecast_session_sync", handleUpdate);
+    window.addEventListener("powerforecast_stopwatch_rollover", handleUpdate);
     window.addEventListener("powerforecast_simulation_updated", handleUpdate);
     return () => {
       window.removeEventListener("powerforecast_circuit_toggled", handleUpdate);
+      window.removeEventListener("powerforecast_session_sync", handleUpdate);
+      window.removeEventListener("powerforecast_stopwatch_rollover", handleUpdate);
       window.removeEventListener("powerforecast_simulation_updated", handleUpdate);
     };
   }, [dailyUsageRes, simulatedUsageRes, appliancesRes]);
@@ -123,13 +133,8 @@ export const ForecastingView: React.FC = () => {
   const simulatedRecords: SimulatedApplianceUsage[] = simulatedUsageRes?.data?.data || simulatedUsageRes?.result?.data || [];
 
   // Live 1-second ticker for running stopwatches
-  const [liveNow, setLiveNow] = useState<number>(Date.now());
-  useEffect(() => {
-    const hasRunning = appliances.some((a) => a.is_currently_on);
-    if (!hasRunning) return;
-    const interval = setInterval(() => setLiveNow(Date.now()), 1000);
-    return () => clearInterval(interval);
-  }, [appliances]);
+  const hasRunningCircuits = appliances.some((a) => a.is_currently_on);
+  const liveNow = useLiveTicker(hasRunningCircuits);
 
   // Filter target appliances based on space selection (excluding blacklisted / inactive appliances)
   const allSpaceAppliances = useMemo(() => {
@@ -165,7 +170,7 @@ export const ForecastingView: React.FC = () => {
   const activeSpace = spaces.find((s) => s.id === selectedSpaceId);
   const tariffType: "residential" | "commercial" = activeSpace?.tariff_type || "residential";
 
-  // 2. Month-To-Date (MTD) Actual Logged Telemetry
+  // 2. Month-To-Date (MTD) Actual Logged Telemetry with 100% Stopwatch Parity
   const mtdActuals = useMemo(() => {
     let actualKwh = 0;
     let actualCost = 0;
@@ -181,30 +186,22 @@ export const ForecastingView: React.FC = () => {
       }
     });
 
-    // Factor in live currently running stopwatch sessions for Today
-    const runningTargetApps = targetAppliances.filter((a) => a.is_currently_on);
-    let liveSessionKwh = 0;
-    let liveSessionCost = 0;
+    // Factor in live currently running stopwatch sessions for the active month using unified engine
+    const runningTargetApps = targetAppliances.filter((a) => a.is_currently_on && a.last_turned_on_at);
+    const liveMonthSummary = sumLiveDeltaForRange(
+      runningTargetApps,
+      liveNow,
+      dailyRecords,
+      (dateKey) => dateKey.startsWith(activeMonthKey)
+    );
 
-    runningTargetApps.forEach((curr) => {
-      if (curr.last_turned_on_at) {
-        const start = new Date(curr.last_turned_on_at).getTime();
-        const diffSeconds = Math.max(0, (liveNow - start) / 1000);
-        const totalWatts = curr.watts * (curr.quantity || 1);
-        const kwh = (totalWatts / 1000) * (diffSeconds / 3600);
-        const rate = curr.tariff_type === "commercial" ? 15.2 : 14.8261;
-        liveSessionKwh += kwh;
-        liveSessionCost += kwh * rate;
-      }
-    });
-
-    if (runningTargetApps.length > 0) {
+    if (runningTargetApps.length > 0 && (liveMonthSummary.deltaKwh > 0 || liveMonthSummary.deltaCost > 0)) {
       const todayStr = `${activeMonthKey}-${String(now.getDate()).padStart(2, "0")}`;
       loggedDatesSet.add(todayStr);
     }
 
-    actualKwh += liveSessionKwh;
-    actualCost += liveSessionCost;
+    actualKwh += liveMonthSummary.deltaKwh;
+    actualCost += liveMonthSummary.deltaCost;
 
     const loggedDaysCount = loggedDatesSet.size;
     const avgDailyLoggedKwh = loggedDaysCount > 0 ? actualKwh / loggedDaysCount : 0;
