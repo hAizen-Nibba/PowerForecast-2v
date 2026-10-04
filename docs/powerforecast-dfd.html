@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PowerForecast Refine — Complete Gane &amp; Sarson Data Flow Diagrams</title>
+  <title>PowerForecast Refine — Architecture & Gane & Sarson DFD v3.7</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -12,9 +12,9 @@
     :root {
       --bg-canvas: #f1f5f9;
       --bg-sheet: #ffffff;
-      --border-sheet: #e2e8f0;
-      --text-main: #1e293b;
-      --text-muted: #64748b;
+      --border-sheet: #cbd5e1;
+      --text-main: #0f172a;
+      --text-muted: #475569;
       --toolbar-bg: #ffffff;
       --toolbar-border: #e2e8f0;
       --btn-bg: #f8fafc;
@@ -23,27 +23,27 @@
       --btn-hover-bg: #e2e8f0;
       --tab-active-bg: #2563eb;
       --tab-active-text: #ffffff;
-      --tab-inactive-bg: #f1f5f9;
-      --tab-inactive-text: #64748b;
+      --tab-inactive-bg: #e2e8f0;
+      --tab-inactive-text: #475569;
       --shadow-sheet: 0 10px 25px -5px rgba(0,0,0,.08), 0 8px 10px -6px rgba(0,0,0,.04);
     }
     [data-theme="dark"] {
-      --bg-canvas: #0f172a;
-      --bg-sheet: #1e293b;
-      --border-sheet: #334155;
+      --bg-canvas: #09092e;
+      --bg-sheet: #0e0e38;
+      --border-sheet: #222560;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
-      --toolbar-bg: #1e293b;
-      --toolbar-border: #334155;
-      --btn-bg: #334155;
-      --btn-border: #475569;
+      --toolbar-bg: #0b0b30;
+      --toolbar-border: #1e2050;
+      --btn-bg: #191b4d;
+      --btn-border: #2a2d70;
       --btn-text: #e2e8f0;
-      --btn-hover-bg: #475569;
+      --btn-hover-bg: #262968;
       --tab-active-bg: #3b82f6;
       --tab-active-text: #ffffff;
-      --tab-inactive-bg: #1e293b;
+      --tab-inactive-bg: #141644;
       --tab-inactive-text: #94a3b8;
-      --shadow-sheet: 0 10px 25px -5px rgba(0,0,0,.4);
+      --shadow-sheet: 0 10px 25px -5px rgba(0,0,0,.5);
     }
 
     /* ───────── RESET & BASE ───────── */
@@ -57,6 +57,7 @@
     .badge{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:9999px;letter-spacing:.2px}
     .badge-method{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
     [data-theme="dark"] .badge-method{background:#1e3a8a;color:#93c5fd;border-color:#2563eb}
+    .badge-new{background:#ecfdf5;color:#047857;border:1px solid #a7f3d0}
     .controls-section{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
     .btn{display:inline-flex;align-items:center;gap:5px;background:var(--btn-bg);color:var(--btn-text);border:1px solid var(--btn-border);border-radius:6px;padding:6px 10px;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;text-decoration:none;font-family:inherit}
     .btn:hover{background:var(--btn-hover-bg);border-color:var(--text-muted)}
@@ -64,61 +65,72 @@
     .btn-primary:hover{background:#1d4ed8}
 
     /* ───────── TAB NAVIGATION ───────── */
-    .tab-nav{width:100%;max-width:1200px;padding:20px 20px 0;display:flex;gap:4px;flex-wrap:wrap}
-    .tab-btn{padding:8px 16px;font-size:12.5px;font-weight:600;border:1px solid var(--border-sheet);border-bottom:none;border-radius:8px 8px 0 0;background:var(--tab-inactive-bg);color:var(--tab-inactive-text);cursor:pointer;transition:all .15s;font-family:inherit}
+    .tab-nav{width:100%;max-width:1280px;padding:20px 20px 0;display:flex;gap:5px;flex-wrap:wrap}
+    .tab-btn{padding:9px 16px;font-size:12.5px;font-weight:600;border:1px solid var(--border-sheet);border-bottom:none;border-radius:8px 8px 0 0;background:var(--tab-inactive-bg);color:var(--tab-inactive-text);cursor:pointer;transition:all .15s;font-family:inherit}
     .tab-btn.active{background:var(--tab-active-bg);color:var(--tab-active-text);border-color:var(--tab-active-bg)}
     .tab-btn:hover:not(.active){background:var(--btn-hover-bg);color:var(--text-main)}
 
     /* ───────── DOCUMENT VIEWPORT ───────── */
-    .document-viewport{width:100%;max-width:1200px;padding:0 20px}
+    .document-viewport{width:100%;max-width:1280px;padding:0 20px}
     .tab-panel{display:none}
     .tab-panel.active{display:block}
 
     .sheet-card{width:100%;background:var(--bg-sheet);border:1px solid var(--border-sheet);border-radius:0 8px 8px 8px;box-shadow:var(--shadow-sheet);padding:24px;position:relative;overflow:hidden}
     .svg-container{width:100%;display:flex;justify-content:center;cursor:grab;user-select:none;overflow:hidden}
     .svg-container:active{cursor:grabbing}
-    .svg-container svg{width:100%;height:auto;max-height:80vh;transition:transform .2s cubic-bezier(.16,1,.3,1);transform-origin:center center}
+    .svg-container svg{width:100%;height:auto;max-height:82vh;transition:transform .2s cubic-bezier(.16,1,.3,1);transform-origin:center center}
+
+    /* ───────── SVG SHARED STYLES ───────── */
+    .dfd-svg .title-main{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:30px;font-weight:800;fill:#1e293b;letter-spacing:-.5px}
+    .dfd-svg .title-sub{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:13.5px;fill:#475569}
+    [data-theme="dark"] .dfd-svg .title-main{fill:#f8fafc}
+    [data-theme="dark"] .dfd-svg .title-sub{fill:#94a3b8}
+
+    .dfd-svg .entity-box{fill:#a4c2f4;stroke:#4f7ca8;stroke-width:1.6px}
+    .dfd-svg .entity-text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:12.5px;font-weight:700;fill:#102a45;text-anchor:middle}
+    .dfd-svg .entity-sub{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:10.5px;font-weight:600;fill:#26486a;text-anchor:middle}
+
+    .dfd-svg .proc-bg{fill:#ffffff;stroke:#3b82f6;stroke-width:1.6px;rx:8px;ry:8px}
+    .dfd-svg .proc-header{fill:#bfdbfe;stroke:#3b82f6;stroke-width:1.6px}
+    .dfd-svg .proc-bottom{fill:#bfdbfe;stroke:#3b82f6;stroke-width:1.6px}
+    .dfd-svg .proc-id-box{fill:#3b82f6;stroke:#2563eb;stroke-width:1.4px;rx:3px}
+    .dfd-svg .proc-id-text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:13px;font-weight:800;fill:#ffffff;text-anchor:middle}
+    .dfd-svg .proc-name{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:12.5px;font-weight:700;fill:#0f172a;text-anchor:middle}
+
+    .dfd-svg .store-id-box{fill:#64748b;stroke:#475569;stroke-width:1.6px}
+    .dfd-svg .store-id-text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:12px;font-weight:800;fill:#ffffff;text-anchor:middle}
+    .dfd-svg .store-body{fill:#cbd5e1;stroke:#64748b;stroke-width:1.6px}
+    .dfd-svg .store-name{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:11.5px;font-weight:700;fill:#0f172a;text-anchor:middle}
+
+    .dfd-svg .flow-line{fill:none;stroke:#dc2626;stroke-width:1.6px;stroke-linejoin:round;stroke-linecap:round}
+    .dfd-svg .flow-text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:8.5px;font-weight:700;fill:#1e293b;letter-spacing:.3px}
+    [data-theme="dark"] .dfd-svg .flow-text{fill:#e2e8f0}
+
+    .dfd-svg .context-process{fill:#dbeafe;stroke:#2563eb;stroke-width:2.5px}
+    .dfd-svg .context-text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:14.5px;font-weight:800;fill:#1e3a8a;text-anchor:middle}
+    .dfd-svg .context-id{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:11px;font-weight:800;fill:#2563eb;text-anchor:middle}
+    .dfd-svg .footer-text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:8.5px;font-weight:600;fill:#94a3b8;text-anchor:end;letter-spacing:.5px}
 
     /* ───────── SPEC TABLE ───────── */
-    .docs-section{width:100%;max-width:1200px;margin-top:28px;background:var(--bg-sheet);border:1px solid var(--border-sheet);border-radius:8px;padding:28px;box-shadow:var(--shadow-sheet)}
+    .docs-section{width:100%;max-width:1280px;margin-top:28px;background:var(--bg-sheet);border:1px solid var(--border-sheet);border-radius:8px;padding:28px;box-shadow:var(--shadow-sheet)}
     .docs-header{font-size:18px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:10px}
     .docs-sub{font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.5}
     .legend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:24px}
     .legend-card{border:1px solid var(--border-sheet);border-radius:6px;padding:14px;background:var(--btn-bg)}
     .legend-title{font-size:13px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px}
     .legend-swatch{width:13px;height:13px;border-radius:3px;display:inline-block}
-    .swatch-entity{background:#a4c2f4;border:1.5px solid #6b97c2}
-    .swatch-process{background:#fff;border:1.5px solid #6b97c2}
-    .swatch-store{background:#b8d4f8;border:1.5px solid #8e9aaf}
-    .swatch-flow{background:#c45d73}
-    .swatch-context{background:#dbeafe;border:1.5px solid #3b82f6;border-radius:50%}
+    .swatch-entity{background:#a4c2f4;border:1.5px solid #4f7ca8}
+    .swatch-process{background:#fff;border:1.5px solid #3b82f6}
+    .swatch-store{background:#cbd5e1;border:1.5px solid #64748b}
+    .swatch-flow{background:#dc2626}
+    .swatch-context{background:#dbeafe;border:1.5px solid #2563eb;border-radius:50%}
     .legend-desc{font-size:11.5px;color:var(--text-muted);line-height:1.5}
     .spec-table{width:100%;border-collapse:collapse;font-size:12px;text-align:left;margin-top:14px}
     .spec-table th,.spec-table td{padding:9px 12px;border-bottom:1px solid var(--border-sheet)}
     .spec-table th{background:var(--btn-bg);font-weight:600;color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
     .tag-id{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11.5px;padding:2px 6px;background:#e2e8f0;border-radius:4px;color:#334155}
-    [data-theme="dark"] .tag-id{background:#334155;color:#cbd5e1}
-
-    /* ───────── SVG SHARED STYLES ───────── */
-    .dfd-svg .title-main{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:32px;font-weight:800;fill:#222b35;letter-spacing:-.5px}
-    .dfd-svg .title-sub{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:14px;fill:#4a5568}
-    .dfd-svg .entity-box{fill:#a4c2f4;stroke:#6b97c2;stroke-width:1.6px}
-    .dfd-svg .entity-text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:13px;font-weight:600;fill:#1c3550;text-anchor:middle}
-    .dfd-svg .proc-bg{fill:#fff;stroke:#6b97c2;stroke-width:1.6px;rx:8px;ry:8px}
-    .dfd-svg .proc-header{fill:#a4c2f4;stroke:#6b97c2;stroke-width:1.6px}
-    .dfd-svg .proc-bottom{fill:#a4c2f4;stroke:#6b97c2;stroke-width:1.6px}
-    .dfd-svg .proc-id-text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:13.5px;font-weight:700;fill:#1a3652;text-anchor:middle}
-    .dfd-svg .proc-name{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:13px;font-weight:600;fill:#1a202c;text-anchor:middle}
-    .dfd-svg .store-id-box{fill:#8e9aaf;stroke:#6b97c2;stroke-width:1.6px}
-    .dfd-svg .store-id-text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:13px;font-weight:700;fill:#fff;text-anchor:middle}
-    .dfd-svg .store-body{fill:#b8d4f8;stroke:#6b97c2;stroke-width:1.6px}
-    .dfd-svg .store-name{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:12px;font-weight:600;fill:#1c3550;text-anchor:middle}
-    .dfd-svg .flow-line{fill:none;stroke:#c45d73;stroke-width:1.6px;stroke-linejoin:round;stroke-linecap:round}
-    .dfd-svg .flow-text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:8.8px;font-weight:700;fill:#2d3748;letter-spacing:.35px}
-    .dfd-svg .footer-text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:8px;font-weight:600;fill:#94a3b8;text-anchor:end;letter-spacing:.5px}
-    .dfd-svg .context-process{fill:#dbeafe;stroke:#3b82f6;stroke-width:2px}
-    .dfd-svg .context-text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:15px;font-weight:700;fill:#1e3a8a;text-anchor:middle}
-    .dfd-svg .context-id{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:11px;font-weight:800;fill:#3b82f6;text-anchor:middle}
+    [data-theme="dark"] .tag-id{background:#1e293b;color:#93c5fd}
+    .badge-pill{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:#fef3c7;color:#92400e}
 
     /* ───────── PRINT ───────── */
     @media print{
@@ -137,14 +149,14 @@
 <header class="top-bar">
   <div class="brand-section">
     <span class="brand-title">⚡ PowerForecast Refine</span>
-    <span class="badge badge-method">Gane &amp; Sarson DFD v2.6</span>
+    <span class="badge badge-method">Gane &amp; Sarson DFD v3.7.2</span>
+    <span class="badge badge-new">New Architecture</span>
   </div>
   <div class="controls-section">
     <button class="btn" onclick="zoomIn()">🔍 In</button>
     <button class="btn" onclick="zoomOut()">🔍 Out</button>
     <button class="btn" onclick="resetView()">↺ Reset</button>
     <button class="btn" id="btn-theme" onclick="toggleTheme()">🌓 Theme</button>
-    <a class="btn" href="powerforecast-gane-sarson-dfd.svg" download="PowerForecast-DFD-Level1.svg">📄 SVG</a>
     <button class="btn btn-primary" onclick="window.print()">📥 Print / PDF</button>
   </div>
 </header>
@@ -152,10 +164,11 @@
 <!-- ═══════════════ TAB NAVIGATION ═══════════════ -->
 <nav class="tab-nav">
   <button class="tab-btn active" onclick="switchTab('ctx')">Context Diagram (Level 0)</button>
-  <button class="tab-btn" onclick="switchTab('l1')">Level 1 DFD</button>
-  <button class="tab-btn" onclick="switchTab('l2p1')">Level 2 — Process 1</button>
-  <button class="tab-btn" onclick="switchTab('l2p2')">Level 2 — Process 2</button>
-  <button class="tab-btn" onclick="switchTab('l2p3')">Level 2 — Process 3</button>
+  <button class="tab-btn" onclick="switchTab('l1')">Level 1 DFD (Core Architecture)</button>
+  <button class="tab-btn" onclick="switchTab('l2p1')">Level 2 — P1: Ingestion</button>
+  <button class="tab-btn" onclick="switchTab('l2p2')">Level 2 — P2: Room-Code System</button>
+  <button class="tab-btn" onclick="switchTab('l2p3')">Level 2 — P3: Daily Telemetry & Calendar</button>
+  <button class="tab-btn" onclick="switchTab('l2p4')">Level 2 — P4: Modeling & Reconciliation</button>
 </nav>
 
 <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
@@ -167,217 +180,309 @@
 <div class="tab-panel active" id="panel-ctx">
 <div class="sheet-card">
 <div class="svg-container" data-panel="ctx">
-<svg class="dfd-svg" viewBox="0 0 1000 720">
+<svg class="dfd-svg" viewBox="0 0 1140 760">
   <defs>
-    <marker id="a0" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 1.5L8 5 0 8.5z" fill="#c45d73"/></marker>
+    <marker id="a0" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 1.5L8 5 0 8.5z" fill="#dc2626"/></marker>
     <filter id="sh0" x="-5%" y="-5%" width="110%" height="110%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity=".06"/></filter>
   </defs>
-  <!-- Canvas -->
-  <rect width="1000" height="720" fill="#f8fafc"/>
-  <rect x="20" y="20" width="960" height="680" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#sh0)"/>
+  <rect width="1140" height="760" fill="var(--bg-sheet)"/>
+  <rect x="20" y="20" width="1100" height="720" rx="8" fill="var(--bg-sheet)" stroke="var(--border-sheet)" stroke-width="1.5" filter="url(#sh0)"/>
 
   <!-- Header -->
-  <text x="500" y="62" class="title-main" text-anchor="middle" font-size="28">Context Diagram (Level 0)</text>
-  <text x="500" y="86" class="title-sub" text-anchor="middle">PowerForecast Refine — Showing the system boundary and all external entities.</text>
+  <text x="570" y="60" class="title-main" text-anchor="middle">Context Diagram (Level 0)</text>
+  <text x="570" y="82" class="title-sub" text-anchor="middle">PowerForecast Refine v3.7.2 — Updated boundary with Room-Code collaboration, dual OCR, PC TDP/TGP, and bottom-up MAPE reconciliation.</text>
 
   <!-- Central Process 0 -->
-  <circle cx="500" cy="380" r="90" class="context-process"/>
-  <text x="500" y="370" class="context-text">PowerForecast</text>
-  <text x="500" y="392" class="context-text">Refine System</text>
-  <text x="500" y="415" class="context-id">0</text>
+  <circle cx="570" cy="410" r="100" class="context-process"/>
+  <text x="570" y="395" class="context-text">PowerForecast</text>
+  <text x="570" y="415" class="context-text">Refine System</text>
+  <text x="570" y="435" class="context-id">0 (v3.7.2+)</text>
 
-  <!-- Entity: User / Consumer (Left) -->
-  <rect x="50" y="250" width="160" height="52" class="entity-box" rx="3"/>
-  <text x="130" y="281" class="entity-text">User / Consumer</text>
+  <!-- External Entities -->
+  <!-- Top Row Left: Gemini Vision AI -->
+  <rect x="180" y="110" width="180" height="52" class="entity-box" rx="3"/>
+  <text x="270" y="134" class="entity-text">Gemini Vision AI</text>
+  <text x="270" y="150" class="entity-sub">Multimodal 2.0 Flash</text>
 
-  <!-- Entity: Gemini Vision AI (Top-Left) -->
-  <rect x="170" y="110" width="165" height="48" class="entity-box" rx="3"/>
-  <text x="252" y="139" class="entity-text">Gemini Vision AI</text>
+  <!-- Top Row Center-Left: Tesseract.js Client OCR (NEW) -->
+  <rect x="400" y="110" width="170" height="52" class="entity-box" rx="3"/>
+  <text x="485" y="134" class="entity-text">Tesseract.js OCR</text>
+  <text x="485" y="150" class="entity-sub">Client In-Browser Fallback</text>
 
-  <!-- Entity: DOE PELP Registry (Top-Right) -->
-  <rect x="660" y="110" width="165" height="48" class="entity-box" rx="3"/>
-  <text x="742" y="139" class="entity-text">DOE PELP Registry</text>
+  <!-- Top Row Center-Right: DOE PELP Registry -->
+  <rect x="610" y="110" width="170" height="52" class="entity-box" rx="3"/>
+  <text x="695" y="134" class="entity-text">DOE PELP Registry</text>
+  <text x="695" y="150" class="entity-sub">6,800+ Certified Ratings</text>
 
-  <!-- Entity: Electric Utility (Bottom-Left) -->
-  <rect x="50" y="490" width="175" height="52" class="entity-box" rx="3"/>
-  <text x="137" y="514" class="entity-text">Electric Utility</text>
-  <text x="137" y="530" class="entity-text" font-size="11">(Meralco)</text>
+  <!-- Top Row Right: PC Hardware Registry (NEW) -->
+  <rect x="820" y="110" width="170" height="52" class="entity-box" rx="3"/>
+  <text x="905" y="134" class="entity-text">PC Hardware Specs</text>
+  <text x="905" y="150" class="entity-sub">CPU TDP &amp; GPU TGP</text>
 
-  <!-- Entity: Notification Service (Right) -->
-  <rect x="760" y="340" width="175" height="52" class="entity-box" rx="3"/>
-  <text x="847" y="363" class="entity-text">Notification Service</text>
-  <text x="847" y="379" class="entity-text" font-size="11">(Resend &amp; Web Push)</text>
+  <!-- Left Row: User / Primary Consumer -->
+  <rect x="40" y="270" width="180" height="56" class="entity-box" rx="3"/>
+  <text x="130" y="296" class="entity-text">User / Consumer</text>
+  <text x="130" y="312" class="entity-sub">Account Owner &amp; Admin</text>
+
+  <!-- Left Row 2: Room Members / Collaborators (NEW) -->
+  <rect x="40" y="390" width="180" height="56" class="entity-box" rx="3"/>
+  <text x="130" y="416" class="entity-text">Room Collaborators</text>
+  <text x="130" y="432" class="entity-sub">Household Members (PF-XXXXXX)</text>
+
+  <!-- Left Row 3: Electric Utility (Meralco) -->
+  <rect x="40" y="550" width="180" height="56" class="entity-box" rx="3"/>
+  <text x="130" y="575" class="entity-text">Electric Utility</text>
+  <text x="130" y="591" class="entity-sub">Meralco / ERC Matrix</text>
+
+  <!-- Right: Notification Services -->
+  <rect x="890" y="380" width="190" height="56" class="entity-box" rx="3"/>
+  <text x="985" y="405" class="entity-text">Notification Services</text>
+  <text x="985" y="421" class="entity-sub">Web Push &amp; Resend Email</text>
 
   <!-- FLOWS -->
   <!-- User -> System -->
-  <line x1="210" y1="265" x2="415" y2="340" class="flow-line" marker-end="url(#a0)"/>
-  <text x="260" y="278" class="flow-text">APPLIANCE SPECS, PHOTOS, ROUTINES,</text>
-  <text x="260" y="289" class="flow-text">STOPWATCH LOGS, ACTUAL UTILITY BILL</text>
+  <line x1="220" y1="285" x2="475" y2="370" class="flow-line" marker-end="url(#a0)"/>
+  <text x="250" y="278" class="flow-text">1-3 STAGED PHOTOS, PC SPECS, ROUTINES, ACTUAL BILL</text>
 
   <!-- System -> User -->
-  <line x1="415" y1="395" x2="210" y2="290" class="flow-line" marker-end="url(#a0)"/>
-  <text x="230" y="365" class="flow-text">ONBOARDING CONFIRMATION, ITEMIZED</text>
-  <text x="230" y="376" class="flow-text">ERC BILL, 24H LOAD CURVE, MAPE SCORE</text>
+  <line x1="475" y1="410" x2="220" y2="310" class="flow-line" marker-end="url(#a0)"/>
+  <text x="240" y="390" class="flow-text">LIVE TELEMETRY, 24H CURVE, ERC BILL, MAPE SCORE (≥90%), AI TIPS</text>
+
+  <!-- Room Member -> System -->
+  <line x1="220" y1="415" x2="470" y2="425" class="flow-line" marker-end="url(#a0)"/>
+  <text x="235" y="433" class="flow-text">6-CHAR ROOM CODE (PF-XXXXXX), APPLIANCE PROPOSALS</text>
+
+  <!-- System -> Room Member -->
+  <path d="M472 445 L260 445 L260 435 L220 435" class="flow-line" marker-end="url(#a0)"/>
+  <text x="245" y="460" class="flow-text">SCOPED ROOM TELEMETRY (VIEW-ONLY)</text>
 
   <!-- Gemini -> System -->
-  <line x1="310" y1="158" x2="460" y2="300" class="flow-line" marker-end="url(#a0)"/>
-  <text x="330" y="195" class="flow-text">OCR EXTRACTED SPECS</text>
-  <text x="330" y="206" class="flow-text">(WATTS, MODEL, VOLTS)</text>
+  <line x1="300" y1="162" x2="520" y2="320" class="flow-line" marker-end="url(#a0)"/>
+  <text x="325" y="225" class="flow-text">MULTIMODAL OCR SPECS</text>
+
+  <!-- Tesseract -> System -->
+  <line x1="490" y1="162" x2="550" y2="310" class="flow-line" marker-end="url(#a0)"/>
+  <text x="495" y="220" class="flow-text">LOCAL OCR FALLBACK</text>
 
   <!-- DOE PELP -> System -->
-  <line x1="695" y1="158" x2="545" y2="300" class="flow-line" marker-end="url(#a0)"/>
-  <text x="610" y="195" class="flow-text">CERTIFIED CSPF</text>
-  <text x="610" y="206" class="flow-text">EFFICIENCY RATINGS</text>
+  <line x1="680" y1="162" x2="590" y2="315" class="flow-line" marker-end="url(#a0)"/>
+  <text x="645" y="220" class="flow-text">CSPF &amp; STAR RATINGS</text>
+
+  <!-- PC Hardware -> System -->
+  <line x1="870" y1="162" x2="650" y2="340" class="flow-line" marker-end="url(#a0)"/>
+  <text x="760" y="240" class="flow-text">TDP/TGP BENCHMARKS</text>
 
   <!-- Utility -> System -->
-  <line x1="225" y1="505" x2="425" y2="435" class="flow-line" marker-end="url(#a0)"/>
-  <text x="238" y="498" class="flow-text">UNBUNDLED TARIFF SCHEDULES</text>
+  <line x1="220" y1="565" x2="480" y2="465" class="flow-line" marker-end="url(#a0)"/>
+  <text x="240" y="555" class="flow-text">UNBUNDLED TARIFF SCHEDULES</text>
 
   <!-- System -> Utility -->
-  <line x1="425" y1="450" x2="225" y2="525" class="flow-line" marker-end="url(#a0)"/>
-  <text x="238" y="518" class="flow-text" transform="translate(0,30)">ESTIMATED GRID DEMAND</text>
+  <line x1="480" y1="485" x2="220" y2="585" class="flow-line" marker-end="url(#a0)"/>
+  <text x="240" y="605" class="flow-text">ESTIMATED GRID DEMAND</text>
 
   <!-- System -> Notification -->
-  <line x1="588" y1="365" x2="752" y2="365" class="flow-line" marker-end="url(#a0)"/>
-  <text x="605" y="358" class="flow-text">BUDGET &amp; PEAK ALERTS,</text>
-  <text x="605" y="369" class="flow-text">TRANSACTIONAL DIGESTS</text>
+  <line x1="670" y1="410" x2="882" y2="410" class="flow-line" marker-end="url(#a0)"/>
+  <text x="690" y="403" class="flow-text">BUDGET, PEAK WINDOWS &amp; CRUISING ALERTS</text>
 
-  <!-- Footer -->
-  <text x="950" y="682" class="footer-text">© 2026 POWERFORECAST REFINE — CONTEXT DIAGRAM (LEVEL 0)</text>
+  <text x="1080" y="725" class="footer-text">© 2026 POWERFORECAST REFINE — LEVEL 0 CONTEXT DIAGRAM</text>
 </svg>
 </div></div></div>
 
 <!-- ╔══════════════════════════════════════════════════════════════╗ -->
-<!-- ║  TAB 2: LEVEL 1 DFD                                        ║ -->
+<!-- ║  TAB 2: LEVEL 1 DFD (CORE ARCHITECTURE)                     ║ -->
 <!-- ╚══════════════════════════════════════════════════════════════╝ -->
 <div class="tab-panel" id="panel-l1">
 <div class="sheet-card">
 <div class="svg-container" data-panel="l1">
-<svg class="dfd-svg" viewBox="0 0 1120 1140">
+<svg class="dfd-svg" viewBox="0 0 1200 1260">
   <defs>
-    <marker id="a1" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 1.5L8 5 0 8.5z" fill="#c45d73"/></marker>
+    <marker id="a1" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 1.5L8 5 0 8.5z" fill="#dc2626"/></marker>
     <filter id="sh1" x="-5%" y="-5%" width="110%" height="110%"><feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity=".06"/></filter>
   </defs>
-  <rect width="1120" height="1140" fill="#f8fafc"/>
-  <rect x="25" y="25" width="1070" height="1090" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#sh1)"/>
+  <rect width="1200" height="1260" fill="var(--bg-sheet)"/>
+  <rect x="25" y="25" width="1150" height="1210" rx="8" fill="var(--bg-sheet)" stroke="var(--border-sheet)" stroke-width="1.5" filter="url(#sh1)"/>
 
-  <text x="560" y="72" class="title-main" text-anchor="middle">Level 1 Data Flow Diagram</text>
-  <text x="560" y="100" class="title-sub" text-anchor="middle">Using the Gane &amp; Sarson method — PowerForecast Refine information system.</text>
+  <!-- Header -->
+  <text x="600" y="68" class="title-main" text-anchor="middle">Level 1 Data Flow Diagram (Architecture v3.7.2)</text>
+  <text x="600" y="92" class="title-sub" text-anchor="middle">Gane &amp; Sarson notation with 4 core processes: Ingestion, Room-Code System, Daily Telemetry, and Modeling &amp; Reconciliation.</text>
 
-  <!-- ENTITIES -->
-  <g><rect x="450" y="130" width="170" height="48" class="entity-box" rx="3"/><text x="535" y="159" class="entity-text">Gemini Vision AI</text></g>
-  <g><rect x="670" y="130" width="170" height="48" class="entity-box" rx="3"/><text x="755" y="159" class="entity-text">DOE PELP Registry</text></g>
-  <g><rect x="85" y="215" width="165" height="52" class="entity-box" rx="3"/><text x="167" y="246" class="entity-text">User / Consumer</text></g>
-  <g><rect x="830" y="365" width="175" height="52" class="entity-box" rx="3"/><text x="917" y="388" class="entity-text">Notification Service</text><text x="917" y="405" class="entity-text" font-size="11">(Resend &amp; Web Push)</text></g>
-  <g><rect x="85" y="525" width="165" height="52" class="entity-box" rx="3"/><text x="167" y="556" class="entity-text">Electric Utility (Meralco)</text></g>
+  <!-- External Entities -->
+  <!-- Top Left Entities: User & Room Members -->
+  <rect x="60" y="160" width="170" height="50" class="entity-box" rx="3"/>
+  <text x="145" y="185" class="entity-text">User / Consumer</text>
+  <text x="145" y="200" class="entity-sub">Account Owner</text>
 
-  <!-- PROCESS 1 -->
-  <g>
-    <rect x="440" y="270" width="190" height="96" class="proc-bg"/>
-    <path d="M440 278A8 8 0 01 448 270H622A8 8 0 01 630 278V295H440Z" class="proc-header"/>
-    <rect x="440" y="270" width="30" height="25" fill="#a4c2f4" stroke="#6b97c2" stroke-width="1.6" rx="3"/>
-    <text x="455" y="287" class="proc-id-text">1</text>
-    <path d="M440 357H630V358A8 8 0 01 622 366H448A8 8 0 01 440 358Z" class="proc-bottom"/>
-    <text x="535" y="325" class="proc-name">Appliance Ingestion</text>
-    <text x="535" y="343" class="proc-name">&amp; Specification System</text>
+  <rect x="60" y="290" width="170" height="50" class="entity-box" rx="3"/>
+  <text x="145" y="315" class="entity-text">Room Collaborator</text>
+  <text x="145" y="330" class="entity-sub">Household Member</text>
+
+  <!-- Top Ingestion Sources -->
+  <rect x="360" y="120" width="170" height="48" class="entity-box" rx="3"/>
+  <text x="445" y="142" class="entity-text">Gemini 2.0 / Tesseract</text>
+  <text x="445" y="156" class="entity-sub">Dual OCR Engines</text>
+
+  <rect x="560" y="120" width="170" height="48" class="entity-box" rx="3"/>
+  <text x="645" y="142" class="entity-text">DOE PELP / PC Registry</text>
+  <text x="645" y="156" class="entity-sub">Ratings &amp; Hardware Specs</text>
+
+  <!-- Right: Notification Service -->
+  <rect x="940" y="550" width="180" height="50" class="entity-box" rx="3"/>
+  <text x="1030" y="573" class="entity-text">Notification Service</text>
+  <text x="1030" y="589" class="entity-sub">Web Push &amp; Resend Email</text>
+
+  <!-- Left: Electric Utility -->
+  <rect x="60" y="870" width="170" height="50" class="entity-box" rx="3"/>
+  <text x="145" y="893" class="entity-text">Electric Utility</text>
+  <text x="145" y="909" class="entity-sub">Meralco / ERC Rates</text>
+
+  <!-- ==================== PROCESSES ==================== -->
+  <!-- PROCESS 1: Appliance Ingestion & Specification System -->
+  <g id="proc-1">
+    <rect x="410" y="210" width="220" height="96" class="proc-bg"/>
+    <path d="M410 218A8 8 0 01 418 210H622A8 8 0 01 630 218V235H410Z" class="proc-header"/>
+    <rect x="410" y="210" width="34" height="25" class="proc-id-box"/>
+    <text x="427" y="227" class="proc-id-text">1</text>
+    <path d="M410 297H630V298A8 8 0 01 622 306H418A8 8 0 01 410 298Z" class="proc-bottom"/>
+    <text x="520" y="260" class="proc-name">Appliance Ingestion</text>
+    <text x="520" y="278" class="proc-name">&amp; Specification System</text>
   </g>
 
-  <!-- PROCESS 2 -->
-  <g>
-    <rect x="440" y="515" width="190" height="96" class="proc-bg"/>
-    <path d="M440 523A8 8 0 01 448 515H622A8 8 0 01 630 523V540H440Z" class="proc-header"/>
-    <rect x="440" y="515" width="30" height="25" fill="#a4c2f4" stroke="#6b97c2" stroke-width="1.6" rx="3"/>
-    <text x="455" y="532" class="proc-id-text">2</text>
-    <path d="M440 602H630V603A8 8 0 01 622 611H448A8 8 0 01 440 603Z" class="proc-bottom"/>
-    <text x="535" y="567" class="proc-name">Daily Usage &amp; Smart</text>
-    <text x="535" y="585" class="proc-name">Calendar Control System</text>
+  <!-- PROCESS 2: Room-Code & Household Management (NEW) -->
+  <g id="proc-2">
+    <rect x="800" y="210" width="220" height="96" class="proc-bg"/>
+    <path d="M800 218A8 8 0 01 808 210H1012A8 8 0 01 1020 218V235H800Z" class="proc-header"/>
+    <rect x="800" y="210" width="34" height="25" class="proc-id-box"/>
+    <text x="817" y="227" class="proc-id-text">2</text>
+    <path d="M800 297H1020V298A8 8 0 01 1012 306H808A8 8 0 01 800 298Z" class="proc-bottom"/>
+    <text x="910" y="260" class="proc-name">Room-Code &amp; Multi-Tenant</text>
+    <text x="910" y="278" class="proc-name">Household Management</text>
   </g>
 
-  <!-- PROCESS 3 -->
-  <g>
-    <rect x="440" y="780" width="190" height="96" class="proc-bg"/>
-    <path d="M440 788A8 8 0 01 448 780H622A8 8 0 01 630 788V805H440Z" class="proc-header"/>
-    <rect x="440" y="780" width="30" height="25" fill="#a4c2f4" stroke="#6b97c2" stroke-width="1.6" rx="3"/>
-    <text x="455" y="797" class="proc-id-text">3</text>
-    <path d="M440 867H630V868A8 8 0 01 622 876H448A8 8 0 01 440 868Z" class="proc-bottom"/>
-    <text x="535" y="832" class="proc-name">Energy Modeling &amp;</text>
-    <text x="535" y="850" class="proc-name">Accuracy Reconciliation</text>
+  <!-- PROCESS 3: Daily Usage, Live Board & Smart Calendar -->
+  <g id="proc-3">
+    <rect x="410" y="530" width="220" height="96" class="proc-bg"/>
+    <path d="M410 538A8 8 0 01 418 530H622A8 8 0 01 630 538V555H410Z" class="proc-header"/>
+    <rect x="410" y="530" width="34" height="25" class="proc-id-box"/>
+    <text x="427" y="547" class="proc-id-text">3</text>
+    <path d="M410 617H630V618A8 8 0 01 622 626H418A8 8 0 01 410 618Z" class="proc-bottom"/>
+    <text x="520" y="578" class="proc-name">Daily Telemetry, Live Board</text>
+    <text x="520" y="596" class="proc-name">&amp; Smart Calendar Engine</text>
   </g>
 
-  <!-- DATA STORES -->
-  <g><rect x="790" y="295" width="36" height="46" class="store-id-box"/><text x="808" y="323" class="store-id-text">D</text><rect x="826" y="295" width="170" height="46" class="store-body"/><text x="911" y="323" class="store-name">User Profiles &amp; Cache</text></g>
-  <g><rect x="85" y="380" width="36" height="46" class="store-id-box"/><text x="103" y="408" class="store-id-text">D</text><rect x="121" y="380" width="160" height="46" class="store-body"/><text x="201" y="408" class="store-name">Appliance Catalog Specs</text></g>
-  <g><rect x="205" y="650" width="36" height="46" class="store-id-box"/><text x="223" y="678" class="store-id-text">D</text><rect x="241" y="650" width="145" height="46" class="store-body"/><text x="313" y="678" class="store-name">Appliance Inventory</text></g>
-  <g><rect x="440" y="650" width="36" height="46" class="store-id-box"/><text x="458" y="678" class="store-id-text">D</text><rect x="476" y="650" width="154" height="46" class="store-body"/><text x="553" y="678" class="store-name">Daily Usage Logs</text></g>
-  <g><rect x="675" y="650" width="36" height="46" class="store-id-box"/><text x="693" y="678" class="store-id-text">D</text><rect x="711" y="650" width="145" height="46" class="store-body"/><text x="783" y="678" class="store-name">Tariff Matrix</text></g>
-  <g><rect x="210" y="930" width="36" height="46" class="store-id-box"/><text x="228" y="958" class="store-id-text">D</text><rect x="246" y="930" width="180" height="46" class="store-body"/><text x="336" y="958" class="store-name">Reconciled Metrics (MAPE)</text></g>
-  <g><rect x="645" y="930" width="36" height="46" class="store-id-box"/><text x="663" y="958" class="store-id-text">D</text><rect x="681" y="930" width="180" height="46" class="store-body"/><text x="771" y="958" class="store-name">Unbundled Bill Records</text></g>
+  <!-- PROCESS 4: Bottom-Up Energy Modeling, Tariff & Reconciliation -->
+  <g id="proc-4">
+    <rect x="410" y="870" width="220" height="96" class="proc-bg"/>
+    <path d="M410 878A8 8 0 01 418 870H622A8 8 0 01 630 878V895H410Z" class="proc-header"/>
+    <rect x="410" y="870" width="34" height="25" class="proc-id-box"/>
+    <text x="427" y="887" class="proc-id-text">4</text>
+    <path d="M410 957H630V958A8 8 0 01 622 966H418A8 8 0 01 410 958Z" class="proc-bottom"/>
+    <text x="520" y="918" class="proc-name">Bottom-Up Energy Modeling,</text>
+    <text x="520" y="936" class="proc-name">Tariff &amp; Reconciliation</text>
+  </g>
 
-  <!-- FLOWS -->
-  <line x1="250" y1="230" x2="432" y2="230" class="flow-line"/><line x1="432" y1="230" x2="432" y2="280" class="flow-line" marker-end="url(#a1)"/>
-  <text x="270" y="223" class="flow-text">APPLIANCE SPECS &amp; PHOTOS</text>
+  <!-- ==================== DATA STORES ==================== -->
+  <!-- D1: Rooms & Members -->
+  <g><rect x="800" y="370" width="36" height="46" class="store-id-box"/><text x="818" y="398" class="store-id-text">D1</text><rect x="836" y="370" width="184" height="46" class="store-body"/><text x="928" y="398" class="store-name">Rooms &amp; Room Members</text></g>
 
-  <path d="M440 320L290 320 290 255 258 255" class="flow-line" marker-end="url(#a1)"/>
-  <text x="270" y="313" class="flow-text">ONBOARDING CONFIRMATION</text>
+  <!-- D2: User Accounts & Cache -->
+  <g><rect x="800" y="120" width="36" height="46" class="store-id-box"/><text x="818" y="148" class="store-id-text">D2</text><rect x="836" y="120" width="184" height="46" class="store-body"/><text x="928" y="148" class="store-name">User Accounts &amp; Profiles</text></g>
 
-  <line x1="510" y1="178" x2="510" y2="262" class="flow-line" marker-end="url(#a1)"/>
-  <text x="502" y="225" class="flow-text" text-anchor="end">OCR EXTRACTED SPECS</text>
+  <!-- D3: User Appliances (Cruising & Duty Specs) -->
+  <g><rect x="180" y="420" width="36" height="46" class="store-id-box"/><text x="198" y="448" class="store-id-text">D3</text><rect x="216" y="420" width="190" height="46" class="store-body"/><text x="311" y="448" class="store-name">User Appliances (Cruising Specs)</text></g>
 
-  <path d="M740 178 740 220 570 220 570 262" class="flow-line" marker-end="url(#a1)"/>
-  <text x="610" y="213" class="flow-text">CERTIFIED CSPF RATINGS</text>
+  <!-- ROW OF DATA STORES (Below Process 3) -->
+  <!-- D4: Actual Daily Appliance Usage -->
+  <g><rect x="180" y="690" width="36" height="46" class="store-id-box"/><text x="198" y="718" class="store-id-text">D4</text><rect x="216" y="690" width="180" height="46" class="store-body"/><text x="306" y="718" class="store-name">Actual Daily Usage (Measured)</text></g>
 
-  <line x1="630" y1="318" x2="782" y2="318" class="flow-line" marker-end="url(#a1)"/>
-  <text x="645" y="311" class="flow-text">USER PROFILE &amp; PREFERENCES</text>
+  <!-- D5: Simulated Usage & Calendar Plans -->
+  <g><rect x="420" y="690" width="36" height="46" class="store-id-box"/><text x="438" y="718" class="store-id-text">D5</text><rect x="456" y="690" width="180" height="46" class="store-body"/><text x="546" y="718" class="store-name">Simulated Plans &amp; Schedules</text></g>
 
-  <path d="M440 350 330 350 330 403 289 403" class="flow-line" marker-end="url(#a1)"/>
-  <text x="338" y="380" class="flow-text">CATALOG SPECS</text>
+  <!-- D6: Live Stopwatch Sessions -->
+  <g><rect x="660" y="690" width="36" height="46" class="store-id-box"/><text x="678" y="718" class="store-id-text">D6</text><rect x="696" y="690" width="160" height="46" class="store-body"/><text x="776" y="718" class="store-name">Live Stopwatch Sessions</text></g>
 
-  <line x1="535" y1="366" x2="535" y2="507" class="flow-line" marker-end="url(#a1)"/>
-  <text x="543" y="445" class="flow-text">RATED WATTAGE &amp; DUTY ATTRIBUTES</text>
+  <!-- D7: Meralco Tariff Matrix -->
+  <g><rect x="880" y="690" width="36" height="46" class="store-id-box"/><text x="898" y="718" class="store-id-text">D7</text><rect x="916" y="690" width="150" height="46" class="store-body"/><text x="991" y="718" class="store-name">Meralco Tariff Matrix</text></g>
 
-  <path d="M210 267 210 340 380 340 380 500 432 500" class="flow-line" marker-end="url(#a1)"/>
-  <text x="220" y="333" class="flow-text">DAILY ROUTINES &amp; STOPWATCH LOGS</text>
+  <!-- D8: Reconciled Metrics & Unbundled Bills -->
+  <g><rect x="410" y="1050" width="36" height="46" class="store-id-box"/><text x="428" y="1078" class="store-id-text">D8</text><rect x="446" y="1050" width="220" height="46" class="store-body"/><text x="556" y="1078" class="store-name">Reconciled Forecasts &amp; MAPE Metrics</text></g>
 
-  <line x1="250" y1="540" x2="432" y2="540" class="flow-line" marker-end="url(#a1)"/>
-  <text x="260" y="533" class="flow-text">MERALCO TARIFF RATES</text>
+  <!-- ==================== DATA FLOWS ==================== -->
+  <!-- Process 2 (Rooms) Flows -->
+  <path d="M230 185 L792 185" class="flow-line" marker-end="url(#a1)"/>
+  <text x="250" y="178" class="flow-text">PROVISION ROOM &amp; MANAGE MEMBERS</text>
 
-  <line x1="440" y1="565" x2="258" y2="565" class="flow-line" marker-end="url(#a1)"/>
-  <text x="260" y="580" class="flow-text">ESTIMATED GRID DEMAND</text>
+  <path d="M230 315 L792 315" class="flow-line" marker-end="url(#a1)"/>
+  <text x="250" y="308" class="flow-text">JOIN VIA 6-CHAR CODE (PF-XXXXXX)</text>
 
-  <path d="M630 550 800 550 800 395 822 395" class="flow-line" marker-end="url(#a1)"/>
-  <text x="645" y="543" class="flow-text">BUDGET &amp; PEAK ALERTS</text>
+  <line x1="910" y1="306" x2="910" y2="362" class="flow-line" marker-end="url(#a1)"/>
+  <text x="918" y="340" class="flow-text">ROOM &amp; MEMBER ROLES</text>
 
-  <path d="M917 365 917 115 60 115 60 240 77 240" class="flow-line" marker-end="url(#a1)"/>
-  <text x="490" y="110" class="flow-text" text-anchor="middle">TRANSACTIONAL NOTIFICATIONS &amp; DISPATCHED DIGESTS</text>
+  <line x1="910" y1="210" x2="910" y2="174" class="flow-line" marker-end="url(#a1)"/>
+  <text x="918" y="195" class="flow-text">SCOPED USER CONTEXT</text>
 
-  <path d="M480 611 480 632 315 632 315 642" class="flow-line" marker-end="url(#a1)"/>
-  <text x="325" y="627" class="flow-text">REGISTERED APPLIANCES</text>
+  <!-- Process 1 (Ingestion) Flows -->
+  <line x1="230" y1="205" x2="402" y2="245" class="flow-line" marker-end="url(#a1)"/>
+  <text x="240" y="220" class="flow-text">3-PHOTO STAGING, MANUAL SPECS, PC BUILDER</text>
 
-  <line x1="535" y1="611" x2="535" y2="642" class="flow-line" marker-end="url(#a1)"/>
-  <text x="543" y="632" class="flow-text">DAILY KWH LOGS</text>
+  <line x1="445" y1="168" x2="445" y2="202" class="flow-line" marker-end="url(#a1)"/>
+  <text x="448" y="188" class="flow-text">OCR SPECS</text>
 
-  <path d="M590 611 590 632 770 632 770 642" class="flow-line" marker-end="url(#a1)"/>
-  <text x="635" y="627" class="flow-text">RATE TIERS &amp; VAT</text>
+  <line x1="600" y1="168" x2="560" y2="202" class="flow-line" marker-end="url(#a1)"/>
+  <text x="585" y="188" class="flow-text">CSPF &amp; TDP/TGP</text>
 
-  <line x1="535" y1="696" x2="535" y2="772" class="flow-line" marker-end="url(#a1)"/>
-  <text x="543" y="742" class="flow-text">CONSOLIDATED 24H LOAD PROFILE</text>
+  <path d="M410 270 L300 270 L300 412" class="flow-line" marker-end="url(#a1)"/>
+  <text x="308" y="360" class="flow-text">SAVE APPLIANCE WITH CRUISING WATTS</text>
 
-  <path d="M140 267 140 360 360 360 360 760 432 760" class="flow-line" marker-end="url(#a1)"/>
-  <text x="148" y="353" class="flow-text">ACTUAL UTILITY BILL (KWH &amp; CHARGES)</text>
+  <path d="M800 395 L720 395 L720 280 L638 280" class="flow-line" marker-end="url(#a1)"/>
+  <text x="690" y="385" class="flow-text">ACTIVE ROOM SCOPING</text>
 
-  <path d="M480 876 480 905 336 905 336 922" class="flow-line" marker-end="url(#a1)"/>
-  <text x="345" y="900" class="flow-text">MAPE SCORE &amp; PHANTOM BUFFER</text>
+  <!-- Process 1 -> Process 3 (Spine) -->
+  <line x1="520" y1="306" x2="520" y2="522" class="flow-line" marker-end="url(#a1)"/>
+  <text x="528" y="420" class="flow-text">RATED WATTAGE, DUTY CYCLES &amp; CRUISING ATTRIBUTES</text>
 
-  <path d="M590 876 590 905 755 905 755 922" class="flow-line" marker-end="url(#a1)"/>
-  <text x="625" y="900" class="flow-text">7-PART UNBUNDLED RECORDS</text>
+  <!-- Process 3 (Telemetry & Calendar) Flows -->
+  <path d="M200 210 L160 210 L160 560 L402 560" class="flow-line" marker-end="url(#a1)"/>
+  <text x="170" y="540" class="flow-text">CIRCUIT TOGGLES, WORKLOAD MODES &amp; CALENDAR EDITS</text>
 
-  <path d="M440 825 48 825 48 250 77 250" class="flow-line" marker-end="url(#a1)"/>
-  <text x="56" y="818" class="flow-text">ITEMIZED ERC BILL &amp; 24H LOAD CURVE</text>
+  <path d="M376 466 L376 545 L402 545" class="flow-line" marker-end="url(#a1)"/>
+  <text x="280" y="525" class="flow-text">CRUISING LOAD SPECS</text>
 
-  <path d="M440 850 35 850 35 230 77 230" class="flow-line" marker-end="url(#a1)"/>
-  <text x="43" y="843" class="flow-text">MAPE ACCURACY VALIDATION (≥90%)</text>
+  <path d="M480 626 L480 655 L280 655 L280 682" class="flow-line" marker-end="url(#a1)"/>
+  <text x="290" y="650" class="flow-text">LOGGED ACTUAL KWH</text>
 
-  <text x="1065" y="1092" class="footer-text">© 2026 POWERFORECAST REFINE — LEVEL 1 DFD</text>
+  <line x1="520" y1="626" x2="520" y2="682" class="flow-line" marker-end="url(#a1)"/>
+  <text x="528" y="660" class="flow-text">SIMULATED SCHEDULE PLANS</text>
+
+  <path d="M570 626 L570 655 L750 655 L750 682" class="flow-line" marker-end="url(#a1)"/>
+  <text x="590" y="650" class="flow-text">LIVE RUNNING SESSIONS</text>
+
+  <path d="M630 560 L932 560" class="flow-line" marker-end="url(#a1)"/>
+  <text x="660" y="552" class="flow-text">BUDGET, PEAK &amp; CRUISING ALERTS</text>
+
+  <!-- Process 4 (Modeling & Reconciliation) Flows -->
+  <path d="M280 736 L280 820 L440 820 L440 862" class="flow-line" marker-end="url(#a1)"/>
+  <text x="290" y="812" class="flow-text">MTD ACTUAL USAGE</text>
+
+  <line x1="520" y1="736" x2="520" y2="862" class="flow-line" marker-end="url(#a1)"/>
+  <text x="528" y="800" class="flow-text">REMAINING DAYS BASELINE PROJECTION</text>
+
+  <line x1="230" y1="895" x2="402" y2="895" class="flow-line" marker-end="url(#a1)"/>
+  <text x="245" y="888" class="flow-text">MERALCO TARIFF RATES &amp; SCHEDULES</text>
+
+  <path d="M410 930 L160 930 L160 920 L238 920" class="flow-line" marker-end="url(#a1)"/>
+  <text x="245" y="940" class="flow-text">ESTIMATED GRID DEMAND</text>
+
+  <path d="M960 736 L960 910 L638 910" class="flow-line" marker-end="url(#a1)"/>
+  <text x="750" y="902" class="flow-text">7-PART UNBUNDLED MATRIX</text>
+
+  <line x1="520" y1="966" x2="520" y2="1042" class="flow-line" marker-end="url(#a1)"/>
+  <text x="528" y="1005" class="flow-text">ITEMIZED ERC BILL &amp; MAPE SCORE (≥90%)</text>
+
+  <!-- Returns to User -->
+  <path d="M410 915 L80 915 L80 218 L140 218" class="flow-line" marker-end="url(#a1)"/>
+  <text x="90" y="700" class="flow-text" transform="rotate(-90 90 700)">VERIFIED ACCURACY BADGE, WHAT-IF SIMULATOR &amp; AI ENERGY AUDIT TIPS</text>
+
+  <text x="1140" y="1225" class="footer-text">© 2026 POWERFORECAST REFINE — LEVEL 1 DFD ARCHITECTURE v3.7.2</text>
 </svg>
 </div></div></div>
 
@@ -387,229 +492,201 @@
 <div class="tab-panel" id="panel-l2p1">
 <div class="sheet-card">
 <div class="svg-container" data-panel="l2p1">
-<svg class="dfd-svg" viewBox="0 0 1060 820">
+<svg class="dfd-svg" viewBox="0 0 1140 880">
   <defs>
-    <marker id="a2" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 1.5L8 5 0 8.5z" fill="#c45d73"/></marker>
+    <marker id="a2" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 1.5L8 5 0 8.5z" fill="#dc2626"/></marker>
     <filter id="sh2" x="-5%" y="-5%" width="110%" height="110%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity=".06"/></filter>
   </defs>
-  <rect width="1060" height="820" fill="#f8fafc"/>
-  <rect x="20" y="20" width="1020" height="780" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#sh2)"/>
+  <rect width="1140" height="880" fill="var(--bg-sheet)"/>
+  <rect x="20" y="20" width="1100" height="840" rx="8" fill="var(--bg-sheet)" stroke="var(--border-sheet)" stroke-width="1.5" filter="url(#sh2)"/>
 
-  <text x="530" y="62" class="title-main" text-anchor="middle" font-size="26">Level 2 DFD — Process 1 Decomposition</text>
-  <text x="530" y="86" class="title-sub" text-anchor="middle">Appliance Ingestion &amp; Specification System — Sub-process detail.</text>
+  <text x="570" y="60" class="title-main" text-anchor="middle">Level 2 DFD — Process 1 Decomposition</text>
+  <text x="570" y="82" class="title-sub" text-anchor="middle">Multi-Modal Ingestion Pipeline: 3-Photo Staging, Dual OCR Engines, DOE PELP &amp; PC Hardware TDP/TGP Builder.</text>
 
   <!-- External Entities -->
-  <g><rect x="55" y="200" width="155" height="48" class="entity-box" rx="3"/><text x="132" y="229" class="entity-text">User / Consumer</text></g>
-  <g><rect x="55" y="400" width="155" height="48" class="entity-box" rx="3"/><text x="132" y="429" class="entity-text">Gemini Vision AI</text></g>
-  <g><rect x="55" y="560" width="155" height="48" class="entity-box" rx="3"/><text x="132" y="589" class="entity-text">DOE PELP Registry</text></g>
+  <g><rect x="50" y="160" width="160" height="50" class="entity-box" rx="3"/><text x="130" y="185" class="entity-text">User / Consumer</text><text x="130" y="200" class="entity-sub">Photos &amp; Specs</text></g>
+  <g><rect x="50" y="320" width="160" height="50" class="entity-box" rx="3"/><text x="130" y="343" class="entity-text">Gemini 2.0 Flash</text><text x="130" y="358" class="entity-sub">Multimodal Cloud OCR</text></g>
+  <g><rect x="50" y="410" width="160" height="50" class="entity-box" rx="3"/><text x="130" y="433" class="entity-text">Tesseract.js</text><text x="130" y="448" class="entity-sub">Client In-Browser OCR</text></g>
+  <g><rect x="50" y="550" width="160" height="50" class="entity-box" rx="3"/><text x="130" y="573" class="entity-text">DOE PELP Registry</text><text x="130" y="588" class="entity-sub">6,800+ Devices</text></g>
+  <g><rect x="50" y="640" width="160" height="50" class="entity-box" rx="3"/><text x="130" y="663" class="entity-text">PC Hardware Specs</text><text x="130" y="678" class="entity-sub">CPU/GPU TDP/TGP</text></g>
 
-  <!-- Sub-Process 1.1 -->
+  <!-- Sub-Processes -->
+  <!-- 1.1 -->
   <g>
-    <rect x="310" y="170" width="200" height="88" class="proc-bg"/>
-    <path d="M310 178A8 8 0 01 318 170H502A8 8 0 01 510 178V192H310Z" class="proc-header"/>
-    <rect x="310" y="170" width="34" height="22" fill="#a4c2f4" stroke="#6b97c2" stroke-width="1.6" rx="3"/>
-    <text x="327" y="186" class="proc-id-text" font-size="12">1.1</text>
-    <path d="M310 249H510V250A8 8 0 01 502 258H318A8 8 0 01 310 250Z" class="proc-bottom"/>
-    <text x="410" y="220" class="proc-name">Photo Capture &amp;</text>
-    <text x="410" y="236" class="proc-name">Upload Interface</text>
+    <rect x="340" y="140" width="220" height="88" class="proc-bg"/>
+    <path d="M340 148A8 8 0 01 348 140H552A8 8 0 01 560 148V162H340Z" class="proc-header"/>
+    <rect x="340" y="140" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="156" class="proc-id-text">1.1</text>
+    <path d="M340 219H560V220A8 8 0 01 552 228H348A8 8 0 01 340 220Z" class="proc-bottom"/>
+    <text x="450" y="188" class="proc-name">3-Photo Staging Area</text>
+    <text x="450" y="206" class="proc-name">&amp; Manual Capture Interface</text>
   </g>
 
-  <!-- Sub-Process 1.2 -->
+  <!-- 1.2 -->
   <g>
-    <rect x="310" y="370" width="200" height="88" class="proc-bg"/>
-    <path d="M310 378A8 8 0 01 318 370H502A8 8 0 01 510 378V392H310Z" class="proc-header"/>
-    <rect x="310" y="370" width="34" height="22" fill="#a4c2f4" stroke="#6b97c2" stroke-width="1.6" rx="3"/>
-    <text x="327" y="386" class="proc-id-text" font-size="12">1.2</text>
-    <path d="M310 449H510V450A8 8 0 01 502 458H318A8 8 0 01 310 450Z" class="proc-bottom"/>
-    <text x="410" y="420" class="proc-name">Gemini Vision</text>
-    <text x="410" y="436" class="proc-name">OCR Parsing</text>
+    <rect x="340" y="320" width="220" height="88" class="proc-bg"/>
+    <path d="M340 328A8 8 0 01 348 320H552A8 8 0 01 560 328V342H340Z" class="proc-header"/>
+    <rect x="340" y="320" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="336" class="proc-id-text">1.2</text>
+    <path d="M340 399H560V400A8 8 0 01 552 408H348A8 8 0 01 340 400Z" class="proc-bottom"/>
+    <text x="450" y="365" class="proc-name">Dual-Engine OCR Parser</text>
+    <text x="450" y="383" class="proc-name">(Gemini + Tesseract Fallback)</text>
   </g>
 
-  <!-- Sub-Process 1.3 -->
+  <!-- 1.3 -->
   <g>
-    <rect x="310" y="540" width="200" height="88" class="proc-bg"/>
-    <path d="M310 548A8 8 0 01 318 540H502A8 8 0 01 510 548V562H310Z" class="proc-header"/>
-    <rect x="310" y="540" width="34" height="22" fill="#a4c2f4" stroke="#6b97c2" stroke-width="1.6" rx="3"/>
-    <text x="327" y="556" class="proc-id-text" font-size="12">1.3</text>
-    <path d="M310 619H510V620A8 8 0 01 502 628H318A8 8 0 01 310 620Z" class="proc-bottom"/>
-    <text x="410" y="590" class="proc-name">DOE CSPF</text>
-    <text x="410" y="606" class="proc-name">Cross-Validation</text>
+    <rect x="340" y="520" width="220" height="88" class="proc-bg"/>
+    <path d="M340 528A8 8 0 01 348 520H552A8 8 0 01 560 528V542H340Z" class="proc-header"/>
+    <rect x="340" y="520" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="536" class="proc-id-text">1.3</text>
+    <path d="M340 599H560V600A8 8 0 01 552 608H348A8 8 0 01 340 600Z" class="proc-bottom"/>
+    <text x="450" y="565" class="proc-name">DOE PELP &amp; PC Hardware</text>
+    <text x="450" y="583" class="proc-name">Spec Cross-Validation</text>
   </g>
 
-  <!-- Sub-Process 1.4 -->
+  <!-- 1.4 -->
   <g>
-    <rect x="310" y="700" width="200" height="80" class="proc-bg"/>
-    <path d="M310 708A8 8 0 01 318 700H502A8 8 0 01 510 708V720H310Z" class="proc-header"/>
-    <rect x="310" y="700" width="34" height="20" fill="#a4c2f4" stroke="#6b97c2" stroke-width="1.6" rx="3"/>
-    <text x="327" y="714" class="proc-id-text" font-size="12">1.4</text>
-    <path d="M310 771H510V772A8 8 0 01 502 780H318A8 8 0 01 310 772Z" class="proc-bottom"/>
-    <text x="410" y="748" class="proc-name">Catalog Storage &amp; Onboarding</text>
+    <rect x="340" y="700" width="220" height="88" class="proc-bg"/>
+    <path d="M340 708A8 8 0 01 348 700H552A8 8 0 01 560 708V720H340Z" class="proc-header"/>
+    <rect x="340" y="700" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="716" class="proc-id-text">1.4</text>
+    <path d="M340 779H560V780A8 8 0 01 552 788H348A8 8 0 01 340 780Z" class="proc-bottom"/>
+    <text x="450" y="745" class="proc-name">Duty Cycle &amp; Inverter</text>
+    <text x="450" y="763" class="proc-name">Cruising Power Profiler</text>
   </g>
 
   <!-- Data Stores -->
-  <g><rect x="700" y="220" width="36" height="42" class="store-id-box"/><text x="718" y="246" class="store-id-text">D</text><rect x="736" y="220" width="170" height="42" class="store-body"/><text x="821" y="246" class="store-name">User Profiles &amp; Cache</text></g>
-  <g><rect x="700" y="570" width="36" height="42" class="store-id-box"/><text x="718" y="596" class="store-id-text">D</text><rect x="736" y="570" width="170" height="42" class="store-body"/><text x="821" y="596" class="store-name">Appliance Catalog Specs</text></g>
+  <g><rect x="740" y="160" width="36" height="42" class="store-id-box"/><text x="758" y="186" class="store-id-text">D2</text><rect x="776" y="160" width="180" height="42" class="store-body"/><text x="866" y="186" class="store-name">User Accounts &amp; Profiles</text></g>
+  <g><rect x="740" y="540" width="36" height="42" class="store-id-box"/><text x="758" y="566" class="store-id-text">D1</text><rect x="776" y="540" width="180" height="42" class="store-body"/><text x="866" y="566" class="store-name">Rooms &amp; Room Members</text></g>
+  <g><rect x="740" y="720" width="36" height="42" class="store-id-box"/><text x="758" y="746" class="store-id-text">D3</text><rect x="776" y="720" width="180" height="42" class="store-body"/><text x="866" y="746" class="store-name">User Appliances (Cruising Specs)</text></g>
 
   <!-- Flows -->
-  <line x1="210" y1="215" x2="302" y2="215" class="flow-line" marker-end="url(#a2)"/>
-  <text x="218" y="208" class="flow-text">NAMEPLATE PHOTOS &amp; MANUAL SPECS</text>
+  <line x1="210" y1="185" x2="332" y2="185" class="flow-line" marker-end="url(#a2)"/>
+  <text x="218" y="178" class="flow-text">1-3 PHOTOS (NAMEPLATE, GUIDE, FULL)</text>
 
-  <line x1="410" y1="258" x2="410" y2="362" class="flow-line" marker-end="url(#a2)"/>
-  <text x="418" y="315" class="flow-text">RAW IMAGE DATA</text>
+  <line x1="450" y1="228" x2="450" y2="312" class="flow-line" marker-end="url(#a2)"/>
+  <text x="458" y="270" class="flow-text">RAW IMAGE STAGING DATA</text>
 
-  <line x1="210" y1="424" x2="302" y2="414" class="flow-line" marker-end="url(#a2)"/>
-  <text x="218" y="440" class="flow-text">OCR RESPONSE (WATTS, MODEL)</text>
+  <line x1="210" y1="345" x2="332" y2="345" class="flow-line" marker-end="url(#a2)"/>
+  <text x="218" y="338" class="flow-text">OCR ATTRIBUTES (WATTS, VOLTS)</text>
 
-  <line x1="410" y1="458" x2="410" y2="532" class="flow-line" marker-end="url(#a2)"/>
-  <text x="418" y="498" class="flow-text">PARSED SPEC ATTRIBUTES</text>
+  <line x1="210" y1="435" x2="332" y2="380" class="flow-line" marker-end="url(#a2)"/>
+  <text x="218" y="420" class="flow-text">CLIENT OCR FALLBACK</text>
 
-  <line x1="210" y1="584" x2="302" y2="584" class="flow-line" marker-end="url(#a2)"/>
-  <text x="218" y="577" class="flow-text">CSPF CERTIFIED RATINGS</text>
+  <line x1="450" y1="408" x2="450" y2="512" class="flow-line" marker-end="url(#a2)"/>
+  <text x="458" y="465" class="flow-text">EXTRACTED MODEL SPECS</text>
 
-  <line x1="410" y1="628" x2="410" y2="692" class="flow-line" marker-end="url(#a2)"/>
-  <text x="418" y="665" class="flow-text">VALIDATED &amp; ENRICHED SPECS</text>
+  <line x1="210" y1="565" x2="332" y2="565" class="flow-line" marker-end="url(#a2)"/>
+  <text x="218" y="558" class="flow-text">CSPF &amp; STAR RATINGS</text>
 
-  <path d="M510 230 620 230 620 241 692 241" class="flow-line" marker-end="url(#a2)"/>
-  <text x="540" y="224" class="flow-text">USER ONBOARDING STATE</text>
+  <line x1="210" y1="655" x2="332" y2="585" class="flow-line" marker-end="url(#a2)"/>
+  <text x="218" y="640" class="flow-text">TDP/TGP OPERATIONAL LOADS</text>
 
-  <path d="M510 740 620 740 620 591 692 591" class="flow-line" marker-end="url(#a2)"/>
-  <text x="540" y="735" class="flow-text">CATALOG RECORD</text>
+  <line x1="450" y1="608" x2="450" y2="692" class="flow-line" marker-end="url(#a2)"/>
+  <text x="458" y="655" class="flow-text">VALIDATED SPECIFICATIONS</text>
 
-  <!-- Output to Process 2 (dashed boundary arrow) -->
-  <line x1="410" y1="780" x2="410" y2="800" class="flow-line" stroke-dasharray="4,3"/>
-  <text x="418" y="798" class="flow-text" fill="#3b82f6">→ TO PROCESS 2: RATED WATTAGE &amp; DUTY ATTRIBUTES</text>
+  <line x1="560" y1="745" x2="732" y2="745" class="flow-line" marker-end="url(#a2)"/>
+  <text x="575" y="738" class="flow-text">PERSIST WITH CRUISING WATTS &amp; ROOM ID</text>
 
-  <!-- Return to User -->
-  <path d="M310 750 130 750 130 256" class="flow-line" marker-end="url(#a2)"/>
-  <text x="138" y="685" class="flow-text">ONBOARDING CONFIRMATION</text>
+  <path d="M740 560 L620 560 L620 725 L568 725" class="flow-line" marker-end="url(#a2)"/>
+  <text x="630" y="553" class="flow-text">ACTIVE ROOM SCOPING</text>
 
-  <text x="1010" y="790" class="footer-text">LEVEL 2 — PROCESS 1 DECOMPOSITION</text>
+  <path d="M560 180 L732 180" class="flow-line" marker-end="url(#a2)"/>
+  <text x="580" y="173" class="flow-text">USER ONBOARDING STATE</text>
+
+  <!-- Output to Process 3 -->
+  <line x1="450" y1="788" x2="450" y2="820" class="flow-line" stroke-dasharray="4,3"/>
+  <text x="458" y="818" class="flow-text" fill="#2563eb">→ TO PROCESS 3: RATED WATTAGE &amp; CRUISING ATTRIBUTES</text>
+
+  <text x="1080" y="845" class="footer-text">LEVEL 2 — PROCESS 1 DECOMPOSITION</text>
 </svg>
 </div></div></div>
 
 <!-- ╔══════════════════════════════════════════════════════════════╗ -->
-<!-- ║  TAB 4: LEVEL 2 — PROCESS 2 DECOMPOSITION                 ║ -->
+<!-- ║  TAB 4: LEVEL 2 — PROCESS 2 DECOMPOSITION (NEW)           ║ -->
 <!-- ╚══════════════════════════════════════════════════════════════╝ -->
 <div class="tab-panel" id="panel-l2p2">
 <div class="sheet-card">
 <div class="svg-container" data-panel="l2p2">
-<svg class="dfd-svg" viewBox="0 0 1060 900">
+<svg class="dfd-svg" viewBox="0 0 1140 820">
   <defs>
-    <marker id="a3" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 1.5L8 5 0 8.5z" fill="#c45d73"/></marker>
-    <filter id="sh3" x="-5%" y="-5%" width="110%" height="110%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity=".06"/></filter>
+    <marker id="a_p2" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 1.5L8 5 0 8.5z" fill="#dc2626"/></marker>
+    <filter id="sh_p2" x="-5%" y="-5%" width="110%" height="110%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity=".06"/></filter>
   </defs>
-  <rect width="1060" height="900" fill="#f8fafc"/>
-  <rect x="20" y="20" width="1020" height="860" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#sh3)"/>
+  <rect width="1140" height="820" fill="var(--bg-sheet)"/>
+  <rect x="20" y="20" width="1100" height="780" rx="8" fill="var(--bg-sheet)" stroke="var(--border-sheet)" stroke-width="1.5" filter="url(#sh_p2)"/>
 
-  <text x="530" y="62" class="title-main" text-anchor="middle" font-size="26">Level 2 DFD — Process 2 Decomposition</text>
-  <text x="530" y="86" class="title-sub" text-anchor="middle">Daily Usage &amp; Smart Calendar Control System — Sub-process detail.</text>
+  <text x="570" y="60" class="title-main" text-anchor="middle">Level 2 DFD — Process 2 Decomposition (NEW)</text>
+  <text x="570" y="82" class="title-sub" text-anchor="middle">Room-Code &amp; Multi-Tenant Household Management: Auto-provisioning, Join Codes (PF-XXXXXX) &amp; RLS Role Guard.</text>
 
   <!-- External Entities -->
-  <g><rect x="55" y="150" width="155" height="48" class="entity-box" rx="3"/><text x="132" y="179" class="entity-text">User / Consumer</text></g>
-  <g><rect x="55" y="520" width="175" height="48" class="entity-box" rx="3"/><text x="142" y="544" class="entity-text">Electric Utility</text><text x="142" y="558" class="entity-text" font-size="11">(Meralco)</text></g>
-  <g><rect x="810" y="150" width="175" height="48" class="entity-box" rx="3"/><text x="897" y="172" class="entity-text">Notification Service</text><text x="897" y="186" class="entity-text" font-size="11">(Resend &amp; Web Push)</text></g>
+  <g><rect x="60" y="160" width="170" height="50" class="entity-box" rx="3"/><text x="145" y="185" class="entity-text">User / Consumer</text><text x="145" y="200" class="entity-sub">Room Owner / Admin</text></g>
+  <g><rect x="60" y="420" width="170" height="50" class="entity-box" rx="3"/><text x="145" y="445" class="entity-text">Room Member</text><text x="145" y="460" class="entity-sub">Household Collaborator</text></g>
 
-  <!-- Sub-Process 2.1 -->
+  <!-- Sub-Processes -->
+  <!-- 2.1 -->
   <g>
-    <rect x="310" y="130" width="200" height="80" class="proc-bg"/>
-    <path d="M310 138A8 8 0 01 318 130H502A8 8 0 01 510 138V150H310Z" class="proc-header"/>
-    <rect x="310" y="130" width="34" height="20" fill="#a4c2f4" stroke="#6b97c2" stroke-width="1.6" rx="3"/>
-    <text x="327" y="144" class="proc-id-text" font-size="12">2.1</text>
-    <path d="M310 201H510V202A8 8 0 01 502 210H318A8 8 0 01 310 202Z" class="proc-bottom"/>
-    <text x="410" y="178" class="proc-name">Stopwatch &amp; Timeline</text>
-    <text x="410" y="194" class="proc-name">Tracker &amp; Monitor</text>
+    <rect x="360" y="140" width="220" height="88" class="proc-bg"/>
+    <path d="M360 148A8 8 0 01 368 140H572A8 8 0 01 580 148V162H360Z" class="proc-header"/>
+    <rect x="360" y="140" width="34" height="22" class="proc-id-box"/>
+    <text x="377" y="156" class="proc-id-text">2.1</text>
+    <path d="M360 219H580V220A8 8 0 01 572 228H368A8 8 0 01 360 220Z" class="proc-bottom"/>
+    <text x="470" y="188" class="proc-name">Automatic Main Room</text>
+    <text x="470" y="206" class="proc-name">Provisioning Engine</text>
   </g>
 
-  <!-- Sub-Process 2.2 -->
+  <!-- 2.2 -->
   <g>
-    <rect x="310" y="280" width="200" height="80" class="proc-bg"/>
-    <path d="M310 288A8 8 0 01 318 280H502A8 8 0 01 510 288V300H310Z" class="proc-header"/>
-    <rect x="310" y="280" width="34" height="20" fill="#a4c2f4" stroke="#6b97c2" stroke-width="1.6" rx="3"/>
-    <text x="327" y="294" class="proc-id-text" font-size="12">2.2</text>
-    <path d="M310 351H510V352A8 8 0 01 502 360H318A8 8 0 01 310 352Z" class="proc-bottom"/>
-    <text x="410" y="328" class="proc-name">Smart Calendar</text>
-    <text x="410" y="344" class="proc-name">Schedule Manager</text>
+    <rect x="360" y="360" width="220" height="88" class="proc-bg"/>
+    <path d="M360 368A8 8 0 01 368 360H572A8 8 0 01 580 368V382H360Z" class="proc-header"/>
+    <rect x="360" y="360" width="34" height="22" class="proc-id-box"/>
+    <text x="377" y="376" class="proc-id-text">2.2</text>
+    <path d="M360 439H580V440A8 8 0 01 572 448H368A8 8 0 01 360 440Z" class="proc-bottom"/>
+    <text x="470" y="405" class="proc-name">6-Char Room Code Dispatcher</text>
+    <text x="470" y="423" class="proc-name">&amp; Join Resolver (PF-XXXXXX)</text>
   </g>
 
-  <!-- Sub-Process 2.3 -->
+  <!-- 2.3 -->
   <g>
-    <rect x="310" y="490" width="200" height="88" class="proc-bg"/>
-    <path d="M310 498A8 8 0 01 318 490H502A8 8 0 01 510 498V512H310Z" class="proc-header"/>
-    <rect x="310" y="490" width="34" height="22" fill="#a4c2f4" stroke="#6b97c2" stroke-width="1.6" rx="3"/>
-    <text x="327" y="506" class="proc-id-text" font-size="12">2.3</text>
-    <path d="M310 569H510V570A8 8 0 01 502 578H318A8 8 0 01 310 570Z" class="proc-bottom"/>
-    <text x="410" y="540" class="proc-name">kWh Computation &amp;</text>
-    <text x="410" y="556" class="proc-name">Load Profiling Engine</text>
-  </g>
-
-  <!-- Sub-Process 2.4 -->
-  <g>
-    <rect x="620" y="320" width="200" height="80" class="proc-bg"/>
-    <path d="M620 328A8 8 0 01 628 320H812A8 8 0 01 820 328V340H620Z" class="proc-header"/>
-    <rect x="620" y="320" width="34" height="20" fill="#a4c2f4" stroke="#6b97c2" stroke-width="1.6" rx="3"/>
-    <text x="637" y="334" class="proc-id-text" font-size="12">2.4</text>
-    <path d="M620 391H820V392A8 8 0 01 812 400H628A8 8 0 01 620 392Z" class="proc-bottom"/>
-    <text x="720" y="368" class="proc-name">Budget &amp; Peak</text>
-    <text x="720" y="384" class="proc-name">Alert Monitor</text>
+    <rect x="360" y="580" width="220" height="88" class="proc-bg"/>
+    <path d="M360 588A8 8 0 01 368 580H572A8 8 0 01 580 588V602H360Z" class="proc-header"/>
+    <rect x="360" y="580" width="34" height="22" class="proc-id-box"/>
+    <text x="377" y="596" class="proc-id-text">2.3</text>
+    <path d="M360 659H580V660A8 8 0 01 572 668H368A8 8 0 01 360 660Z" class="proc-bottom"/>
+    <text x="470" y="625" class="proc-name">Role Hierarchy &amp; RLS</text>
+    <text x="470" y="643" class="proc-name">Permission Guard</text>
   </g>
 
   <!-- Data Stores -->
-  <g><rect x="120" y="680" width="36" height="42" class="store-id-box"/><text x="138" y="706" class="store-id-text">D</text><rect x="156" y="680" width="145" height="42" class="store-body"/><text x="228" y="706" class="store-name">Appliance Inventory</text></g>
-  <g><rect x="380" y="680" width="36" height="42" class="store-id-box"/><text x="398" y="706" class="store-id-text">D</text><rect x="416" y="680" width="140" height="42" class="store-body"/><text x="486" y="706" class="store-name">Daily Usage Logs</text></g>
-  <g><rect x="640" y="680" width="36" height="42" class="store-id-box"/><text x="658" y="706" class="store-id-text">D</text><rect x="676" y="680" width="140" height="42" class="store-body"/><text x="746" y="706" class="store-name">Tariff Matrix</text></g>
+  <g><rect x="760" y="160" width="36" height="42" class="store-id-box"/><text x="778" y="186" class="store-id-text">D2</text><rect x="796" y="160" width="180" height="42" class="store-body"/><text x="886" y="186" class="store-name">User Accounts &amp; Profiles</text></g>
+  <g><rect x="760" y="380" width="36" height="42" class="store-id-box"/><text x="778" y="406" class="store-id-text">D1</text><rect x="796" y="380" width="180" height="42" class="store-body"/><text x="886" y="406" class="store-name">Rooms &amp; Room Members</text></g>
 
   <!-- Flows -->
-  <!-- From Process 1 (input boundary) -->
-  <line x1="410" y1="110" x2="410" y2="122" class="flow-line" stroke-dasharray="4,3" marker-end="url(#a3)"/>
-  <text x="418" y="108" class="flow-text" fill="#3b82f6">FROM PROCESS 1: RATED WATTAGE &amp; DUTY ATTRIBUTES</text>
+  <line x1="230" y1="185" x2="352" y2="185" class="flow-line" marker-end="url(#a_p2)"/>
+  <text x="240" y="178" class="flow-text">SIGNUP &amp; FIRST LOGIN EVENT</text>
 
-  <!-- User -> 2.1 -->
-  <line x1="210" y1="165" x2="302" y2="165" class="flow-line" marker-end="url(#a3)"/>
-  <text x="218" y="158" class="flow-text">STOPWATCH TOGGLES &amp; TIMER INPUTS</text>
+  <line x1="580" y1="185" x2="752" y2="185" class="flow-line" marker-end="url(#a_p2)"/>
+  <text x="600" y="178" class="flow-text">CREATE &lt;&lt;USERNAME&gt;&gt;'S ROOM</text>
 
-  <!-- User -> 2.2 -->
-  <path d="M170 198 170 310 302 310" class="flow-line" marker-end="url(#a3)"/>
-  <text x="178" y="268" class="flow-text">CALENDAR EVENTS &amp; SCHEDULES</text>
+  <line x1="470" y1="228" x2="470" y2="352" class="flow-line" marker-end="url(#a_p2)"/>
+  <text x="478" y="290" class="flow-text">INITIALIZE ROOM CODE</text>
 
-  <!-- 2.1 -> D: Usage Logs -->
-  <path d="M410 210 410 240 486 240 486 672" class="flow-line" marker-end="url(#a3)"/>
-  <text x="420" y="238" class="flow-text">TIMED USAGE RECORDS</text>
+  <line x1="580" y1="405" x2="752" y2="405" class="flow-line" marker-end="url(#a_p2)"/>
+  <text x="600" y="398" class="flow-text">STORE ROOM CODE &amp; OWNER ROLE</text>
 
-  <!-- 2.2 -> D: Usage Logs -->
-  <path d="M410 360 410 420 460 420 460 672" class="flow-line" marker-end="url(#a3)"/>
-  <text x="418" y="413" class="flow-text">SCHEDULED USAGE PROJECTIONS</text>
+  <line x1="230" y1="445" x2="352" y2="425" class="flow-line" marker-end="url(#a_p2)"/>
+  <text x="240" y="430" class="flow-text">ENTER CODE: PF-XXXXXX</text>
 
-  <!-- D: Appliance Inventory -> 2.3 -->
-  <path d="M228 680 228 534 302 534" class="flow-line" marker-end="url(#a3)"/>
-  <text x="234" y="630" class="flow-text">APPLIANCE LOAD PROFILES</text>
+  <line x1="470" y1="448" x2="470" y2="572" class="flow-line" marker-end="url(#a_p2)"/>
+  <text x="478" y="510" class="flow-text">MEMBERSHIP RECORD</text>
 
-  <!-- D: Usage Logs -> 2.3 -->
-  <line x1="486" y1="680" x2="486" y2="578" class="flow-line" marker-end="url(#a3)"/>
-  <text x="494" y="640" class="flow-text">DAILY USAGE DATA</text>
+  <path d="M580 625 L730 625 L730 415 L752 415" class="flow-line" marker-end="url(#a_p2)"/>
+  <text x="600" y="618" class="flow-text">UPDATE MEMBER LIST &amp; ROLES</text>
 
-  <!-- Meralco -> 2.3 -->
-  <line x1="230" y1="544" x2="302" y2="534" class="flow-line" marker-end="url(#a3)"/>
-  <text x="238" y="558" class="flow-text">TARIFF RATE SCHEDULES</text>
+  <path d="M360 625 L160 625 L160 478" class="flow-line" marker-end="url(#a_p2)"/>
+  <text x="170" y="550" class="flow-text">ASSIGN ROLE: VIEW-ONLY OR ADMIN</text>
 
-  <!-- 2.3 -> D: Tariff Matrix -->
-  <path d="M510 550 580 550 580 701 668 701" class="flow-line" marker-end="url(#a3)"/>
-  <text x="518" y="543" class="flow-text">COMPUTED RATE TIERS &amp; VAT</text>
-
-  <!-- 2.3 -> 2.4 -->
-  <path d="M510 520 580 520 580 365 612 365" class="flow-line" marker-end="url(#a3)"/>
-  <text x="518" y="513" class="flow-text">HOURLY KWH &amp; COST ESTIMATES</text>
-
-  <!-- 2.4 -> Notification Service -->
-  <line x1="820" y1="350" x2="820" y2="198" class="flow-line" marker-end="url(#a3)"/>
-  <text x="828" y="270" class="flow-text">BUDGET THRESHOLD</text>
-  <text x="828" y="281" class="flow-text">&amp; PEAK ALERTS</text>
-
-  <!-- Output to Process 3 (boundary) -->
-  <line x1="410" y1="578" x2="410" y2="620" class="flow-line"/>
-  <text x="418" y="610" class="flow-text" fill="#3b82f6">→ TO PROCESS 3:</text>
-  <text x="418" y="621" class="flow-text" fill="#3b82f6">AGGREGATED 24H LOAD PROFILE</text>
-
-  <text x="1010" y="868" class="footer-text">LEVEL 2 — PROCESS 2 DECOMPOSITION</text>
+  <text x="1080" y="785" class="footer-text">LEVEL 2 — PROCESS 2 DECOMPOSITION</text>
 </svg>
 </div></div></div>
 
@@ -619,97 +696,240 @@
 <div class="tab-panel" id="panel-l2p3">
 <div class="sheet-card">
 <div class="svg-container" data-panel="l2p3">
-<svg class="dfd-svg" viewBox="0 0 1060 820">
+<svg class="dfd-svg" viewBox="0 0 1140 920">
   <defs>
-    <marker id="a4" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 1.5L8 5 0 8.5z" fill="#c45d73"/></marker>
-    <filter id="sh4" x="-5%" y="-5%" width="110%" height="110%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity=".06"/></filter>
+    <marker id="a3" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 1.5L8 5 0 8.5z" fill="#dc2626"/></marker>
+    <filter id="sh3" x="-5%" y="-5%" width="110%" height="110%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity=".06"/></filter>
   </defs>
-  <rect width="1060" height="820" fill="#f8fafc"/>
-  <rect x="20" y="20" width="1020" height="780" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#sh4)"/>
+  <rect width="1140" height="920" fill="var(--bg-sheet)"/>
+  <rect x="20" y="20" width="1100" height="880" rx="8" fill="var(--bg-sheet)" stroke="var(--border-sheet)" stroke-width="1.5" filter="url(#sh3)"/>
 
-  <text x="530" y="62" class="title-main" text-anchor="middle" font-size="26">Level 2 DFD — Process 3 Decomposition</text>
-  <text x="530" y="86" class="title-sub" text-anchor="middle">Energy Modeling &amp; Accuracy Reconciliation — Sub-process detail.</text>
+  <text x="570" y="60" class="title-main" text-anchor="middle">Level 2 DFD — Process 3 Decomposition</text>
+  <text x="570" y="82" class="title-sub" text-anchor="middle">Daily Telemetry &amp; Smart Calendar: Live Power Board, Inverter Cruising Alerts, Dual-Track Logger &amp; Cycle Configurator.</text>
 
-  <!-- External Entity -->
-  <g><rect x="55" y="420" width="155" height="48" class="entity-box" rx="3"/><text x="132" y="449" class="entity-text">User / Consumer</text></g>
+  <!-- External Entities -->
+  <g><rect x="50" y="150" width="160" height="50" class="entity-box" rx="3"/><text x="130" y="175" class="entity-text">User / Consumer</text><text x="130" y="190" class="entity-sub">Switches &amp; Calendar</text></g>
+  <g><rect x="880" y="150" width="180" height="50" class="entity-box" rx="3"/><text x="970" y="173" class="entity-text">Notification Service</text><text x="970" y="189" class="entity-sub">Web Push &amp; Resend Email</text></g>
 
-  <!-- Sub-Process 3.1 -->
+  <!-- Sub-Processes -->
+  <!-- 3.1 -->
   <g>
-    <rect x="350" y="140" width="210" height="80" class="proc-bg"/>
-    <path d="M350 148A8 8 0 01 358 140H552A8 8 0 01 560 148V160H350Z" class="proc-header"/>
-    <rect x="350" y="140" width="34" height="20" fill="#a4c2f4" stroke="#6b97c2" stroke-width="1.6" rx="3"/>
-    <text x="367" y="154" class="proc-id-text" font-size="12">3.1</text>
-    <path d="M350 211H560V212A8 8 0 01 552 220H358A8 8 0 01 350 212Z" class="proc-bottom"/>
-    <text x="455" y="188" class="proc-name">Load Aggregation &amp;</text>
-    <text x="455" y="204" class="proc-name">24-Hour Curve Builder</text>
+    <rect x="340" y="130" width="220" height="88" class="proc-bg"/>
+    <path d="M340 138A8 8 0 01 348 130H552A8 8 0 01 560 138V152H340Z" class="proc-header"/>
+    <rect x="340" y="130" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="146" class="proc-id-text">3.1</text>
+    <path d="M340 209H560V210A8 8 0 01 552 218H348A8 8 0 01 340 210Z" class="proc-bottom"/>
+    <text x="450" y="175" class="proc-name">Live Power Board &amp; Inverter</text>
+    <text x="450" y="193" class="proc-name">Pulldown-Cruising Telemetry</text>
   </g>
 
-  <!-- Sub-Process 3.2 -->
+  <!-- 3.2 -->
   <g>
-    <rect x="350" y="330" width="210" height="88" class="proc-bg"/>
-    <path d="M350 338A8 8 0 01 358 330H552A8 8 0 01 560 338V352H350Z" class="proc-header"/>
-    <rect x="350" y="330" width="34" height="22" fill="#a4c2f4" stroke="#6b97c2" stroke-width="1.6" rx="3"/>
-    <text x="367" y="346" class="proc-id-text" font-size="12">3.2</text>
-    <path d="M350 409H560V410A8 8 0 01 552 418H358A8 8 0 01 350 410Z" class="proc-bottom"/>
-    <text x="455" y="380" class="proc-name">ERC 7-Part Unbundled</text>
-    <text x="455" y="396" class="proc-name">Charge Calculator</text>
+    <rect x="340" y="280" width="220" height="88" class="proc-bg"/>
+    <path d="M340 288A8 8 0 01 348 280H552A8 8 0 01 560 288V302H340Z" class="proc-header"/>
+    <rect x="340" y="280" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="296" class="proc-id-text">3.2</text>
+    <path d="M340 359H560V360A8 8 0 01 552 368H348A8 8 0 01 340 360Z" class="proc-bottom"/>
+    <text x="450" y="325" class="proc-name">Dual-Track Usage Logger</text>
+    <text x="450" y="343" class="proc-name">(Actual vs Simulated Plans)</text>
   </g>
 
-  <!-- Sub-Process 3.3 -->
+  <!-- 3.3 -->
   <g>
-    <rect x="350" y="530" width="210" height="88" class="proc-bg"/>
-    <path d="M350 538A8 8 0 01 358 530H552A8 8 0 01 560 538V552H350Z" class="proc-header"/>
-    <rect x="350" y="530" width="34" height="22" fill="#a4c2f4" stroke="#6b97c2" stroke-width="1.6" rx="3"/>
-    <text x="367" y="546" class="proc-id-text" font-size="12">3.3</text>
-    <path d="M350 609H560V610A8 8 0 01 552 618H358A8 8 0 01 350 610Z" class="proc-bottom"/>
-    <text x="455" y="580" class="proc-name">MAPE Accuracy</text>
-    <text x="455" y="596" class="proc-name">Reconciliation Engine</text>
+    <rect x="340" y="440" width="220" height="88" class="proc-bg"/>
+    <path d="M340 448A8 8 0 01 348 440H552A8 8 0 01 560 448V462H340Z" class="proc-header"/>
+    <rect x="340" y="440" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="456" class="proc-id-text">3.3</text>
+    <path d="M340 519H560V520A8 8 0 01 552 528H348A8 8 0 01 340 520Z" class="proc-bottom"/>
+    <text x="450" y="485" class="proc-name">Smart Calendar Multi-View</text>
+    <text x="450" y="503" class="proc-name">&amp; Peak Hour Overlays</text>
+  </g>
+
+  <!-- 3.4 -->
+  <g>
+    <rect x="340" y="600" width="220" height="88" class="proc-bg"/>
+    <path d="M340 608A8 8 0 01 348 600H552A8 8 0 01 560 608V622H340Z" class="proc-header"/>
+    <rect x="340" y="600" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="616" class="proc-id-text">3.4</text>
+    <path d="M340 679H560V680A8 8 0 01 552 688H348A8 8 0 01 340 680Z" class="proc-bottom"/>
+    <text x="450" y="645" class="proc-name">Billing Period &amp; Cycle</text>
+    <text x="450" y="663" class="proc-name">Configurator (15th-to-14th)</text>
+  </g>
+
+  <!-- 3.5 -->
+  <g>
+    <rect x="680" y="280" width="210" height="88" class="proc-bg"/>
+    <path d="M680 288A8 8 0 01 688 280H882A8 8 0 01 890 288V302H680Z" class="proc-header"/>
+    <rect x="680" y="280" width="34" height="22" class="proc-id-box"/>
+    <text x="697" y="296" class="proc-id-text">3.5</text>
+    <path d="M680 359H890V360A8 8 0 01 882 368H688A8 8 0 01 680 360Z" class="proc-bottom"/>
+    <text x="785" y="325" class="proc-name">Budget, Cruising &amp;</text>
+    <text x="785" y="343" class="proc-name">Peak Alert Dispatcher</text>
   </g>
 
   <!-- Data Stores -->
-  <g><rect x="740" y="200" width="36" height="42" class="store-id-box"/><text x="758" y="226" class="store-id-text">D</text><rect x="776" y="200" width="140" height="42" class="store-body"/><text x="846" y="226" class="store-name">Tariff Matrix</text></g>
-  <g><rect x="740" y="480" width="36" height="42" class="store-id-box"/><text x="758" y="506" class="store-id-text">D</text><rect x="776" y="480" width="170" height="42" class="store-body"/><text x="861" y="506" class="store-name">Unbundled Bill Records</text></g>
-  <g><rect x="740" y="600" width="36" height="42" class="store-id-box"/><text x="758" y="626" class="store-id-text">D</text><rect x="776" y="600" width="180" height="42" class="store-body"/><text x="866" y="626" class="store-name">Reconciled Metrics (MAPE)</text></g>
+  <g><rect x="100" y="740" width="36" height="42" class="store-id-box"/><text x="118" y="766" class="store-id-text">D3</text><rect x="136" y="740" width="160" height="42" class="store-body"/><text x="216" y="766" class="store-name">User Appliances</text></g>
+  <g><rect x="320" y="740" width="36" height="42" class="store-id-box"/><text x="338" y="766" class="store-id-text">D4</text><rect x="356" y="740" width="160" height="42" class="store-body"/><text x="436" y="766" class="store-name">Actual Daily Usage</text></g>
+  <g><rect x="540" y="740" width="36" height="42" class="store-id-box"/><text x="558" y="766" class="store-id-text">D5</text><rect x="576" y="740" width="160" height="42" class="store-body"/><text x="656" y="766" class="store-name">Simulated Plans</text></g>
+  <g><rect x="760" y="740" width="36" height="42" class="store-id-box"/><text x="778" y="766" class="store-id-text">D6</text><rect x="796" y="740" width="160" height="42" class="store-body"/><text x="876" y="766" class="store-name">Live Stopwatch Logs</text></g>
 
   <!-- Flows -->
-  <!-- Input from Process 2 (boundary) -->
-  <line x1="455" y1="110" x2="455" y2="132" class="flow-line" stroke-dasharray="4,3" marker-end="url(#a4)"/>
-  <text x="463" y="108" class="flow-text" fill="#3b82f6">FROM PROCESS 2: CONSOLIDATED 24H LOAD PROFILE</text>
+  <line x1="210" y1="175" x2="332" y2="175" class="flow-line" marker-end="url(#a3)"/>
+  <text x="218" y="168" class="flow-text">TOGGLE SWITCH / WORKLOAD MODE</text>
 
-  <!-- 3.1 -> 3.2 -->
-  <line x1="455" y1="220" x2="455" y2="322" class="flow-line" marker-end="url(#a4)"/>
-  <text x="463" y="275" class="flow-text">24-HOUR LOAD CURVE DATA</text>
+  <path d="M180 200 L180 480 L332 480" class="flow-line" marker-end="url(#a3)"/>
+  <text x="190" y="470" class="flow-text">SCHEDULE OVERRIDES &amp; TASKS</text>
 
-  <!-- D: Tariff Matrix -> 3.2 -->
-  <path d="M740 221 630 221 630 365 568 365" class="flow-line" marker-end="url(#a4)"/>
-  <text x="640" y="214" class="flow-text">UNBUNDLED RATE TIERS</text>
+  <line x1="450" y1="218" x2="450" y2="272" class="flow-line" marker-end="url(#a3)"/>
+  <text x="458" y="250" class="flow-text">LIVE SESSION DATA</text>
 
-  <!-- 3.2 -> D: Unbundled Bill Records -->
-  <path d="M560 390 650 390 650 501 732 501" class="flow-line" marker-end="url(#a4)"/>
-  <text x="568" y="383" class="flow-text">7-PART ITEMIZED CHARGES</text>
+  <path d="M560 324 L672 324" class="flow-line" marker-end="url(#a3)"/>
+  <text x="575" y="317" class="flow-text">ALERT TRIGGERS</text>
 
-  <!-- 3.2 -> 3.3 -->
-  <line x1="455" y1="418" x2="455" y2="522" class="flow-line" marker-end="url(#a4)"/>
-  <text x="463" y="475" class="flow-text">COMPUTED BILL TOTAL</text>
+  <line x1="890" y1="324" x2="970" y2="324" class="flow-line"/>
+  <line x1="970" y1="324" x2="970" y2="208" class="flow-line" marker-end="url(#a3)"/>
+  <text x="900" y="270" class="flow-text">CRUISING TRANSITION &amp; PEAK ALERTS</text>
 
-  <!-- User -> 3.3 (Actual Bill) -->
-  <line x1="210" y1="444" x2="342" y2="560" class="flow-line" marker-end="url(#a4)"/>
-  <text x="218" y="478" class="flow-text">ACTUAL MERALCO BILL</text>
-  <text x="218" y="489" class="flow-text">(KWH &amp; PESO AMOUNT)</text>
+  <line x1="410" y1="368" x2="410" y2="732" class="flow-line" marker-end="url(#a3)"/>
+  <text x="418" y="710" class="flow-text">WRITE MEASURED KWH</text>
 
-  <!-- 3.3 -> D: Reconciled Metrics -->
-  <path d="M560 580 650 580 650 621 732 621" class="flow-line" marker-end="url(#a4)"/>
-  <text x="568" y="573" class="flow-text">MAPE SCORE &amp; PHANTOM BUFFER</text>
+  <path d="M490 528 L490 600 L620 600 L620 732" class="flow-line" marker-end="url(#a3)"/>
+  <text x="500" y="590" class="flow-text">WRITE SIMULATED KWH</text>
 
-  <!-- 3.3 -> User: Accuracy Metric -->
-  <path d="M350 600 130 600 130 476" class="flow-line" marker-end="url(#a4)"/>
-  <text x="138" y="560" class="flow-text">MAPE ACCURACY VALIDATION (≥90%)</text>
+  <path d="M216 740 L216 200 L332 200" class="flow-line" marker-end="url(#a3)"/>
+  <text x="225" y="250" class="flow-text">APPLIANCE SPECS &amp; CRUISING RATIO</text>
 
-  <!-- 3.2 -> User: Itemized Bill -->
-  <path d="M350 400 100 400 100 460" class="flow-line" marker-end="url(#a4)"/>
-  <text x="108" y="395" class="flow-text">ITEMIZED ERC BILL RECEIPT &amp; 24H LOAD CURVE</text>
+  <line x1="450" y1="528" x2="450" y2="592" class="flow-line" marker-end="url(#a3)"/>
+  <text x="458" y="565" class="flow-text">CYCLE BOUNDARIES</text>
 
-  <text x="1010" y="790" class="footer-text">LEVEL 2 — PROCESS 3 DECOMPOSITION</text>
+  <!-- Output to Process 4 -->
+  <line x1="450" y1="688" x2="450" y2="720" class="flow-line" stroke-dasharray="4,3"/>
+  <text x="458" y="710" class="flow-text" fill="#2563eb">→ TO PROCESS 4: AGGREGATED ACTUALS &amp; SIMULATED LOAD PROFILE</text>
+
+  <text x="1080" y="885" class="footer-text">LEVEL 2 — PROCESS 3 DECOMPOSITION</text>
+</svg>
+</div></div></div>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗ -->
+<!-- ║  TAB 6: LEVEL 2 — PROCESS 4 DECOMPOSITION                 ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════╝ -->
+<div class="tab-panel" id="panel-l2p4">
+<div class="sheet-card">
+<div class="svg-container" data-panel="l2p4">
+<svg class="dfd-svg" viewBox="0 0 1140 880">
+  <defs>
+    <marker id="a4" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 1.5L8 5 0 8.5z" fill="#dc2626"/></marker>
+    <filter id="sh4" x="-5%" y="-5%" width="110%" height="110%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity=".06"/></filter>
+  </defs>
+  <rect width="1140" height="880" fill="var(--bg-sheet)"/>
+  <rect x="20" y="20" width="1100" height="840" rx="8" fill="var(--bg-sheet)" stroke="var(--border-sheet)" stroke-width="1.5" filter="url(#sh4)"/>
+
+  <text x="570" y="60" class="title-main" text-anchor="middle">Level 2 DFD — Process 4 Decomposition</text>
+  <text x="570" y="82" class="title-sub" text-anchor="middle">Energy Modeling &amp; Reconciliation: 5–8% Phantom Buffer, ERC 7-Part Unbundled Bill, What-If Simulator &amp; MAPE ≥90% Validation.</text>
+
+  <!-- External Entities -->
+  <g><rect x="50" y="440" width="160" height="50" class="entity-box" rx="3"/><text x="130" y="465" class="entity-text">User / Consumer</text><text x="130" y="480" class="entity-sub">Actual Bill &amp; Sliders</text></g>
+  <g><rect x="50" y="300" width="160" height="50" class="entity-box" rx="3"/><text x="130" y="323" class="entity-text">Electric Utility</text><text x="130" y="339" class="entity-sub">Meralco / ERC Matrix</text></g>
+
+  <!-- Sub-Processes -->
+  <!-- 4.1 -->
+  <g>
+    <rect x="340" y="130" width="230" height="88" class="proc-bg"/>
+    <path d="M340 138A8 8 0 01 348 130H562A8 8 0 01 570 138V152H340Z" class="proc-header"/>
+    <rect x="340" y="130" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="146" class="proc-id-text">4.1</text>
+    <path d="M340 209H570V210A8 8 0 01 562 218H348A8 8 0 01 340 210Z" class="proc-bottom"/>
+    <text x="455" y="175" class="proc-name">Bottom-Up Load Curve +</text>
+    <text x="455" y="193" class="proc-name">5–8% Phantom Base Load Buffer</text>
+  </g>
+
+  <!-- 4.2 -->
+  <g>
+    <rect x="340" y="290" width="230" height="88" class="proc-bg"/>
+    <path d="M340 298A8 8 0 01 348 290H562A8 8 0 01 570 298V312H340Z" class="proc-header"/>
+    <rect x="340" y="290" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="306" class="proc-id-text">4.2</text>
+    <path d="M340 369H570V370A8 8 0 01 562 378H348A8 8 0 01 340 370Z" class="proc-bottom"/>
+    <text x="455" y="335" class="proc-name">ERC 7-Part Unbundled</text>
+    <text x="455" y="353" class="proc-name">Charge Calculator Engine</text>
+  </g>
+
+  <!-- 4.3 -->
+  <g>
+    <rect x="340" y="450" width="230" height="88" class="proc-bg"/>
+    <path d="M340 458A8 8 0 01 348 450H562A8 8 0 01 570 458V472H340Z" class="proc-header"/>
+    <rect x="340" y="450" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="466" class="proc-id-text">4.3</text>
+    <path d="M340 529H570V530A8 8 0 01 562 538H348A8 8 0 01 340 530Z" class="proc-bottom"/>
+    <text x="455" y="495" class="proc-name">What-If Energy Saving</text>
+    <text x="455" y="513" class="proc-name">Simulator &amp; Rate Slider</text>
+  </g>
+
+  <!-- 4.4 -->
+  <g>
+    <rect x="340" y="610" width="230" height="88" class="proc-bg"/>
+    <path d="M340 618A8 8 0 01 348 610H562A8 8 0 01 570 618V632H340Z" class="proc-header"/>
+    <rect x="340" y="610" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="626" class="proc-id-text">4.4</text>
+    <path d="M340 689H570V690A8 8 0 01 562 698H348A8 8 0 01 340 690Z" class="proc-bottom"/>
+    <text x="455" y="655" class="proc-name">Ground-Truth MAPE Accuracy</text>
+    <text x="455" y="673" class="proc-name">Reconciliation Engine (≥90%)</text>
+  </g>
+
+  <!-- 4.5 -->
+  <g>
+    <rect x="730" y="370" width="230" height="88" class="proc-bg"/>
+    <path d="M730 378A8 8 0 01 738 370H952A8 8 0 01 960 378V392H730Z" class="proc-header"/>
+    <rect x="730" y="370" width="34" height="22" class="proc-id-box"/>
+    <text x="747" y="386" class="proc-id-text">4.5</text>
+    <path d="M730 449H960V450A8 8 0 01 952 458H738A8 8 0 01 730 450Z" class="proc-bottom"/>
+    <text x="845" y="415" class="proc-name">Gemini AI Energy Audit &amp;</text>
+    <text x="845" y="433" class="proc-name">Vampire Standby Optimizer</text>
+  </g>
+
+  <!-- Data Stores -->
+  <g><rect x="750" y="160" width="36" height="42" class="store-id-box"/><text x="768" y="186" class="store-id-text">D7</text><rect x="786" y="160" width="180" height="42" class="store-body"/><text x="876" y="186" class="store-name">Meralco Tariff Matrix</text></g>
+  <g><rect x="750" y="630" width="36" height="42" class="store-id-box"/><text x="768" y="656" class="store-id-text">D8</text><rect x="786" y="630" width="180" height="42" class="store-body"/><text x="876" y="656" class="store-name">Reconciled Metrics (MAPE)</text></g>
+
+  <!-- Flows -->
+  <line x1="455" y1="218" x2="455" y2="282" class="flow-line" marker-end="url(#a4)"/>
+  <text x="463" y="255" class="flow-text">24H LOAD CURVE + 5% PHANTOM BUFFER</text>
+
+  <line x1="210" y1="325" x2="332" y2="325" class="flow-line" marker-end="url(#a4)"/>
+  <text x="218" y="318" class="flow-text">LATEST MERALCO TARIFF RATES</text>
+
+  <line x1="570" y1="334" x2="742" y2="185" class="flow-line" marker-end="url(#a4)"/>
+  <text x="610" y="260" class="flow-text">RATE TIERS &amp; VAT</text>
+
+  <line x1="455" y1="378" x2="455" y2="442" class="flow-line" marker-end="url(#a4)"/>
+  <text x="463" y="415" class="flow-text">ITEMIZED ERC CHARGES</text>
+
+  <line x1="210" y1="475" x2="332" y2="475" class="flow-line" marker-end="url(#a4)"/>
+  <text x="218" y="468" class="flow-text">WHAT-IF SLIDER ADJUSTMENTS</text>
+
+  <line x1="455" y1="538" x2="455" y2="602" class="flow-line" marker-end="url(#a4)"/>
+  <text x="463" y="575" class="flow-text">COMPUTED PROJECTED BILL</text>
+
+  <path d="M210 490 L260 490 L260 645 L332 645" class="flow-line" marker-end="url(#a4)"/>
+  <text x="220" y="550" class="flow-text">ACTUAL UTILITY BILL (KWH &amp; ₱)</text>
+
+  <line x1="570" y1="654" x2="742" y2="654" class="flow-line" marker-end="url(#a4)"/>
+  <text x="585" y="647" class="flow-text">MAPE SCORE &amp; ACCURACY REPORT</text>
+
+  <!-- Returns to User -->
+  <path d="M340 660 L140 660 L140 500" class="flow-line" marker-end="url(#a4)"/>
+  <text x="148" y="600" class="flow-text">VERIFIED ACCURACY BADGE (≥90%)</text>
+
+  <path d="M340 500 L218 500" class="flow-line" marker-end="url(#a4)"/>
+  <text x="225" y="515" class="flow-text">WHAT-IF SAVINGS (₱/MO)</text>
+
+  <line x1="570" y1="410" x2="722" y2="410" class="flow-line" marker-end="url(#a4)"/>
+  <text x="585" y="403" class="flow-text">LOAD PROFILE &amp; DEVICE MIX</text>
+
+  <path d="M845 458 L845 530 L180 530 L180 500" class="flow-line" marker-end="url(#a4)"/>
+  <text x="400" y="522" class="flow-text">AI ENERGY-SAVING AUDIT TIPS &amp; VAMPIRE REDUCTION</text>
+
+  <text x="1080" y="845" class="footer-text">LEVEL 2 — PROCESS 4 DECOMPOSITION</text>
 </svg>
 </div></div></div>
 
@@ -717,55 +937,66 @@
 
 <!-- ═══════════════ SPECIFICATION SECTION ═══════════════ -->
 <section class="docs-section" id="spec-section">
-  <h2 class="docs-header">📐 Complete DFD Specification — Capstone Architecture</h2>
+  <h2 class="docs-header">📐 Complete DFD Specification — PowerForecast Architecture v3.7.2</h2>
   <p class="docs-sub">
-    This document contains the formal, complete Data Flow Diagram hierarchy for PowerForecast Refine,
-    modeled using the Gane &amp; Sarson notation — Context Diagram (Level 0), Level 1 DFD, and Level 2
-    decompositions for all three core processes. Suitable for Chapter 3: System Design &amp; Methodology.
+    Formal Data Flow Diagram hierarchy matching the active implementation of PowerForecast Refine.
+    Incorporating multi-tenant household collaboration, dual OCR, PC hardware profiling, inverter pulldown-to-cruising telemetry,
+    and bottom-up MAPE reconciliation with phantom base load buffers.
   </p>
 
   <div class="legend-grid">
     <div class="legend-card">
       <div class="legend-title"><span class="legend-swatch swatch-context"></span> Context Process (Level 0)</div>
-      <div class="legend-desc">A single circle representing the entire system boundary, showing only external entity interactions.</div>
+      <div class="legend-desc">Single circle representing the system boundary and its relationships with all external human &amp; cloud actors.</div>
     </div>
     <div class="legend-card">
       <div class="legend-title"><span class="legend-swatch swatch-entity"></span> External Entities</div>
-      <div class="legend-desc">Actors or systems outside the boundary: User, Meralco, DOE PELP, Gemini AI, Resend notifications.</div>
+      <div class="legend-desc">User/Owner, Room Collaborator, Meralco, DOE PELP, PC HW Registry, Gemini AI, Tesseract.js, Resend/Push.</div>
     </div>
     <div class="legend-card">
       <div class="legend-title"><span class="legend-swatch swatch-process"></span> Gane &amp; Sarson Processes</div>
-      <div class="legend-desc">Numbered rounded rectangles with partitioned top ID bands (1, 2, 3 or 1.1, 1.2, etc.).</div>
+      <div class="legend-desc">Partitioned rounded rectangles with top ID bands (1, 2, 3, 4 and sub-processes 1.1–4.5).</div>
     </div>
     <div class="legend-card">
-      <div class="legend-title"><span class="legend-swatch swatch-store"></span> Data Stores (D)</div>
-      <div class="legend-desc">Left "D" ID-compartmented blocks holding persistent records in Supabase/PostgreSQL.</div>
+      <div class="legend-title"><span class="legend-swatch swatch-store"></span> Data Stores (D1–D8)</div>
+      <div class="legend-desc">Persistent Supabase PostgreSQL tables: rooms, user_appliances, daily_appliance_usage, simulated_usage, etc.</div>
     </div>
     <div class="legend-card">
       <div class="legend-title"><span class="legend-swatch swatch-flow"></span> Data Flows</div>
-      <div class="legend-desc">Orthogonal rose/coral directed paths with clean uppercase labels.</div>
+      <div class="legend-desc">Directed red flow paths with clear uppercase labels representing discrete data packages.</div>
     </div>
   </div>
 
   <table class="spec-table">
     <thead>
-      <tr><th>Diagram</th><th>Process ID</th><th>Subsystem</th><th>Primary Inputs</th><th>Primary Outputs</th></tr>
+      <tr><th>Level</th><th>ID</th><th>Subsystem / Process</th><th>Primary Inputs</th><th>Primary Outputs</th><th>Storage Target</th></tr>
     </thead>
     <tbody>
-      <tr><td rowspan="3"><span class="tag-id">Level 1</span></td><td><span class="tag-id">1</span></td><td><strong>Appliance Ingestion &amp; Specification</strong></td><td>Photos, User Specs, OCR, CSPF</td><td>Catalog Specs, Rated Wattage</td></tr>
-      <tr><td><span class="tag-id">2</span></td><td><strong>Daily Usage &amp; Smart Calendar</strong></td><td>Routines, Stopwatch, Tariffs</td><td>kWh Logs, Load Profiles, Alerts</td></tr>
-      <tr><td><span class="tag-id">3</span></td><td><strong>Energy Modeling &amp; Reconciliation</strong></td><td>24h Load Profiles, Actual Bills</td><td>ERC Bill, MAPE Score</td></tr>
-      <tr><td rowspan="4"><span class="tag-id">Level 2: P1</span></td><td><span class="tag-id">1.1</span></td><td>Photo Capture &amp; Upload</td><td>Nameplate Photos, Manual Input</td><td>Raw Image Data</td></tr>
-      <tr><td><span class="tag-id">1.2</span></td><td>Gemini Vision OCR Parsing</td><td>Raw Images, OCR API Response</td><td>Parsed Spec Attributes</td></tr>
-      <tr><td><span class="tag-id">1.3</span></td><td>DOE CSPF Cross-Validation</td><td>Parsed Specs, CSPF Ratings</td><td>Validated &amp; Enriched Specs</td></tr>
-      <tr><td><span class="tag-id">1.4</span></td><td>Catalog Storage &amp; Onboarding</td><td>Validated Specs</td><td>Catalog Record, Onboarding Confirmation</td></tr>
-      <tr><td rowspan="4"><span class="tag-id">Level 2: P2</span></td><td><span class="tag-id">2.1</span></td><td>Stopwatch &amp; Timeline Tracker</td><td>Stopwatch Toggles, Timeline Sessions, Left-Running Monitor</td><td>Live &amp; Auto-logged Session Records</td></tr>
-      <tr><td><span class="tag-id">2.2</span></td><td>Smart Calendar Manager</td><td>Calendar Events &amp; Schedules</td><td>Scheduled Usage Projections</td></tr>
-      <tr><td><span class="tag-id">2.3</span></td><td>kWh Computation Engine</td><td>Load Profiles, Usage Data, Tariffs</td><td>Hourly kWh, Cost Estimates, Rate Tiers</td></tr>
-      <tr><td><span class="tag-id">2.4</span></td><td>Budget &amp; Peak Alert Monitor</td><td>Hourly kWh &amp; Cost Estimates</td><td>Budget Threshold &amp; Peak Alerts</td></tr>
-      <tr><td rowspan="3"><span class="tag-id">Level 2: P3</span></td><td><span class="tag-id">3.1</span></td><td>Load Aggregation &amp; 24h Curve Builder</td><td>Consolidated Daily kWh</td><td>24-Hour Load Curve Data</td></tr>
-      <tr><td><span class="tag-id">3.2</span></td><td>ERC 7-Part Unbundled Calculator</td><td>Load Curve, Rate Tiers</td><td>7-Part Itemized Charges</td></tr>
-      <tr><td><span class="tag-id">3.3</span></td><td>MAPE Accuracy Reconciliation</td><td>Computed Total, Actual Bill</td><td>MAPE Score (&ge;90%), Phantom Buffer</td></tr>
+      <tr><td><span class="tag-id">Level 1</span></td><td><span class="tag-id">1</span></td><td><strong>Multi-Modal Ingestion &amp; Specification</strong></td><td>3 Photos, Manual Specs, OCR, CSPF, TDP/TGP</td><td>Catalog Specs, Cruising Watts</td><td><span class="tag-id">D3</span> user_appliances</td></tr>
+      <tr><td><span class="tag-id">Level 1</span></td><td><span class="tag-id">2</span></td><td><strong>Room-Code &amp; Household Management</strong> <span class="badge-pill">NEW</span></td><td>Create Room, Join Code (PF-XXXXXX)</td><td>Scoped Profiles, Admin vs Viewer RLS</td><td><span class="tag-id">D1</span> rooms, room_members</td></tr>
+      <tr><td><span class="tag-id">Level 1</span></td><td><span class="tag-id">3</span></td><td><strong>Daily Telemetry, Live Board &amp; Calendar</strong></td><td>Stopwatch Toggles, Workloads, Calendar Overrides</td><td>Measured kWh, Simulated Plans, Alerts</td><td><span class="tag-id">D4, D5, D6</span></td></tr>
+      <tr><td><span class="tag-id">Level 1</span></td><td><span class="tag-id">4</span></td><td><strong>Modeling, Tariff &amp; Reconciliation Engine</strong></td><td>MTD Actuals, Simulated Baseline, Meralco Rates</td><td>ERC Bill, MAPE (≥90%), AI Tips</td><td><span class="tag-id">D7, D8</span></td></tr>
+      
+      <tr><td rowspan="4"><span class="tag-id">L2: P1</span></td><td><span class="tag-id">1.1</span></td><td>3-Photo Staging &amp; Capture Interface</td><td>Nameplate, Energy Guide, Full Unit</td><td>Raw Image Staging Data</td><td>Memory Buffer</td></tr>
+      <tr><td><span class="tag-id">1.2</span></td><td>Dual-Engine OCR Parser</td><td>Gemini 2.0 Flash + Tesseract Fallback</td><td>Parsed Spec Attributes</td><td>Memory Buffer</td></tr>
+      <tr><td><span class="tag-id">1.3</span></td><td>DOE CSPF &amp; PC Spec Cross-Validation</td><td>6,800+ PELP Ratings + CPU/GPU TDP/TGP</td><td>Validated Specifications</td><td>Catalog Cache</td></tr>
+      <tr><td><span class="tag-id">1.4</span></td><td>Duty Cycle &amp; Cruising Profiler</td><td>Validated Specs, Inverter Modulation</td><td>Cruising Watts, Scoped Appliance</td><td><span class="tag-id">D3</span> user_appliances</td></tr>
+
+      <tr><td rowspan="3"><span class="tag-id">L2: P2</span></td><td><span class="tag-id">2.1</span></td><td>Main Room Auto-Provisioning</td><td>Signup &amp; First Login Event</td><td>&lt;&lt;Username&gt;&gt;'s Room Profile</td><td><span class="tag-id">D1</span> rooms</td></tr>
+      <tr><td><span class="tag-id">2.2</span></td><td>6-Char Room Code Dispatcher</td><td>Join Request: PF-XXXXXX</td><td>Validated Membership Record</td><td><span class="tag-id">D1</span> room_members</td></tr>
+      <tr><td><span class="tag-id">2.3</span></td><td>Role Hierarchy &amp; Permission Guard</td><td>User Session, Room Role</td><td>Owner/Admin vs View-Only Context</td><td>RLS Policies</td></tr>
+
+      <tr><td rowspan="5"><span class="tag-id">L2: P3</span></td><td><span class="tag-id">3.1</span></td><td>Live Board &amp; Cruising Telemetry</td><td>Circuit Switches, Workload Modes</td><td>Live Draw, Cruising Alert Events</td><td><span class="tag-id">D6</span> usage_logs</td></tr>
+      <tr><td><span class="tag-id">3.2</span></td><td>Dual-Track Usage Logger</td><td>Completed Sessions &amp; Calendar Overrides</td><td>Measured kWh (D4), Plan kWh (D5)</td><td><span class="tag-id">D4, D5</span></td></tr>
+      <tr><td><span class="tag-id">3.3</span></td><td>Smart Calendar Multi-View &amp; Peak</td><td>Routines, 11am-4pm &amp; 6pm-9pm Bands</td><td>Scheduled Daily Projections</td><td><span class="tag-id">D5</span></td></tr>
+      <tr><td><span class="tag-id">3.4</span></td><td>Billing Period Configurator</td><td>15th-to-14th Cycle or Custom Date Range</td><td>Billing Window Boundaries</td><td><span class="tag-id">D2</span> accounts</td></tr>
+      <tr><td><span class="tag-id">3.5</span></td><td>Budget, Cruising &amp; Peak Alert Dispatcher</td><td>Hourly kWh &amp; 30m Cruising Timers</td><td>Web Push &amp; Resend Transactional Email</td><td>Notification API</td></tr>
+
+      <tr><td rowspan="5"><span class="tag-id">L2: P4</span></td><td><span class="tag-id">4.1</span></td><td>Bottom-Up Load Curve + 5-8% Buffer</td><td>MTD Actuals (D4) + Future Days (D5)</td><td>24H Load Curve + Standby Loads</td><td>Calculation Memory</td></tr>
+      <tr><td><span class="tag-id">4.2</span></td><td>ERC 7-Part Unbundled Calculator</td><td>Load Curve, Generation, Transmission, Taxes</td><td>Itemized 7-Part Bill Breakdown</td><td><span class="tag-id">D7</span> meralco_rates</td></tr>
+      <tr><td><span class="tag-id">4.3</span></td><td>What-If Energy Saving Simulator</td><td>Gen Rate Slider (&plusmn;₱) &amp; Appliance Sliders</td><td>Projected Monthly Peso Savings</td><td>UI Simulation State</td></tr>
+      <tr><td><span class="tag-id">4.4</span></td><td>MAPE Accuracy Reconciliation</td><td>Estimated kWh, Actual Meralco Bill</td><td>MAPE Score (≥90%), Verified Badge</td><td><span class="tag-id">D8</span> reconciled_metrics</td></tr>
+      <tr><td><span class="tag-id">4.5</span></td><td>Gemini AI Energy Audit &amp; Optimizer</td><td>Device Inventory Mix, Vampire Standby Draw</td><td>Actionable AI Savings Tips</td><td>Persisted Audit Cache</td></tr>
     </tbody>
   </table>
 </section>
@@ -781,22 +1012,35 @@
   }
 
   /* ── Tabs ── */
-  const panels = { ctx: 'panel-ctx', l1: 'panel-l1', l2p1: 'panel-l2p1', l2p2: 'panel-l2p2', l2p3: 'panel-l2p3' };
+  const panels = { 
+    ctx: 'panel-ctx', 
+    l1: 'panel-l1', 
+    l2p1: 'panel-l2p1', 
+    l2p2: 'panel-l2p2', 
+    l2p3: 'panel-l2p3', 
+    l2p4: 'panel-l2p4' 
+  };
   function switchTab(id) {
-    Object.values(panels).forEach(p => document.getElementById(p).classList.remove('active'));
+    Object.values(panels).forEach(p => {
+      const el = document.getElementById(p);
+      if (el) el.classList.remove('active');
+    });
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(panels[id]).classList.add('active');
-    event.currentTarget.classList.add('active');
+    const target = document.getElementById(panels[id]);
+    if (target) target.classList.add('active');
+    if (event && event.currentTarget) event.currentTarget.classList.add('active');
     resetView();
   }
 
   /* ── Zoom / Pan ── */
   let scale = 1, tx = 0, ty = 0, dragging = false, sx = 0, sy = 0;
   function activeSvg() {
-    const panel = document.querySelector('.tab-panel.active .svg-container svg');
-    return panel;
+    return document.querySelector('.tab-panel.active .svg-container svg');
   }
-  function apply() { const s = activeSvg(); if (s) s.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`; }
+  function apply() { 
+    const s = activeSvg(); 
+    if (s) s.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`; 
+  }
   function zoomIn() { scale = Math.min(scale * 1.25, 3.5); apply(); }
   function zoomOut() { scale = Math.max(scale / 1.25, 0.5); apply(); }
   function resetView() { scale = 1; tx = 0; ty = 0; apply(); }
@@ -805,10 +1049,18 @@
     if (!e.target.closest('.svg-container')) return;
     dragging = true; sx = e.clientX - tx; sy = e.clientY - ty;
   });
-  document.addEventListener('mousemove', e => { if (!dragging) return; tx = e.clientX - sx; ty = e.clientY - sy; apply(); });
+  document.addEventListener('mousemove', e => { 
+    if (!dragging) return; 
+    tx = e.clientX - sx; ty = e.clientY - sy; 
+    apply(); 
+  });
   document.addEventListener('mouseup', () => { dragging = false; });
   document.querySelectorAll('.svg-container').forEach(c => {
-    c.addEventListener('wheel', e => { e.preventDefault(); scale = Math.min(Math.max(scale * (e.deltaY < 0 ? 1.1 : .9), .5), 3.5); apply(); }, { passive: false });
+    c.addEventListener('wheel', e => { 
+      e.preventDefault(); 
+      scale = Math.min(Math.max(scale * (e.deltaY < 0 ? 1.1 : .9), .5), 3.5); 
+      apply(); 
+    }, { passive: false });
   });
 </script>
 </body>

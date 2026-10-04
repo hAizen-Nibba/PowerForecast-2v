@@ -3,6 +3,26 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
+    id: "3.8.4bv",
+    version: "3.8.4bv",
+    git_commit_tag: "3.8.4bv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.4bv - Upstream Full Synchronization & Unified Experience: Integrated Core Views UI Modernization (Smart Calendar, Analytics, Forecasting, Bill Calculator with Stack Template Zinc theme) and Header Redesign (sharp square aesthetics, room switcher in profile menu, page name before room breadcrumb) with Production Settings Hierarchy, Notification Activity Center logs feed, and dynamic contrast fixes.",
+  },
+  {
+    id: "3.8.4av",
+    version: "3.8.4av",
+    git_commit_tag: "3.8.4av",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.4av - Redesign Header: Aligned with sidebar brand header, square edges across header and sidebar, page name before room breadcrumb, and relocated rooms dropdown to profile menu.",
+  },
+  {
     id: "3.8.4v",
     version: "3.8.4v",
     git_commit_tag: "3.8.4v",
@@ -10,7 +30,7 @@ export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
-      "3.8.4v - Button Contrast Optimization & Notification Center Architecture: Fixed button and text contrast across light and dark modes for Join With Code, removed raw telemetry UID badge from active profile banner, consolidated comprehensive notification configuration (sensitivity presets, hardware chimes/haptics, load surge watts, budget milestones, peak hours) into Settings Notifications tab, and transformed the header popover into an interactive Notification Logs Feed.",
+      "3.8.4v - Core Views UI Modernization & Notification Center Architecture: Aligned Smart Calendar, Analytics, Forecasting, and Bill Calculator with Stack Template Zinc theme; added Notification Center Activity Logs Feed with unread badges, and optimized button and avatar contrast across light and dark modes.",
   },
   {
     id: "3.8.3bv",

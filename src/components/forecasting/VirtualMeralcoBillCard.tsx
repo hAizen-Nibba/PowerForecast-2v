@@ -25,6 +25,8 @@ import {
   Home as HomeIcon,
 } from "@mui/icons-material";
 import { calculateMeralcoBill } from "../../lib/meralcoCalculator";
+import { SectionCard } from "../common/SectionCard";
+import { tokens } from "../../theme/tokens";
 
 interface VirtualMeralcoBillCardProps {
   forecastedKwh: number;
@@ -63,149 +65,225 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
   const lifelineBuffer = Math.max(0, 100 - forecastedKwh);
 
   return (
-    <Card
-      data-tour="forecasting-virtual-bill"
-      sx={{
-        p: { xs: 2.5, sm: 3 },
-        borderRadius: 1.5,
-        border: "1px solid",
-        borderColor: (theme) =>
-          theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.25)" : "rgba(13, 148, 136, 0.25)",
-        bgcolor: (theme) =>
-          theme.palette.mode === "dark" ? "rgba(24, 27, 32, 0.85)" : "#ffffff",
-        boxShadow: (theme) =>
-          theme.palette.mode === "dark" ? "none" : "0 2px 12px rgba(15, 23, 42, 0.04)",
-      }}
-    >
-      {/* 1. Header Bar: Title, Tariff Classification, and Lifeline Badge */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-          gap: 2,
-          mb: 2,
-        }}
-      >
-        <Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <BillIcon sx={{ color: "primary.main" }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
-              {language === "tl"
-                ? "Talaan ng Tinatayang Bill sa Meralco (Unbundled Virtual Bill)"
-                : 'Projected Meralco Statement Breakdown ("Virtual Bill")'}
-            </Typography>
-          </Box>
-          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+    <SectionCard
+      dataTour="forecasting-virtual-bill"
+      title={
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <BillIcon sx={{ color: "text.primary", fontSize: 18 }} />
+          <span>
             {language === "tl"
-              ? `Eksaktong unbundled ERC tariff computation para sa ${activeMonthName} batay sa iyong kabuuang prediksyon.`
-              : `Official ERC unbundled cost decomposition for ${activeMonthName} based on projected load.`}
-          </Typography>
+              ? "Talaan ng Tinatayang Bill sa Meralco (Unbundled Virtual Bill)"
+              : 'Projected Meralco Statement Breakdown ("Virtual Bill")'}
+          </span>
         </Box>
-
+      }
+      subtitle={
+        language === "tl"
+          ? `Eksaktong unbundled ERC tariff computation para sa ${activeMonthName} batay sa iyong kabuuang prediksyon.`
+          : `Official ERC unbundled cost decomposition for ${activeMonthName} based on projected load.`
+      }
+      headerActions={
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
           <Chip
-            icon={isCommercial ? <BuildingIcon sx={{ fontSize: 16 }} /> : <HomeIcon sx={{ fontSize: 16 }} />}
+            icon={isCommercial ? <BuildingIcon sx={{ fontSize: 14 }} /> : <HomeIcon sx={{ fontSize: 14 }} />}
             label={isCommercial ? "Commercial General Power" : "Residential (Meralco)"}
             variant="outlined"
             size="small"
-            sx={{ fontWeight: 700 }}
+            sx={{
+              fontWeight: 600,
+              fontSize: "0.75rem",
+              borderRadius: 0.75,
+              borderColor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.border : tokens.light.border,
+            }}
           />
 
           {!isCommercial && (
             <Chip
-              icon={isLifeline ? <CheckIcon sx={{ fontSize: "16px !important" }} /> : <InfoIcon sx={{ fontSize: "16px !important" }} />}
+              icon={isLifeline ? <CheckIcon sx={{ fontSize: "14px !important" }} /> : <InfoIcon sx={{ fontSize: "14px !important" }} />}
               label={
                 isLifeline
                   ? language === "tl"
-                    ? `Lifeline Bracket Aktibo (${lifelineBuffer.toFixed(1)} kWh allowance)`
-                    : `Lifeline Discount Qualified (${lifelineBuffer.toFixed(1)} kWh buffer)`
-                  : language === "tl"
-                  ? "Standard Tariff (>100 kWh)"
+                    ? `Lifeline Aktibo (${lifelineBuffer.toFixed(1)} kWh allowance)`
+                    : `Lifeline Qualified (${lifelineBuffer.toFixed(1)} kWh buffer)`
                   : "Standard Tariff (>100 kWh)"
               }
-              color={isLifeline ? "success" : "default"}
               size="small"
-              sx={{ fontWeight: 700 }}
+              sx={{
+                fontWeight: 600,
+                fontSize: "0.72rem",
+                borderRadius: 0.75,
+                bgcolor: (theme) =>
+                  isLifeline
+                    ? theme.palette.mode === "dark" ? tokens.dark.liveBg : tokens.light.liveBg
+                    : theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+                color: (theme) =>
+                  isLifeline
+                    ? theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live
+                    : "text.secondary",
+                border: "1px solid",
+                borderColor: (theme) =>
+                  isLifeline
+                    ? theme.palette.mode === "dark" ? tokens.dark.liveBorder : tokens.light.liveBorder
+                    : theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+              }}
             />
           )}
         </Box>
-      </Box>
-
+      }
+    >
       {/* 2. Color-Segmented Proportion Bar */}
       <Box sx={{ mb: 2.5 }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
-          <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
+          <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>
             {language === "tl" ? "Distribusyon ng Bawat Bahagi ng Singil" : "Unbundled Cost Distribution"}
           </Typography>
-          <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace", color: "text.primary" }}>
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 700,
+              fontVariantNumeric: "tabular-nums",
+              color: "text.primary",
+            }}
+          >
             {forecastedKwh.toFixed(1)} kWh • ₱{effectiveRate.toFixed(2)}/kWh eff.
           </Typography>
         </Box>
 
         <Box
           sx={{
-            height: 14,
+            height: 8,
             width: "100%",
-            borderRadius: 1.5,
+            borderRadius: 0.5,
             overflow: "hidden",
             display: "flex",
-            bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.06)" : "#e2e8f0"),
+            bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle),
+            border: "1px solid",
+            borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
           }}
         >
           {/* Generation */}
           <Tooltip title={`Generation Charge: ₱${bill.generationTotal.toFixed(2)} (${genPct}%)`}>
-            <Box sx={{ width: `${genPct}%`, height: "100%", bgcolor: "#00e5c9", transition: "width 0.3s ease" }} />
+            <Box
+              sx={{
+                width: `${genPct}%`,
+                height: "100%",
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.chart[0] : tokens.light.chart[0]),
+                transition: "width 0.3s ease",
+              }}
+            />
           </Tooltip>
           {/* Distribution */}
           <Tooltip title={`Distribution Charge: ₱${bill.distributionTotal.toFixed(2)} (${distPct}%)`}>
-            <Box sx={{ width: `${distPct}%`, height: "100%", bgcolor: "#3b82f6", transition: "width 0.3s ease" }} />
+            <Box
+              sx={{
+                width: `${distPct}%`,
+                height: "100%",
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.chart[1] : tokens.light.chart[1]),
+                transition: "width 0.3s ease",
+              }}
+            />
           </Tooltip>
           {/* Transmission */}
           <Tooltip title={`Transmission Charge: ₱${bill.transmissionTotal.toFixed(2)} (${transPct}%)`}>
-            <Box sx={{ width: `${transPct}%`, height: "100%", bgcolor: "#8b5cf6", transition: "width 0.3s ease" }} />
+            <Box
+              sx={{
+                width: `${transPct}%`,
+                height: "100%",
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.chart[3] : tokens.light.chart[3]),
+                transition: "width 0.3s ease",
+              }}
+            />
           </Tooltip>
           {/* Taxes */}
           <Tooltip title={`Government Taxes (VAT & LFT): ₱${taxesTotal.toFixed(2)} (${taxesPct}%)`}>
-            <Box sx={{ width: `${taxesPct}%`, height: "100%", bgcolor: "#f59e0b", transition: "width 0.3s ease" }} />
+            <Box
+              sx={{
+                width: `${taxesPct}%`,
+                height: "100%",
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.chart[2] : tokens.light.chart[2]),
+                transition: "width 0.3s ease",
+              }}
+            />
           </Tooltip>
           {/* Universal & System Loss */}
           <Tooltip title={`Universal & System Loss: ₱${(bill.universalCharges.total + bill.systemLossTotal).toFixed(2)}`}>
-            <Box sx={{ width: `${Math.max(1, sysLossPct + universalPct)}%`, height: "100%", bgcolor: "#10b981", transition: "width 0.3s ease" }} />
+            <Box
+              sx={{
+                width: `${Math.max(1, sysLossPct + universalPct)}%`,
+                height: "100%",
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.chart[4] : tokens.light.chart[4]),
+                transition: "width 0.3s ease",
+              }}
+            />
           </Tooltip>
         </Box>
 
         {/* Legend */}
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1, flexWrap: "wrap", gap: 1.5 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Box sx={{ width: 10, height: 10, borderRadius: 0.5, bgcolor: "#00e5c9" }} />
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Box
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.chart[0] : tokens.light.chart[0]),
+                }}
+              />
+              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
                 Generation ({genPct}%)
               </Typography>
             </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Box sx={{ width: 10, height: 10, borderRadius: 0.5, bgcolor: "#3b82f6" }} />
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Box
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.chart[1] : tokens.light.chart[1]),
+                }}
+              />
+              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
                 Distribution ({distPct}%)
               </Typography>
             </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Box sx={{ width: 10, height: 10, borderRadius: 0.5, bgcolor: "#8b5cf6" }} />
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Box
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.chart[3] : tokens.light.chart[3]),
+                }}
+              />
+              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
                 Transmission ({transPct}%)
               </Typography>
             </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Box sx={{ width: 10, height: 10, borderRadius: 0.5, bgcolor: "#f59e0b" }} />
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Box
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.chart[2] : tokens.light.chart[2]),
+                }}
+              />
+              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
                 Taxes/VAT ({taxesPct}%)
               </Typography>
             </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Box sx={{ width: 10, height: 10, borderRadius: 0.5, bgcolor: "#10b981" }} />
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+              <Box
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.chart[4] : tokens.light.chart[4]),
+                }}
+              />
+              <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
                 Universal/Loss ({universalPct}%)
               </Typography>
             </Box>
@@ -218,24 +296,24 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
         component={Paper}
         variant="outlined"
         sx={{
-          borderRadius: 1.25,
-          bgcolor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "#fafafa",
-          borderColor: "divider",
+          borderRadius: 1,
+          bgcolor: "transparent",
+          borderColor: (theme) =>
+            theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
         }}
       >
         <Table size="small">
           <TableBody>
             {/* Generation Charge */}
             <TableRow>
-              <TableCell sx={{ py: 1.25, borderBottomColor: "divider" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <ElectricBoltIcon sx={{ color: "#00e5c9", fontSize: 18 }} />
+              <TableCell sx={{ py: 1.25, borderColor: (theme) => theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                  <ElectricBoltIcon sx={{ color: (theme) => theme.palette.mode === "dark" ? tokens.dark.chart[0] : tokens.light.chart[0], fontSize: 16 }} />
                   <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {language === "tl" ? "Singil sa Henerasyon" : "Generation Charge"}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
                       {language === "tl"
                         ? "Pass-through sa mga planta at WESM spot market (walang tubo ang Meralco)"
                         : "Pass-through fuel & wholesale WESM market cost"}
@@ -243,11 +321,11 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
                   </Box>
                 </Box>
               </TableCell>
-              <TableCell align="right" sx={{ py: 1.25, borderBottomColor: "divider" }}>
-                <Typography variant="body2" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
+              <TableCell align="right" sx={{ py: 1.25, borderColor: (theme) => theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                   ₱{bill.generationTotal.toFixed(2)}
                 </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
                   {genPct}%
                 </Typography>
               </TableCell>
@@ -255,14 +333,14 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
 
             {/* Transmission Charge */}
             <TableRow>
-              <TableCell sx={{ py: 1.25, borderBottomColor: "divider" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <PowerIcon sx={{ color: "#8b5cf6", fontSize: 18 }} />
+              <TableCell sx={{ py: 1.25, borderColor: (theme) => theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                  <PowerIcon sx={{ color: (theme) => theme.palette.mode === "dark" ? tokens.dark.chart[3] : tokens.light.chart[3], fontSize: 16 }} />
                   <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {language === "tl" ? "Singil sa Transmisyon" : "Transmission Charge"}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
                       {language === "tl"
                         ? "Ibinabayad sa National Grid Corporation of the Philippines (NGCP)"
                         : "High-voltage grid delivery paid to NGCP"}
@@ -270,11 +348,11 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
                   </Box>
                 </Box>
               </TableCell>
-              <TableCell align="right" sx={{ py: 1.25, borderBottomColor: "divider" }}>
-                <Typography variant="body2" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
+              <TableCell align="right" sx={{ py: 1.25, borderColor: (theme) => theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                   ₱{bill.transmissionTotal.toFixed(2)}
                 </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
                   {transPct}%
                 </Typography>
               </TableCell>
@@ -282,14 +360,14 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
 
             {/* Distribution Charge */}
             <TableRow>
-              <TableCell sx={{ py: 1.25, borderBottomColor: "divider" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <BuildingIcon sx={{ color: "#3b82f6", fontSize: 18 }} />
+              <TableCell sx={{ py: 1.25, borderColor: (theme) => theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                  <BuildingIcon sx={{ color: (theme) => theme.palette.mode === "dark" ? tokens.dark.chart[1] : tokens.light.chart[1], fontSize: 16 }} />
                   <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {language === "tl" ? "Singil sa Distribusyon" : "Distribution Charge (Meralco)"}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
                       {language === "tl"
                         ? `Meralco poles, wires, metering (₱${bill.meteringCharge.toFixed(2)}), at supply (₱${bill.supplyCharge.toFixed(2)})`
                         : `Distribution, Supply (₱${bill.supplyCharge.toFixed(2)}), and Metering (₱${bill.meteringCharge.toFixed(2)})`}
@@ -297,11 +375,11 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
                   </Box>
                 </Box>
               </TableCell>
-              <TableCell align="right" sx={{ py: 1.25, borderBottomColor: "divider" }}>
-                <Typography variant="body2" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
+              <TableCell align="right" sx={{ py: 1.25, borderColor: (theme) => theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                   ₱{bill.distributionTotal.toFixed(2)}
                 </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
                   {distPct}%
                 </Typography>
               </TableCell>
@@ -309,14 +387,14 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
 
             {/* System Loss Charge */}
             <TableRow>
-              <TableCell sx={{ py: 1.25, borderBottomColor: "divider" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <LossIcon sx={{ color: "#10b981", fontSize: 18 }} />
+              <TableCell sx={{ py: 1.25, borderColor: (theme) => theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                  <LossIcon sx={{ color: (theme) => theme.palette.mode === "dark" ? tokens.dark.chart[4] : tokens.light.chart[4], fontSize: 16 }} />
                   <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {language === "tl" ? "Singil sa Pagkawala ng Sistema" : "System Loss Charge"}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
                       {language === "tl"
                         ? "Teknikal at grid recovery loss alinsunod sa itinakdang limit ng ERC"
                         : "Technical and non-technical grid recovery mandated by ERC"}
@@ -324,11 +402,11 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
                   </Box>
                 </Box>
               </TableCell>
-              <TableCell align="right" sx={{ py: 1.25, borderBottomColor: "divider" }}>
-                <Typography variant="body2" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
+              <TableCell align="right" sx={{ py: 1.25, borderColor: (theme) => theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                   ₱{bill.systemLossTotal.toFixed(2)}
                 </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
                   {sysLossPct}%
                 </Typography>
               </TableCell>
@@ -336,14 +414,14 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
 
             {/* Government Taxes & VAT */}
             <TableRow>
-              <TableCell sx={{ py: 1.25, borderBottomColor: "divider" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <GovIcon sx={{ color: "#f59e0b", fontSize: 18 }} />
+              <TableCell sx={{ py: 1.25, borderColor: (theme) => theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                  <GovIcon sx={{ color: (theme) => theme.palette.mode === "dark" ? tokens.dark.chart[2] : tokens.light.chart[2], fontSize: 16 }} />
                   <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {language === "tl" ? "Mga Buwis sa Pamahalaan" : "Government Taxes & Levies"}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
                       {language === "tl"
                         ? "12% Value Added Tax (VAT), Local Franchise Tax, at Real Property Tax"
                         : "12% Value Added Tax (VAT), Local Franchise Tax (LFT), and RPT"}
@@ -351,11 +429,11 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
                   </Box>
                 </Box>
               </TableCell>
-              <TableCell align="right" sx={{ py: 1.25, borderBottomColor: "divider" }}>
-                <Typography variant="body2" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
+              <TableCell align="right" sx={{ py: 1.25, borderColor: (theme) => theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                   ₱{taxesTotal.toFixed(2)}
                 </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
                   {taxesPct}%
                 </Typography>
               </TableCell>
@@ -363,14 +441,14 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
 
             {/* Universal Charges & Subsidies */}
             <TableRow>
-              <TableCell sx={{ py: 1.25, borderBottomColor: "divider" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <ShieldIcon sx={{ color: "#10b981", fontSize: 18 }} />
+              <TableCell sx={{ py: 1.25, borderColor: (theme) => theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                  <ShieldIcon sx={{ color: "text.secondary", fontSize: 16 }} />
                   <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {language === "tl" ? "Universal Charges at Subsidies" : "Universal Charges & Subsidies"}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
                       {language === "tl"
                         ? "Missionary electrification, stranded debts, at FIT-All renewable subsidy"
                         : "Missionary electrification, FIT-All renewable energy, and subsidies"}
@@ -378,11 +456,11 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
                   </Box>
                 </Box>
               </TableCell>
-              <TableCell align="right" sx={{ py: 1.25, borderBottomColor: "divider" }}>
-                <Typography variant="body2" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
+              <TableCell align="right" sx={{ py: 1.25, borderColor: (theme) => theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
                   ₱{(bill.universalCharges.total + fitAllTotal + bill.lifelineSubsidy).toFixed(2)}
                 </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
                   {universalPct}%
                 </Typography>
               </TableCell>
@@ -392,11 +470,11 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
             <TableRow
               sx={{
                 bgcolor: (theme) =>
-                  theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(13, 148, 136, 0.08)",
+                  theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
               }}
             >
               <TableCell sx={{ py: 1.5, borderBottom: "none" }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 900, color: "primary.main" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
                   {language === "tl" ? "KABUUANG TINATAYANG BILL" : "TOTAL PROJECTED MERALCO BILL"}
                 </Typography>
                 <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -407,14 +485,14 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
                 <Typography
                   variant="h6"
                   sx={{
-                    fontWeight: 900,
-                    fontFamily: "monospace",
-                    color: (theme) => (theme.palette.mode === "dark" ? "#00e5c9" : "#0d9488"),
+                    fontWeight: 700,
+                    fontVariantNumeric: "tabular-nums",
+                    color: "text.primary",
                   }}
                 >
                   ₱{bill.totalBill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700 }}>
+                <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
                   ₱{effectiveRate.toFixed(4)} / kWh
                 </Typography>
               </TableCell>
@@ -422,7 +500,7 @@ export const VirtualMeralcoBillCard: React.FC<VirtualMeralcoBillCardProps> = ({
           </TableBody>
         </Table>
       </TableContainer>
-    </Card>
+    </SectionCard>
   );
 };
 

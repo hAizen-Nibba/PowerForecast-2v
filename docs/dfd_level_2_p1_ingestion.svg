@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1140 880" width="100%" height="100%">
+  <defs>
+    <style type="text/css">
+<![CDATA[
+    svg { background-color: #ffffff; }
+    .title-main { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 28px; font-weight: 800; fill: #1e293b; letter-spacing: -0.5px; }
+    .title-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13.5px; fill: #475569; }
+    .entity-box { fill: #f1f5f9; stroke: #334155; stroke-width: 1.6px; rx: 4px; ry: 4px; }
+    .entity-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .entity-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 10.5px; font-weight: 600; fill: #475569; text-anchor: middle; }
+    .proc-bg { fill: #ffffff; stroke: #2563eb; stroke-width: 1.8px; rx: 8px; ry: 8px; }
+    .proc-header { fill: #dbeafe; stroke: #2563eb; stroke-width: 1.8px; }
+    .proc-bottom { fill: #dbeafe; stroke: #2563eb; stroke-width: 1.8px; }
+    .proc-id-box { fill: #2563eb; stroke: #1d4ed8; stroke-width: 1.4px; rx: 3px; }
+    .proc-id-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 800; fill: #ffffff; text-anchor: middle; }
+    .proc-name { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 12.5px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .store-id-box { fill: #475569; stroke: #334155; stroke-width: 1.6px; }
+    .store-id-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 12px; font-weight: 800; fill: #ffffff; text-anchor: middle; }
+    .store-body { fill: #f8fafc; stroke: #475569; stroke-width: 1.6px; }
+    .store-name { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 11.5px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .flow-line { fill: none; stroke: #2563eb; stroke-width: 1.6px; stroke-linejoin: round; stroke-linecap: round; }
+    .flow-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 8.5px; font-weight: 700; fill: #0f172a; letter-spacing: 0.3px; }
+    .context-process { fill: #ffffff; stroke: #2563eb; stroke-width: 2.5px; }
+    .context-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14.5px; font-weight: 800; fill: #1e3a8a; text-anchor: middle; }
+    .context-id { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 800; fill: #2563eb; text-anchor: middle; }
+    .footer-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 8.5px; font-weight: 600; fill: #94a3b8; text-anchor: end; letter-spacing: 0.5px; }
+]]>
+    </style>
+  </defs>
+  <!-- Pure White Clean Background for Easy Copying into Documents -->
+  <rect width="100%" height="100%" fill="#ffffff" />
+  <defs>
+    <marker id="a2" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 1.5L8 5 0 8.5z" fill="#2563eb"/></marker>
+    
+  </defs>
+  
+  
+
+  <text x="570" y="60" class="title-main" text-anchor="middle">Level 2 DFD — Process 1 Decomposition</text>
+  <text x="570" y="82" class="title-sub" text-anchor="middle">Multi-Modal Ingestion Pipeline: 3-Photo Staging, Dual OCR Engines, DOE PELP &amp; PC Hardware TDP/TGP Builder.</text>
+
+  <!-- External Entities -->
+  <g><rect x="50" y="160" width="160" height="50" class="entity-box" rx="3"/><text x="130" y="185" class="entity-text">User / Consumer</text><text x="130" y="200" class="entity-sub">Photos &amp; Specs</text></g>
+  <g><rect x="50" y="320" width="160" height="50" class="entity-box" rx="3"/><text x="130" y="343" class="entity-text">Gemini 2.0 Flash</text><text x="130" y="358" class="entity-sub">Multimodal Cloud OCR</text></g>
+  <g><rect x="50" y="410" width="160" height="50" class="entity-box" rx="3"/><text x="130" y="433" class="entity-text">Tesseract.js</text><text x="130" y="448" class="entity-sub">Client In-Browser OCR</text></g>
+  <g><rect x="50" y="550" width="160" height="50" class="entity-box" rx="3"/><text x="130" y="573" class="entity-text">DOE PELP Registry</text><text x="130" y="588" class="entity-sub">6,800+ Devices</text></g>
+  <g><rect x="50" y="640" width="160" height="50" class="entity-box" rx="3"/><text x="130" y="663" class="entity-text">PC Hardware Specs</text><text x="130" y="678" class="entity-sub">CPU/GPU TDP/TGP</text></g>
+
+  <!-- Sub-Processes -->
+  <!-- 1.1 -->
+  <g>
+    <rect x="340" y="140" width="220" height="88" class="proc-bg"/>
+    <path d="M340 148A8 8 0 01 348 140H552A8 8 0 01 560 148V162H340Z" class="proc-header"/>
+    <rect x="340" y="140" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="156" class="proc-id-text">1.1</text>
+    <path d="M340 219H560V220A8 8 0 01 552 228H348A8 8 0 01 340 220Z" class="proc-bottom"/>
+    <text x="450" y="188" class="proc-name">3-Photo Staging Area</text>
+    <text x="450" y="206" class="proc-name">&amp; Manual Capture Interface</text>
+  </g>
+
+  <!-- 1.2 -->
+  <g>
+    <rect x="340" y="320" width="220" height="88" class="proc-bg"/>
+    <path d="M340 328A8 8 0 01 348 320H552A8 8 0 01 560 328V342H340Z" class="proc-header"/>
+    <rect x="340" y="320" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="336" class="proc-id-text">1.2</text>
+    <path d="M340 399H560V400A8 8 0 01 552 408H348A8 8 0 01 340 400Z" class="proc-bottom"/>
+    <text x="450" y="365" class="proc-name">Dual-Engine OCR Parser</text>
+    <text x="450" y="383" class="proc-name">(Gemini + Tesseract Fallback)</text>
+  </g>
+
+  <!-- 1.3 -->
+  <g>
+    <rect x="340" y="520" width="220" height="88" class="proc-bg"/>
+    <path d="M340 528A8 8 0 01 348 520H552A8 8 0 01 560 528V542H340Z" class="proc-header"/>
+    <rect x="340" y="520" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="536" class="proc-id-text">1.3</text>
+    <path d="M340 599H560V600A8 8 0 01 552 608H348A8 8 0 01 340 600Z" class="proc-bottom"/>
+    <text x="450" y="565" class="proc-name">DOE PELP &amp; PC Hardware</text>
+    <text x="450" y="583" class="proc-name">Spec Cross-Validation</text>
+  </g>
+
+  <!-- 1.4 -->
+  <g>
+    <rect x="340" y="700" width="220" height="88" class="proc-bg"/>
+    <path d="M340 708A8 8 0 01 348 700H552A8 8 0 01 560 708V720H340Z" class="proc-header"/>
+    <rect x="340" y="700" width="34" height="22" class="proc-id-box"/>
+    <text x="357" y="716" class="proc-id-text">1.4</text>
+    <path d="M340 779H560V780A8 8 0 01 552 788H348A8 8 0 01 340 780Z" class="proc-bottom"/>
+    <text x="450" y="745" class="proc-name">Duty Cycle &amp; Inverter</text>
+    <text x="450" y="763" class="proc-name">Cruising Power Profiler</text>
+  </g>
+
+  <!-- Data Stores -->
+  <g><rect x="740" y="160" width="36" height="42" class="store-id-box"/><text x="758" y="186" class="store-id-text">D2</text><rect x="776" y="160" width="180" height="42" class="store-body"/><text x="866" y="186" class="store-name">User Accounts &amp; Profiles</text></g>
+  <g><rect x="740" y="540" width="36" height="42" class="store-id-box"/><text x="758" y="566" class="store-id-text">D1</text><rect x="776" y="540" width="180" height="42" class="store-body"/><text x="866" y="566" class="store-name">Rooms &amp; Room Members</text></g>
+  <g><rect x="740" y="720" width="36" height="42" class="store-id-box"/><text x="758" y="746" class="store-id-text">D3</text><rect x="776" y="720" width="180" height="42" class="store-body"/><text x="866" y="746" class="store-name">User Appliances (Cruising Specs)</text></g>
+
+  <!-- Flows -->
+  <line x1="210" y1="185" x2="332" y2="185" class="flow-line" marker-end="url(#a2)"/>
+  <text x="218" y="178" class="flow-text">1-3 PHOTOS (NAMEPLATE, GUIDE, FULL)</text>
+
+  <line x1="450" y1="228" x2="450" y2="312" class="flow-line" marker-end="url(#a2)"/>
+  <text x="458" y="270" class="flow-text">RAW IMAGE STAGING DATA</text>
+
+  <line x1="210" y1="345" x2="332" y2="345" class="flow-line" marker-end="url(#a2)"/>
+  <text x="218" y="338" class="flow-text">OCR ATTRIBUTES (WATTS, VOLTS)</text>
+
+  <line x1="210" y1="435" x2="332" y2="380" class="flow-line" marker-end="url(#a2)"/>
+  <text x="218" y="420" class="flow-text">CLIENT OCR FALLBACK</text>
+
+  <line x1="450" y1="408" x2="450" y2="512" class="flow-line" marker-end="url(#a2)"/>
+  <text x="458" y="465" class="flow-text">EXTRACTED MODEL SPECS</text>
+
+  <line x1="210" y1="565" x2="332" y2="565" class="flow-line" marker-end="url(#a2)"/>
+  <text x="218" y="558" class="flow-text">CSPF &amp; STAR RATINGS</text>
+
+  <line x1="210" y1="655" x2="332" y2="585" class="flow-line" marker-end="url(#a2)"/>
+  <text x="218" y="640" class="flow-text">TDP/TGP OPERATIONAL LOADS</text>
+
+  <line x1="450" y1="608" x2="450" y2="692" class="flow-line" marker-end="url(#a2)"/>
+  <text x="458" y="655" class="flow-text">VALIDATED SPECIFICATIONS</text>
+
+  <line x1="560" y1="745" x2="732" y2="745" class="flow-line" marker-end="url(#a2)"/>
+  <text x="575" y="738" class="flow-text">PERSIST WITH CRUISING WATTS &amp; ROOM ID</text>
+
+  <path d="M740 560 L620 560 L620 725 L568 725" class="flow-line" marker-end="url(#a2)"/>
+  <text x="630" y="553" class="flow-text">ACTIVE ROOM SCOPING</text>
+
+  <path d="M560 180 L732 180" class="flow-line" marker-end="url(#a2)"/>
+  <text x="580" y="173" class="flow-text">USER ONBOARDING STATE</text>
+
+  <!-- Output to Process 3 -->
+  <line x1="450" y1="788" x2="450" y2="820" class="flow-line" stroke-dasharray="4,3"/>
+  <text x="458" y="818" class="flow-text" fill="#2563eb">→ TO PROCESS 3: RATED WATTAGE &amp; CRUISING ATTRIBUTES</text>
+
+  <text x="1080" y="845" class="footer-text">LEVEL 2 — PROCESS 1 DECOMPOSITION</text>
+</svg>

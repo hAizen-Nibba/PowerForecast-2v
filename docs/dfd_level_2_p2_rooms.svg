@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1140 820" width="100%" height="100%">
+  <defs>
+    <style type="text/css">
+<![CDATA[
+    svg { background-color: #ffffff; }
+    .title-main { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 28px; font-weight: 800; fill: #1e293b; letter-spacing: -0.5px; }
+    .title-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13.5px; fill: #475569; }
+    .entity-box { fill: #f1f5f9; stroke: #334155; stroke-width: 1.6px; rx: 4px; ry: 4px; }
+    .entity-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .entity-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 10.5px; font-weight: 600; fill: #475569; text-anchor: middle; }
+    .proc-bg { fill: #ffffff; stroke: #2563eb; stroke-width: 1.8px; rx: 8px; ry: 8px; }
+    .proc-header { fill: #dbeafe; stroke: #2563eb; stroke-width: 1.8px; }
+    .proc-bottom { fill: #dbeafe; stroke: #2563eb; stroke-width: 1.8px; }
+    .proc-id-box { fill: #2563eb; stroke: #1d4ed8; stroke-width: 1.4px; rx: 3px; }
+    .proc-id-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 800; fill: #ffffff; text-anchor: middle; }
+    .proc-name { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 12.5px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .store-id-box { fill: #475569; stroke: #334155; stroke-width: 1.6px; }
+    .store-id-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 12px; font-weight: 800; fill: #ffffff; text-anchor: middle; }
+    .store-body { fill: #f8fafc; stroke: #475569; stroke-width: 1.6px; }
+    .store-name { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 11.5px; font-weight: 700; fill: #0f172a; text-anchor: middle; }
+    .flow-line { fill: none; stroke: #2563eb; stroke-width: 1.6px; stroke-linejoin: round; stroke-linecap: round; }
+    .flow-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 8.5px; font-weight: 700; fill: #0f172a; letter-spacing: 0.3px; }
+    .context-process { fill: #ffffff; stroke: #2563eb; stroke-width: 2.5px; }
+    .context-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14.5px; font-weight: 800; fill: #1e3a8a; text-anchor: middle; }
+    .context-id { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 800; fill: #2563eb; text-anchor: middle; }
+    .footer-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 8.5px; font-weight: 600; fill: #94a3b8; text-anchor: end; letter-spacing: 0.5px; }
+]]>
+    </style>
+  </defs>
+  <!-- Pure White Clean Background for Easy Copying into Documents -->
+  <rect width="100%" height="100%" fill="#ffffff" />
+  <defs>
+    <marker id="a_p2" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 1.5L8 5 0 8.5z" fill="#2563eb"/></marker>
+    
+  </defs>
+  
+  
+
+  <text x="570" y="60" class="title-main" text-anchor="middle">Level 2 DFD — Process 2 Decomposition (NEW)</text>
+  <text x="570" y="82" class="title-sub" text-anchor="middle">Room-Code &amp; Multi-Tenant Household Management: Auto-provisioning, Join Codes (PF-XXXXXX) &amp; RLS Role Guard.</text>
+
+  <!-- External Entities -->
+  <g><rect x="60" y="160" width="170" height="50" class="entity-box" rx="3"/><text x="145" y="185" class="entity-text">User / Consumer</text><text x="145" y="200" class="entity-sub">Room Owner / Admin</text></g>
+  <g><rect x="60" y="420" width="170" height="50" class="entity-box" rx="3"/><text x="145" y="445" class="entity-text">Room Member</text><text x="145" y="460" class="entity-sub">Household Collaborator</text></g>
+
+  <!-- Sub-Processes -->
+  <!-- 2.1 -->
+  <g>
+    <rect x="360" y="140" width="220" height="88" class="proc-bg"/>
+    <path d="M360 148A8 8 0 01 368 140H572A8 8 0 01 580 148V162H360Z" class="proc-header"/>
+    <rect x="360" y="140" width="34" height="22" class="proc-id-box"/>
+    <text x="377" y="156" class="proc-id-text">2.1</text>
+    <path d="M360 219H580V220A8 8 0 01 572 228H368A8 8 0 01 360 220Z" class="proc-bottom"/>
+    <text x="470" y="188" class="proc-name">Automatic Main Room</text>
+    <text x="470" y="206" class="proc-name">Provisioning Engine</text>
+  </g>
+
+  <!-- 2.2 -->
+  <g>
+    <rect x="360" y="360" width="220" height="88" class="proc-bg"/>
+    <path d="M360 368A8 8 0 01 368 360H572A8 8 0 01 580 368V382H360Z" class="proc-header"/>
+    <rect x="360" y="360" width="34" height="22" class="proc-id-box"/>
+    <text x="377" y="376" class="proc-id-text">2.2</text>
+    <path d="M360 439H580V440A8 8 0 01 572 448H368A8 8 0 01 360 440Z" class="proc-bottom"/>
+    <text x="470" y="405" class="proc-name">6-Char Room Code Dispatcher</text>
+    <text x="470" y="423" class="proc-name">&amp; Join Resolver (PF-XXXXXX)</text>
+  </g>
+
+  <!-- 2.3 -->
+  <g>
+    <rect x="360" y="580" width="220" height="88" class="proc-bg"/>
+    <path d="M360 588A8 8 0 01 368 580H572A8 8 0 01 580 588V602H360Z" class="proc-header"/>
+    <rect x="360" y="580" width="34" height="22" class="proc-id-box"/>
+    <text x="377" y="596" class="proc-id-text">2.3</text>
+    <path d="M360 659H580V660A8 8 0 01 572 668H368A8 8 0 01 360 660Z" class="proc-bottom"/>
+    <text x="470" y="625" class="proc-name">Role Hierarchy &amp; RLS</text>
+    <text x="470" y="643" class="proc-name">Permission Guard</text>
+  </g>
+
+  <!-- Data Stores -->
+  <g><rect x="760" y="160" width="36" height="42" class="store-id-box"/><text x="778" y="186" class="store-id-text">D2</text><rect x="796" y="160" width="180" height="42" class="store-body"/><text x="886" y="186" class="store-name">User Accounts &amp; Profiles</text></g>
+  <g><rect x="760" y="380" width="36" height="42" class="store-id-box"/><text x="778" y="406" class="store-id-text">D1</text><rect x="796" y="380" width="180" height="42" class="store-body"/><text x="886" y="406" class="store-name">Rooms &amp; Room Members</text></g>
+
+  <!-- Flows -->
+  <line x1="230" y1="185" x2="352" y2="185" class="flow-line" marker-end="url(#a_p2)"/>
+  <text x="240" y="178" class="flow-text">SIGNUP &amp; FIRST LOGIN EVENT</text>
+
+  <line x1="580" y1="185" x2="752" y2="185" class="flow-line" marker-end="url(#a_p2)"/>
+  <text x="600" y="178" class="flow-text">CREATE &lt;&lt;USERNAME&gt;&gt;'S ROOM</text>
+
+  <line x1="470" y1="228" x2="470" y2="352" class="flow-line" marker-end="url(#a_p2)"/>
+  <text x="478" y="290" class="flow-text">INITIALIZE ROOM CODE</text>
+
+  <line x1="580" y1="405" x2="752" y2="405" class="flow-line" marker-end="url(#a_p2)"/>
+  <text x="600" y="398" class="flow-text">STORE ROOM CODE &amp; OWNER ROLE</text>
+
+  <line x1="230" y1="445" x2="352" y2="425" class="flow-line" marker-end="url(#a_p2)"/>
+  <text x="240" y="430" class="flow-text">ENTER CODE: PF-XXXXXX</text>
+
+  <line x1="470" y1="448" x2="470" y2="572" class="flow-line" marker-end="url(#a_p2)"/>
+  <text x="478" y="510" class="flow-text">MEMBERSHIP RECORD</text>
+
+  <path d="M580 625 L730 625 L730 415 L752 415" class="flow-line" marker-end="url(#a_p2)"/>
+  <text x="600" y="618" class="flow-text">UPDATE MEMBER LIST &amp; ROLES</text>
+
+  <path d="M360 625 L160 625 L160 478" class="flow-line" marker-end="url(#a_p2)"/>
+  <text x="170" y="550" class="flow-text">ASSIGN ROLE: VIEW-ONLY OR ADMIN</text>
+
+  <text x="1080" y="785" class="footer-text">LEVEL 2 — PROCESS 2 DECOMPOSITION</text>
+</svg>

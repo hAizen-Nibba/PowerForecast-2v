@@ -129,7 +129,7 @@ const dashboardTour: PageTour = {
     },
     {
       id: 'header-db-status',
-      placement: 'bottom',
+      placement: 'top',
       page: 'dashboard',
       copy: {
         en: {

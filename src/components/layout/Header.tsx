@@ -9,6 +9,8 @@ import IconButton from "@mui/material/IconButton";
 import Avatar from "@mui/material/Avatar";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
 import Tooltip from "@mui/material/Tooltip";
 import Badge from "@mui/material/Badge";
 import Divider from "@mui/material/Divider";
@@ -18,106 +20,64 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import {
   Menu as MenuIcon,
-  LightMode as SunIcon,
-  DarkMode as MoonIcon,
-  AutoAwesome as SparklesIcon,
-  Bolt as BoltIcon,
   Logout as LogoutIcon,
-  CloudDone as CloudDoneIcon,
-  CloudOff as CloudOffIcon,
   NotificationsNone as NotificationsIcon,
   NotificationsActive as NotificationsActiveIcon,
   HelpOutlined as HelpIcon,
   Settings as SettingsIcon,
   Shield as ShieldIcon,
   ArrowBack as ArrowBackIcon,
+  Home as HomeIcon,
+  MeetingRoom as RoomIcon,
+  Check as CheckIcon,
+  ContentCopy as CopyIcon,
+  Group as GroupIcon,
+  Add as AddIcon,
 } from "@mui/icons-material";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useGetIdentity, useLogout } from "@refinedev/core";
-import { checkSupabaseConnection } from "../../lib/supabaseClient";
 import { NotificationPopover } from "./NotificationPopover";
 import { getNotificationPermission, getNotificationLogs } from "../../lib/notificationService";
 import { useTour } from "../../hooks/useTour";
 import { ROUTE_TO_TOUR_PAGE } from "../tour/tourSteps";
 import { useLanguage } from "../../context/LanguageContext";
 import { MeralcoRatePopover } from "./MeralcoRatePopover";
-import { RoomSwitcher } from "../rooms/RoomSwitcher";
 import { useRoom } from "../../context/RoomContext";
+import { useToast } from "../common/ToastProvider";
 
 interface HeaderProps {
   onOpenSidebar: () => void;
-  isDark: boolean;
-  onToggleTheme: () => void;
+  isDark?: boolean;
+  onToggleTheme?: () => void;
   onOpenAiScanner?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   onOpenSidebar,
-  isDark,
-  onToggleTheme,
-  onOpenAiScanner,
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { startTour, openWelcomeModal, isActive: isTourActive } = useTour();
+  const { openWelcomeModal, isActive: isTourActive } = useTour();
   const currentTourPage = ROUTE_TO_TOUR_PAGE[location.pathname] || (location.pathname === "/" ? "dashboard" : null);
 
   const { data: identity } = useGetIdentity<any>();
   const { mutate: logout } = useLogout();
-  const { activeRoom } = useRoom();
+  const { rooms, activeRoom, switchRoom, openJoinModal } = useRoom();
+  const { showSuccess } = useToast();
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
-  const [dbStatus, setDbStatus] = useState<{ ok: boolean; latency?: number }>({ ok: true, latency: 45 });
   const notifPermission = getNotificationPermission();
 
-  // Check Supabase connection health on mount and periodically
-  useEffect(() => {
-    let isMounted = true;
-    const verifyConnection = async () => {
-      const res = await checkSupabaseConnection();
-      if (isMounted) {
-        setDbStatus({ ok: res.ok, latency: res.latencyMs });
-      }
-    };
-    verifyConnection();
-    const interval = setInterval(verifyConnection, 30000);
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, []);
-
-  // Real-time Clock
-  const [timeStr, setTimeStr] = useState<string>("");
-  const [dateStr, setDateStr] = useState<string>("");
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setTimeStr(
-        now.toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: true,
-        })
-      );
-      setDateStr(
-        now.toLocaleDateString("en-US", {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-        })
-      );
-    };
-
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  const handleCopyCode = (e: React.MouseEvent, code?: string) => {
+    e.stopPropagation();
+    if (code) {
+      navigator.clipboard.writeText(code);
+      showSuccess(`Room code ${code} copied to clipboard!`, "Copied");
+    }
+  };
 
   const [unreadNotifCount, setUnreadNotifCount] = useState(() => {
     return getNotificationLogs().filter((l) => !l.read).length;
@@ -166,18 +126,21 @@ export const Header: React.FC<HeaderProps> = ({
         boxShadow: "none",
         borderBottom: "1px solid",
         borderColor: "divider",
+        borderRadius: 0,
       }}
     >
       <Toolbar
         sx={{
           justifyContent: "space-between",
-          minHeight: { xs: 54, sm: 58 },
+          height: 60,
+          minHeight: "60px !important",
+          boxSizing: "border-box",
           px: { xs: 2, sm: 2.5, md: 3 },
           gap: 1.5,
         }}
       >
-        {/* Left: Mobile Menu Toggle, Breadcrumbs, DB Status, and Tariff */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, minWidth: 0 }}>
+        {/* Left: Mobile Toggle / Back, Page Title / Room Breadcrumb, and Tariff */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
           {location.pathname === "/settings" ? (
             <Button
               component={Link}
@@ -187,7 +150,7 @@ export const Header: React.FC<HeaderProps> = ({
               variant="outlined"
               color="inherit"
               sx={{
-                borderRadius: 1.25,
+                borderRadius: 0,
                 fontWeight: 600,
                 textTransform: "none",
                 fontSize: "0.8125rem",
@@ -202,100 +165,49 @@ export const Header: React.FC<HeaderProps> = ({
               color="inherit"
               edge="start"
               onClick={onOpenSidebar}
-              sx={{ display: { lg: "none" }, p: 0.75 }}
+              sx={{ display: { lg: "none" }, p: 0.75, borderRadius: 0 }}
             >
               <MenuIcon />
             </IconButton>
           )}
 
-          {/* Breadcrumb Path Indicator */}
+          {/* Breadcrumb Path: Page Title FIRST (Larger & Bolder) / Room Name SECOND */}
           <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 0.75, mr: 0.5 }}>
-            <Typography variant="body2" sx={{ color: "text.secondary", fontWeight: 500, fontSize: "0.8125rem" }}>
-              {activeRoom?.room_name || "Home Room"}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "text.disabled", fontSize: "0.8125rem" }}>
-              /
-            </Typography>
-            <Typography variant="body2" sx={{ color: "text.primary", fontWeight: 600, fontSize: "0.8125rem" }}>
+            <Typography
+              variant="subtitle1"
+              sx={{
+                color: "text.primary",
+                fontWeight: 700,
+                fontSize: { xs: "0.95rem", sm: "1.05rem", md: "1.1rem" },
+                letterSpacing: "-0.01em",
+                lineHeight: 1.2,
+              }}
+            >
               {getPageTitle(location.pathname)}
             </Typography>
-          </Box>
-
-          {/* Database Connection Status Chip */}
-          <Tooltip title={dbStatus.ok ? `Supabase Connected (${dbStatus.latency || 0}ms)` : "Supabase Offline / Local Mode"}>
-            <Chip
-              data-tour="header-db-status"
-              icon={
-                <Box
-                  sx={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: "50%",
-                    bgcolor: dbStatus.ok ? "success.main" : "error.main",
-                    ml: "4px !important",
-                  }}
-                />
-              }
-              label={dbStatus.ok ? t("header.dbLive", "Synced") : t("header.localMode", "Offline")}
-              size="small"
+            <Typography variant="body2" sx={{ color: "text.disabled", fontSize: "0.85rem", mx: 0.25 }}>
+              /
+            </Typography>
+            <Typography
+              variant="body2"
               sx={{
-                fontWeight: 600,
-                fontSize: "0.6875rem",
-                bgcolor: "action.hover",
                 color: "text.secondary",
-                border: "1px solid",
-                borderColor: "divider",
-                display: { xs: "none", sm: "inline-flex" },
-                height: 24,
+                fontWeight: 500,
+                fontSize: "0.8125rem",
               }}
-            />
-          </Tooltip>
+            >
+              {activeRoom?.room_name || "Home Room"}
+            </Typography>
+          </Box>
 
           {/* Meralco Generation Rate Badge & Hover Breakdown Popover */}
           <Box data-tour="header-rate-popover">
             <MeralcoRatePopover />
           </Box>
-
-          {/* Active Room Code & Room Switcher */}
-          <RoomSwitcher />
         </Box>
 
-        {/* Center: Live Time / Date */}
-        <Box sx={{ display: { xs: "none", xl: "flex" }, flexDirection: "column", alignItems: "center" }}>
-          <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums", letterSpacing: "0.02em", lineHeight: 1.2 }}>
-            {timeStr}
-          </Typography>
-          <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.6875rem", mt: 0.25 }}>
-            {dateStr}
-          </Typography>
-        </Box>
-
-        {/* Right: AI Scanner CTA, Theme Switch, and User Profile */}
+        {/* Right: Guided Tour, Notifications, and User Profile with Embedded Rooms/Household Dropdown */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          {onOpenAiScanner && (
-            <Button
-              data-tour="header-ai-scanner"
-              variant="outlined"
-              size="small"
-              onClick={onOpenAiScanner}
-              startIcon={<SparklesIcon sx={{ fontSize: 16, color: "text.secondary" }} />}
-              sx={{
-                display: { xs: "none", sm: "inline-flex" },
-                borderRadius: 1.25,
-                borderColor: "divider",
-                fontWeight: 600,
-                color: "text.primary",
-                py: 0.5,
-                "&:hover": {
-                  bgcolor: "action.hover",
-                  borderColor: "text.secondary",
-                },
-              }}
-            >
-              AI Scanner
-            </Button>
-          )}
-
           {/* Guided Tour Replay Button */}
           {currentTourPage && (
             <Tooltip title="Page Tour & Tutorial [?]">
@@ -311,7 +223,7 @@ export const Header: React.FC<HeaderProps> = ({
                   borderColor: "divider",
                   color: "text.secondary",
                   p: 0.75,
-                  borderRadius: 1.5,
+                  borderRadius: 0,
                   "&:hover": {
                     bgcolor: "action.hover",
                     color: "text.primary",
@@ -322,29 +234,6 @@ export const Header: React.FC<HeaderProps> = ({
               </IconButton>
             </Tooltip>
           )}
-
-          {/* Theme Mode Toggle Button */}
-          <Tooltip title={`Switch to ${isDark ? "Light" : "Dark"} Mode`}>
-            <IconButton
-              data-tour="header-theme-toggle"
-              onClick={onToggleTheme}
-              color="inherit"
-              size="small"
-              sx={{
-                border: "1px solid",
-                borderColor: "divider",
-                p: 0.75,
-                borderRadius: 1.5,
-                color: "text.secondary",
-                "&:hover": {
-                  bgcolor: "action.hover",
-                  color: "text.primary",
-                },
-              }}
-            >
-              {isDark ? <SunIcon sx={{ color: "warning.main", fontSize: 18 }} /> : <MoonIcon sx={{ color: "text.primary", fontSize: 18 }} />}
-            </IconButton>
-          </Tooltip>
 
           {/* Smart Energy Notifications Bell */}
           <Tooltip title="Smart Energy Notifications">
@@ -357,7 +246,7 @@ export const Header: React.FC<HeaderProps> = ({
                 border: "1px solid",
                 borderColor: "divider",
                 p: 0.75,
-                borderRadius: 1.5,
+                borderRadius: 0,
                 color: "text.secondary",
                 "&:hover": {
                   bgcolor: "action.hover",
@@ -373,9 +262,11 @@ export const Header: React.FC<HeaderProps> = ({
                   "& .MuiBadge-badge": {
                     fontSize: "0.625rem",
                     height: unreadNotifCount > 0 ? 16 : 6,
+                    width: unreadNotifCount > 0 ? "auto" : 6,
                     minWidth: unreadNotifCount > 0 ? 16 : 6,
                     px: unreadNotifCount > 0 ? 0.5 : 0,
                     fontWeight: 800,
+                    borderRadius: 0,
                   },
                 }}
               >
@@ -388,7 +279,7 @@ export const Header: React.FC<HeaderProps> = ({
             </IconButton>
           </Tooltip>
 
-          {/* User Profile Pill & Menu */}
+          {/* User Profile Pill & Dropdown Menu */}
           <Box
             data-tour="header-profile"
             onClick={(e) => setAnchorEl(e.currentTarget)}
@@ -396,8 +287,8 @@ export const Header: React.FC<HeaderProps> = ({
               display: "flex",
               alignItems: "center",
               gap: 1,
-              p: "3px 8px 3px 3px",
-              borderRadius: 1.5,
+              p: "4px 8px 4px 4px",
+              borderRadius: 0,
               border: "1px solid",
               borderColor: "divider",
               cursor: "pointer",
@@ -407,7 +298,15 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Avatar
               src={identity?.avatar}
-              sx={{ width: 26, height: 26, bgcolor: "primary.main", color: "primary.contrastText", fontSize: "0.75rem", fontWeight: 700 }}
+              sx={{
+                width: 26,
+                height: 26,
+                borderRadius: 0,
+                bgcolor: "primary.main",
+                color: "primary.contrastText",
+                fontSize: "0.75rem",
+                fontWeight: 700,
+              }}
             >
               {identity?.name?.charAt(0) || "U"}
             </Avatar>
@@ -426,6 +325,7 @@ export const Header: React.FC<HeaderProps> = ({
             </Typography>
           </Box>
 
+          {/* Profile Menu with Embedded Rooms & Household Dropdown Above Settings */}
           <Menu
             anchorEl={anchorEl}
             open={Boolean(anchorEl)}
@@ -433,10 +333,11 @@ export const Header: React.FC<HeaderProps> = ({
             slotProps={{
               paper: {
                 sx: {
-                  minWidth: 220,
+                  minWidth: 260,
+                  maxWidth: 320,
                   p: 0.5,
-                  borderRadius: 1.5,
-                  boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.2)",
+                  borderRadius: 0,
+                  boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)",
                   border: "1px solid",
                   borderColor: "divider",
                   bgcolor: (theme) =>
@@ -446,6 +347,7 @@ export const Header: React.FC<HeaderProps> = ({
               },
             }}
           >
+            {/* 1. User Profile Details */}
             <Box sx={{ px: 2, py: 1.25 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
                 {identity?.name || "PowerForecast User"}
@@ -455,12 +357,13 @@ export const Header: React.FC<HeaderProps> = ({
               </Typography>
               <Chip
                 icon={<ShieldIcon sx={{ fontSize: "12px !important", color: "warning.main !important" }} />}
-                label={t("header.ownerBadge", "Household Owner")}
+                label={activeRoom?.is_owner ? t("header.ownerBadge", "Household Owner") : (activeRoom?.role === "admin" ? "Household Admin" : "Household Viewer")}
                 size="small"
                 sx={{
                   height: 20,
                   fontSize: "0.625rem",
                   fontWeight: 600,
+                  borderRadius: 0,
                   bgcolor: (theme) =>
                     theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.12)" : "rgba(217, 119, 6, 0.1)",
                   color: "warning.main",
@@ -473,23 +376,183 @@ export const Header: React.FC<HeaderProps> = ({
 
             <Divider sx={{ my: 0.5 }} />
 
+            {/* 2. Rooms and Household Section (Under Profile, Above Settings) */}
+            <Box sx={{ px: 2, pt: 1, pb: 0.5 }}>
+              <Typography
+                variant="overline"
+                sx={{
+                  fontWeight: 800,
+                  color: "text.disabled",
+                  letterSpacing: "0.08em",
+                  fontSize: "0.625rem",
+                  display: "block",
+                }}
+              >
+                Rooms & Household
+              </Typography>
+            </Box>
+
+            {rooms.map((r) => {
+              const isCurrent = r.room_id === activeRoom?.room_id;
+              const isItemAdmin = r.is_owner || r.role === "admin";
+              return (
+                <MenuItem
+                  key={r.room_id}
+                  onClick={() => {
+                    switchRoom(r.room_id);
+                    setAnchorEl(null);
+                  }}
+                  selected={isCurrent}
+                  sx={{
+                    borderRadius: 0,
+                    my: 0.25,
+                    mx: 0.5,
+                    py: 0.75,
+                    px: 1.5,
+                    bgcolor: isCurrent
+                      ? (theme) =>
+                          theme.palette.mode === "dark"
+                            ? "rgba(0, 229, 201, 0.12) !important"
+                            : "rgba(0, 229, 201, 0.08) !important"
+                      : "transparent",
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 28 }}>
+                    {r.is_owner ? (
+                      <HomeIcon sx={{ fontSize: 17, color: "primary.main" }} />
+                    ) : (
+                      <RoomIcon sx={{ fontSize: 17, color: isItemAdmin ? "#34d399" : "#f59e0b" }} />
+                    )}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: isCurrent ? 700 : 500,
+                            color: isCurrent ? "primary.main" : "text.primary",
+                            fontSize: "0.8125rem",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            maxWidth: 130,
+                          }}
+                        >
+                          {r.room_name}
+                        </Typography>
+                        <Chip
+                          size="small"
+                          label={r.is_owner ? "Owner" : isItemAdmin ? "Admin" : "View"}
+                          sx={{
+                            height: 16,
+                            fontSize: "0.5625rem",
+                            fontWeight: 700,
+                            borderRadius: 0,
+                            bgcolor: r.is_owner
+                              ? "rgba(0, 229, 201, 0.15)"
+                              : isItemAdmin
+                              ? "rgba(52, 211, 153, 0.15)"
+                              : "rgba(245, 158, 11, 0.15)",
+                            color: r.is_owner ? "primary.main" : isItemAdmin ? "#34d399" : "#f59e0b",
+                          }}
+                        />
+                      </Box>
+                    }
+                    secondary={
+                      <Typography variant="caption" sx={{ fontFamily: "monospace", color: "text.secondary", fontSize: "0.6875rem" }}>
+                        {r.room_code}
+                      </Typography>
+                    }
+                  />
+                  {isCurrent && <CheckIcon sx={{ fontSize: 16, color: "primary.main", ml: 1 }} />}
+                </MenuItem>
+              );
+            })}
+
+            <MenuItem
+              onClick={() => {
+                setAnchorEl(null);
+                openJoinModal();
+              }}
+              sx={{ borderRadius: 0, mx: 0.5, py: 0.6, px: 1.5, gap: 1 }}
+            >
+              <ListItemIcon sx={{ minWidth: 28 }}>
+                <AddIcon sx={{ fontSize: 17, color: "primary.main" }} />
+              </ListItemIcon>
+              <ListItemText
+                primary={
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: "primary.main", fontSize: "0.75rem" }}>
+                    Join another Room with Code
+                  </Typography>
+                }
+              />
+            </MenuItem>
+
+            {activeRoom?.room_code && (
+              <MenuItem
+                onClick={(e) => handleCopyCode(e, activeRoom.room_code)}
+                sx={{ borderRadius: 0, mx: 0.5, py: 0.6, px: 1.5, gap: 1 }}
+              >
+                <ListItemIcon sx={{ minWidth: 28 }}>
+                  <CopyIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={
+                    <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "text.secondary" }}>
+                      Copy Room Code ({activeRoom.room_code})
+                    </Typography>
+                  }
+                />
+              </MenuItem>
+            )}
+
+            <MenuItem
+              onClick={() => {
+                setAnchorEl(null);
+                navigate("/settings");
+                setTimeout(() => {
+                  const el = document.getElementById("room-members-section");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }, 150);
+              }}
+              sx={{ borderRadius: 0, mx: 0.5, py: 0.6, px: 1.5, gap: 1 }}
+            >
+              <ListItemIcon sx={{ minWidth: 28 }}>
+                <GroupIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+              </ListItemIcon>
+              <ListItemText
+                primary={
+                  <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "text.secondary" }}>
+                    Manage Room Members
+                  </Typography>
+                }
+              />
+            </MenuItem>
+
+            <Divider sx={{ my: 0.5 }} />
+
+            {/* 3. Settings Navigation */}
             <MenuItem
               onClick={() => {
                 setAnchorEl(null);
                 navigate("/settings");
               }}
-              sx={{ gap: 1.25, fontSize: "0.8125rem", fontWeight: 500, borderRadius: 1, py: 0.75, color: "text.primary" }}
+              sx={{ gap: 1.25, fontSize: "0.8125rem", fontWeight: 500, borderRadius: 0, py: 0.75, color: "text.primary" }}
             >
               <SettingsIcon fontSize="small" sx={{ color: "text.secondary" }} />
               {t("header.settings", "Settings")}
             </MenuItem>
 
+            <Divider sx={{ my: 0.5 }} />
+
+            {/* 4. Sign Out */}
             <MenuItem
               onClick={() => {
                 setAnchorEl(null);
                 setIsLogoutConfirmOpen(true);
               }}
-              sx={{ gap: 1.25, color: "error.main", fontSize: "0.8125rem", fontWeight: 500, borderRadius: 1, py: 0.75 }}
+              sx={{ gap: 1.25, color: "error.main", fontSize: "0.8125rem", fontWeight: 500, borderRadius: 0, py: 0.75 }}
             >
               <LogoutIcon fontSize="small" />
               {t("header.signOut", "Sign Out")}
@@ -505,7 +568,7 @@ export const Header: React.FC<HeaderProps> = ({
             slotProps={{
               paper: {
                 sx: {
-                  borderRadius: 1.5,
+                  borderRadius: 0,
                   border: "1px solid",
                   borderColor: "divider",
                   bgcolor: (theme) =>
@@ -526,7 +589,7 @@ export const Header: React.FC<HeaderProps> = ({
               </Typography>
             </DialogContent>
             <DialogActions sx={{ p: 2 }}>
-              <Button onClick={() => setIsLogoutConfirmOpen(false)} sx={{ fontWeight: 600 }}>
+              <Button onClick={() => setIsLogoutConfirmOpen(false)} sx={{ fontWeight: 600, borderRadius: 0 }}>
                 {t("header.cancel", "Cancel")}
               </Button>
               <Button
@@ -536,7 +599,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setIsLogoutConfirmOpen(false);
                   logout();
                 }}
-                sx={{ fontWeight: 600, borderRadius: 1.5, px: 2 }}
+                sx={{ fontWeight: 600, borderRadius: 0, px: 2 }}
               >
                 {t("header.signOut", "Sign Out")}
               </Button>
@@ -546,7 +609,10 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Smart Notification Preferences Popover */}
           <NotificationPopover
             anchorEl={notifAnchorEl}
-            onClose={() => setNotifAnchorEl(null)}
+            onClose={() => {
+              setNotifAnchorEl(null);
+              setUnreadNotifCount(getNotificationLogs().filter((l) => !l.read).length);
+            }}
           />
         </Box>
       </Toolbar>

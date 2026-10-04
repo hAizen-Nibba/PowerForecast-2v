@@ -19,6 +19,8 @@ import {
   TipsAndUpdates as TipsIcon,
   Bolt as BoltIcon,
 } from "@mui/icons-material";
+import { SectionCard } from "../common/SectionCard";
+import { tokens } from "../../theme/tokens";
 
 interface BudgetSentinelCardProps {
   budgetTarget: number;
@@ -104,84 +106,41 @@ export const BudgetSentinelCard: React.FC<BudgetSentinelCardProps> = ({
   const budgetDelta = forecastedBill - budgetTarget;
 
   return (
-    <Card
-      data-tour="forecasting-budget-sentinel"
-      sx={{
-        p: { xs: 2.5, sm: 3 },
-        borderRadius: 1.5,
-        border: "1px solid",
-        borderColor: (theme) =>
-          isExceeded
-            ? theme.palette.mode === "dark"
-              ? "rgba(239, 68, 68, 0.4)"
-              : "rgba(239, 68, 68, 0.3)"
-            : isBreachRisk
-            ? theme.palette.mode === "dark"
-              ? "rgba(245, 158, 11, 0.4)"
-              : "rgba(245, 158, 11, 0.3)"
-            : theme.palette.mode === "dark"
-            ? "rgba(16, 185, 129, 0.35)"
-            : "rgba(16, 185, 129, 0.3)",
-        bgcolor: (theme) =>
-          theme.palette.mode === "dark"
-            ? isExceeded
-              ? "rgba(35, 18, 20, 0.75)"
-              : isBreachRisk
-              ? "rgba(35, 27, 18, 0.75)"
-              : "rgba(18, 32, 28, 0.75)"
-            : isExceeded
-            ? "rgba(254, 242, 242, 0.85)"
-            : isBreachRisk
-            ? "rgba(255, 251, 235, 0.85)"
-            : "rgba(240, 253, 244, 0.85)",
-        boxShadow: (theme) =>
-          theme.palette.mode === "dark" ? "none" : "0 2px 12px rgba(15, 23, 42, 0.04)",
-      }}
-    >
-      {/* 1. Header Bar: Title, Presets, and Status Chip */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-          gap: 2,
-          mb: 2.5,
-        }}
-      >
-        <Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <TargetIcon
-              sx={{
-                color: isExceeded
-                  ? "error.main"
-                  : isBreachRisk
-                  ? "warning.main"
-                  : "success.main",
-              }}
-            />
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "text.primary" }}>
-              {language === "tl"
-                ? "Bantay sa Buwanang Badyet at Alerto sa Paglabis"
-                : "Monthly Budget Sentinel & Breach Guard"}
-            </Typography>
-          </Box>
-          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+    <SectionCard
+      dataTour="forecasting-budget-sentinel"
+      title={
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <TargetIcon
+            sx={{
+              fontSize: 18,
+              color: isExceeded
+                ? "error.main"
+                : isBreachRisk
+                ? "warning.main"
+                : "text.primary",
+            }}
+          />
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "text.primary" }}>
             {language === "tl"
-              ? "Magtakda ng target na limitasyon upang maiwasan ang sorpresang mataas na bill sa Meralco."
-              : "Set a monthly target ceiling to monitor real-time burn rate and avoid unexpected bill surges."}
+              ? "Bantay sa Buwanang Badyet at Alerto sa Paglabis"
+              : "Monthly Budget Sentinel & Breach Guard"}
           </Typography>
         </Box>
-
-        {/* Status Chip */}
+      }
+      subtitle={
+        language === "tl"
+          ? "Magtakda ng target na limitasyon upang maiwasan ang sorpresang mataas na bill sa Meralco."
+          : "Set a monthly target ceiling to monitor real-time burn rate and avoid unexpected bill surges."
+      }
+      headerActions={
         <Chip
           icon={
             isExceeded ? (
-              <DangerIcon sx={{ fontSize: "16px !important" }} />
+              <DangerIcon sx={{ fontSize: "14px !important" }} />
             ) : isBreachRisk ? (
-              <WarningIcon sx={{ fontSize: "16px !important" }} />
+              <WarningIcon sx={{ fontSize: "14px !important" }} />
             ) : (
-              <CheckIcon sx={{ fontSize: "16px !important" }} />
+              <CheckIcon sx={{ fontSize: "14px !important" }} />
             )
           }
           label={
@@ -197,29 +156,62 @@ export const BudgetSentinelCard: React.FC<BudgetSentinelCardProps> = ({
               ? `PASOK SA BADYET (-₱${Math.abs(budgetDelta).toFixed(2)})`
               : `ON TRACK (-₱${Math.abs(budgetDelta).toFixed(2)} Under)`
           }
-          color={isExceeded ? "error" : isBreachRisk ? "warning" : "success"}
-          sx={{ fontWeight: 800, fontSize: "0.75rem", height: 28, px: 0.5 }}
+          size="small"
+          sx={{
+            fontWeight: 600,
+            fontSize: "0.72rem",
+            fontVariantNumeric: "tabular-nums",
+            bgcolor: (theme) =>
+              isExceeded
+                ? theme.palette.mode === "dark" ? tokens.dark.errorBg : tokens.light.errorBg
+                : isBreachRisk
+                ? theme.palette.mode === "dark" ? tokens.dark.warnBg : tokens.light.warnBg
+                : theme.palette.mode === "dark" ? tokens.dark.liveBg : tokens.light.liveBg,
+            color: (theme) =>
+              isExceeded
+                ? theme.palette.mode === "dark" ? tokens.dark.error : tokens.light.error
+                : isBreachRisk
+                ? theme.palette.mode === "dark" ? tokens.dark.warn : tokens.light.warn
+                : theme.palette.mode === "dark" ? tokens.dark.live : tokens.light.live,
+            border: "1px solid",
+            borderColor: (theme) =>
+              isExceeded
+                ? theme.palette.mode === "dark" ? tokens.dark.errorBorder : tokens.light.errorBorder
+                : isBreachRisk
+                ? theme.palette.mode === "dark" ? tokens.dark.warnBorder : tokens.light.warnBorder
+                : theme.palette.mode === "dark" ? tokens.dark.liveBorder : tokens.light.liveBorder,
+          }}
         />
-      </Box>
-
-      {/* 2. Target Budget Input & Presets */}
+      }
+      sx={{
+        border: "1px solid",
+        borderColor: (theme) =>
+          isExceeded
+            ? theme.palette.mode === "dark" ? tokens.dark.errorBorder : tokens.light.errorBorder
+            : isBreachRisk
+            ? theme.palette.mode === "dark" ? tokens.dark.warnBorder : tokens.light.warnBorder
+            : theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+      }}
+    >
+      {/* 1. Target Budget Input & Presets */}
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
           flexWrap: "wrap",
           gap: 2,
-          p: 2,
+          p: 1.75,
           mb: 2.5,
-          borderRadius: 1.25,
+          borderRadius: 1,
           bgcolor: (theme) =>
-            theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "rgba(255, 255, 255, 0.8)",
+            theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
           border: "1px solid",
-          borderColor: "divider",
+          borderColor: (theme) =>
+            theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Typography variant="body2" sx={{ fontWeight: 700, color: "text.secondary", whiteSpace: "nowrap" }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: "text.secondary", whiteSpace: "nowrap" }}>
             {language === "tl" ? "Target na Badyet:" : "Target Monthly Budget:"}
           </Typography>
           {isEditing ? (
@@ -235,9 +227,9 @@ export const BudgetSentinelCard: React.FC<BudgetSentinelCardProps> = ({
                     startAdornment: <InputAdornment position="start">₱</InputAdornment>,
                   },
                 }}
-                sx={{ width: 140, "& input": { fontWeight: 800, fontFamily: "monospace" } }}
+                sx={{ width: 140, "& input": { fontWeight: 700, fontVariantNumeric: "tabular-nums" } }}
               />
-              <Button size="small" variant="contained" color="primary" onClick={handleSaveBudget} sx={{ fontWeight: 700 }}>
+              <Button size="small" variant="contained" onClick={handleSaveBudget} sx={{ fontWeight: 600, borderRadius: 1, textTransform: "none" }}>
                 {language === "tl" ? "Ilapat" : "Apply"}
               </Button>
             </Box>
@@ -250,16 +242,16 @@ export const BudgetSentinelCard: React.FC<BudgetSentinelCardProps> = ({
                   alignItems: "center",
                   gap: 0.5,
                   cursor: "pointer",
-                  px: 1.5,
-                  py: 0.5,
-                  borderRadius: 1,
-                  bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255,255,255,0.06)" : "#f1f5f9"),
-                  border: "1px dashed",
-                  borderColor: "primary.main",
-                  "&:hover": { bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255,255,255,0.1)" : "#e2e8f0") },
+                  px: 1.25,
+                  py: 0.35,
+                  borderRadius: 0.75,
+                  bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface),
+                  border: "1px solid",
+                  borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong),
+                  "&:hover": { bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.hover : tokens.light.hover) },
                 }}
               >
-                <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", color: "primary.main" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "text.primary" }}>
                   ₱{budgetTarget.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </Typography>
                 <Typography variant="caption" sx={{ color: "text.secondary", ml: 0.5 }}>
@@ -272,7 +264,7 @@ export const BudgetSentinelCard: React.FC<BudgetSentinelCardProps> = ({
 
         {/* Preset Chips */}
         <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", alignItems: "center", gap: 0.75 }}>
-          <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700, mr: 0.5 }}>
+          <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 600, mr: 0.5 }}>
             {language === "tl" ? "Mga Karaniwan:" : "Quick Presets:"}
           </Typography>
           {PRESET_BUDGETS.map((amt) => (
@@ -281,21 +273,27 @@ export const BudgetSentinelCard: React.FC<BudgetSentinelCardProps> = ({
               size="small"
               label={`₱${amt.toLocaleString()}`}
               variant={budgetTarget === amt ? "filled" : "outlined"}
-              color={budgetTarget === amt ? "primary" : "default"}
               onClick={() => handleSelectPreset(amt)}
-              sx={{ fontWeight: 700, fontSize: "0.72rem", cursor: "pointer" }}
+              sx={{
+                fontWeight: 600,
+                fontSize: "0.72rem",
+                fontVariantNumeric: "tabular-nums",
+                cursor: "pointer",
+                bgcolor: budgetTarget === amt ? (theme) => (theme.palette.mode === "dark" ? tokens.dark.active : tokens.light.active) : "transparent",
+                borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong),
+              }}
             />
           ))}
         </Stack>
       </Box>
 
-      {/* 3. Visual Multi-Segment Consumption Track */}
+      {/* 2. Visual Multi-Segment Consumption Track */}
       <Box sx={{ mb: 2.5 }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.75 }}>
-          <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
+          <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary" }}>
             {language === "tl" ? "Konsumo Laban sa Badyet" : "Budget Consumption Progress"}
           </Typography>
-          <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace", color: "text.primary" }}>
+          <Typography variant="caption" sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "text.primary" }}>
             {totalForecastPct.toFixed(1)}% {language === "tl" ? "ng badyet" : "of budget"}
           </Typography>
         </Box>
@@ -303,10 +301,12 @@ export const BudgetSentinelCard: React.FC<BudgetSentinelCardProps> = ({
         {/* Dual Bar Track */}
         <Box
           sx={{
-            height: 12,
+            height: 10,
             width: "100%",
-            borderRadius: 1.5,
-            bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "#e2e8f0"),
+            borderRadius: 1,
+            bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle),
+            border: "1px solid",
+            borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
             position: "relative",
             overflow: "hidden",
             display: "flex",
@@ -317,19 +317,19 @@ export const BudgetSentinelCard: React.FC<BudgetSentinelCardProps> = ({
             sx={{
               width: `${Math.min(100, actualPct)}%`,
               height: "100%",
-              bgcolor: (theme) => (theme.palette.mode === "dark" ? "primary.main" : "#0d9488"),
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary),
               transition: "width 0.4s ease",
             }}
           />
-          {/* Projected Remaining (Tinted / Patterned) */}
+          {/* Projected Remaining */}
           <Box
             sx={{
               width: `${Math.min(100 - actualPct, projectedExtraPct)}%`,
               height: "100%",
-              bgcolor: isBreachRisk || isExceeded ? "#f59e0b" : "#10b981",
-              opacity: 0.65,
-              backgroundImage:
-                "repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,0.25) 6px, rgba(255,255,255,0.25) 12px)",
+              bgcolor: (theme) =>
+                isBreachRisk || isExceeded
+                  ? theme.palette.mode === "dark" ? tokens.dark.warn : tokens.light.warn
+                  : theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong,
               transition: "width 0.4s ease",
             }}
           />
@@ -339,8 +339,7 @@ export const BudgetSentinelCard: React.FC<BudgetSentinelCardProps> = ({
               sx={{
                 width: `${Math.min(100, overBudgetPct)}%`,
                 height: "100%",
-                bgcolor: "#ef4444",
-                opacity: 0.9,
+                bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.error : tokens.light.error),
               }}
             />
           )}
@@ -350,51 +349,51 @@ export const BudgetSentinelCard: React.FC<BudgetSentinelCardProps> = ({
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1, flexWrap: "wrap", gap: 1 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <Box sx={{ width: 10, height: 10, borderRadius: 0.5, bgcolor: "primary.main" }} />
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              <Box sx={{ width: 8, height: 8, borderRadius: 0.5, bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary) }} />
+              <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
                 {language === "tl" ? "Naitalang MTD" : "MTD Actual"} (₱{mtdCost.toFixed(2)})
               </Typography>
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-              <Box sx={{ width: 10, height: 10, borderRadius: 0.5, bgcolor: isBreachRisk ? "#f59e0b" : "#10b981", opacity: 0.7 }} />
-              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+              <Box sx={{ width: 8, height: 8, borderRadius: 0.5, bgcolor: (theme) => isBreachRisk ? (theme.palette.mode === "dark" ? tokens.dark.warn : tokens.light.warn) : (theme.palette.mode === "dark" ? tokens.dark.borderStrong : tokens.light.borderStrong) }} />
+              <Typography variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
                 {language === "tl" ? "Tinatayang Natitira" : "Projected Remaining"} (₱{Math.max(0, forecastedBill - mtdCost).toFixed(2)})
               </Typography>
             </Box>
           </Box>
-          <Typography variant="caption" sx={{ fontWeight: 800, fontFamily: "monospace", color: "text.primary" }}>
+          <Typography variant="caption" sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "text.primary" }}>
             {language === "tl" ? "Limit:" : "Cap:"} ₱{budgetTarget.toLocaleString()}
           </Typography>
         </Box>
       </Box>
 
-      {/* 4. Proactive Sentinel Guidance & Actionable Recommendations */}
+      {/* 3. Proactive Sentinel Guidance & Actionable Recommendations */}
       <Grid container spacing={2}>
         {/* Burn Rate vs Safe Allowance */}
         <Grid size={{ xs: 12, sm: 6 }}>
           <Box
             sx={{
-              p: 1.75,
-              borderRadius: 1.25,
-              bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.02)" : "#f8fafc"),
+              p: 2,
+              borderRadius: 1,
+              bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle),
               border: "1px solid",
-              borderColor: "divider",
+              borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle),
               height: "100%",
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
             }}
           >
-            <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
-              {language === "tl" ? "KASALUKUYANG BILIS NG KONSUMO" : "CURRENT DAILY BURN RATE"}
+            <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", textTransform: "uppercase", fontSize: "0.7rem", letterSpacing: "0.03em" }}>
+              {language === "tl" ? "Kasalukuyang Bilis ng Konsumo" : "Current Daily Burn Rate"}
             </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: "monospace", my: 0.5 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", my: 0.5 }}>
               {effectiveBurnRate.toFixed(1)} kWh/d{" "}
-              <Typography component="span" variant="caption" sx={{ color: "text.secondary" }}>
+              <Typography component="span" variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
                 (≈ ₱{(effectiveBurnRate * effectiveCostPerKwh).toFixed(2)}/day)
               </Typography>
             </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
               {language === "tl"
                 ? `${elapsedDays} araw na lumipas, ${remainingDays} araw na natitira sa buwan.`
                 : `${elapsedDays} days elapsed, ${remainingDays} days remaining in cycle.`}
@@ -406,25 +405,17 @@ export const BudgetSentinelCard: React.FC<BudgetSentinelCardProps> = ({
         <Grid size={{ xs: 12, sm: 6 }}>
           <Box
             sx={{
-              p: 1.75,
-              borderRadius: 1.25,
+              p: 2,
+              borderRadius: 1,
               bgcolor: (theme) =>
                 isBreachRisk || isExceeded
-                  ? theme.palette.mode === "dark"
-                    ? "rgba(245, 158, 11, 0.08)"
-                    : "rgba(245, 158, 11, 0.06)"
-                  : theme.palette.mode === "dark"
-                  ? "rgba(16, 185, 129, 0.08)"
-                  : "rgba(16, 185, 129, 0.06)",
+                  ? theme.palette.mode === "dark" ? tokens.dark.warnBg : tokens.light.warnBg
+                  : theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
               border: "1px solid",
               borderColor: (theme) =>
                 isBreachRisk || isExceeded
-                  ? theme.palette.mode === "dark"
-                    ? "rgba(245, 158, 11, 0.3)"
-                    : "rgba(245, 158, 11, 0.25)"
-                  : theme.palette.mode === "dark"
-                  ? "rgba(16, 185, 129, 0.3)"
-                  : "rgba(16, 185, 129, 0.25)",
+                  ? theme.palette.mode === "dark" ? tokens.dark.warnBorder : tokens.light.warnBorder
+                  : theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
               height: "100%",
               display: "flex",
               flexDirection: "column",
@@ -434,27 +425,30 @@ export const BudgetSentinelCard: React.FC<BudgetSentinelCardProps> = ({
             <Typography
               variant="caption"
               sx={{
-                fontWeight: 800,
-                color: isBreachRisk || isExceeded ? "warning.main" : "success.main",
+                fontWeight: 600,
+                textTransform: "uppercase",
+                fontSize: "0.7rem",
+                letterSpacing: "0.03em",
+                color: isBreachRisk || isExceeded ? "warning.main" : "text.secondary",
               }}
             >
-              {language === "tl" ? "LIGTAS NA ALOKASYON ARAW-ARAW" : "SAFE DAILY ALLOWANCE"}
+              {language === "tl" ? "Ligtas na Alokasyon Araw-Araw" : "Safe Daily Allowance"}
             </Typography>
             <Typography
-              variant="h6"
+              variant="subtitle1"
               sx={{
-                fontWeight: 900,
-                fontFamily: "monospace",
-                color: isBreachRisk || isExceeded ? "warning.main" : "success.main",
+                fontWeight: 700,
+                fontVariantNumeric: "tabular-nums",
+                color: isBreachRisk || isExceeded ? "warning.main" : "text.primary",
                 my: 0.5,
               }}
             >
               {safeDailyKwh.toFixed(1)} kWh/d{" "}
-              <Typography component="span" variant="caption" sx={{ color: "text.secondary" }}>
+              <Typography component="span" variant="caption" sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}>
                 (≤ ₱{safeDailyBudget.toFixed(2)}/day)
               </Typography>
             </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
               {isBreachRisk
                 ? language === "tl"
                   ? `Bawasan ng ${dailyKwhCutNeeded.toFixed(1)} kWh/araw upang hindi lumagpas sa ₱${budgetTarget.toLocaleString()}.`
@@ -473,16 +467,16 @@ export const BudgetSentinelCard: React.FC<BudgetSentinelCardProps> = ({
           sx={{
             mt: 2,
             p: 1.5,
-            borderRadius: 1.25,
-            bgcolor: (theme) => (theme.palette.mode === "dark" ? "rgba(245, 158, 11, 0.06)" : "#fffbeb"),
-            border: "1px dashed",
-            borderColor: "warning.main",
+            borderRadius: 1,
+            bgcolor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.warnBg : tokens.light.warnBg),
+            border: "1px solid",
+            borderColor: (theme) => (theme.palette.mode === "dark" ? tokens.dark.warnBorder : tokens.light.warnBorder),
             display: "flex",
             alignItems: "center",
             gap: 1.5,
           }}
         >
-          <TipsIcon sx={{ color: "warning.main", fontSize: 20, flexShrink: 0 }} />
+          <TipsIcon sx={{ color: "warning.main", fontSize: 18, flexShrink: 0 }} />
           <Typography variant="caption" sx={{ color: "text.primary", lineHeight: 1.5 }}>
             {language === "tl" ? (
               <>
@@ -500,7 +494,7 @@ export const BudgetSentinelCard: React.FC<BudgetSentinelCardProps> = ({
           </Typography>
         </Box>
       )}
-    </Card>
+    </SectionCard>
   );
 };
 

@@ -34,6 +34,7 @@ import {
   formatDateToKey,
   DEFAULT_BILLING_PERIOD_CONFIG,
 } from "../../lib/dailyUsageService";
+import { tokens } from "../../theme/tokens";
 
 interface BillingPeriodModalProps {
   isOpen: boolean;
@@ -117,10 +118,13 @@ export const BillingPeriodModal: React.FC<BillingPeriodModalProps> = ({
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 1.5,
+            borderRadius: 1,
             border: "1px solid",
-            borderColor: "rgba(0, 229, 201, 0.3)",
-            backdropFilter: "blur(24px)",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.surface : tokens.light.surface,
+            backgroundImage: "none",
             p: 0.5,
           },
         },
@@ -137,23 +141,25 @@ export const BillingPeriodModal: React.FC<BillingPeriodModalProps> = ({
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Box
             sx={{
-              width: 36,
-              height: 36,
-              borderRadius: 1.25,
-              bgcolor: "primary.main",
-              color: "#ffffff",
+              width: 32,
+              height: 32,
+              borderRadius: 0.75,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
+              color: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.textSecondary : tokens.light.textSecondary,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <DateRangeIcon sx={{ fontSize: 20, color: "#ffd54f" }} />
+            <DateRangeIcon sx={{ fontSize: 18 }} />
           </Box>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
               Billing Period & Cutoff Settings
             </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
               Tailor calendar calculations to match your exact utility meter cutoff dates
             </Typography>
           </Box>
@@ -166,7 +172,16 @@ export const BillingPeriodModal: React.FC<BillingPeriodModalProps> = ({
       <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 1.5 }}>
         {/* Mode Selector Bento Cards */}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
-          <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, color: "text.secondary" }}>
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.02em",
+              fontSize: "0.75rem",
+              color: "text.secondary",
+            }}
+          >
             Select Billing Calculation Mode
           </Typography>
 
@@ -175,31 +190,50 @@ export const BillingPeriodModal: React.FC<BillingPeriodModalProps> = ({
             onClick={() => setMode("calendar_month")}
             sx={{
               p: 1.5,
-              borderRadius: 1.25,
+              borderRadius: 1,
               cursor: "pointer",
-              border: "1.5px solid",
-              borderColor: mode === "calendar_month" ? "primary.main" : "divider",
-              bgcolor: mode === "calendar_month"
-                ? (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(13, 148, 136, 0.06)"
-                : "background.paper",
+              border: "1px solid",
+              borderColor: (theme) => {
+                const isDark = theme.palette.mode === "dark";
+                return mode === "calendar_month"
+                  ? isDark ? tokens.dark.borderStrong : tokens.light.borderStrong
+                  : isDark ? tokens.dark.borderSubtle : tokens.light.borderSubtle;
+              },
+              bgcolor: (theme) => {
+                const isDark = theme.palette.mode === "dark";
+                return mode === "calendar_month"
+                  ? isDark ? tokens.dark.active : tokens.light.active
+                  : "transparent";
+              },
               display: "flex",
               alignItems: "flex-start",
               gap: 1.5,
-              transition: "all 0.15s ease",
-              "&:hover": { borderColor: "primary.light" },
+              transition: "border-color 0.15s ease",
             }}
           >
-            <CalendarIcon sx={{ mt: 0.25, color: mode === "calendar_month" ? "primary.main" : "text.secondary" }} />
+            <CalendarIcon sx={{ mt: 0.25, fontSize: 20, color: mode === "calendar_month" ? "text.primary" : "text.secondary" }} />
             <Box sx={{ flex: 1 }}>
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
                   Standard Calendar Month
                 </Typography>
                 {mode === "calendar_month" && (
-                  <Chip size="small" label="Active Mode" color="primary" sx={{ height: 20, fontSize: "0.65rem", fontWeight: 800 }} />
+                  <Chip
+                    size="small"
+                    label="Active"
+                    sx={{
+                      height: 18,
+                      fontSize: "0.65rem",
+                      fontWeight: 600,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary,
+                      color: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg,
+                    }}
+                  />
                 )}
               </Box>
-              <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.25 }}>
+              <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.25, fontSize: "0.75rem" }}>
                 Computes energy draw and bills from the 1st to the last day of each month (e.g. Oct 1 – Oct 31).
               </Typography>
             </Box>
@@ -210,31 +244,50 @@ export const BillingPeriodModal: React.FC<BillingPeriodModalProps> = ({
             onClick={() => setMode("recurring_cycle")}
             sx={{
               p: 1.5,
-              borderRadius: 1.25,
+              borderRadius: 1,
               cursor: "pointer",
-              border: "1.5px solid",
-              borderColor: mode === "recurring_cycle" ? "primary.main" : "divider",
-              bgcolor: mode === "recurring_cycle"
-                ? (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(13, 148, 136, 0.06)"
-                : "background.paper",
+              border: "1px solid",
+              borderColor: (theme) => {
+                const isDark = theme.palette.mode === "dark";
+                return mode === "recurring_cycle"
+                  ? isDark ? tokens.dark.borderStrong : tokens.light.borderStrong
+                  : isDark ? tokens.dark.borderSubtle : tokens.light.borderSubtle;
+              },
+              bgcolor: (theme) => {
+                const isDark = theme.palette.mode === "dark";
+                return mode === "recurring_cycle"
+                  ? isDark ? tokens.dark.active : tokens.light.active
+                  : "transparent";
+              },
               display: "flex",
               alignItems: "flex-start",
               gap: 1.5,
-              transition: "all 0.15s ease",
-              "&:hover": { borderColor: "primary.light" },
+              transition: "border-color 0.15s ease",
             }}
           >
-            <RepeatIcon sx={{ mt: 0.25, color: mode === "recurring_cycle" ? "primary.main" : "text.secondary" }} />
+            <RepeatIcon sx={{ mt: 0.25, fontSize: 20, color: mode === "recurring_cycle" ? "text.primary" : "text.secondary" }} />
             <Box sx={{ flex: 1 }}>
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
                   Monthly Recurring Billing Cycle (e.g. 15th to 15th)
                 </Typography>
                 {mode === "recurring_cycle" && (
-                  <Chip size="small" label="Active Mode" color="primary" sx={{ height: 20, fontSize: "0.65rem", fontWeight: 800 }} />
+                  <Chip
+                    size="small"
+                    label="Active"
+                    sx={{
+                      height: 18,
+                      fontSize: "0.65rem",
+                      fontWeight: 600,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary,
+                      color: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg,
+                    }}
+                  />
                 )}
               </Box>
-              <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.25 }}>
+              <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.25, fontSize: "0.75rem" }}>
                 Automatically computes your exact monthly billing cycle across month boundaries (e.g. Sep 15 to Oct 15) for every month.
               </Typography>
             </Box>
@@ -245,31 +298,50 @@ export const BillingPeriodModal: React.FC<BillingPeriodModalProps> = ({
             onClick={() => setMode("custom_range")}
             sx={{
               p: 1.5,
-              borderRadius: 1.25,
+              borderRadius: 1,
               cursor: "pointer",
-              border: "1.5px solid",
-              borderColor: mode === "custom_range" ? "primary.main" : "divider",
-              bgcolor: mode === "custom_range"
-                ? (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.08)" : "rgba(13, 148, 136, 0.06)"
-                : "background.paper",
+              border: "1px solid",
+              borderColor: (theme) => {
+                const isDark = theme.palette.mode === "dark";
+                return mode === "custom_range"
+                  ? isDark ? tokens.dark.borderStrong : tokens.light.borderStrong
+                  : isDark ? tokens.dark.borderSubtle : tokens.light.borderSubtle;
+              },
+              bgcolor: (theme) => {
+                const isDark = theme.palette.mode === "dark";
+                return mode === "custom_range"
+                  ? isDark ? tokens.dark.active : tokens.light.active
+                  : "transparent";
+              },
               display: "flex",
               alignItems: "flex-start",
               gap: 1.5,
-              transition: "all 0.15s ease",
-              "&:hover": { borderColor: "primary.light" },
+              transition: "border-color 0.15s ease",
             }}
           >
-            <TuneIcon sx={{ mt: 0.25, color: mode === "custom_range" ? "primary.main" : "text.secondary" }} />
+            <TuneIcon sx={{ mt: 0.25, fontSize: 20, color: mode === "custom_range" ? "text.primary" : "text.secondary" }} />
             <Box sx={{ flex: 1 }}>
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: "0.875rem" }}>
                   Custom Specific Date Range
                 </Typography>
                 {mode === "custom_range" && (
-                  <Chip size="small" label="Active Mode" color="primary" sx={{ height: 20, fontSize: "0.65rem", fontWeight: 800 }} />
+                  <Chip
+                    size="small"
+                    label="Active"
+                    sx={{
+                      height: 18,
+                      fontSize: "0.65rem",
+                      fontWeight: 600,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary,
+                      color: (theme) =>
+                        theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg,
+                    }}
+                  />
                 )}
               </Box>
-              <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.25 }}>
+              <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.25, fontSize: "0.75rem" }}>
                 Select an arbitrary start and end date for special audits, sub-meter billing, or irregular cutoff dates.
               </Typography>
             </Box>
@@ -442,52 +514,91 @@ export const BillingPeriodModal: React.FC<BillingPeriodModalProps> = ({
         {/* Live Preview Bento Box */}
         <Paper
           sx={{
-            p: 2,
-            borderRadius: 1.25,
-            bgcolor: (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.06)" : "rgba(13, 148, 136, 0.05)",
+            p: 1.75,
+            borderRadius: 1,
+            bgcolor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.surfaceSubtle : tokens.light.surfaceSubtle,
             border: "1px solid",
-            borderColor: (theme) => theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.3)" : "rgba(13, 148, 136, 0.25)",
+            borderColor: (theme) =>
+              theme.palette.mode === "dark" ? tokens.dark.borderSubtle : tokens.light.borderSubtle,
             display: "flex",
             alignItems: "center",
             gap: 1.5,
           }}
         >
-          <BoltIcon sx={{ color: "primary.main", fontSize: 24 }} />
+          <BoltIcon sx={{ color: "text.primary", fontSize: 22 }} />
           <Box sx={{ flex: 1 }}>
-            <Typography variant="caption" sx={{ fontWeight: 800, color: "primary.main", textTransform: "uppercase", letterSpacing: 0.5 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 600,
+                color: "text.secondary",
+                textTransform: "uppercase",
+                letterSpacing: "0.02em",
+                fontSize: "0.6875rem",
+              }}
+            >
               Active Calculation Preview
             </Typography>
-            <Typography variant="body1" sx={{ fontWeight: 800, fontFamily: "monospace" }}>
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: 600,
+                fontVariantNumeric: "tabular-nums",
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.dark.textPrimary : tokens.light.textPrimary,
+              }}
+            >
               {previewWindow.label}
             </Typography>
-            <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", fontSize: "0.75rem" }}>
               {previewWindow.subLabel || `${previewWindow.days.length} days timeframe`} • Telemetry and savings calculated strictly within these dates.
             </Typography>
           </Box>
         </Paper>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, pb: 2.5, pt: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <DialogActions sx={{ px: 3, pb: 2, pt: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Button
           size="small"
           color="inherit"
-          startIcon={<RestartAltIcon />}
+          startIcon={<RestartAltIcon sx={{ fontSize: 16 }} />}
           onClick={handleResetToStandard}
-          sx={{ fontWeight: 700, textTransform: "none" }}
+          sx={{ fontWeight: 600, textTransform: "none", fontSize: "0.75rem" }}
         >
           Reset to Standard Month
         </Button>
 
         <Box sx={{ display: "flex", gap: 1 }}>
-          <Button size="small" onClick={onClose} sx={{ fontWeight: 700, textTransform: "none" }}>
+          <Button
+            size="small"
+            onClick={onClose}
+            sx={{ fontWeight: 600, textTransform: "none", fontSize: "0.75rem" }}
+          >
             Cancel
           </Button>
           <Button
             size="small"
             variant="contained"
             onClick={handleApply}
-            startIcon={<CheckCircleIcon />}
-            sx={{ fontWeight: 800, textTransform: "none", px: 2.5 }}
+            startIcon={<CheckCircleIcon sx={{ fontSize: 16 }} />}
+            sx={{
+              fontWeight: 600,
+              textTransform: "none",
+              fontSize: "0.75rem",
+              px: 2,
+              borderRadius: 1,
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.primary : tokens.light.primary,
+              color: (theme) =>
+                theme.palette.mode === "dark" ? tokens.dark.primaryFg : tokens.light.primaryFg,
+              boxShadow: "none",
+              "&:hover": {
+                bgcolor: (theme) =>
+                  theme.palette.mode === "dark" ? tokens.zinc[200] : tokens.zinc[800],
+                boxShadow: "none",
+              },
+            }}
           >
             Apply Billing Period
           </Button>

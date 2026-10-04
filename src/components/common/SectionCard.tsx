@@ -3,6 +3,7 @@ import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { tokens } from "../../theme/tokens";
+import type { SxProps, Theme } from "@mui/material/styles";
 
 export interface SectionCardProps {
   title?: React.ReactNode;
@@ -13,7 +14,7 @@ export interface SectionCardProps {
   noPadding?: boolean;
   dataTour?: string;
   id?: string;
-  sx?: any;
+  sx?: SxProps<Theme>;
 }
 
 export const SectionCard: React.FC<SectionCardProps> = ({
