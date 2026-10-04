@@ -35,7 +35,6 @@ import {
   CheckCircle as CheckCircleIcon,
   Security as SecurityIcon,
   Lock as LockIcon,
-  Save as SaveIcon,
   Bolt as BoltIcon,
   Shield as ShieldIcon,
   WarningAmber as WarningIcon,
@@ -91,6 +90,7 @@ import {
   sendTestBackgroundPush,
 } from "../../lib/pushNotificationService";
 import { RoomMembersPanel } from "../rooms/RoomMembersPanel";
+import { ChangePasswordCard } from "./ChangePasswordCard";
 
 const SETTINGS_TABS = ["general", "household", "notifications", "security"] as const;
 type SettingsTabKey = (typeof SETTINGS_TABS)[number];
@@ -164,100 +164,6 @@ export const SettingsView: React.FC = () => {
   };
 
   const [isSignoutConfirmOpen, setIsSignoutConfirmOpen] = useState(false);
-
-  // ── 1. Change Password State ─────────────────────────────
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState("");
-
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPasswordError("");
-
-    const trimmedCurrent = currentPassword.trim();
-    const trimmedNew = newPassword.trim();
-    const trimmedConfirm = confirmNewPassword.trim();
-
-    if (!trimmedCurrent || !trimmedNew || !trimmedConfirm) {
-      setPasswordError(
-        language === "tl"
-          ? "Pakipunan ang lahat ng field para sa pagpapalit ng password."
-          : "Please fill in all password fields."
-      );
-      return;
-    }
-
-    if (trimmedNew.length < 6) {
-      setPasswordError(
-        language === "tl"
-          ? "Dapat ay may hindi bababa sa 6 na character ang bagong password."
-          : "New password must be at least 6 characters long."
-      );
-      return;
-    }
-
-    if (trimmedNew !== trimmedConfirm) {
-      setPasswordError(
-        language === "tl"
-          ? "Hindi nagtutugma ang bagong password at kumpirmasyon."
-          : "New passwords do not match."
-      );
-      return;
-    }
-
-    setIsChangingPassword(true);
-    try {
-      const userEmail = identity?.email;
-      if (!userEmail) throw new Error("Could not detect active user email.");
-
-      // 1. Verify current password
-      const { error: authErr } = await supabaseClient.auth.signInWithPassword({
-        email: userEmail,
-        password: trimmedCurrent,
-      });
-
-      if (authErr) {
-        setPasswordError(
-          language === "tl"
-            ? "Maling kasalukuyang password. Pakisuri at subukang muli."
-            : "Current password is incorrect. Please verify and try again."
-        );
-        setIsChangingPassword(false);
-        return;
-      }
-
-      // 2. Update to new password
-      const { error: updateErr } = await supabaseClient.auth.updateUser({
-        password: trimmedNew,
-      });
-
-      if (updateErr) {
-        throw updateErr;
-      }
-
-      showSuccess(
-        language === "tl"
-          ? "Matagumpay na pinalitan ang iyong password!"
-          : "Password successfully updated!",
-        language === "tl" ? "Na-update ang Password" : "Password Changed"
-      );
-
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmNewPassword("");
-    } catch (err: any) {
-      setPasswordError(err?.message || "Failed to update password.");
-    } finally {
-      setIsChangingPassword(false);
-    }
-  };
-
-  const passwordsMatch = !confirmNewPassword || newPassword === confirmNewPassword;
 
   // ── 2. Language & Localization ───────────────────────────
   const handleLanguageChange = (lang: Language) => {
@@ -1871,110 +1777,7 @@ export const SettingsView: React.FC = () => {
 
             <Grid container spacing={3} sx={{ justifyContent: "center" }}>
               <Grid size={{ xs: 12, md: 8, lg: 7 }}>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2.5,
-                    borderRadius: 1.5,
-                    bgcolor: (theme) =>
-                      theme.palette.mode === "dark" ? "rgba(0, 0, 0, 0.25)" : "rgba(248, 250, 252, 0.8)",
-                  }}
-                >
-                  <Box component="form" onSubmit={handleChangePassword}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
-                      <LockIcon sx={{ fontSize: 18, color: "primary.main" }} />
-                      <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                        {language === "tl" ? "Palitan ang Password" : "Change Login Password"}
-                      </Typography>
-                    </Box>
-
-                    {passwordError && (
-                      <Alert severity="error" sx={{ mb: 2, borderRadius: 1, py: 0.5 }}>
-                        {passwordError}
-                      </Alert>
-                    )}
-
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                      <TextField
-                        type={showCurrentPassword ? "text" : "password"}
-                        size="small"
-                        fullWidth
-                        label={language === "tl" ? "Kasalukuyang Password" : "Current Password"}
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        required
-                        slotProps={{
-                          input: {
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <IconButton size="small" onClick={() => setShowCurrentPassword(!showCurrentPassword)}>
-                                  {showCurrentPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                                </IconButton>
-                              </InputAdornment>
-                            ),
-                          },
-                        }}
-                      />
-
-                      <TextField
-                        type={showNewPassword ? "text" : "password"}
-                        size="small"
-                        fullWidth
-                        label={language === "tl" ? "Bagong Password (min 6 chars)" : "New Password (min 6 chars)"}
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        required
-                        slotProps={{
-                          input: {
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <IconButton size="small" onClick={() => setShowNewPassword(!showNewPassword)}>
-                                  {showNewPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                                </IconButton>
-                              </InputAdornment>
-                            ),
-                          },
-                        }}
-                      />
-
-                      <TextField
-                        type={showConfirmNewPassword ? "text" : "password"}
-                        size="small"
-                        fullWidth
-                        label={language === "tl" ? "Kumpirmahin ang Bagong Password" : "Confirm New Password"}
-                        value={confirmNewPassword}
-                        onChange={(e) => setConfirmNewPassword(e.target.value)}
-                        error={!passwordsMatch}
-                        helperText={!passwordsMatch ? (language === "tl" ? "Hindi nagtutugma" : "Passwords do not match") : ""}
-                        required
-                        slotProps={{
-                          input: {
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <IconButton size="small" onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}>
-                                  {showConfirmNewPassword ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                                </IconButton>
-                              </InputAdornment>
-                            ),
-                          },
-                        }}
-                      />
-
-                      <Button
-                        type="submit"
-                        variant="contained"
-                        color="primary"
-                        disabled={isChangingPassword || !passwordsMatch}
-                        startIcon={isChangingPassword ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-                        sx={{ mt: 1, fontWeight: 700, borderRadius: 1.25, py: 1 }}
-                      >
-                        {isChangingPassword
-                          ? (language === "tl" ? "Ina-update..." : "Updating...")
-                          : (language === "tl" ? "I-save ang Bagong Password" : "Update Password")}
-                      </Button>
-                    </Box>
-                  </Box>
-                </Paper>
+                <ChangePasswordCard userEmail={identity?.email} />
               </Grid>
             </Grid>
           </Card>

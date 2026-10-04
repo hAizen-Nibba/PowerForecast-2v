@@ -3,14 +3,64 @@ import type { SystemChangelogEntry } from "./changelogService";
 // Master compiled GitHub deployment history covering all releases
 export const COMPLETE_GITHUB_DEPLOYMENTS: SystemChangelogEntry[] = [
   {
-    id: "3.8.5v",
-    version: "3.8.5v",
-    git_commit_tag: "3.8.5v",
+    id: "3.8.6bv",
+    version: "3.8.6bv",
+    git_commit_tag: "3.8.6bv",
     created_at: new Date().toISOString(),
     deployed_by: "Antigravity Pair Programmer",
     source: "github",
     description:
-      "3.8.5v - Mobile View Modernization: Replaced header burger menu with PowerForecast brand logo and title on mobile, removed profile icon clutter from mobile header, streamlined More navigation drawer by removing redundant brand logo and title, transformed Smart Calendar on mobile to clean date-only view with interactive tap-to-reveal selected day metrics panel, and eliminated fixed element overlaps.",
+      "3.8.6bv - Mobile View Modernization & Upstream Synchronization: Replaced header burger menu with PowerForecast brand logo and title on mobile, removed profile icon clutter from mobile header, streamlined More navigation drawer by removing redundant brand logo and title, transformed Smart Calendar on mobile to clean date-only view with interactive tap-to-reveal selected day metrics panel, eliminated fixed element overlaps, and synchronized with 8-digit email OTP password security.",
+  },
+  {
+    id: "3.8.6av",
+    version: "3.8.6av",
+    git_commit_tag: "3.8.6av",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.6av - Password Change OTP Security Hotfix: Enforced strict 8-digit OTP verification via Supabase verifyOtp, rejecting modified or incorrect verification codes prior to password update, and updated input slots to 8 digits.",
+  },
+  {
+    id: "3.8.6v",
+    version: "3.8.6v",
+    git_commit_tag: "3.8.6v",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.6v - Enhanced Account Security: Introduced 2-step password update with email OTP code confirmation, direct email verification link fallback, live password strength meter, 60s cooldown timer, and bilingual English/Tagalog support.",
+  },
+  {
+    id: "3.8.4ev",
+    version: "3.8.4ev",
+    git_commit_tag: "3.8.4ev",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.4ev - AI Vision Scanner Dropzone Optimization: Removed redundant mobile camera button, retained prominent Upload from Gallery button, implemented interactive drag-and-drop file upload with visual feedback states, and introduced clean focus behavior that hides the upload dropzone when a photo is staged.",
+  },
+  {
+    id: "3.8.4dv",
+    version: "3.8.4dv",
+    git_commit_tag: "3.8.4dv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.4dv - Smart Calendar Today Highlight Enhancement: Preserved 1px border thickness from simulation plan while styling the Today date cell with live emerald green background tint and border accents across Actual Tracker and Simulation Plan views.",
+  },
+  {
+    id: "3.8.4cv",
+    version: "3.8.4cv",
+    git_commit_tag: "3.8.4cv",
+    created_at: new Date().toISOString(),
+    deployed_by: "Antigravity Pair Programmer",
+    source: "github",
+    description:
+      "3.8.4cv - Container Border Alignment: Reverted internal component border radius while maintaining header and sidebar container borders.",
   },
   {
     id: "3.8.4bv",

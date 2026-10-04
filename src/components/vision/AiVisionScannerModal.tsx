@@ -70,6 +70,42 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
 
   const [stagedImages, setStagedImages] = useState<ImageItem[]>([]);
   const [selectedSpaceId, setSelectedSpaceId] = useState<string>(defaultListId || "");
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounter = React.useRef(0);
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current += 1;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current -= 1;
+    if (dragCounter.current <= 0) {
+      setIsDragging(false);
+      dragCounter.current = 0;
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounter.current = 0;
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files);
+    }
+  };
 
   // Editable fields before saving
   const [editName, setEditName] = useState("");
@@ -513,63 +549,57 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
           </Typography>
         </Alert>
 
-        {/* Upload & Camera Actions Dropzone */}
-        <Paper
-          variant="outlined"
-          sx={{
-            p: { xs: 2.5, sm: 3.5 },
-            borderRadius: 1.5,
-            textAlign: "center",
-            borderStyle: "dashed",
-            borderWidth: 2,
-            bgcolor: "action.hover",
-            borderColor: "divider",
-            position: "relative",
-          }}
-        >
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
-            <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", justifyContent: "center" }}>
-              {/* Native Mobile Camera Trigger */}
-              <Button
-                component="label"
-                variant="contained"
-                color="primary"
-                disabled={isCompressing || stagedImages.length >= 3}
-                startIcon={<CameraIcon />}
-                sx={{
-                  fontWeight: 800,
-                  borderRadius: 1.25,
-                  px: 2.5,
-                  py: 1,
-                  fontSize: "0.875rem",
-                  boxShadow: "0 4px 14px rgba(0, 229, 201, 0.25)",
-                }}
-              >
-                Take Photo with Camera
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  hidden
-                  onChange={(e) => {
-                    handleFiles(e.target.files);
-                    e.target.value = "";
-                  }}
-                />
-              </Button>
+        {/* Upload & Gallery Actions Dropzone with Drag and Drop (Hidden when photo is staged) */}
+        {stagedImages.length === 0 && (
+          <Paper
+            variant="outlined"
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            sx={{
+              p: { xs: 3, sm: 4 },
+              borderRadius: 1.5,
+              textAlign: "center",
+              borderStyle: "dashed",
+              borderWidth: 2,
+              bgcolor: isDragging
+                ? (theme) => (theme.palette.mode === "dark" ? "rgba(0, 229, 201, 0.12)" : "rgba(0, 229, 201, 0.08)")
+                : "action.hover",
+              borderColor: isDragging ? "primary.main" : "divider",
+              position: "relative",
+              transition: "all 0.2s ease-in-out",
+            }}
+          >
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
+              <UploadIcon sx={{ fontSize: 38, color: isDragging ? "primary.main" : "text.secondary", transition: "color 0.2s" }} />
+
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5 }}>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: isDragging ? "primary.main" : "text.primary" }}>
+                  {isDragging ? "Drop appliance photo here..." : "Drag & drop appliance label photo here, or"}
+                </Typography>
+                {!isDragging && (
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    Capture or upload 1 clear photo of DOE Yellow Energy Guide or appliance nameplate (Max 12 MB)
+                  </Typography>
+                )}
+              </Box>
 
               {/* Gallery / File Picker */}
               <Button
                 component="label"
-                variant="outlined"
+                variant="contained"
+                color="primary"
                 disabled={isCompressing}
                 startIcon={<UploadIcon />}
                 sx={{
                   fontWeight: 700,
                   borderRadius: 1.25,
-                  px: 2.5,
+                  px: 3,
                   py: 1,
                   fontSize: "0.875rem",
+                  boxShadow: "0 4px 14px rgba(0, 229, 201, 0.2)",
+                  cursor: "pointer",
                 }}
               >
                 Upload from Gallery
@@ -583,22 +613,18 @@ export const AiVisionScannerModal: React.FC<AiVisionScannerModalProps> = ({
                   }}
                 />
               </Button>
-            </Box>
 
-            {isCompressing ? (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
-                <CircularProgress size={16} />
-                <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 600 }}>
-                  Optimizing photo for AI scan (compressing to prevent size limit)...
-                </Typography>
-              </Box>
-            ) : (
-              <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
-                Capture or upload 1 clear photo of DOE Yellow Energy Guide or appliance nameplate (Max 12 MB)
-              </Typography>
-            )}
-          </Box>
-        </Paper>
+              {isCompressing && (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+                  <CircularProgress size={16} />
+                  <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 600 }}>
+                    Optimizing photo for AI scan (compressing to prevent size limit)...
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Paper>
+        )}
 
         {/* Single Staged Photo Preview Card */}
         {stagedImages.length > 0 && (

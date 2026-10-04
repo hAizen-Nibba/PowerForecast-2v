@@ -1,13 +1,14 @@
 {
   "name": "powerforecast-refine",
   "private": true,
-  "version": "3.8.5",
+  "version": "3.8.6",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
+    "update-rates": "node scripts/update-rates.mjs",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
@@ -45,6 +46,7 @@
     "autoprefixer": "^10.5.4",
     "gh-pages": "^6.3.0",
     "oxlint": "^1.75.0",
+    "pdf-parse": "^2.4.5",
     "postcss": "^8.5.26",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",

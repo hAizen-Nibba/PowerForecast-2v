@@ -23,7 +23,7 @@ export const DEFAULT_MERALCO_RATES = {
   fitAll: 0.2011,
   lifelineRate: 0.0100,
   seniorRate: 0.0001,
-  defaultGenerationRate: 9.2504,
+  defaultGenerationRate: 9.7032,
 };
 
 export const DEFAULT_COMMERCIAL_RATES = {
@@ -46,7 +46,7 @@ export const DEFAULT_COMMERCIAL_RATES = {
   fitAll: 0.2011,
   lifelineRate: 0.0100,
   seniorRate: 0.0001,
-  defaultGenerationRate: 9.2504,
+  defaultGenerationRate: 9.7032,
 };
 
 /**
