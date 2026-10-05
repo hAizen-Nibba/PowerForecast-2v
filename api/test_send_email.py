@@ -57,5 +57,17 @@ class TestSendEmailAPI(unittest.TestCase):
         self.assertTrue(len(sender) > 0)
         self.assertIn("@", sender)
 
+    def test_html_injection_prevention(self):
+        data = {
+            "inviterName": "<script>alert('xss')</script>Juan",
+            "inviteCode": "<b>PF-HH-1234</b>",
+            "inviteLink": "javascript:alert(1)"
+        }
+        subject, html_content = render_template("household_invite", data)
+        self.assertNotIn("<script>", html_content)
+        self.assertNotIn("<script>", subject)
+        self.assertIn("&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;Juan", html_content)
+        self.assertNotIn("href=\"javascript:alert(1)\"", html_content)
+
 if __name__ == '__main__':
     unittest.main()
