@@ -1,8 +1,28 @@
+import html
 import json
 import os
 import urllib.request
 import urllib.error
 from http.server import BaseHTTPRequestHandler
+
+def _safe_str(val, default=""):
+    """
+    Sanitizes string inputs against HTML injection / XSS vulnerabilities.
+    """
+    if val is None:
+        return default
+    return html.escape(str(val), quote=True)
+
+def _safe_url(url, default="https://powerforecast.ph"):
+    """
+    Validates URL to prevent javascript: or data: URI execution in rendered HTML email clients.
+    """
+    if not url or not isinstance(url, str):
+        return default
+    clean = url.strip()
+    if clean.startswith("http://") or clean.startswith("https://"):
+        return html.escape(clean, quote=True)
+    return default
 
 def get_resend_api_key():
     """
@@ -112,9 +132,9 @@ def render_template(template_type, data):
     """
 
     if template_type == 'household_invite':
-        inviter_name = data.get('inviterName', 'A household member')
-        invite_code = data.get('inviteCode', 'PF-HH-0000')
-        invite_link = data.get('inviteLink', 'https://powerforecast.ph')
+        inviter_name = _safe_str(data.get('inviterName'), 'A household member')
+        invite_code = _safe_str(data.get('inviteCode'), 'PF-HH-0000')
+        invite_link = _safe_url(data.get('inviteLink'))
         
         subject = f"⚡ You've been invited by {inviter_name} to join PowerForecast Household"
         content = f"""
@@ -155,11 +175,11 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'budget_alert':
-        user_name = data.get('userName', 'User')
-        current_kwh = data.get('currentKwh', '0')
-        budget_limit_kwh = data.get('budgetLimitKwh', '0')
-        percent_consumed = data.get('percentConsumed', '80%')
-        projected_bill = data.get('projectedBill', '₱0.00')
+        user_name = _safe_str(data.get('userName'), 'User')
+        current_kwh = _safe_str(data.get('currentKwh'), '0')
+        budget_limit_kwh = _safe_str(data.get('budgetLimitKwh'), '0')
+        percent_consumed = _safe_str(data.get('percentConsumed'), '80%')
+        projected_bill = _safe_str(data.get('projectedBill'), '₱0.00')
 
         subject = f"⚠️ Alert: PowerForecast Monthly Budget Threshold Reached ({percent_consumed})"
         content = f"""
@@ -193,9 +213,9 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'surge_alert':
-        current_watts = data.get('currentWatts', '2500')
-        threshold_watts = data.get('thresholdWatts', '2000')
-        timestamp = data.get('timestamp', 'Just now')
+        current_watts = _safe_str(data.get('currentWatts'), '2500')
+        threshold_watts = _safe_str(data.get('thresholdWatts'), '2000')
+        timestamp = _safe_str(data.get('timestamp'), 'Just now')
 
         subject = f"⚡ Critical Surge Alert: {current_watts}W Wattage Spike Detected"
         content = f"""
@@ -215,9 +235,9 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'test_email':
-        recipient = data.get('recipient', 'Administrator')
-        timestamp = data.get('timestamp', 'Now')
-        note = data.get('note', 'Resend SMTP & Delivery Test Successful')
+        recipient = _safe_str(data.get('recipient'), 'Administrator')
+        timestamp = _safe_str(data.get('timestamp'), 'Now')
+        note = _safe_str(data.get('note'), 'Resend SMTP & Delivery Test Successful')
 
         subject = "⚡ PowerForecast SMTP & Resend Delivery Test Successful"
         content = f"""
@@ -248,13 +268,14 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     # Default fallback
-    subject = data.get('subject', 'PowerForecast Notification')
+    subject = _safe_str(data.get('subject'), 'PowerForecast Notification')
+    content_safe = _safe_str(data.get('content'), 'Notification from PowerForecast.')
     content = f"""
       <h1 style="font-size: 22px; font-weight: 800; color: {text_main}; margin-top: 0; margin-bottom: 12px; letter-spacing: -0.3px;">
         {subject}
       </h1>
       <div style="font-size: 15px; line-height: 1.6; color: {text_muted};">
-        {data.get('content', 'Notification from PowerForecast.')}
+        {content_safe}
       </div>
     """
     return subject, base_header + content + base_footer
@@ -324,7 +345,7 @@ class handler(BaseHTTPRequestHandler):
             return
 
         recipients = [to_recipient] if isinstance(to_recipient, str) else to_recipient
-        from_email = payload.get('from') or get_sender_email()
+        from_email = get_sender_email()
         template_type = payload.get('type')
         template_data = payload.get('data', {})
 
