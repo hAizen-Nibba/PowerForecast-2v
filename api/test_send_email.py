@@ -1,7 +1,36 @@
 import unittest
-from api.send_email import render_template, get_sender_email
+from api.send_email import render_template, get_sender_email, sanitize_recipients
 
 class TestSendEmailAPI(unittest.TestCase):
+
+    def test_html_escaping_in_template(self):
+        data = {
+            "inviterName": "<script>alert('xss')</script>",
+            "inviteCode": "<b>PF-1234</b>",
+            "inviteLink": "https://powerforecast.ph?a=\"&b='"
+        }
+        subject, html = render_template("household_invite", data)
+        self.assertNotIn("<script>", html)
+        self.assertIn("&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;", html)
+        self.assertNotIn("<b>PF-1234</b>", html)
+        self.assertIn("&lt;b&gt;PF-1234&lt;/b&gt;", html)
+
+    def test_sanitize_recipients(self):
+        # Header injection attempt with newlines
+        input_recipients = [
+            "victim@example.com\r\nBcc: attacker@example.com",
+            "  user2@example.com \n",
+            ""
+        ]
+        sanitized = sanitize_recipients(input_recipients)
+        self.assertEqual(sanitized, [
+            "victim@example.comBcc: attacker@example.com",
+            "user2@example.com"
+        ])
+
+        # Test recipient cap at 10
+        many_recipients = [f"user{i}@example.com" for i in range(20)]
+        self.assertEqual(len(sanitize_recipients(many_recipients)), 10)
 
     def test_household_invite_template(self):
         data = {
