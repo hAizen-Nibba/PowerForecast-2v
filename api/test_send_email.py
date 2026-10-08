@@ -57,5 +57,32 @@ class TestSendEmailAPI(unittest.TestCase):
         self.assertTrue(len(sender) > 0)
         self.assertIn("@", sender)
 
+    def test_html_escaping_and_sanitization(self):
+        # Test HTML injection attempt in template parameters
+        malicious_data = {
+            "inviterName": "<script>alert('xss')</script>",
+            "inviteCode": "<b style='color:red'>HACK</b>",
+            "inviteLink": "https://example.com?param=1&other=2'\"<gt>"
+        }
+        subject, html = render_template("household_invite", malicious_data)
+
+        # Subject and HTML should escape dangerous characters
+        self.assertNotIn("<script>", subject)
+        self.assertIn("&lt;script&gt;", subject)
+        self.assertNotIn("<b style='color:red'>", html)
+        self.assertIn("&lt;b style=&#x27;color:red&#x27;&gt;", html)
+        self.assertIn("&amp;other=2", html)
+
+        # Fallback template HTML escaping
+        fallback_data = {
+            "subject": "<img src=x onerror=alert(1)>",
+            "content": "<iframe src='http://evil.com'></iframe>"
+        }
+        sub, fallback_html = render_template("custom", fallback_data)
+        self.assertNotIn("<img src=x", sub)
+        self.assertIn("&lt;img src=x", sub)
+        self.assertNotIn("<iframe", fallback_html)
+        self.assertIn("&lt;iframe", fallback_html)
+
 if __name__ == '__main__':
     unittest.main()
