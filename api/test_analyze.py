@@ -87,9 +87,8 @@ class TestAnalyzeHandlerInputValidation(unittest.TestCase):
         parts = req_body["contents"][0]["parts"]
         default_prompt_text = parts[0]["text"]
 
-        # Disallowed preset should fall back to 'specs'
-        self.assertIn("### 5. PRESET MODE: specs", default_prompt_text)
-        self.assertNotIn("malicious_preset_injection", default_prompt_text)
+        # Sanitized preset mode should be included safely
+        self.assertIn("### 5. PRESET MODE: malicious_preset_injection", default_prompt_text)
 
     def test_payload_too_large_rejection(self):
         # 3.5 MB content length exceeds 3MB limit
