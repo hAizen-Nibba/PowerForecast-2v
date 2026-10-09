@@ -122,8 +122,6 @@ export const ApiDocsPage: React.FC = () => {
             status: "ok",
             serverHasKey: true,
             keyCount: 3,
-            keyNameDetected: "GEMINI_API_KEY (+2 Fallback Keys)",
-            detectedSources: ["GEMINI_API_KEY", "GEMINI_API_KEY_2", "GEMINI_API_KEY_3"],
             maxImagesSupported: 3,
             defaultModel: "gemini-2.5-flash",
           }, null, 2));
