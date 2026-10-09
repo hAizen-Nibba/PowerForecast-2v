@@ -293,12 +293,12 @@ class handler(BaseHTTPRequestHandler):
 
         try:
             payload = json.loads(raw_body) if raw_body else {}
-        except Exception as e:
+        except Exception:
             self.send_response(400)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({"success": False, "error": f"Invalid JSON body: {str(e)}"}).encode('utf-8'))
+            self.wfile.write(json.dumps({"success": False, "error": "Invalid JSON payload format."}).encode('utf-8'))
             return
 
         api_key = get_resend_api_key()
@@ -380,7 +380,11 @@ class handler(BaseHTTPRequestHandler):
             try:
                 error_json = json.loads(error_body)
             except Exception:
-                error_json = {"message": error_body}
+                error_json = {}
+
+            # Sanitize error message to prevent leaking sensitive upstream API details
+            raw_msg = error_json.get("message") if isinstance(error_json, dict) else None
+            safe_error_msg = raw_msg if raw_msg and isinstance(raw_msg, str) else "Failed to dispatch email via downstream service."
 
             self.send_response(http_err.code if http_err.code in [400, 401, 403, 422, 500] else 500)
             self.send_header('Content-Type', 'application/json')
@@ -388,18 +392,17 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({
                 "success": False,
-                "error": error_json.get("message") or f"Resend API error: {http_err.reason}",
-                "details": error_json,
+                "error": safe_error_msg,
                 "code": "RESEND_HTTP_ERROR"
             }).encode('utf-8'))
 
-        except Exception as e:
+        except Exception:
             self.send_response(500)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(json.dumps({
                 "success": False,
-                "error": f"Internal email dispatcher error: {str(e)}",
+                "error": "An error occurred while dispatching email.",
                 "code": "DISPATCHER_ERROR"
             }).encode('utf-8'))
