@@ -1,8 +1,14 @@
 import json
 import os
+import html
 import urllib.request
 import urllib.error
 from http.server import BaseHTTPRequestHandler
+
+def _esc(val):
+    if val is None:
+        return ""
+    return html.escape(str(val))
 
 def get_resend_api_key():
     """
@@ -112,11 +118,12 @@ def render_template(template_type, data):
     """
 
     if template_type == 'household_invite':
-        inviter_name = data.get('inviterName', 'A household member')
-        invite_code = data.get('inviteCode', 'PF-HH-0000')
-        invite_link = data.get('inviteLink', 'https://powerforecast.ph')
+        raw_inviter_name = str(data.get('inviterName', 'A household member'))
+        inviter_name = _esc(raw_inviter_name)
+        invite_code = _esc(data.get('inviteCode', 'PF-HH-0000'))
+        invite_link = _esc(data.get('inviteLink', 'https://powerforecast.ph'))
         
-        subject = f"⚡ You've been invited by {inviter_name} to join PowerForecast Household"
+        subject = f"⚡ You've been invited by {raw_inviter_name} to join PowerForecast Household"
         content = f"""
           <h1 style="font-size: 22px; font-weight: 800; color: {text_main}; margin-top: 0; margin-bottom: 12px; letter-spacing: -0.3px;">
             Household Energy Team Invitation
@@ -155,13 +162,14 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'budget_alert':
-        user_name = data.get('userName', 'User')
-        current_kwh = data.get('currentKwh', '0')
-        budget_limit_kwh = data.get('budgetLimitKwh', '0')
-        percent_consumed = data.get('percentConsumed', '80%')
-        projected_bill = data.get('projectedBill', '₱0.00')
+        raw_percent_consumed = str(data.get('percentConsumed', '80%'))
+        user_name = _esc(data.get('userName', 'User'))
+        current_kwh = _esc(data.get('currentKwh', '0'))
+        budget_limit_kwh = _esc(data.get('budgetLimitKwh', '0'))
+        percent_consumed = _esc(raw_percent_consumed)
+        projected_bill = _esc(data.get('projectedBill', '₱0.00'))
 
-        subject = f"⚠️ Alert: PowerForecast Monthly Budget Threshold Reached ({percent_consumed})"
+        subject = f"⚠️ Alert: PowerForecast Monthly Budget Threshold Reached ({raw_percent_consumed})"
         content = f"""
           <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px;">
             <strong style="color: #b91c1c; font-size: 13px; letter-spacing: 0.5px;">ENERGY BUDGET THRESHOLD WARNING</strong>
@@ -193,11 +201,12 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'surge_alert':
-        current_watts = data.get('currentWatts', '2500')
-        threshold_watts = data.get('thresholdWatts', '2000')
-        timestamp = data.get('timestamp', 'Just now')
+        raw_current_watts = str(data.get('currentWatts', '2500'))
+        current_watts = _esc(raw_current_watts)
+        threshold_watts = _esc(data.get('thresholdWatts', '2000'))
+        timestamp = _esc(data.get('timestamp', 'Just now'))
 
-        subject = f"⚡ Critical Surge Alert: {current_watts}W Wattage Spike Detected"
+        subject = f"⚡ Critical Surge Alert: {raw_current_watts}W Wattage Spike Detected"
         content = f"""
           <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px;">
             <strong style="color: #b45309; font-size: 13px; letter-spacing: 0.5px;">HIGH CONCURRENT POWER SURGE</strong>
@@ -215,9 +224,9 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'test_email':
-        recipient = data.get('recipient', 'Administrator')
-        timestamp = data.get('timestamp', 'Now')
-        note = data.get('note', 'Resend SMTP & Delivery Test Successful')
+        recipient = _esc(data.get('recipient', 'Administrator'))
+        timestamp = _esc(data.get('timestamp', 'Now'))
+        note = _esc(data.get('note', 'Resend SMTP & Delivery Test Successful'))
 
         subject = "⚡ PowerForecast SMTP & Resend Delivery Test Successful"
         content = f"""
@@ -248,13 +257,14 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     # Default fallback
-    subject = data.get('subject', 'PowerForecast Notification')
+    raw_subject = str(data.get('subject', 'PowerForecast Notification'))
+    subject = raw_subject
     content = f"""
       <h1 style="font-size: 22px; font-weight: 800; color: {text_main}; margin-top: 0; margin-bottom: 12px; letter-spacing: -0.3px;">
-        {subject}
+        {_esc(raw_subject)}
       </h1>
       <div style="font-size: 15px; line-height: 1.6; color: {text_muted};">
-        {data.get('content', 'Notification from PowerForecast.')}
+        {_esc(data.get('content', 'Notification from PowerForecast.'))}
       </div>
     """
     return subject, base_header + content + base_footer

@@ -57,5 +57,20 @@ class TestSendEmailAPI(unittest.TestCase):
         self.assertTrue(len(sender) > 0)
         self.assertIn("@", sender)
 
+    def test_html_injection_prevention(self):
+        data = {
+            "inviterName": "<script>alert('xss')</script>",
+            "inviteCode": "PF-<b>1234</b>",
+            "inviteLink": "https://powerforecast.ph?q=\"><img src=x onerror=alert(1)>"
+        }
+        subject, html = render_template("household_invite", data)
+        # Subject line remains unescaped plain text for proper email client header rendering
+        self.assertEqual(subject, "⚡ You've been invited by <script>alert('xss')</script> to join PowerForecast Household")
+        # HTML body must have dangerous tags properly escaped
+        self.assertNotIn("<script>", html)
+        self.assertIn("&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;", html)
+        self.assertIn("PF-&lt;b&gt;1234&lt;/b&gt;", html)
+        self.assertIn("&quot;&gt;&lt;img src=x onerror=alert(1)&gt;", html)
+
 if __name__ == '__main__':
     unittest.main()
