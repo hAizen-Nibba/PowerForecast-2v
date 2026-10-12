@@ -57,5 +57,28 @@ class TestSendEmailAPI(unittest.TestCase):
         self.assertTrue(len(sender) > 0)
         self.assertIn("@", sender)
 
+    def test_invalid_json_body_sanitized_error(self):
+        from unittest.mock import MagicMock
+        import json
+        import api.send_email as send_email
+
+        handler = send_email.handler.__new__(send_email.handler)
+        handler.headers = {'Content-Length': '12'}
+        handler.rfile = MagicMock()
+        handler.rfile.read.return_value = b"invalid json"
+        handler.wfile = MagicMock()
+        handler.send_response = MagicMock()
+        handler.send_header = MagicMock()
+        handler.end_headers = MagicMock()
+
+        handler.do_POST()
+
+        handler.send_response.assert_called_with(400)
+        written_bytes = handler.wfile.write.call_args[0][0]
+        res = json.loads(written_bytes.decode('utf-8'))
+        self.assertFalse(res["success"])
+        self.assertEqual(res["error"], "Invalid JSON payload format.")
+        self.assertNotIn("Expecting value", res["error"])
+
 if __name__ == '__main__':
     unittest.main()
