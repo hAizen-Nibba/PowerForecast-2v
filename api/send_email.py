@@ -293,12 +293,13 @@ class handler(BaseHTTPRequestHandler):
 
         try:
             payload = json.loads(raw_body) if raw_body else {}
-        except Exception as e:
+        except Exception:
             self.send_response(400)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({"success": False, "error": f"Invalid JSON body: {str(e)}"}).encode('utf-8'))
+            # Secure error response: do not leak JSON parsing internal exception strings
+            self.wfile.write(json.dumps({"success": False, "error": "Invalid JSON payload format."}).encode('utf-8'))
             return
 
         api_key = get_resend_api_key()
@@ -324,7 +325,8 @@ class handler(BaseHTTPRequestHandler):
             return
 
         recipients = [to_recipient] if isinstance(to_recipient, str) else to_recipient
-        from_email = payload.get('from') or get_sender_email()
+        # Enforce server-configured sender email to prevent arbitrary sender spoofing
+        from_email = get_sender_email()
         template_type = payload.get('type')
         template_data = payload.get('data', {})
 
@@ -393,13 +395,14 @@ class handler(BaseHTTPRequestHandler):
                 "code": "RESEND_HTTP_ERROR"
             }).encode('utf-8'))
 
-        except Exception as e:
+        except Exception:
             self.send_response(500)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
+            # Secure error response: do not leak internal exception details or stack traces to clients
             self.wfile.write(json.dumps({
                 "success": False,
-                "error": f"Internal email dispatcher error: {str(e)}",
+                "error": "Internal email dispatcher error occurred. Please try again later.",
                 "code": "DISPATCHER_ERROR"
             }).encode('utf-8'))
