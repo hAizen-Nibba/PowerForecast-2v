@@ -37,7 +37,7 @@ class TestAnalyzeHandlerInputValidation(unittest.TestCase):
             "preset": "<script>alert(1)</script>",
             "model": "gemini-2.0-flash/../etc/passwd",
             "mimeType": "application/x-executable",
-            "prompt": "A" * 3000,
+            "prompt": "A" * 10000,
             "imageBase64": "data:image/jpeg;base64,12345"
         }
         json_bytes = json.dumps(body_data).encode('utf-8')
@@ -55,9 +55,9 @@ class TestAnalyzeHandlerInputValidation(unittest.TestCase):
         req_body = json.loads(req.data.decode('utf-8'))
         parts = req_body["contents"][0]["parts"]
 
-        # Prompt should be capped to 2000 characters
+        # Prompt should be capped to 8000 characters
         custom_prompt = parts[0]["text"]
-        self.assertEqual(len(custom_prompt), 2000)
+        self.assertEqual(len(custom_prompt), 8000)
 
         # Inline data mime_type should default to image/jpeg because application/x-executable was rejected
         inline_data = parts[1]["inline_data"]
