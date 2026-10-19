@@ -1,8 +1,26 @@
+import html
 import json
 import os
 import urllib.request
 import urllib.error
 from http.server import BaseHTTPRequestHandler
+
+def sanitize_val(val):
+    """
+    Escapes HTML entities in template values to prevent email HTML/XSS injection.
+    """
+    if val is None:
+        return ""
+    return html.escape(str(val))
+
+def sanitize_link(url):
+    """
+    Ensures link starts with http:// or https:// to prevent javascript: or data: URI execution.
+    """
+    clean_url = str(url or "").strip()
+    if clean_url.startswith(('http://', 'https://')):
+        return html.escape(clean_url)
+    return "https://powerforecast.ph"
 
 def get_resend_api_key():
     """
@@ -26,6 +44,8 @@ def render_template(template_type, data):
     Renders responsive, branded PowerForecast HTML emails for supported transactional types.
     Modern light branding matching Stack Template / Google Stitch design guidelines.
     """
+    raw_data = data if isinstance(data, dict) else {}
+    data = {k: sanitize_val(v) for k, v in raw_data.items()}
     brand_emerald = "#059669"
     page_bg = "#f4f4f5"
     card_bg = "#ffffff"
@@ -114,7 +134,7 @@ def render_template(template_type, data):
     if template_type == 'household_invite':
         inviter_name = data.get('inviterName', 'A household member')
         invite_code = data.get('inviteCode', 'PF-HH-0000')
-        invite_link = data.get('inviteLink', 'https://powerforecast.ph')
+        invite_link = sanitize_link(raw_data.get('inviteLink'))
         
         subject = f"⚡ You've been invited by {inviter_name} to join PowerForecast Household"
         content = f"""
@@ -324,7 +344,7 @@ class handler(BaseHTTPRequestHandler):
             return
 
         recipients = [to_recipient] if isinstance(to_recipient, str) else to_recipient
-        from_email = payload.get('from') or get_sender_email()
+        from_email = get_sender_email()
         template_type = payload.get('type')
         template_data = payload.get('data', {})
 
