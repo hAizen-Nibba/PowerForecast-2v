@@ -288,7 +288,24 @@ class handler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(res).encode('utf-8'))
 
     def do_POST(self):
-        content_length = int(self.headers.get('Content-Length', 0))
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+        except (ValueError, TypeError):
+            content_length = 0
+
+        # SECURITY: Enforce payload size cap (1MB) to prevent Denial of Service via memory exhaustion
+        if content_length > 1 * 1024 * 1024:
+            self.send_response(413)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "success": False,
+                "error": "Payload Too Large: Maximum allowed payload is 1 MB.",
+                "code": "PAYLOAD_TOO_LARGE"
+            }).encode('utf-8'))
+            return
+
         raw_body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else ''
 
         try:
@@ -386,10 +403,10 @@ class handler(BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
+            # SECURITY: Prevent information disclosure by sanitizing error response (omit raw details object)
             self.wfile.write(json.dumps({
                 "success": False,
                 "error": error_json.get("message") or f"Resend API error: {http_err.reason}",
-                "details": error_json,
                 "code": "RESEND_HTTP_ERROR"
             }).encode('utf-8'))
 
