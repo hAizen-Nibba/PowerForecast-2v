@@ -57,5 +57,19 @@ class TestSendEmailAPI(unittest.TestCase):
         self.assertTrue(len(sender) > 0)
         self.assertIn("@", sender)
 
+    def test_html_and_url_sanitization(self):
+        data = {
+            "inviterName": "<script>alert('xss')</script>",
+            "inviteCode": "<b>123</b>",
+            "inviteLink": "javascript:alert(1)"
+        }
+        subject, html = render_template("household_invite", data)
+        self.assertNotIn("<script>", subject)
+        self.assertIn("&lt;script&gt;", subject)
+        self.assertNotIn("<b>123</b>", html)
+        self.assertIn("&lt;b&gt;123&lt;/b&gt;", html)
+        self.assertNotIn("javascript:alert(1)", html)
+        self.assertIn("https://powerforecast.ph", html)
+
 if __name__ == '__main__':
     unittest.main()
