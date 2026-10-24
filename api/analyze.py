@@ -103,7 +103,7 @@ class handler(BaseHTTPRequestHandler):
 
         prompt = None
         if isinstance(raw_prompt, str) and raw_prompt.strip():
-            # Cap prompt length to 8000 chars to support comprehensive energy audit telemetry
+            # Cap prompt length to 8000 chars to support comprehensive energy audit telemetry while mitigating DoS
             prompt = raw_prompt.strip()[:8000]
 
         api_keys = get_gemini_api_keys()
