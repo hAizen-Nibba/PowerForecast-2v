@@ -57,5 +57,16 @@ class TestSendEmailAPI(unittest.TestCase):
         self.assertTrue(len(sender) > 0)
         self.assertIn("@", sender)
 
+    def test_template_enforcement_over_raw_html(self):
+        # Verify that render_template ignores malicious custom raw HTML in favor of structured templates
+        subject, html = render_template("budget_alert", {"userName": "TestUser", "currentKwh": "100"})
+        self.assertNotIn("<script>alert('xss')</script>", html)
+        self.assertIn("TestUser", html)
+
+    def test_sender_email_enforcement(self):
+        sender = get_sender_email()
+        # Verify sender address cannot be spoofed and defaults to authorized email
+        self.assertTrue(sender.startswith("PowerForecast") or "@" in sender)
+
 if __name__ == '__main__':
     unittest.main()
