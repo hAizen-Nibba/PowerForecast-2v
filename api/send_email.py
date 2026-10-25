@@ -324,17 +324,16 @@ class handler(BaseHTTPRequestHandler):
             return
 
         recipients = [to_recipient] if isinstance(to_recipient, str) else to_recipient
-        from_email = payload.get('from') or get_sender_email()
+        # Security: Enforce server-side sender email to prevent email header spoofing
+        from_email = get_sender_email()
         template_type = payload.get('type')
-        template_data = payload.get('data', {})
+        template_data = payload.get('data') if isinstance(payload.get('data'), dict) else {}
 
         if template_type:
-            computed_subject, computed_html = render_template(template_type, template_data)
-            subject = payload.get('subject') or computed_subject
-            html = payload.get('html') or computed_html
+            subject, html = render_template(template_type, template_data)
         else:
             subject = payload.get('subject', 'Notification from PowerForecast')
-            html = payload.get('html', f"<p>{payload.get('text', 'No content provided.')}</p>")
+            html = payload.get('html') or f"<p>{payload.get('text', 'Notification from PowerForecast.')}</p>"
 
         resend_payload = {
             "from": from_email,
