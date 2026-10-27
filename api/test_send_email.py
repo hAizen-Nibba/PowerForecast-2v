@@ -57,5 +57,22 @@ class TestSendEmailAPI(unittest.TestCase):
         self.assertTrue(len(sender) > 0)
         self.assertIn("@", sender)
 
+    def test_html_injection_escaping_and_sanitization(self):
+        data = {
+            "inviterName": "<script>alert('xss')</script>",
+            "inviteCode": "PF-HH-<b>1234</b>",
+            "inviteLink": "javascript:alert(1)"
+        }
+        subject, html = render_template("household_invite", data)
+        # Verify script tags and unescaped HTML are HTML-encoded
+        self.assertNotIn("<script>", subject)
+        self.assertIn("&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;", subject)
+        self.assertNotIn("<script>", html)
+        self.assertNotIn("<b>1234</b>", html)
+        self.assertIn("&lt;b&gt;1234&lt;/b&gt;", html)
+        # Verify dangerous javascript: URL scheme was rejected and replaced with safe default
+        self.assertNotIn("href=\"javascript:alert(1)\"", html)
+        self.assertIn("https://powerforecast.ph", html)
+
 if __name__ == '__main__':
     unittest.main()
