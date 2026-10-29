@@ -1,7 +1,30 @@
 import unittest
-from api.send_email import render_template, get_sender_email
+from api.send_email import render_template, get_sender_email, _sanitize, _clean_header
 
 class TestSendEmailAPI(unittest.TestCase):
+
+    def test_sanitize_and_html_escaping(self):
+        xss_input = "<script>alert('xss')</script>"
+        sanitized = _sanitize(xss_input)
+        self.assertNotIn("<script>", sanitized)
+        self.assertIn("&lt;script&gt;", sanitized)
+
+        # Test in template rendering
+        data = {
+            "inviterName": "<img src=x onerror=alert(1)>",
+            "inviteCode": "PF-HH-0001\r\nBcc: evil@attacker.com",
+            "inviteLink": "https://powerforecast.ph"
+        }
+        subject, html = render_template("household_invite", data)
+        self.assertNotIn("<img src=x", html)
+        self.assertIn("&lt;img src=x", html)
+
+    def test_clean_header_injection_prevention(self):
+        injected = "admin@example.com\r\nBcc: victim@example.com\nSubject: Injected"
+        cleaned = _clean_header(injected)
+        self.assertNotIn("\r", cleaned)
+        self.assertNotIn("\n", cleaned)
+        self.assertEqual(cleaned, "admin@example.com Bcc: victim@example.com Subject: Injected")
 
     def test_household_invite_template(self):
         data = {

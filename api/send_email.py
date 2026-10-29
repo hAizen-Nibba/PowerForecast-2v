@@ -1,8 +1,23 @@
+import html
 import json
 import os
+import re
 import urllib.request
 import urllib.error
 from http.server import BaseHTTPRequestHandler
+
+def _sanitize(val):
+    """Safely converts input to string, removes CR/LF line breaks, and escapes HTML."""
+    if val is None:
+        return ""
+    clean = re.sub(r'[\r\n]+', ' ', str(val))
+    return html.escape(clean)
+
+def _clean_header(val):
+    """Strips CR/LF characters from email headers to prevent header injection."""
+    if not isinstance(val, str):
+        return ""
+    return re.sub(r'[\r\n]+', ' ', val).strip()
 
 def get_resend_api_key():
     """
@@ -112,9 +127,9 @@ def render_template(template_type, data):
     """
 
     if template_type == 'household_invite':
-        inviter_name = data.get('inviterName', 'A household member')
-        invite_code = data.get('inviteCode', 'PF-HH-0000')
-        invite_link = data.get('inviteLink', 'https://powerforecast.ph')
+        inviter_name = _sanitize(data.get('inviterName', 'A household member'))
+        invite_code = _sanitize(data.get('inviteCode', 'PF-HH-0000'))
+        invite_link = _sanitize(data.get('inviteLink', 'https://powerforecast.ph'))
         
         subject = f"⚡ You've been invited by {inviter_name} to join PowerForecast Household"
         content = f"""
@@ -155,11 +170,11 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'budget_alert':
-        user_name = data.get('userName', 'User')
-        current_kwh = data.get('currentKwh', '0')
-        budget_limit_kwh = data.get('budgetLimitKwh', '0')
-        percent_consumed = data.get('percentConsumed', '80%')
-        projected_bill = data.get('projectedBill', '₱0.00')
+        user_name = _sanitize(data.get('userName', 'User'))
+        current_kwh = _sanitize(data.get('currentKwh', '0'))
+        budget_limit_kwh = _sanitize(data.get('budgetLimitKwh', '0'))
+        percent_consumed = _sanitize(data.get('percentConsumed', '80%'))
+        projected_bill = _sanitize(data.get('projectedBill', '₱0.00'))
 
         subject = f"⚠️ Alert: PowerForecast Monthly Budget Threshold Reached ({percent_consumed})"
         content = f"""
@@ -193,9 +208,9 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'surge_alert':
-        current_watts = data.get('currentWatts', '2500')
-        threshold_watts = data.get('thresholdWatts', '2000')
-        timestamp = data.get('timestamp', 'Just now')
+        current_watts = _sanitize(data.get('currentWatts', '2500'))
+        threshold_watts = _sanitize(data.get('thresholdWatts', '2000'))
+        timestamp = _sanitize(data.get('timestamp', 'Just now'))
 
         subject = f"⚡ Critical Surge Alert: {current_watts}W Wattage Spike Detected"
         content = f"""
@@ -215,9 +230,9 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'test_email':
-        recipient = data.get('recipient', 'Administrator')
-        timestamp = data.get('timestamp', 'Now')
-        note = data.get('note', 'Resend SMTP & Delivery Test Successful')
+        recipient = _sanitize(data.get('recipient', 'Administrator'))
+        timestamp = _sanitize(data.get('timestamp', 'Now'))
+        note = _sanitize(data.get('note', 'Resend SMTP & Delivery Test Successful'))
 
         subject = "⚡ PowerForecast SMTP & Resend Delivery Test Successful"
         content = f"""
@@ -248,13 +263,14 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     # Default fallback
-    subject = data.get('subject', 'PowerForecast Notification')
+    subject = _sanitize(data.get('subject', 'PowerForecast Notification'))
+    clean_content = _sanitize(data.get('content', 'Notification from PowerForecast.'))
     content = f"""
       <h1 style="font-size: 22px; font-weight: 800; color: {text_main}; margin-top: 0; margin-bottom: 12px; letter-spacing: -0.3px;">
         {subject}
       </h1>
       <div style="font-size: 15px; line-height: 1.6; color: {text_muted};">
-        {data.get('content', 'Notification from PowerForecast.')}
+        {clean_content}
       </div>
     """
     return subject, base_header + content + base_footer
@@ -323,8 +339,22 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({"success": False, "error": "Missing 'to' recipient parameter."}).encode('utf-8'))
             return
 
-        recipients = [to_recipient] if isinstance(to_recipient, str) else to_recipient
-        from_email = payload.get('from') or get_sender_email()
+        if isinstance(to_recipient, list):
+            recipients = [_clean_header(r) for r in to_recipient if _clean_header(r)]
+        else:
+            cleaned = _clean_header(to_recipient)
+            recipients = [cleaned] if cleaned else []
+
+        if not recipients:
+            self.send_response(400)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": False, "error": "Invalid recipient email address."}).encode('utf-8'))
+            return
+
+        raw_from = payload.get('from')
+        from_email = _clean_header(raw_from) if raw_from else get_sender_email()
         template_type = payload.get('type')
         template_data = payload.get('data', {})
 
@@ -393,13 +423,13 @@ class handler(BaseHTTPRequestHandler):
                 "code": "RESEND_HTTP_ERROR"
             }).encode('utf-8'))
 
-        except Exception as e:
+        except Exception:
             self.send_response(500)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(json.dumps({
                 "success": False,
-                "error": f"Internal email dispatcher error: {str(e)}",
+                "error": "An internal error occurred while processing the email dispatch request.",
                 "code": "DISPATCHER_ERROR"
             }).encode('utf-8'))
