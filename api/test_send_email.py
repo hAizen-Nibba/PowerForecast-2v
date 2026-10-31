@@ -57,5 +57,56 @@ class TestSendEmailAPI(unittest.TestCase):
         self.assertTrue(len(sender) > 0)
         self.assertIn("@", sender)
 
+    def test_xss_sanitization_in_templates(self):
+        # Test script tag escaping across templates
+        data = {
+            "inviterName": "<script>alert('xss')</script>",
+            "inviteCode": 'PF-"><script>alert(1)</script>',
+            "inviteLink": "javascript:alert(document.cookie)"
+        }
+        subject, html = render_template("household_invite", data)
+        self.assertNotIn("<script>", html)
+        self.assertNotIn("javascript:alert", html)
+        self.assertIn("&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;", html)
+        # Check that safe fallback link was used instead of javascript:
+        self.assertIn('href="https://powerforecast.ph"', html)
+
+    def test_safe_url_validation(self):
+        # Test malicious URL schemes (data:, vbscript:, javascript:)
+        for bad_url in [
+            "javascript:void(0)",
+            "data:text/html;base64,PHNjcmlwdD4=",
+            "vbscript:msgbox(1)",
+            "//evil.com/phish",
+        ]:
+            data = {
+                "inviterName": "Test User",
+                "inviteCode": "PF-001",
+                "inviteLink": bad_url
+            }
+            _, html = render_template("household_invite", data)
+            self.assertNotIn(bad_url, html)
+            self.assertIn('href="https://powerforecast.ph"', html)
+
+        # Empty or blank space string should also fall back to safe default
+        data_blank = {
+            "inviterName": "Test User",
+            "inviteCode": "PF-001",
+            "inviteLink": "   "
+        }
+        _, html_blank = render_template("household_invite", data_blank)
+        self.assertIn('href="https://powerforecast.ph"', html_blank)
+
+    def test_subject_header_injection_sanitization(self):
+        data = {
+            "inviterName": "Alice\r\nBcc: victim@example.com\r\n",
+            "inviteCode": "PF-002",
+            "inviteLink": "https://powerforecast.ph"
+        }
+        subject, _ = render_template("household_invite", data)
+        self.assertNotIn("\r", subject)
+        self.assertNotIn("\n", subject)
+        self.assertIn("Alice  Bcc: victim@example.com", subject)
+
 if __name__ == '__main__':
     unittest.main()
