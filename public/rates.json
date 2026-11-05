@@ -1,7 +1,7 @@
 {
   "success": true,
   "error": null,
-  "warning": null,
+  "warning": "November 2026 rates not yet published. Using October 2026 rates.",
   "date": "10/2026",
   "data": [
     {
@@ -126,7 +126,7 @@
     }
   ],
   "meta": {
-    "timestamp": "2026-10-20T10:43:49.426Z",
+    "timestamp": "2026-11-05T13:46:46.186Z",
     "source": "https://meralcomain.s3.ap-southeast-1.amazonaws.com/2026-10/10-2026_residential_bills.pdf"
   }
 }
