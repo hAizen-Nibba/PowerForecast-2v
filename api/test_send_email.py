@@ -57,5 +57,41 @@ class TestSendEmailAPI(unittest.TestCase):
         self.assertTrue(len(sender) > 0)
         self.assertIn("@", sender)
 
+    def test_html_injection_sanitization_in_templates(self):
+        malicious_data = {
+            "inviterName": "<script>alert('xss')</script>",
+            "inviteCode": '"><b onmouseover="alert(1)">code</b>',
+            "inviteLink": "javascript:alert(document.cookie)"
+        }
+        subject, html = render_template("household_invite", malicious_data)
+
+        self.assertNotIn("<script>", html)
+        self.assertIn("&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;", html)
+        self.assertNotIn("<b onmouseover=", html)
+        self.assertIn("&quot;&gt;&lt;b onmouseover=&quot;alert(1)&quot;&gt;code&lt;/b&gt;", html)
+        self.assertNotIn("javascript:alert", html)
+        self.assertIn("https://powerforecast.ph", html)
+
+    def test_html_injection_budget_and_surge_templates(self):
+        malicious_budget = {
+            "userName": "<img src=x onerror=alert(1)>",
+            "percentConsumed": "<b>99%</b>",
+            "projectedBill": "<script>evil()</script>"
+        }
+        _, html_budget = render_template("budget_alert", malicious_budget)
+        self.assertNotIn("<img src=x", html_budget)
+        self.assertIn("&lt;img src=x onerror=alert(1)&gt;", html_budget)
+        self.assertNotIn("<script>", html_budget)
+        self.assertIn("&lt;script&gt;evil()&lt;/script&gt;", html_budget)
+
+        malicious_surge = {
+            "currentWatts": "<iframe src='evil.com'>",
+            "timestamp": "<script>steal()</script>"
+        }
+        _, html_surge = render_template("surge_alert", malicious_surge)
+        self.assertNotIn("<iframe", html_surge)
+        self.assertIn("&lt;iframe src=&#x27;evil.com&#x27;&gt;", html_surge)
+        self.assertNotIn("<script>", html_surge)
+
 if __name__ == '__main__':
     unittest.main()
