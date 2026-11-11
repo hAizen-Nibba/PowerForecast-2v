@@ -57,5 +57,29 @@ class TestSendEmailAPI(unittest.TestCase):
         self.assertTrue(len(sender) > 0)
         self.assertIn("@", sender)
 
+    def test_html_injection_sanitization(self):
+        # Verify malicious payload injection across templates is neutralized
+        data = {
+            "inviterName": "<script>alert('xss')</script>John",
+            "inviteCode": "<code>\"onload=\"alert(1)</code>",
+            "inviteLink": "javascript:alert(1)"
+        }
+        _, html_out = render_template("household_invite", data)
+        self.assertNotIn("<script>", html_out)
+        self.assertIn("&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;John", html_out)
+        self.assertNotIn("javascript:alert(1)", html_out)
+        self.assertNotIn("onload=\"alert(1)", html_out)
+
+        budget_data = {
+            "userName": "<img src=x onerror=alert(1)>",
+            "percentConsumed": "80%<script>bad()</script>",
+            "projectedBill": "₱1,000<b onmouseover=bad()>"
+        }
+        _, budget_html = render_template("budget_alert", budget_data)
+        self.assertNotIn("<img src=x", budget_html)
+        self.assertNotIn("<script>bad()</script>", budget_html)
+        self.assertNotIn("<b onmouseover=", budget_html)
+        self.assertIn("&lt;img src=x onerror=alert(1)&gt;", budget_html)
+
 if __name__ == '__main__':
     unittest.main()
