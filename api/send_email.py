@@ -1,3 +1,4 @@
+import html
 import json
 import os
 import urllib.request
@@ -111,12 +112,24 @@ def render_template(template_type, data):
     </html>
     """
 
+    def _sanitize(val, default=''):
+        if val is None:
+            return default
+        return html.escape(str(val).strip(), quote=True)
+
+    def _sanitize_url(url_val, default='https://powerforecast.ph'):
+        clean = str(url_val or '').strip()
+        if not clean.startswith(('https://', 'http://')):
+            return default
+        return html.escape(clean, quote=True)
+
     if template_type == 'household_invite':
-        inviter_name = data.get('inviterName', 'A household member')
-        invite_code = data.get('inviteCode', 'PF-HH-0000')
-        invite_link = data.get('inviteLink', 'https://powerforecast.ph')
+        raw_inviter = str(data.get('inviterName', 'A household member'))
+        inviter_name = _sanitize(raw_inviter, 'A household member')
+        invite_code = _sanitize(data.get('inviteCode', 'PF-HH-0000'), 'PF-HH-0000')
+        invite_link = _sanitize_url(data.get('inviteLink', 'https://powerforecast.ph'))
         
-        subject = f"⚡ You've been invited by {inviter_name} to join PowerForecast Household"
+        subject = f"⚡ You've been invited by {raw_inviter} to join PowerForecast Household"
         content = f"""
           <h1 style="font-size: 22px; font-weight: 800; color: {text_main}; margin-top: 0; margin-bottom: 12px; letter-spacing: -0.3px;">
             Household Energy Team Invitation
@@ -155,11 +168,11 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'budget_alert':
-        user_name = data.get('userName', 'User')
-        current_kwh = data.get('currentKwh', '0')
-        budget_limit_kwh = data.get('budgetLimitKwh', '0')
-        percent_consumed = data.get('percentConsumed', '80%')
-        projected_bill = data.get('projectedBill', '₱0.00')
+        user_name = _sanitize(data.get('userName', 'User'), 'User')
+        current_kwh = _sanitize(data.get('currentKwh', '0'), '0')
+        budget_limit_kwh = _sanitize(data.get('budgetLimitKwh', '0'), '0')
+        percent_consumed = _sanitize(data.get('percentConsumed', '80%'), '80%')
+        projected_bill = _sanitize(data.get('projectedBill', '₱0.00'), '₱0.00')
 
         subject = f"⚠️ Alert: PowerForecast Monthly Budget Threshold Reached ({percent_consumed})"
         content = f"""
@@ -193,9 +206,9 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'surge_alert':
-        current_watts = data.get('currentWatts', '2500')
-        threshold_watts = data.get('thresholdWatts', '2000')
-        timestamp = data.get('timestamp', 'Just now')
+        current_watts = _sanitize(data.get('currentWatts', '2500'), '2500')
+        threshold_watts = _sanitize(data.get('thresholdWatts', '2000'), '2000')
+        timestamp = _sanitize(data.get('timestamp', 'Just now'), 'Just now')
 
         subject = f"⚡ Critical Surge Alert: {current_watts}W Wattage Spike Detected"
         content = f"""
@@ -215,9 +228,9 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'test_email':
-        recipient = data.get('recipient', 'Administrator')
-        timestamp = data.get('timestamp', 'Now')
-        note = data.get('note', 'Resend SMTP & Delivery Test Successful')
+        recipient = _sanitize(data.get('recipient', 'Administrator'), 'Administrator')
+        timestamp = _sanitize(data.get('timestamp', 'Now'), 'Now')
+        note = _sanitize(data.get('note', 'Resend SMTP & Delivery Test Successful'), 'Resend SMTP & Delivery Test Successful')
 
         subject = "⚡ PowerForecast SMTP & Resend Delivery Test Successful"
         content = f"""
@@ -251,10 +264,10 @@ def render_template(template_type, data):
     subject = data.get('subject', 'PowerForecast Notification')
     content = f"""
       <h1 style="font-size: 22px; font-weight: 800; color: {text_main}; margin-top: 0; margin-bottom: 12px; letter-spacing: -0.3px;">
-        {subject}
+        {_sanitize(subject, 'PowerForecast Notification')}
       </h1>
       <div style="font-size: 15px; line-height: 1.6; color: {text_muted};">
-        {data.get('content', 'Notification from PowerForecast.')}
+        {_sanitize(data.get('content', 'Notification from PowerForecast.'), 'Notification from PowerForecast.')}
       </div>
     """
     return subject, base_header + content + base_footer
