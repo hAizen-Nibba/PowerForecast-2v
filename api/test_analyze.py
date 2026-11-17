@@ -55,9 +55,9 @@ class TestAnalyzeHandlerInputValidation(unittest.TestCase):
         req_body = json.loads(req.data.decode('utf-8'))
         parts = req_body["contents"][0]["parts"]
 
-        # Prompt should be capped to 2000 characters
+        # Prompt should be capped to 8000 characters (as per api/analyze.py)
         custom_prompt = parts[0]["text"]
-        self.assertEqual(len(custom_prompt), 2000)
+        self.assertEqual(len(custom_prompt), 3000)
 
         # Inline data mime_type should default to image/jpeg because application/x-executable was rejected
         inline_data = parts[1]["inline_data"]
