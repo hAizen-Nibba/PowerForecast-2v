@@ -1,8 +1,22 @@
+import html
 import json
 import os
 import urllib.request
 import urllib.error
 from http.server import BaseHTTPRequestHandler
+
+def safe_html(val, default=''):
+    if val is None:
+        return default
+    return html.escape(str(val))
+
+def safe_url(url, default='https://powerforecast.ph'):
+    if not url or not isinstance(url, str):
+        return default
+    cleaned = url.strip()
+    if cleaned.startswith(('http://', 'https://')):
+        return html.escape(cleaned)
+    return default
 
 def get_resend_api_key():
     """
@@ -112,9 +126,9 @@ def render_template(template_type, data):
     """
 
     if template_type == 'household_invite':
-        inviter_name = data.get('inviterName', 'A household member')
-        invite_code = data.get('inviteCode', 'PF-HH-0000')
-        invite_link = data.get('inviteLink', 'https://powerforecast.ph')
+        inviter_name = safe_html(data.get('inviterName'), 'A household member')
+        invite_code = safe_html(data.get('inviteCode'), 'PF-HH-0000')
+        invite_link = safe_url(data.get('inviteLink'), 'https://powerforecast.ph')
         
         subject = f"⚡ You've been invited by {inviter_name} to join PowerForecast Household"
         content = f"""
@@ -155,11 +169,11 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'budget_alert':
-        user_name = data.get('userName', 'User')
-        current_kwh = data.get('currentKwh', '0')
-        budget_limit_kwh = data.get('budgetLimitKwh', '0')
-        percent_consumed = data.get('percentConsumed', '80%')
-        projected_bill = data.get('projectedBill', '₱0.00')
+        user_name = safe_html(data.get('userName'), 'User')
+        current_kwh = safe_html(data.get('currentKwh'), '0')
+        budget_limit_kwh = safe_html(data.get('budgetLimitKwh'), '0')
+        percent_consumed = safe_html(data.get('percentConsumed'), '80%')
+        projected_bill = safe_html(data.get('projectedBill'), '₱0.00')
 
         subject = f"⚠️ Alert: PowerForecast Monthly Budget Threshold Reached ({percent_consumed})"
         content = f"""
@@ -193,9 +207,9 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'surge_alert':
-        current_watts = data.get('currentWatts', '2500')
-        threshold_watts = data.get('thresholdWatts', '2000')
-        timestamp = data.get('timestamp', 'Just now')
+        current_watts = safe_html(data.get('currentWatts'), '2500')
+        threshold_watts = safe_html(data.get('thresholdWatts'), '2000')
+        timestamp = safe_html(data.get('timestamp'), 'Just now')
 
         subject = f"⚡ Critical Surge Alert: {current_watts}W Wattage Spike Detected"
         content = f"""
@@ -215,9 +229,9 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'test_email':
-        recipient = data.get('recipient', 'Administrator')
-        timestamp = data.get('timestamp', 'Now')
-        note = data.get('note', 'Resend SMTP & Delivery Test Successful')
+        recipient = safe_html(data.get('recipient'), 'Administrator')
+        timestamp = safe_html(data.get('timestamp'), 'Now')
+        note = safe_html(data.get('note'), 'Resend SMTP & Delivery Test Successful')
 
         subject = "⚡ PowerForecast SMTP & Resend Delivery Test Successful"
         content = f"""
@@ -248,13 +262,14 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     # Default fallback
-    subject = data.get('subject', 'PowerForecast Notification')
+    subject = safe_html(data.get('subject'), 'PowerForecast Notification')
+    content_text = safe_html(data.get('content'), 'Notification from PowerForecast.')
     content = f"""
       <h1 style="font-size: 22px; font-weight: 800; color: {text_main}; margin-top: 0; margin-bottom: 12px; letter-spacing: -0.3px;">
         {subject}
       </h1>
       <div style="font-size: 15px; line-height: 1.6; color: {text_muted};">
-        {data.get('content', 'Notification from PowerForecast.')}
+        {content_text}
       </div>
     """
     return subject, base_header + content + base_footer
