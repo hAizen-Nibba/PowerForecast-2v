@@ -1,8 +1,17 @@
 import json
 import os
+import re
 import urllib.request
 import urllib.error
 from http.server import BaseHTTPRequestHandler
+
+EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
+
+def is_valid_email(email_str):
+    if not isinstance(email_str, str):
+        return False
+    email_str = email_str.strip()
+    return bool(EMAIL_REGEX.match(email_str)) and len(email_str) <= 254
 
 def get_resend_api_key():
     """
@@ -289,16 +298,25 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         content_length = int(self.headers.get('Content-Length', 0))
+
+        if content_length > 1 * 1024 * 1024:
+            self.send_response(413)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": False, "error": "Payload Too Large: Maximum allowed upload is 1 MB."}).encode('utf-8'))
+            return
+
         raw_body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else ''
 
         try:
             payload = json.loads(raw_body) if raw_body else {}
-        except Exception as e:
+        except Exception:
             self.send_response(400)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({"success": False, "error": f"Invalid JSON body: {str(e)}"}).encode('utf-8'))
+            self.wfile.write(json.dumps({"success": False, "error": "Invalid JSON body format."}).encode('utf-8'))
             return
 
         api_key = get_resend_api_key()
@@ -309,7 +327,7 @@ class handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({
                 "success": False,
-                "error": "RESEND_API_KEY is not configured on the server. Please add your Resend API key to environment variables.",
+                "error": "RESEND_API_KEY is not configured on the server.",
                 "code": "MISSING_RESEND_API_KEY"
             }).encode('utf-8'))
             return
@@ -324,7 +342,16 @@ class handler(BaseHTTPRequestHandler):
             return
 
         recipients = [to_recipient] if isinstance(to_recipient, str) else to_recipient
-        from_email = payload.get('from') or get_sender_email()
+        if not isinstance(recipients, list) or not recipients or not all(is_valid_email(r) for r in recipients):
+            self.send_response(400)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": False, "error": "Invalid recipient email address format."}).encode('utf-8'))
+            return
+
+        # Enforce server-side configured sender email to prevent arbitrary email spoofing
+        from_email = get_sender_email()
         template_type = payload.get('type')
         template_data = payload.get('data', {})
 
@@ -354,7 +381,7 @@ class handler(BaseHTTPRequestHandler):
             headers={
                 'Authorization': f'Bearer {api_key}',
                 'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 PowerForecast/3.4'
+                'User-Agent': 'PowerForecast/3.4'
             },
             method='POST'
         )
@@ -376,30 +403,23 @@ class handler(BaseHTTPRequestHandler):
                 }).encode('utf-8'))
 
         except urllib.error.HTTPError as http_err:
-            error_body = http_err.read().decode('utf-8') if http_err.fp else str(http_err)
-            try:
-                error_json = json.loads(error_body)
-            except Exception:
-                error_json = {"message": error_body}
-
             self.send_response(http_err.code if http_err.code in [400, 401, 403, 422, 500] else 500)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(json.dumps({
                 "success": False,
-                "error": error_json.get("message") or f"Resend API error: {http_err.reason}",
-                "details": error_json,
+                "error": "Failed to send email through delivery service. Please verify configuration.",
                 "code": "RESEND_HTTP_ERROR"
             }).encode('utf-8'))
 
-        except Exception as e:
+        except Exception:
             self.send_response(500)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(json.dumps({
                 "success": False,
-                "error": f"Internal email dispatcher error: {str(e)}",
+                "error": "An internal error occurred while dispatching email.",
                 "code": "DISPATCHER_ERROR"
             }).encode('utf-8'))
