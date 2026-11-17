@@ -57,5 +57,68 @@ class TestSendEmailAPI(unittest.TestCase):
         self.assertTrue(len(sender) > 0)
         self.assertIn("@", sender)
 
+
+from unittest.mock import patch, MagicMock
+import json
+import api.send_email as send_email
+
+class TestSendEmailSecurity(unittest.TestCase):
+
+    def setUp(self):
+        self.mock_wfile = MagicMock()
+        self.handler = send_email.handler.__new__(send_email.handler)
+        self.handler.headers = {'Content-Length': '0'}
+        self.handler.rfile = MagicMock()
+        self.handler.wfile = self.mock_wfile
+        self.handler.send_response = MagicMock()
+        self.handler.send_header = MagicMock()
+        self.handler.end_headers = MagicMock()
+
+    def test_invalid_json_body_error_sanitization(self):
+        invalid_body = b"NOT_VALID_JSON{{"
+        self.handler.headers = {'Content-Length': str(len(invalid_body))}
+        self.handler.rfile.read.return_value = invalid_body
+
+        self.handler.do_POST()
+
+        self.handler.send_response.assert_called_with(400)
+        written_bytes = b"".join(call[0][0] for call in self.mock_wfile.write.call_args_list)
+        resp_data = json.loads(written_bytes.decode('utf-8'))
+
+        self.assertFalse(resp_data.get("success"))
+        self.assertEqual(resp_data.get("error"), "Invalid JSON payload format.")
+        # Ensure internal exception strings/details are not disclosed
+        self.assertNotIn("Expecting value", resp_data.get("error"))
+
+    @patch('api.send_email.get_resend_api_key', return_value='re_fake_api_key_12345')
+    @patch('api.send_email.get_sender_email', return_value='PowerForecast <noreply@comugallery.me>')
+    @patch('urllib.request.urlopen')
+    def test_sender_email_spoofing_prevention(self, mock_urlopen, mock_sender, mock_key):
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = json.dumps({"id": "msg_123"}).encode('utf-8')
+        mock_resp.__enter__.return_value = mock_resp
+        mock_urlopen.return_value = mock_resp
+
+        payload = {
+            "to": "user@example.com",
+            "from": "attacker-spoofed@malicious-domain.com",
+            "subject": "Test",
+            "text": "Hello"
+        }
+        raw_payload = json.dumps(payload).encode('utf-8')
+        self.handler.headers = {'Content-Length': str(len(raw_payload))}
+        self.handler.rfile.read.return_value = raw_payload
+
+        self.handler.do_POST()
+
+        self.assertTrue(mock_urlopen.called)
+        req = mock_urlopen.call_args[0][0]
+        sent_body = json.loads(req.data.decode('utf-8'))
+
+        # Verify from address was forced to server configured sender, ignoring spoofed 'from'
+        self.assertEqual(sent_body["from"], "PowerForecast <noreply@comugallery.me>")
+        self.assertNotEqual(sent_body["from"], "attacker-spoofed@malicious-domain.com")
+
+
 if __name__ == '__main__':
     unittest.main()
