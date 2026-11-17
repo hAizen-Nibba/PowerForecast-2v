@@ -57,5 +57,21 @@ class TestSendEmailAPI(unittest.TestCase):
         self.assertTrue(len(sender) > 0)
         self.assertIn("@", sender)
 
+    def test_payload_too_large_rejection(self):
+        from unittest.mock import MagicMock
+        import api.send_email as send_email
+
+        handler = send_email.handler.__new__(send_email.handler)
+        handler.headers = {'Content-Length': str(2 * 1024 * 1024)}  # 2MB
+        handler.rfile = MagicMock()
+        handler.wfile = MagicMock()
+        handler.send_response = MagicMock()
+        handler.send_header = MagicMock()
+        handler.end_headers = MagicMock()
+
+        handler.do_POST()
+
+        handler.send_response.assert_called_with(413)
+
 if __name__ == '__main__':
     unittest.main()
