@@ -1,8 +1,26 @@
+import html
 import json
 import os
 import urllib.request
 import urllib.error
 from http.server import BaseHTTPRequestHandler
+
+def _sanitize_text(val, default=''):
+    """
+    Sanitizes dynamic text values by escaping HTML characters to prevent XSS / HTML injection in transactional emails.
+    """
+    if val is None:
+        return html.escape(str(default))
+    return html.escape(str(val))
+
+def _sanitize_url(val, default='https://powerforecast.ph'):
+    """
+    Sanitizes URL strings, ensuring only http:// or https:// schemes are permitted to block javascript: URI injection.
+    """
+    url_str = str(val or '').strip()
+    if url_str.startswith('http://') or url_str.startswith('https://'):
+        return html.escape(url_str)
+    return html.escape(default)
 
 def get_resend_api_key():
     """
@@ -112,11 +130,13 @@ def render_template(template_type, data):
     """
 
     if template_type == 'household_invite':
-        inviter_name = data.get('inviterName', 'A household member')
-        invite_code = data.get('inviteCode', 'PF-HH-0000')
-        invite_link = data.get('inviteLink', 'https://powerforecast.ph')
+        # Sanitize dynamic inputs to prevent HTML injection & malicious URL schemes
+        inviter_name_raw = data.get('inviterName', 'A household member')
+        inviter_name = _sanitize_text(inviter_name_raw, 'A household member')
+        invite_code = _sanitize_text(data.get('inviteCode', 'PF-HH-0000'), 'PF-HH-0000')
+        invite_link = _sanitize_url(data.get('inviteLink', 'https://powerforecast.ph'))
         
-        subject = f"⚡ You've been invited by {inviter_name} to join PowerForecast Household"
+        subject = f"⚡ You've been invited by {inviter_name_raw} to join PowerForecast Household"
         content = f"""
           <h1 style="font-size: 22px; font-weight: 800; color: {text_main}; margin-top: 0; margin-bottom: 12px; letter-spacing: -0.3px;">
             Household Energy Team Invitation
@@ -155,13 +175,15 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'budget_alert':
-        user_name = data.get('userName', 'User')
-        current_kwh = data.get('currentKwh', '0')
-        budget_limit_kwh = data.get('budgetLimitKwh', '0')
-        percent_consumed = data.get('percentConsumed', '80%')
-        projected_bill = data.get('projectedBill', '₱0.00')
+        user_name_raw = data.get('userName', 'User')
+        user_name = _sanitize_text(user_name_raw, 'User')
+        current_kwh = _sanitize_text(data.get('currentKwh', '0'), '0')
+        budget_limit_kwh = _sanitize_text(data.get('budgetLimitKwh', '0'), '0')
+        percent_consumed_raw = data.get('percentConsumed', '80%')
+        percent_consumed = _sanitize_text(percent_consumed_raw, '80%')
+        projected_bill = _sanitize_text(data.get('projectedBill', '₱0.00'), '₱0.00')
 
-        subject = f"⚠️ Alert: PowerForecast Monthly Budget Threshold Reached ({percent_consumed})"
+        subject = f"⚠️ Alert: PowerForecast Monthly Budget Threshold Reached ({percent_consumed_raw})"
         content = f"""
           <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px;">
             <strong style="color: #b91c1c; font-size: 13px; letter-spacing: 0.5px;">ENERGY BUDGET THRESHOLD WARNING</strong>
@@ -193,11 +215,12 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'surge_alert':
-        current_watts = data.get('currentWatts', '2500')
-        threshold_watts = data.get('thresholdWatts', '2000')
-        timestamp = data.get('timestamp', 'Just now')
+        current_watts_raw = data.get('currentWatts', '2500')
+        current_watts = _sanitize_text(current_watts_raw, '2500')
+        threshold_watts = _sanitize_text(data.get('thresholdWatts', '2000'), '2000')
+        timestamp = _sanitize_text(data.get('timestamp', 'Just now'), 'Just now')
 
-        subject = f"⚡ Critical Surge Alert: {current_watts}W Wattage Spike Detected"
+        subject = f"⚡ Critical Surge Alert: {current_watts_raw}W Wattage Spike Detected"
         content = f"""
           <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px;">
             <strong style="color: #b45309; font-size: 13px; letter-spacing: 0.5px;">HIGH CONCURRENT POWER SURGE</strong>
@@ -215,9 +238,9 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'test_email':
-        recipient = data.get('recipient', 'Administrator')
-        timestamp = data.get('timestamp', 'Now')
-        note = data.get('note', 'Resend SMTP & Delivery Test Successful')
+        recipient = _sanitize_text(data.get('recipient', 'Administrator'), 'Administrator')
+        timestamp = _sanitize_text(data.get('timestamp', 'Now'), 'Now')
+        note = _sanitize_text(data.get('note', 'Resend SMTP & Delivery Test Successful'), 'Resend SMTP & Delivery Test Successful')
 
         subject = "⚡ PowerForecast SMTP & Resend Delivery Test Successful"
         content = f"""
@@ -248,16 +271,18 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     # Default fallback
-    subject = data.get('subject', 'PowerForecast Notification')
+    raw_subj = data.get('subject', 'PowerForecast Notification')
+    escaped_subj = _sanitize_text(raw_subj, 'PowerForecast Notification')
+    escaped_content = _sanitize_text(data.get('content', 'Notification from PowerForecast.'), 'Notification from PowerForecast.')
     content = f"""
       <h1 style="font-size: 22px; font-weight: 800; color: {text_main}; margin-top: 0; margin-bottom: 12px; letter-spacing: -0.3px;">
-        {subject}
+        {escaped_subj}
       </h1>
       <div style="font-size: 15px; line-height: 1.6; color: {text_muted};">
-        {data.get('content', 'Notification from PowerForecast.')}
+        {escaped_content}
       </div>
     """
-    return subject, base_header + content + base_footer
+    return raw_subj, base_header + content + base_footer
 
 
 class handler(BaseHTTPRequestHandler):
