@@ -1,8 +1,37 @@
+import html
 import json
 import os
+import urllib.parse
 import urllib.request
 import urllib.error
 from http.server import BaseHTTPRequestHandler
+
+def _clean_str(val, default=''):
+    """Sanitize and HTML-escape text values to prevent template injection."""
+    if val is None:
+        return default
+    text = str(val).strip()
+    return html.escape(text, quote=True)
+
+def _clean_subject(val, default='PowerForecast Notification'):
+    """Strip carriage returns and newlines to prevent email header injection."""
+    if val is None:
+        return default
+    text = str(val).replace('\r', ' ').replace('\n', ' ').strip()
+    return text if text else default
+
+def _safe_url(url, default='https://powerforecast.ph'):
+    """Ensure URL strictly adheres to http/https schemes to prevent javascript: or data: URI injection."""
+    if not url or not isinstance(url, str):
+        return default
+    url_str = url.strip()
+    try:
+        parsed = urllib.parse.urlparse(url_str)
+        if parsed.scheme.lower() in ('http', 'https') and parsed.netloc:
+            return html.escape(url_str, quote=True)
+    except Exception:
+        pass
+    return default
 
 def get_resend_api_key():
     """
@@ -112,11 +141,11 @@ def render_template(template_type, data):
     """
 
     if template_type == 'household_invite':
-        inviter_name = data.get('inviterName', 'A household member')
-        invite_code = data.get('inviteCode', 'PF-HH-0000')
-        invite_link = data.get('inviteLink', 'https://powerforecast.ph')
-        
-        subject = f"⚡ You've been invited by {inviter_name} to join PowerForecast Household"
+        inviter_name = _clean_str(data.get('inviterName', 'A household member'), 'A household member')
+        invite_code = _clean_str(data.get('inviteCode', 'PF-HH-0000'), 'PF-HH-0000')
+        invite_link = _safe_url(data.get('inviteLink'), 'https://powerforecast.ph')
+
+        subject = _clean_subject(f"⚡ You've been invited by {inviter_name} to join PowerForecast Household")
         content = f"""
           <h1 style="font-size: 22px; font-weight: 800; color: {text_main}; margin-top: 0; margin-bottom: 12px; letter-spacing: -0.3px;">
             Household Energy Team Invitation
@@ -155,13 +184,13 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'budget_alert':
-        user_name = data.get('userName', 'User')
-        current_kwh = data.get('currentKwh', '0')
-        budget_limit_kwh = data.get('budgetLimitKwh', '0')
-        percent_consumed = data.get('percentConsumed', '80%')
-        projected_bill = data.get('projectedBill', '₱0.00')
+        user_name = _clean_str(data.get('userName', 'User'), 'User')
+        current_kwh = _clean_str(data.get('currentKwh', '0'), '0')
+        budget_limit_kwh = _clean_str(data.get('budgetLimitKwh', '0'), '0')
+        percent_consumed = _clean_str(data.get('percentConsumed', '80%'), '80%')
+        projected_bill = _clean_str(data.get('projectedBill', '₱0.00'), '₱0.00')
 
-        subject = f"⚠️ Alert: PowerForecast Monthly Budget Threshold Reached ({percent_consumed})"
+        subject = _clean_subject(f"⚠️ Alert: PowerForecast Monthly Budget Threshold Reached ({percent_consumed})")
         content = f"""
           <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px;">
             <strong style="color: #b91c1c; font-size: 13px; letter-spacing: 0.5px;">ENERGY BUDGET THRESHOLD WARNING</strong>
@@ -193,11 +222,11 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'surge_alert':
-        current_watts = data.get('currentWatts', '2500')
-        threshold_watts = data.get('thresholdWatts', '2000')
-        timestamp = data.get('timestamp', 'Just now')
+        current_watts = _clean_str(data.get('currentWatts', '2500'), '2500')
+        threshold_watts = _clean_str(data.get('thresholdWatts', '2000'), '2000')
+        timestamp = _clean_str(data.get('timestamp', 'Just now'), 'Just now')
 
-        subject = f"⚡ Critical Surge Alert: {current_watts}W Wattage Spike Detected"
+        subject = _clean_subject(f"⚡ Critical Surge Alert: {current_watts}W Wattage Spike Detected")
         content = f"""
           <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px;">
             <strong style="color: #b45309; font-size: 13px; letter-spacing: 0.5px;">HIGH CONCURRENT POWER SURGE</strong>
@@ -215,9 +244,9 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     elif template_type == 'test_email':
-        recipient = data.get('recipient', 'Administrator')
-        timestamp = data.get('timestamp', 'Now')
-        note = data.get('note', 'Resend SMTP & Delivery Test Successful')
+        recipient = _clean_str(data.get('recipient', 'Administrator'), 'Administrator')
+        timestamp = _clean_str(data.get('timestamp', 'Now'), 'Now')
+        note = _clean_str(data.get('note', 'Resend SMTP & Delivery Test Successful'), 'Resend SMTP & Delivery Test Successful')
 
         subject = "⚡ PowerForecast SMTP & Resend Delivery Test Successful"
         content = f"""
@@ -248,13 +277,13 @@ def render_template(template_type, data):
         return subject, base_header + content + base_footer
 
     # Default fallback
-    subject = data.get('subject', 'PowerForecast Notification')
+    subject = _clean_subject(data.get('subject', 'PowerForecast Notification'), 'PowerForecast Notification')
     content = f"""
       <h1 style="font-size: 22px; font-weight: 800; color: {text_main}; margin-top: 0; margin-bottom: 12px; letter-spacing: -0.3px;">
-        {subject}
+        {_clean_str(subject)}
       </h1>
       <div style="font-size: 15px; line-height: 1.6; color: {text_muted};">
-        {data.get('content', 'Notification from PowerForecast.')}
+        {_clean_str(data.get('content', 'Notification from PowerForecast.'))}
       </div>
     """
     return subject, base_header + content + base_footer
