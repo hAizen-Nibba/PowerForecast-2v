@@ -293,12 +293,12 @@ class handler(BaseHTTPRequestHandler):
 
         try:
             payload = json.loads(raw_body) if raw_body else {}
-        except Exception as e:
+        except Exception:
             self.send_response(400)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({"success": False, "error": f"Invalid JSON body: {str(e)}"}).encode('utf-8'))
+            self.wfile.write(json.dumps({"success": False, "error": "Invalid JSON payload format."}).encode('utf-8'))
             return
 
         api_key = get_resend_api_key()
@@ -393,13 +393,13 @@ class handler(BaseHTTPRequestHandler):
                 "code": "RESEND_HTTP_ERROR"
             }).encode('utf-8'))
 
-        except Exception as e:
+        except Exception:
             self.send_response(500)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(json.dumps({
                 "success": False,
-                "error": f"Internal email dispatcher error: {str(e)}",
+                "error": "An internal error occurred while processing the request.",
                 "code": "DISPATCHER_ERROR"
             }).encode('utf-8'))
