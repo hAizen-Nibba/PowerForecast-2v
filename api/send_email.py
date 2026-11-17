@@ -293,12 +293,12 @@ class handler(BaseHTTPRequestHandler):
 
         try:
             payload = json.loads(raw_body) if raw_body else {}
-        except Exception as e:
+        except Exception:
             self.send_response(400)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({"success": False, "error": f"Invalid JSON body: {str(e)}"}).encode('utf-8'))
+            self.wfile.write(json.dumps({"success": False, "error": "Invalid JSON payload body."}).encode('utf-8'))
             return
 
         api_key = get_resend_api_key()
@@ -376,30 +376,23 @@ class handler(BaseHTTPRequestHandler):
                 }).encode('utf-8'))
 
         except urllib.error.HTTPError as http_err:
-            error_body = http_err.read().decode('utf-8') if http_err.fp else str(http_err)
-            try:
-                error_json = json.loads(error_body)
-            except Exception:
-                error_json = {"message": error_body}
-
             self.send_response(http_err.code if http_err.code in [400, 401, 403, 422, 500] else 500)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(json.dumps({
                 "success": False,
-                "error": error_json.get("message") or f"Resend API error: {http_err.reason}",
-                "details": error_json,
+                "error": "Failed to dispatch email via Resend API.",
                 "code": "RESEND_HTTP_ERROR"
             }).encode('utf-8'))
 
-        except Exception as e:
+        except Exception:
             self.send_response(500)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(json.dumps({
                 "success": False,
-                "error": f"Internal email dispatcher error: {str(e)}",
+                "error": "Internal email dispatcher error.",
                 "code": "DISPATCHER_ERROR"
             }).encode('utf-8'))
