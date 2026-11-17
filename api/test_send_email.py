@@ -16,6 +16,20 @@ class TestSendEmailAPI(unittest.TestCase):
         self.assertIn("Forecast", html)
         self.assertIn("https://raw.githubusercontent.com/hAizen-Nibba/PowerForecast-2v/main/public/Assets/LOGO.png", html)
 
+    def test_html_injection_escaping(self):
+        data = {
+            "inviterName": "<script>alert('xss')</script>",
+            "inviteCode": "<b>CODE</b>",
+            "inviteLink": "javascript:alert('xss')"
+        }
+        subject, html = render_template("household_invite", data)
+        self.assertNotIn("<script>", html)
+        self.assertIn("&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;", html)
+        self.assertNotIn("<b>CODE</b>", html)
+        self.assertIn("&lt;b&gt;CODE&lt;/b&gt;", html)
+        self.assertNotIn("javascript:alert", html)
+        self.assertIn("https://powerforecast.ph", html)
+
     def test_budget_alert_template(self):
         data = {
             "userName": "Maria",
